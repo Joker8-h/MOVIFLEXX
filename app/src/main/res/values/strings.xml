@@ -1,3 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">moviflexx</string>
+    <!-- Nombre de la App -->
+    <string name="app_name">TuViajes</string>
+
+    <!-- Pantalla Principal -->
+    <string name="home_title">TuViajes</string>
+    <string name="map_description">Mapa de la ciudad</string>
+    <string name="profile_button">Perfil de usuario</string>
+    <string name="current_location">Tu ubicación actual</string>
+    <string name="sample_address">Av. Principal #123, Centro</string>
+    <string name="destination_title">¿A dónde vas?</string>
+    <string name="destination_hint">Escribe tu destino...</string>
+    <string name="search_destination">Buscar destino</string>
+
+    <!-- Menú de Perfil -->
+    <string name="menu_profile">Perfil</string>
+    <string name="menu_history">Historial de Solicitudes</string>
+    <string name="menu_help">Ayuda</string>
+    <string name="menu_settings">Configuración</string>
+    <string name="menu_messages">Mensajes</string>
+
+    <!-- Mensajes emergentes -->
+    <string name="toast_profile">Perfil</string>
+    <string name="toast_history">Historial</string>
+    <string name="toast_help">Ayuda</string>
+    <string name="toast_settings">Configuración</string>
+    <string name="toast_messages">Mensajes</string>
+    <string name="toast_search_destination">Buscar destino</string>
+
+    <!-- Texto temporal del mapa -->
+    <string name="map_placeholder_text">🗺️ Mapa de la Ciudad\n(Imagen estática - JPG/PNG)</string>
+
+    <!-- Navegación -->
+    <string name="navigate_home">Ir al inicio</string>
+    <string name="navigate_back">Volver</string>
 </resources>
