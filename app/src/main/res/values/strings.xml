@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">moviflexx</string>
+    <string name="vehículo">Vehículo</string>
+    <string-array name="spinner">
+        <item>Notificaciones</item>
+        <item>Vehículos</item>
+        <item>Guía</item>
+        <item>Perfil</item>
+    </string-array>
 </resources>

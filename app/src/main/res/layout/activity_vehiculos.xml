@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".vehiculos">
+
+    <Button
+        android:id="@+id/Back"
+        android:layout_width="66dp"
+        android:layout_height="71dp"
+        android:background="@drawable/img_5" />
+    <LinearLayout
+        android:layout_width="365dp"
+        android:layout_height="233dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="20dp"
+        android:background="@color/white"
+        android:outlineAmbientShadowColor="@color/black">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textSize="30dp"
+            android:layout_marginHorizontal="10dp"
+            android:text="@string/vehículo"/>
+
+        <ImageView
+            android:id="@+id/imgVehiculo"
+            android:layout_width="180dp"
+            android:layout_height="188dp"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="20dp"/>
+    </LinearLayout>
+
+</LinearLayout>
