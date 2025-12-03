@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <!-- Fondo suave Material You -->
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M60,10 A50,50 0 1,1 59.9,10 Z" />
+
+    <!-- Silueta del vehículo -->
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M35,60 h50 v15 h-50z" />
+
+    <!-- Techo redondeado -->
+    <path
+        android:fillColor="#1E88E5"
+        android:pathData="M40,60
+            A20,20 0 0,1 80,60 z" />
+
+    <!-- Ruedas Material You -->
+    <path
+        android:fillColor="#0D47A1"
+        android:pathData="M45,75 A6,6 0 1,1 44.9,75 Z"/>
+    <path
+        android:fillColor="#0D47A1"
+        android:pathData="M75,75 A6,6 0 1,1 74.9,75 Z"/>
+</vector>

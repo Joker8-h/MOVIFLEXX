@@ -1,3 +1,23 @@
 <resources>
     <string name="app_name">moviflexx</string>
+
+    <!--main-->
+    <string name="appn">Viajes Compartidos</string>
+    <string name="splash_slogan">Tu viaje, tu estilo</string>
+    <string name="splash_version">v1.0.0</string>
+    <string name="splash_logo_description">Logo aplicación</string>
+    <string name="loading">Cargando…</string>
+
+    <!--home-->
+    <string name="home_title">Bienvenido a MoviFlex</string>
+    <string name="home_subtitle">Viajes comunitarios más seguros, económicos y conectados con tu ciudad.</string>
+    <string name="home_next">Comenzar</string>
+
+    <!--Login-->
+    <string name="login_title">Bienvenido a MoviFlexx</string>
+    <string name="email_hint">Correo electrónico</string>
+    <string name="password_hint">Contraseña</string>
+    <string name="login_button">Iniciar Sesión</string>
+    <string name="no_account">¿No tienes cuenta? Regístrate</string>
+
 </resources>

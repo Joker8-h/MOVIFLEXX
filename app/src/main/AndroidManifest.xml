@@ -12,6 +12,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Moviflexx">
         <activity
+            android:name=".controller.Register"
+            android:exported="false" />
+        <activity
+            android:name=".controller.Login"
+            android:exported="false" />
+        <activity
+            android:name=".controller.Home"
+            android:exported="false" />
+        <activity
             android:name=".controller.MainActivity"
             android:exported="true">
             <intent-filter>

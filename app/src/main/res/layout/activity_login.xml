@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_login_gradient">
+
+    <!-- Card del Login -->
+    <LinearLayout
+        android:layout_width="400dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center"
+        android:background="@drawable/login_card"
+        android:layout_centerInParent="true">
+
+        <!-- Título -->
+        <TextView
+            android:id="@+id/loginTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/login_title"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="@color/primary"
+            android:paddingBottom="10dp" />
+
+        <!-- Campo Usuario -->
+        <EditText
+            android:id="@+id/inputEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/email_hint"
+
+            android:drawablePadding="12dp"
+            android:padding="14dp"
+            android:background="@drawable/input_style"
+            android:textColor="@color/grayDark"
+            android:textColorHint="@color/grayLight"
+            android:layout_marginTop="12dp" />
+
+        <!-- Campo Contraseña -->
+        <EditText
+            android:id="@+id/inputPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/password_hint"
+
+            android:drawablePadding="12dp"
+            android:padding="14dp"
+            android:background="@drawable/input_style"
+            android:inputType="textPassword"
+            android:textColor="@color/grayDark"
+            android:textColorHint="@color/grayLight"
+            android:layout_marginTop="12dp" />
+
+        <!-- Botón -->
+        <Button
+            android:id="@+id/btnLogin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/login_button"
+            android:backgroundTint="@color/primary"
+            android:textColor="@color/white"
+            android:layout_marginTop="22dp" />
+
+        <!-- No cuenta -->
+        <TextView
+            android:id="@+id/txtRegister"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/no_account"
+            android:textColor="@color/primaryDark"
+            android:textStyle="bold"
+            android:layout_marginTop="14dp" />
+
+    </LinearLayout>
+
+</RelativeLayout>
