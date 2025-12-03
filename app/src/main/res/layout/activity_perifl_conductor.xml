@@ -1,10 +1,142 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".PeriflConductor">
+    android:background="@android:color/white"
+    android:orientation="vertical"
+    tools:context=".PerfilConductorActivity">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- Encabezado -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="#2196F3"
+        android:padding="20dp">
+
+        <ImageView
+            android:id="@+id/imagen_foto_perfil"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/icono_conductor"
+            android:background="@android:color/white"
+            android:padding="5dp"
+            android:scaleType="centerCrop" />
+
+        <TextView
+            android:id="@+id/texto_nombre_conductor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Juan Pérez"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <!-- Información -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Correo -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Correo electrónico:"
+                android:textSize="16sp"
+                android:layout_marginBottom="5dp" />
+
+            <TextView
+                android:id="@+id/texto_correo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="juan.perez@email.com"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Teléfono -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Teléfono:"
+                android:textSize="16sp"
+                android:layout_marginBottom="5dp" />
+
+            <TextView
+                android:id="@+id/texto_telefono"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+57 300 123 4567"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Placa -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Placa del vehículo:"
+                android:textSize="16sp"
+                android:layout_marginBottom="5dp" />
+
+            <TextView
+                android:id="@+id/texto_placa"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ABC-123"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Calificación -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Calificación:"
+                android:textSize="16sp"
+                android:layout_marginBottom="5dp" />
+
+            <TextView
+                android:id="@+id/texto_calificacion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4.8 ⭐ (125 viajes)"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="40dp" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <!-- Botones -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <Button
+            android:id="@+id/boton_editar_perfil"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginBottom="10dp"
+            android:backgroundTint="#4CAF50"
+            android:text="EDITAR PERFIL"
+            android:textColor="@android:color/white" />
+
+    </LinearLayout>
+
+</LinearLayout>
