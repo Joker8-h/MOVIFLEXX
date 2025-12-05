@@ -8,7 +8,7 @@
 
     <!-- Botón atrás -->
     <Button
-        android:id="@+id/boton_atras"
+        android:id="@+id/Back"
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:layout_margin="10dp"
