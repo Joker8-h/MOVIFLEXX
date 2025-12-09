@@ -64,7 +64,25 @@
     <color name="bgLight">#F2F6FF</color>     <!-- Fondo claro bonito -->
     <color name="grayDark">#424242</color>   <!-- Gris oscuro elegante -->
     <color name="grayLight">#BDBDBD</color>
+    <color name="background_dark">#1A1F2E</color>
+    <color name="background_card">#252B3A</color>
 
+    <!-- Primary Colors -->
+    <color name="primary_teal">#00BFA5</color>
+    <color name="primary_teal_dark">#009A84</color>
+
+    <!-- Text Colors -->
+
+    <color name="button_text">#FFFFFF</color>
+
+    <!-- Social Colors -->
+    <color name="google_green">#00A876</color>
+    <color name="facebook_blue">#1877F2</color>
+    <color name="twitter_blue">#1DA1F2</color>
+
+    <!-- Accent Colors -->
+
+    <color name="accent_pink">#FF4081</color>
 
 
 </resources>

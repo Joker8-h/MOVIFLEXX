@@ -1,8 +1,10 @@
 package com.arlys.moviflexx.controller;
 
+import android.content.Intent;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.VideoView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -34,5 +36,10 @@ public class Home extends AppCompatActivity {
                 videoView.start();        // Inicia video
             }
         });
+    }
+
+    public void irLogin(View view) {
+        Intent siguiente = new Intent(Home.this, Login.class);
+        startActivity(siguiente);
     }
 }

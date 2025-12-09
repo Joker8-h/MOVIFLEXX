@@ -14,7 +14,7 @@ public class ConexionBd extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         // 1. CREACIÓN DE TABLAS BASE
-
+        db.execSQL("CREATE TABLE DATOS(NOMBRE TEXT, TELEFONO NUMBER, CORREO TEXT, CONTRASEÑA TEXT, CONFIMACION TEXT, ROL TEXT, TERMINOS TEXT)");
         // 1.1 ROLES
         db.execSQL("CREATE TABLE roles (idRol INTEGER PRIMARY KEY AUTOINCREMENT, nombreRol TEXT)");
 
@@ -93,6 +93,8 @@ public class ConexionBd extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
+
+        db.execSQL("DROP TABLE IF EXISTS Register");
         db.execSQL("DROP TABLE IF EXISTS usuario_rol");
         db.execSQL("DROP TABLE IF EXISTS calificaciones");
         db.execSQL("DROP TABLE IF EXISTS pagos");
@@ -108,6 +110,8 @@ public class ConexionBd extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS metodos_pago_catalogo");
         db.execSQL("DROP TABLE IF EXISTS USUARIOS");
         db.execSQL("DROP TABLE IF EXISTS roles");
+
+
 
 
 

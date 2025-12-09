@@ -18,21 +18,10 @@ public class Login extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        EditText email = findViewById(R.id.inputEmail);
-        EditText pass = findViewById(R.id.inputPassword);
-        Button login = findViewById(R.id.btnLogin);
-        TextView register = findViewById(R.id.txtRegister);
 
-        login.setOnClickListener(v -> {
-            // Aquí validas login real
-        });
-
-        register.setOnClickListener(v ->
-                startActivity(new Intent(Login.this, Register.class))
-        );
     }
-    public void irRegister(View view) {
-        Intent siguiente = new Intent(Login.this, Register.class);
+    public void irRegister(View view){
+        Intent siguiente = new Intent(Login.this, Register.class );
         startActivity(siguiente);
     }
 }

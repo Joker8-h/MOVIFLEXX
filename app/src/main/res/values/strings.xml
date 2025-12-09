@@ -14,10 +14,34 @@
     <string name="home_next">Comenzar</string>
 
     <!--Login-->
-    <string name="login_title">Bienvenido a MoviFlexx</string>
-    <string name="email_hint">Correo electrónico</string>
-    <string name="password_hint">Contraseña</string>
-    <string name="login_button">Iniciar Sesión</string>
-    <string name="no_account">¿No tienes cuenta? Regístrate</string>
+    <?xml version="1.0" encoding="utf-8"?>
 
+        <string name="email">Email</string>
+        <string name="password">Password</string>
+        <string name="login">LOGIN</string>
+        <string name="register">REGISTER</string>
+        <string name="app_logo">App Logo</string>
+        <string name="login_google">Login with Google</string>
+        <string name="login_facebook">Login with Facebook</string>
+        <string name="login_twitter">Login with Twitter</string>
+    <string name="registerr">¿No tiene cuenta? Registarse</string>
+
+
+
+
+    <string name="register_title">Crear cuenta</string>
+    <string name="register_nombres">Nombres completos</string>
+    <string name="register_phone">Número de teléfono</string>
+    <string name="register_email">Correo electrónico</string>
+    <string name="register_password">Contraseña</string>
+    <string name="register_confirm_password">Confirmar contraseña</string>
+    <string name="register_terms">Acepto los términos y condiciones</string>
+    <string name="register_button">Registrar</string>
+    <string name="register_go_login">¿Ya tienes cuenta? Iniciar sesión</string>
+    <string-array name="Rol">
+        <item>Elige Rol</item>
+        <item>Admin</item>
+        <item>Cliente</item>
+        <item>Conductor</item>
+    </string-array>
 </resources>

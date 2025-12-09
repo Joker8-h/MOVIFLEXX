@@ -68,7 +68,7 @@
     <Button
         android:id="@+id/btnComenzar"
         android:layout_width="250dp"
-        android:onClick="irRegister"
+        android:onClick="irLogin"
         android:layout_height="55dp"
         android:text="@string/home_next"
         android:layout_centerHorizontal="true"
