@@ -14,7 +14,6 @@
         android:gravity="center"
         android:orientation="vertical"
         android:padding="24dp">
-
     </LinearLayout>
 
     <!-- Input Fields Container -->
@@ -30,7 +29,7 @@
 
         <!-- Email Input -->
         <EditText
-            android:id="@+id/et_correo"
+            android:id="@+id/edtcorreoo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/email"
@@ -38,12 +37,12 @@
             android:padding="16dp"
             android:background="@drawable/input_background"
             android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_hint"
+            android:textColorHint="@color/background_white"
             android:textSize="16sp" />
 
         <!-- Password Input -->
         <EditText
-            android:id="@+id/et_password"
+            android:id="@+id/edtcontrasena"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
@@ -57,17 +56,16 @@
 
         <!-- Login Button -->
         <Button
-            android:id="@+id/btn_login"
+            android:id="@+id/btnlogin"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="24dp"
-            android:onClick="irRegister"
+            android:onClick="irsuccess"
             android:backgroundTint="@color/colorPrimary"
             android:text="@string/login"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@android:color/white" />
-
 
     </LinearLayout>
 
@@ -104,6 +102,7 @@
         android:id="@+id/btn_ir_register"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:onClick="irRegister"
         android:layout_below="@id/socialContainer"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="28dp"

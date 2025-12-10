@@ -10,17 +10,21 @@ public class RegisterDatos {
     private String password;
     private String confirmacion;
     private String rol;
-    private boolean terminos;
 
 
-    public RegisterDatos(String nombre, int telefono, String correo, String password, String confirmacion, String rol, boolean terminos){
+    public RegisterDatos(){
+
+    }
+
+
+    public RegisterDatos(String nombre, int telefono, String correo, String password, String confirmacion, String rol){
         this.nombre = nombre;
         this.telefono = telefono;
         this.correo = correo;
         this.password = password;
         this.confirmacion = confirmacion;
         this.rol = rol;
-        this.terminos = terminos;
+
     }
 
     public void setNombre(String nombre){this.nombre = nombre;}
@@ -29,7 +33,7 @@ public class RegisterDatos {
     public void  setPassword(String password){this.password = password;}
     public void setConfirmacion(String confirmacion){this.confirmacion = confirmacion;}
     public void setRol(String rol){this.rol = rol;}
-    public void setTerminos(boolean terminos){this.terminos = terminos;}
+
 
     //_______________________________________________________
 
@@ -39,7 +43,7 @@ public class RegisterDatos {
     public String getPassword(){return password;}
     public String getConfirmacion(){return confirmacion;}
     public String getRol(){return rol;}
-    public boolean getTerminos(){return terminos;}
+
 
 
 }

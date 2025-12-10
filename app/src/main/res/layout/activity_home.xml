@@ -11,15 +11,14 @@
         android:layout_marginTop="367dp"
         android:layout_marginLeft="80dp">
 
-
         <VideoView
             android:id="@+id/backgroundVideo"
             android:layout_width="match_parent"
             android:layout_height="755dp"
             android:layout_weight="1" />
 
-
     </LinearLayout>
+
 
 
     <!-- Fondo con curva -->

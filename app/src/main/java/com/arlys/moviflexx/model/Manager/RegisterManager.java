@@ -8,6 +8,8 @@ import android.database.sqlite.SQLiteDatabase;
 import com.arlys.moviflexx.model.ConexionBd;
 import com.arlys.moviflexx.model.pojo.RegisterDatos;
 
+import java.util.ArrayList;
+
 public class RegisterManager {
 
     private ConexionBd conexionBd;
@@ -25,11 +27,7 @@ public class RegisterManager {
         db = conexionBd.getReadableDatabase();
     }
 
-    public void closeBd() {
-        if (db != null && db.isOpen()) {
-            db.close();
-        }
-    }
+    public void closeBd() {db.close();}
 
     // -------------------------------------------
     //  INSERTAR USUARIO
@@ -44,7 +42,6 @@ public class RegisterManager {
         values.put("PASSWORD", registerDatos.getPassword());
         values.put("CONFIRMACION", registerDatos.getConfirmacion());
         values.put("ROL", registerDatos.getRol());
-        values.put("TERMINOS", registerDatos.getTerminos());
 
         long id = db.insert("RegisterDatos", null, values);
 
@@ -52,22 +49,26 @@ public class RegisterManager {
         return id;
     }
 
-    // -------------------------------------------
-    //  VALIDAR LOGIN
-    // -------------------------------------------
-    public boolean validarLogin(String correo, String password) {
+    public ArrayList<RegisterDatos>listarData() {
         openBdRd();
+        ArrayList<RegisterDatos> lista = new ArrayList<>();
 
-        String query = "SELECT * FROM RegisterDatos WHERE CORREO = ? AND PASSWORD = ?";
-        String[] args = { correo, password };
+        String sql = "SELECT * FROM Datos";
+        Cursor cursor = db.rawQuery(sql, null);
 
-        Cursor cursor = db.rawQuery(query, args);
+        if (cursor.moveToFirst()) {
+            do {
+                RegisterDatos registerDatos = new RegisterDatos();
 
-        boolean existe = cursor.getCount() > 0;
+                registerDatos.setNombre(cursor.getString(0));
+                registerDatos.setTelefono(cursor.getInt(1));
+                registerDatos.setCorreo(cursor.getString(2));
+                registerDatos.setPassword(cursor.getString(3));
+                registerDatos.setConfirmacion(cursor.getString(4));
+                registerDatos.setRol(cursor.getColumnName(5));
 
-        cursor.close();
-        closeBd();
-
-        return existe;
+            } while (cursor.moveToNext());
+        }
+        return lista;
     }
 }
