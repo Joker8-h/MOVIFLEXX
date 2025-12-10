@@ -15,19 +15,17 @@
 
     <!--Login-->
 
-        <string name="email">Email</string>
-        <string name="password">Password</string>
-        <string name="login">LOGIN</string>
-        <string name="register">REGISTER</string>
-        <string name="app_logo">App Logo</string>
-        <string name="login_google">Login with Google</string>
-        <string name="login_facebook">Login with Facebook</string>
-        <string name="login_twitter">Login with Twitter</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="login">LOGIN</string>
+    <string name="register">REGISTER</string>
+    <string name="app_logo">App Logo</string>
+    <string name="login_google">Login with Google</string>
+    <string name="login_facebook">Login with Facebook</string>
+    <string name="login_twitter">Login with Twitter</string>
     <string name="registerr">¿No tiene cuenta? Registarse</string>
 
-
-
-
+    <!--Register-->
     <string name="register_title">Crear cuenta</string>
     <string name="register_nombres">Nombres completos</string>
     <string name="register_phone">Número de teléfono</string>
@@ -42,5 +40,14 @@
         <item>Admin</item>
         <item>Cliente</item>
         <item>Conductor</item>
+
+
     </string-array>
+    <string name="success_title">Success!</string>
+    <string name="success_message">Ahora revise su correo electrónico para obtener el enlace de confirmación.</string>
+    <string name="didnt_receive">¿No lo recibí? <font color="#FF0000">Click aquí</font></string>
+
+    <!-- Content Descriptions -->
+    <string name="close">Cerrar</string>
+    <string name="success_icon">Success icon</string>
 </resources>

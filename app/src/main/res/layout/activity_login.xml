@@ -15,7 +15,6 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-
     </LinearLayout>
 
     <!-- Input Fields Container -->
@@ -31,7 +30,7 @@
 
         <!-- Email Input -->
         <EditText
-            android:id="@+id/emailInput"
+            android:id="@+id/et_correo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/email"
@@ -44,7 +43,7 @@
 
         <!-- Password Input -->
         <EditText
-            android:id="@+id/passwordInput"
+            android:id="@+id/et_password"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
@@ -58,15 +57,17 @@
 
         <!-- Login Button -->
         <Button
-            android:id="@+id/loginButton"
+            android:id="@+id/btn_login"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="24dp"
             android:onClick="irRegister"
-            android:background="@color/accent_orange"
+            android:backgroundTint="@color/colorPrimary"
             android:text="@string/login"
             android:textSize="16sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:textColor="@android:color/white" />
+
 
     </LinearLayout>
 
@@ -100,10 +101,9 @@
 
     <!-- Go to Register -->
     <TextView
-        android:id="@+id/tv_go_login"
+        android:id="@+id/btn_ir_register"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="irRegister"
         android:layout_below="@id/socialContainer"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="28dp"

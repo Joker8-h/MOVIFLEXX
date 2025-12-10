@@ -84,5 +84,10 @@
 
     <color name="accent_pink">#FF4081</color>
 
+    <color name="success_green">#22C55E</color>
+    <color name="text_dark">#1E1E1E</color>
+    <color name="text_gray">#6B7280</color>
+
+
 
 </resources>

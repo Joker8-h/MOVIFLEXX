@@ -1,26 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- Splash Theme -->
     <style name="Theme.MoviFlexx.Splash" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:windowBackground">@drawable/splash_background</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowFullscreen">true</item>
     </style>
 
-        <!-- Tema principal de MoviFlex -->
-        <style name="Theme.MoviFlexx" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-            <item name="colorPrimary">@color/primary</item>
-            <item name="colorPrimaryVariant">@color/primaryDark</item>
-            <item name="android:statusBarColor">@color/primaryDark</item>
-        </style>
+    <!-- Main Theme -->
+    <style name="Theme.MoviFlexx" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primaryDark</item>
+        <item name="android:statusBarColor">@color/primaryDark</item>
+    </style>
 
-        <!-- Botón redondeado -->
-        <style name="MoviButton" parent="Widget.MaterialComponents.Button">
-            <item name="android:backgroundTint">@color/primary</item>
-            <item name="android:textColor">@color/white</item>
-            <item name="android:padding">12dp</item>
-            <item name="cornerRadius">20dp</item>
-        </style>
+    <!-- Rounded Button -->
+    <style name="MoviButton" parent="Widget.MaterialComponents.Button">
+        <item name="android:backgroundTint">@color/primary</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:padding">12dp</item>
+        <item name="cornerRadius">20dp</item>
+    </style>
 
+    <!-- App Theme -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">@color/primary_teal</item>
         <item name="colorPrimaryDark">@color/primary_teal_dark</item>
@@ -38,6 +41,30 @@
         <item name="android:textSize">16sp</item>
     </style>
 
-    <!-- Primary Button Style -->
+    <!-- SUCCESS SCREEN TEXT STYLES (FINALES Y SIN DUPLICADOS) -->
+    <style name="TextAppearance.Success.Title">
+        <item name="android:textColor">@color/success_green</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="TextAppearance.Success.Message">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="TextAppearance.Success.Footer">
+        <item name="android:textColor">@color/primary_blue</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="TextAppearance.Success" parent="TextAppearance.AppCompat.Body1">
+        <item name="android:textColor">@color/success_green</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
 
 </resources>
