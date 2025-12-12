@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/white">
 
     <!-- Logo Container -->
     <LinearLayout
@@ -29,7 +30,7 @@
 
         <!-- Email Input -->
         <EditText
-            android:id="@+id/edtcorreoo"
+            android:id="@+id/edtEmail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/email"
@@ -37,26 +38,43 @@
             android:padding="16dp"
             android:background="@drawable/input_background"
             android:textColor="@color/text_primary"
-            android:textColorHint="@color/background_white"
-            android:textSize="16sp" />
+            android:textColorHint="@color/text_hint"
+            android:textSize="16sp"
+            android:imeOptions="actionNext"/>
 
         <!-- Password Input -->
-        <EditText
-            android:id="@+id/edtcontrasena"
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/input_background"
-            android:hint="@string/password"
-            android:inputType="textPassword"
-            android:padding="16dp"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_hint"
-            android:textSize="16sp" />
+            android:layout_marginTop="16dp">
+
+            <EditText
+                android:id="@+id/edtPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/password"
+                android:inputType="textPassword"
+                android:padding="16dp"
+                android:background="@drawable/input_background"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_hint"
+                android:textSize="16sp"
+                android:imeOptions="actionDone"/>
+
+            <ImageButton
+                android:id="@+id/btnShowPassword"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@null"
+                android:src="@drawable/ic_eye_close"
+                android:contentDescription="@string/password"/>
+        </RelativeLayout>
 
         <!-- Login Button -->
         <Button
-            android:id="@+id/btnlogin"
+            android:id="@+id/btnLogin"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="24dp"
@@ -66,35 +84,6 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@android:color/white" />
-
-    </LinearLayout>
-
-    <!-- Social Login Container -->
-    <LinearLayout
-        android:id="@+id/socialContainer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/inputContainer"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="32dp"
-        android:orientation="horizontal">
-
-        <ImageView
-            android:id="@+id/googleLogin"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="16dp"
-            android:background="@drawable/google"
-            android:contentDescription="@string/login_google"
-            android:padding="12dp" />
-
-        <ImageView
-            android:id="@+id/facebookLogin"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@drawable/facebook"
-            android:contentDescription="@string/login_facebook"
-            android:padding="12dp" />
     </LinearLayout>
 
     <!-- Go to Register -->
@@ -103,7 +92,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="irRegister"
-        android:layout_below="@id/socialContainer"
+        android:layout_below="@id/inputContainer"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="28dp"
         android:text="@string/registerr"

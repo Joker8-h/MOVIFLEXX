@@ -25,29 +25,322 @@
     <string name="login_twitter">Login with Twitter</string>
     <string name="registerr">¿No tiene cuenta? Registarse</string>
 
-    <!--Register-->
-    <string name="register_title">Crear cuenta</string>
-    <string name="register_nombres">Nombres completos</string>
-    <string name="register_phone">Número de teléfono</string>
-    <string name="register_email">Correo electrónico</string>
-    <string name="register_password">Contraseña</string>
-    <string name="register_confirm_password">Confirmar contraseña</string>
-    <string name="register_terms">Acepto los términos y condiciones</string>
-    <string name="register_button">Registrar</string>
-    <string name="register_go_login">¿Ya tienes cuenta? Iniciar sesión</string>
-    <string-array name="Rol">
-        <item>Elige Rol</item>
-        <item>Admin</item>
+
+    <!-- Nombre de la app -->
+
+
+    <!-- Pantalla de registro -->
+    <string name="register_title">Registro</string>
+    <string name="hint_nombre">Nombres completos</string>
+    <string name="hint_phone">Teléfono</string>
+    <string name="hint_email">Correo electrónico</string>
+    <string name="hint_password">Contraseña</string>
+    <string name="hint_confirm_password">Confirmar contraseña</string>
+
+    <!-- Spinner tipos de usuario -->
+    <string-array name="tipo_usuario">
+        <item>Rol</item>
         <item>Cliente</item>
         <item>Conductor</item>
-
-
     </string-array>
+
+    <!-- Términos -->
+    <string name="txt_terms">Acepto términos y condiciones</string>
+
+    <!-- Datos de vehículo -->
+    <string name="hint_placa">Placa</string>
+    <string name="hint_modelo">Modelo</string>
+    <string name="hint_color">Color</string>
+    <string name="btn_subir_foto">Subir foto vehículo</string>
+
+    <!-- Botón registro -->
+    <string name="btn_register">Registrarme</string>
+
+
+    <string name="btn_upload_vehicle">Subir foto vehículo</string>
+
+    <!-- Check y Spinner -->
+    <string name="check_terms">Acepto términos y condiciones</string>
+    <string name="tipo_usuario_chofer">Chofer</string>
+    <string name="tipo_usuario_usuario">Usuario</string>
+
+    <!-- Mensajes y errores -->
+    <string name="error_complete_fields">Complete todos los campos</string>
+    <string name="error_invalid_email">Ingrese un correo válido</string>
+    <string name="error_password_mismatch">Las contraseñas no coinciden</string>
+    <string name="error_select_role">Seleccione un rol antes de continuar</string>
+    <string name="error_terms">Debe aceptar los términos y condiciones</string>
+
+    <!-- Eye icon -->
+    <string name="show_password">Mostrar contraseña</string>
+    <string name="hide_password">Ocultar contraseña</string>
+
+    <!-- Texto "ya tienes cuenta" -->
+    <string name="text_go_login">¿Ya tienes una cuenta? Iniciar sesión</string>
+
+
+    <!-- Ir al login -->
+    <string name="txt_go_login">¿Ya tienes una cuenta? Iniciar sesión</string>
+
+    <!-- Mensajes de validación -->
+    <string name="err_campos">Complete todos los campos</string>
+    <string name="err_password">Las contraseñas no coinciden</string>
+    <string name="err_terms">Debe aceptar los términos y condiciones</string>
+    <string name="err_vehiculo_campos">Complete todos los datos del vehículo</string>
+    <string name="err_foto">Debe subir una foto del vehículo</string>
+
+
     <string name="success_title">Success!</string>
     <string name="success_message">Ahora revise su correo electrónico para obtener el enlace de confirmación.</string>
     <string name="didnt_receive">¿No lo recibí? <font color="#FF0000">Click aquí</font></string>
+    <string name="success_login_title">¡Bienvenido!</string>
+    <string name="success_login_message">Usuario logueado correctamente.</string>
+
 
     <!-- Content Descriptions -->
     <string name="close">Cerrar</string>
     <string name="success_icon">Success icon</string>
+
+
+
+
+    <!-- User Info -->
+
+
+    <!-- Mail Categories -->
+    <string name="all_inboxes">Todas las bandejas</string>
+    <string name="primary">Principal</string>
+    <string name="social">Social</string>
+    <string name="promotions">Promociones</string>
+
+    <!-- Badges -->
+    <string name="badge_14_new">14 nuevo</string>
+    <string name="badge_99_new">99+ nuevo</string>
+
+    <!-- Labels Section -->
+    <string name="all_labels">Todas las etiquetas</string>
+    <string name="starred">Destacados</string>
+    <string name="important">Importantes</string>
+    <string name="sent">Enviados</string>
+    <string name="outbox">Bandeja de salida</string>
+    <string name="drafts">Borradores</string>
+    <string name="all_emails">Todos los correos</string>
+    <string name="spam">Spam</string>
+
+    <!-- Generic counters -->
+    <string name="count_99_plus">99+</string>
+
+
+
+        <!-- PANTALLA DE PERFIL -->
+        <string name="title_perfil">Mi Perfil</string>
+        <string name="title_editar_perfil">Editar Perfil</string>
+
+        <!-- INFORMACIÓN PERSONAL -->
+        <string name="seccion_informacion_personal">Información Personal</string>
+        <string name="label_nombre_completo">Nombre Completo</string>
+        <string name="label_telefono">Teléfono</string>
+        <string name="label_email">Correo Electrónico</string>
+        <string name="label_foto_perfil">Foto de Perfil</string>
+        <string name="btn_cambiar_foto">Cambiar Foto</string>
+        <string name="btn_tomar_foto">Tomar Foto</string>
+        <string name="btn_elegir_galeria">Elegir de Galería</string>
+
+        <!-- TIPO DE USUARIO -->
+        <string name="label_tipo_usuario">Tipo de Usuario</string>
+        <string name="tipo_pasajero">Pasajero</string>
+        <string name="tipo_conductor">Conductor</string>
+
+        <!-- ESTADÍSTICAS -->
+        <string name="seccion_estadisticas">Estadísticas</string>
+        <string name="label_viajes_realizados">Viajes Realizados</string>
+        <string name="label_viajes_completados">Viajes Completados</string>
+        <string name="label_calificacion_promedio">Calificación Promedio</string>
+        <string name="label_total_calificaciones">Total de Calificaciones</string>
+        <string name="label_miembro_desde">Miembro Desde</string>
+        <string name="label_ultimo_viaje">Último Viaje</string>
+        <string name="label_conductor_destacado">Conductor Destacado</string>
+        <string name="label_total_kilometros">Total Kilómetros Recorridos</string>
+
+        <!-- ESTADÍSTICAS CONDUCTOR -->
+        <string name="label_porcentaje_aceptacion">Tasa de Aceptación</string>
+        <string name="label_porcentaje_cancelacion">Tasa de Cancelación</string>
+        <string name="label_tiempo_respuesta">Tiempo de Respuesta Promedio</string>
+
+        <!-- INFORMACIÓN DEL VEHÍCULO -->
+        <string name="seccion_vehiculo">Información del Vehículo</string>
+        <string name="label_placa">Placa</string>
+        <string name="label_modelo">Modelo</string>
+        <string name="label_color">Color</string>
+        <string name="label_foto_vehiculo">Foto del Vehículo</string>
+        <string name="label_capacidad_pasajeros">Capacidad de Pasajeros</string>
+        <string name="label_aire_acondicionado">Aire Acondicionado</string>
+        <string name="label_tipo_combustible">Tipo de Combustible</string>
+        <string name="label_soat">SOAT</string>
+        <string name="label_tecnomecanica">Tecnomecánica</string>
+        <string name="label_fecha_vencimiento_soat">Vencimiento SOAT</string>
+        <string name="label_fecha_vencimiento_tecnomecanica">Vencimiento Tecnomecánica</string>
+        <string name="estado_vigente">Vigente</string>
+        <string name="estado_por_vencer">Por Vencer</string>
+        <string name="estado_vencido">Vencido</string>
+
+        <!-- LICENCIA DE CONDUCCIÓN -->
+        <string name="seccion_licencia">Licencia de Conducción</string>
+        <string name="label_numero_licencia">Número de Licencia</string>
+        <string name="label_categoria_licencia">Categoría</string>
+        <string name="label_fecha_expedicion">Fecha de Expedición</string>
+        <string name="label_fecha_vencimiento">Fecha de Vencimiento</string>
+        <string name="label_estado_licencia">Estado</string>
+
+        <!-- PREFERENCIAS -->
+        <string name="seccion_preferencias">Preferencias</string>
+        <string name="label_rutas_favoritas">Rutas Favoritas</string>
+        <string name="label_horarios_frecuentes">Horarios Frecuentes</string>
+        <string name="label_preferencia_musica">Música</string>
+        <string name="label_preferencia_conversacion">Conversación</string>
+        <string name="label_preferencia_temperatura">Temperatura</string>
+
+        <!-- PREFERENCIAS CONDUCTOR -->
+        <string name="seccion_preferencias_conductor">Preferencias de Conductor</string>
+        <string name="label_acepta_mascotas">Acepta Mascotas</string>
+        <string name="label_acepta_equipaje">Acepta Equipaje Grande</string>
+        <string name="label_acepta_paradas">Acepta Paradas Adicionales</string>
+        <string name="label_musica_permitida">Música Permitida</string>
+        <string name="label_radio_accion">Radio de Acción</string>
+        <string name="label_horarios_disponibles">Horarios Disponibles</string>
+        <string name="label_zonas_operacion">Zonas de Operación</string>
+
+        <!-- SEGURIDAD -->
+        <string name="seccion_seguridad">Seguridad</string>
+        <string name="label_verificacion_identidad">Verificación de Identidad</string>
+        <string name="label_verificacion_telefono">Verificación de Teléfono</string>
+        <string name="label_verificacion_email">Verificación de Email</string>
+        <string name="label_verificacion_antecedentes">Verificación de Antecedentes</string>
+        <string name="label_capacitacion">Capacitación en Seguridad Vial</string>
+        <string name="estado_verificado">Verificado</string>
+        <string name="estado_pendiente">Pendiente</string>
+        <string name="estado_no_verificado">No Verificado</string>
+        <string name="estado_aprobado">Aprobado</string>
+        <string name="estado_completada">Completada</string>
+
+        <!-- CONTACTO DE EMERGENCIA -->
+        <string name="seccion_contacto_emergencia">Contacto de Emergencia</string>
+        <string name="label_nombre_emergencia">Nombre</string>
+        <string name="label_relacion">Relación</string>
+        <string name="label_telefono_emergencia">Teléfono</string>
+        <string name="btn_agregar_contacto">Agregar Contacto de Emergencia</string>
+        <string name="btn_editar_contacto">Editar Contacto</string>
+
+        <!-- HISTORIAL -->
+        <string name="seccion_historial">Historial de Viajes</string>
+        <string name="label_historial_reciente">Viajes Recientes</string>
+        <string name="label_ver_historial_completo">Ver Historial Completo</string>
+        <string name="label_origen">Origen</string>
+        <string name="label_destino">Destino</string>
+        <string name="label_fecha">Fecha</string>
+        <string name="label_precio">Precio</string>
+        <string name="label_calificacion">Calificación</string>
+        <string name="label_comentario">Comentario</string>
+        <string name="label_conductor">Conductor</string>
+        <string name="label_pasajero">Pasajero</string>
+
+        <!-- MÉTODOS DE PAGO -->
+        <string name="seccion_metodos_pago">Métodos de Pago</string>
+        <string name="label_metodo_principal">Método Principal</string>
+        <string name="label_agregar_metodo">Agregar Método de Pago</string>
+        <string name="tipo_tarjeta_debito">Tarjeta Débito</string>
+        <string name="tipo_tarjeta_credito">Tarjeta Crédito</string>
+        <string name="tipo_efectivo">Efectivo</string>
+        <string name="label_ultimos_digitos">Últimos 4 dígitos</string>
+        <string name="label_banco">Banco</string>
+
+        <!-- FINANZAS (CONDUCTOR) -->
+        <string name="seccion_finanzas">Finanzas</string>
+        <string name="label_ganancias_mes_actual">Ganancias Este Mes</string>
+        <string name="label_ganancias_mes_anterior">Ganancias Mes Anterior</string>
+        <string name="label_viajes_mes_actual">Viajes Este Mes</string>
+        <string name="label_promedio_ganancia">Promedio por Viaje</string>
+        <string name="label_cuenta_bancaria">Cuenta Bancaria</string>
+        <string name="label_tipo_cuenta">Tipo de Cuenta</string>
+        <string name="label_numero_cuenta">Número de Cuenta</string>
+        <string name="btn_ver_detalles_financieros">Ver Detalles Financieros</string>
+
+        <!-- INSIGNIAS -->
+        <string name="seccion_insignias">Insignias y Logros</string>
+        <string name="label_mis_insignias">Mis Insignias</string>
+        <string name="insignia_conductor_mes">Conductor del Mes</string>
+        <string name="insignia_100_viajes">100 Viajes Completados</string>
+        <string name="insignia_5_estrellas">Calificación 5 Estrellas</string>
+        <string name="insignia_conductor_seguro">Conductor Seguro</string>
+
+        <!-- CONFIGURACIÓN -->
+        <string name="seccion_configuracion">Configuración de Cuenta</string>
+        <string name="label_estado_actual">Estado Actual</string>
+        <string name="label_modo_conduccion">Modo Conducción Activo</string>
+        <string name="label_notificaciones_viaje">Notificaciones de Viaje</string>
+        <string name="label_notificaciones_solicitudes">Notificaciones de Solicitudes</string>
+        <string name="label_notificaciones_promociones">Notificaciones de Promociones</string>
+        <string name="label_compartir_ubicacion">Compartir Ubicación en Tiempo Real</string>
+        <string name="label_modo_anonimo">Modo Anónimo</string>
+        <string name="label_idioma">Idioma</string>
+        <string name="label_aceptacion_automatica">Aceptación Automática</string>
+        <string name="estado_disponible">Disponible</string>
+        <string name="estado_ocupado">Ocupado</string>
+        <string name="estado_desconectado">Desconectado</string>
+
+        <!-- BOTONES -->
+        <string name="btn_guardar_cambios">Guardar Cambios</string>
+        <string name="btn_cancelar">Cancelar</string>
+        <string name="btn_editar">Editar</string>
+        <string name="btn_eliminar">Eliminar</string>
+        <string name="btn_cerrar_sesion">Cerrar Sesión</string>
+        <string name="btn_eliminar_cuenta">Eliminar Cuenta</string>
+        <string name="btn_ayuda">Ayuda</string>
+        <string name="btn_soporte">Soporte</string>
+        <string name="btn_compartir_perfil">Compartir Perfil</string>
+
+        <!-- MENSAJES -->
+        <string name="msg_perfil_actualizado">Perfil actualizado exitosamente</string>
+        <string name="msg_error_actualizar">Error al actualizar el perfil</string>
+        <string name="msg_campos_requeridos">Por favor complete todos los campos requeridos</string>
+        <string name="msg_foto_actualizada">Foto actualizada exitosamente</string>
+        <string name="msg_confirmar_cerrar_sesion">¿Está seguro que desea cerrar sesión?</string>
+        <string name="msg_confirmar_eliminar_cuenta">¿Está seguro que desea eliminar su cuenta? Esta acción no se puede deshacer.</string>
+        <string name="msg_verificacion_pendiente">Tiene verificaciones pendientes</string>
+        <string name="msg_documentos_por_vencer">Sus documentos están por vencer</string>
+
+        <!-- FORMATO DE DATOS -->
+        <string name="formato_calificacion">%1$.1f ⭐</string>
+        <string name="formato_viajes">%1$d viajes</string>
+        <string name="formato_precio">$%1$,d COP</string>
+        <string name="formato_kilometros">%1$,.0f km</string>
+        <string name="formato_porcentaje">%1$d%%</string>
+        <string name="formato_fecha">%1$td/%1$tm/%1$tY</string>
+        <string name="formato_hora">%1$tH:%1$tM</string>
+
+        <!-- DESCRIPCIONES -->
+        <string name="desc_foto_perfil">Foto de perfil del usuario</string>
+        <string name="desc_foto_vehiculo">Foto del vehículo</string>
+        <string name="desc_editar_perfil">Editar información del perfil</string>
+        <string name="desc_estrella">Estrella de calificación</string>
+        <string name="desc_insignia">Insignia de logro</string>
+
+        <!-- AYUDA Y SOPORTE -->
+        <string name="titulo_ayuda">Ayuda y Soporte</string>
+        <string name="titulo_preguntas_frecuentes">Preguntas Frecuentes</string>
+        <string name="titulo_contactar_soporte">Contactar Soporte</string>
+        <string name="titulo_terminos_condiciones">Términos y Condiciones</string>
+        <string name="titulo_politica_privacidad">Política de Privacidad</string>
+
+        <!-- VALIDACIONES -->
+        <string name="error_nombre_vacio">El nombre no puede estar vacío</string>
+        <string name="error_telefono_invalido">Teléfono inválido</string>
+        <string name="error_email_invalido">Email inválido</string>
+        <string name="error_placa_vacia">La placa no puede estar vacía</string>
+        <string name="error_modelo_vacio">El modelo no puede estar vacío</string>
+        <string name="error_color_vacio">El color no puede estar vacío</string>
+        <string name="error_foto_requerida">Debe subir una foto del vehículo</string>
+
+
+
 </resources>

@@ -89,5 +89,38 @@
     <color name="text_gray">#6B7280</color>
 
 
+        <!-- Primary Colors -->
+        <color name="blue_primary">#1E6FFF</color>
+        <color name="blue_light">#4287FF</color>
+        <color name="blue_dark">#0052E0</color>
+
+        <!-- Green Colors -->
+        <color name="green_primary">#00D48A</color>
+        <color name="green_light">#E8FFF7</color>
+
+
+        <color name="colorPrimaryDark">#3257CC</color>
+        <color name="colorAccent">#FF7A59</color>
+
+        <color name="backgroundLight">#F5F7FA</color>
+
+
+        <color name="danger">#E53935</color>
+
+
+
+
+
+
+    <!-- Background Colors -->
+
+        <color name="divider">#EEEEEE</color>
+
+        <!-- White Variations -->
+        <color name="white_80">#CCFFFFFF</color>
+        <color name="white_90">#E6FFFFFF</color>
+
+
+
 
 </resources>

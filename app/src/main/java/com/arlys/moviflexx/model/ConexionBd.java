@@ -14,13 +14,17 @@ public class ConexionBd extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         // 1. CREACIÓN DE TABLAS BASE
-        db.execSQL("CREATE TABLE DATOS(NOMBRE TEXT, TELEFONO NUMBER, CORREO TEXT, CONTRASEÑA TEXT, CONFIMACION TEXT, ROL TEXT)");
         // 1.1 ROLES
         db.execSQL("CREATE TABLE roles (idRol INTEGER PRIMARY KEY AUTOINCREMENT, nombreRol TEXT)");
 
         // 1.2 USUARIOS (Corregida y combinada de las dos líneas originales)
         db.execSQL("CREATE TABLE USUARIOS (idUsuarios INTEGER PRIMARY KEY AUTOINCREMENT," +
-                " NOMBRE TEXT, APELLIDO TEXT, CORREO TEXT UNIQUE, TELEFONO TEXT, CONTRASEÑA TEXT)");
+                "    NOMBRE TEXT,\n" +
+                "    APELLIDO TEXT,\n" +
+                "    CORREO TEXT UNIQUE,\n" +
+                "    TELEFONO TEXT,\n" +
+                "    CONTRASEÑA TEXT,\n" +
+                "    ROL TEXT)");
 
         // 1.3 METODOS_PAGO_CATALOGO
         db.execSQL("CREATE TABLE metodos_pago_catalogo (idMetodos_pago INTEGER PRIMARY KEY AUTOINCREMENT, " +
