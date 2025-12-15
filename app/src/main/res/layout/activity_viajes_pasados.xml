@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- res/layout/activity_viajes_pasados.xml -->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -8,13 +7,13 @@
     android:layout_height="match_parent"
     android:background="@color/background_light">
 
-    <!-- Header con logo -->
+    <!-- ================= HEADER ================= -->
     <RelativeLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/gradient_header"
-        android:padding="20dp"
+        android:padding="0dp"
         android:elevation="8dp"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -23,29 +22,25 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_arrow_back"
-            android:tint="@color/text_white"
             android:padding="0dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:layout_centerVertical="true"
             android:contentDescription="@string/volver"/>
 
-        <LinearLayout
-            android:id="@+id/logo_container"
+        <LinearLayout android:id="@+id/logo_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:layout_centerInParent="true">
 
-            <ImageView
-                android:id="@+id/logo"
+            <ImageView android:id="@+id/logo"
                 android:layout_width="66dp"
                 android:layout_height="36dp"
                 android:src="@drawable/movi"
                 android:contentDescription="@string/app_name"/>
 
-            <TextView
-                android:layout_width="wrap_content"
+            <TextView android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/app_name"
                 android:textColor="@color/text_white"
@@ -53,22 +48,20 @@
                 android:textStyle="bold"
                 android:letterSpacing="0.02"
                 android:layout_marginStart="10dp"/>
-        </LinearLayout>
 
-        <ImageView
-            android:id="@+id/btn_search"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:src="@drawable/ic_search"
-            android:tint="@color/text_white"
-            android:padding="12dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:contentDescription="@string/buscar"/>
-    </RelativeLayout>
+        </LinearLayout> <ImageView
+        android:id="@+id/btn_search"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@drawable/ic_search"
+        android:padding="12dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:contentDescription="@string/buscar"/>
 
-    <!-- Título y filtro -->
+    </RelativeLayout> <!-- Título y filtro -->
+
     <LinearLayout
         android:id="@+id/title_section"
         android:layout_width="match_parent"
@@ -79,17 +72,15 @@
         android:paddingVertical="16dp"
         app:layout_constraintTop_toBottomOf="@id/header">
 
-        <TextView
-            android:layout_width="0dp"
+        <TextView android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/mis_viajes_pasados"
+            android:layout_weight="1" android:text="@string/mis_viajes_pasados"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@color/text_primary"/>
 
         <TextView
-            android:id="@+id/btn_filtrar"
+        android:id="@+id/btn_filtrar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/filtrar"
@@ -98,66 +89,705 @@
             android:textStyle="bold"
             android:background="?attr/selectableItemBackground"
             android:padding="8dp"/>
+
     </LinearLayout>
 
-    <!-- Tabs de filtro -->
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabs"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="20dp"
-        android:background="@android:color/transparent"
-        app:tabMode="scrollable"
-        app:tabIndicatorColor="@color/primary_blue"
-        app:tabSelectedTextColor="@color/primary_blue"
-        app:tabTextColor="@color/text_secondary"
-        app:tabIndicatorHeight="3dp"
-        app:tabRippleColor="@color/primary_blue"
-        app:layout_constraintTop_toBottomOf="@id/title_section">
-
-        <com.google.android.material.tabs.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/todos"/>
-
-        <com.google.android.material.tabs.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/completados"/>
-
-        <com.google.android.material.tabs.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/cancelados"/>
-    </com.google.android.material.tabs.TabLayout>
-
-    <!-- Lista de viajes -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_viajes"
+    <!-- ================= SCROLL ================= -->
+    <ScrollView
+        android:id="@+id/scroll_viajes"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:paddingHorizontal="20dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="16dp"
-        android:clipToPadding="false"
-        app:layout_constraintTop_toBottomOf="@id/tabs"
-        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
-        tools:listitem="@layout/item_viaje_pasado"/>
+        android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@id/title_section"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation">
 
-    <!-- Bottom Navigation -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <!-- Header con nombre y estado -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="2dp"
+                    android:backgroundTint="@color/primary_blue">
+
+                    <ImageView
+                        android:id="@+id/img_icono_viaje"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_location_marker"
+                        android:contentDescription="@string/viaje"/>
+
+                </androidx.cardview.widget.CardView>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="12dp">
+
+                    <TextView
+                        android:id="@+id/tv_nombre_viaje"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/lugar1"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:maxLines="1"
+                        android:ellipsize="end"/>
+
+                    <TextView
+                    android:id="@+id/tv_fecha_viaje"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/fecha"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginTop="2dp"/>
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_estado"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/completado"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/status_completed"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:background="@drawable/bg_status_chip"
+                    android:layout_marginStart="8dp"/>
+
+            </LinearLayout> <!-- Ruta -->
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <!-- Indicadores visuales -->
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:layout_marginEnd="12dp">
+
+                    <ImageView android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_origin_dot"
+                        android:contentDescription="@string/origen"/>
+
+                    <View
+                        android:layout_width="2dp"
+                        android:layout_height="32dp"
+                        android:background="@color/border_light"
+                        android:layout_marginVertical="4dp"/>
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_destination_dot"
+                        android:contentDescription="@string/destino"/>
+
+                </LinearLayout>
+
+                <!-- Direcciones -->
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv_origen"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/lugar1"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:maxLines="1"
+                        android:ellipsize="end"/>
+
+                    <TextView
+                        android:id="@+id/tv_destino"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/lugar2"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:layout_marginTop="24dp"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Separador -->
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/border_light"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- Precio y rating -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tv_precio"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/Preci"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/primary_blue"/>
+
+                <!-- Rating -->
+                <LinearLayout
+                    android:id="@+id/layout_rating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        android:contentDescription="@string/calificacion"/>
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        android:layout_marginStart="2dp"
+                        android:contentDescription="@string/calificacion"/>
+
+                    <ImageView android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        android:layout_marginStart="2dp"
+                        android:contentDescription="@string/calificacion"/>
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        android:layout_marginStart="2dp"
+                        android:contentDescription="@string/calificacion"/>
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        android:layout_marginStart="2dp"
+                        android:contentDescription="@string/calificacion"/>
+                </LinearLayout>
+            </LinearLayout>
+
+
+            <!-- Botón ver detalles -->
+            <com.google.android.material.button.MaterialButton
+
+                android:id="@+id/btn_ver_detalles"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="@string/ver_detalles"
+                android:onClick="irDetalle"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary_blue"
+                app:backgroundTint="@android:color/transparent"
+                app:cornerRadius="12dp"
+                app:strokeColor="@color/primary_blue"
+                app:strokeWidth="2dp"
+                android:layout_marginTop="16dp" style="@style/Widget.Material3.Button.OutlinedButton"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <!-- Header con nombre y estado -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="2dp"
+                    android:backgroundTint="@color/primary_blue">
+
+                    <ImageView
+                        android:id="@+id/img_icono_viajee"
+                        android:layout_width="24dp"
+                        android:layout_height="26dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@string/viaje"
+                        android:src="@drawable/ic_location_marker" />
+
+                </androidx.cardview.widget.CardView>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="12dp">
+
+                    <TextView
+                        android:id="@+id/tv_nombre_viajee"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/lugar1"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:maxLines="1"
+                        android:ellipsize="end"/>
+
+                    <TextView
+                        android:id="@+id/tv_fecha_viajee"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/fecha"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="2dp"/>
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_estadoo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/completado"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/status_completed"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:background="@drawable/bg_status_chip"
+                    android:layout_marginStart="8dp"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <!-- Indicadores visuales -->
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:layout_marginEnd="12dp">
+
+                    <ImageView android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_origin_dot"
+                        android:contentDescription="@string/origen"/>
+
+                    <View
+                        android:layout_width="2dp"
+                        android:layout_height="32dp"
+                        android:background="@color/border_light"
+                        android:layout_marginVertical="4dp"/>
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_destination_dot"
+                        android:contentDescription="@string/destino"/>
+
+                </LinearLayout>
+
+                <!-- Direcciones -->
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv_origenn"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/lugar1"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:maxLines="1"
+                        android:ellipsize="end"/>
+
+                    <TextView
+                        android:id="@+id/tv_destinoo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/lugar2"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:layout_marginTop="24dp"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Separador -->
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/border_light"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- Precio y rating -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tv_precioo"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/Preci"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/primary_blue"/>
+
+                <!-- Rating -->
+                <LinearLayout
+                    android:id="@+id/layout_ratingg"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        android:contentDescription="@string/calificacion"/>
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        android:layout_marginStart="2dp"
+                        android:contentDescription="@string/calificacion"/>
+
+                    <ImageView android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        android:layout_marginStart="2dp"
+                        android:contentDescription="@string/calificacion"/>
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        android:layout_marginStart="2dp"
+                        android:contentDescription="@string/calificacion"/>
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        android:layout_marginStart="2dp"
+                        android:contentDescription="@string/calificacion"/>
+                </LinearLayout>
+            </LinearLayout>
+            <!-- Botón ver detalles -->
+            <com.google.android.material.button.MaterialButton
+
+                android:id="@+id/btn_ver_detalless"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="@string/ver_detalles"
+
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary_blue"
+                app:backgroundTint="@android:color/transparent"
+                app:cornerRadius="12dp"
+                app:strokeColor="@color/primary_blue"
+                app:strokeWidth="2dp"
+                android:layout_marginTop="16dp" style="@style/Widget.Material3.Button.OutlinedButton"/>
+        </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="2dp"
+                    android:backgroundTint="@color/primary_blue">
+
+                    <ImageView
+                        android:id="@+id/img_icono_viajeee"
+                        android:layout_width="24dp"
+                        android:layout_height="26dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@string/viaje"
+                        android:src="@drawable/ic_location_marker" />
+
+                </androidx.cardview.widget.CardView>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="12dp">
+
+                    <TextView
+                        android:id="@+id/tv_nombre_viajeee"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/lugar1"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:maxLines="1"
+                        android:ellipsize="end"/>
+
+                    <TextView
+                        android:id="@+id/tv_fecha_viajeee"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/fecha"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="2dp"/>
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_estadooo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/completado"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/status_completed"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:background="@drawable/bg_status_chip"
+                    android:layout_marginStart="8dp"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <!-- Indicadores visuales -->
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:layout_marginEnd="12dp">
+
+                    <ImageView android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_origin_dot"
+                        android:contentDescription="@string/origen"/>
+
+                    <View
+                        android:layout_width="2dp"
+                        android:layout_height="32dp"
+                        android:background="@color/border_light"
+                        android:layout_marginVertical="4dp"/>
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_destination_dot"
+                        android:contentDescription="@string/destino"/>
+
+                </LinearLayout>
+
+                <!-- Direcciones -->
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv_origennn"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/lugar1"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:maxLines="1"
+                        android:ellipsize="end"/>
+
+                    <TextView
+                        android:id="@+id/tv_destinooo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/lugar2"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:layout_marginTop="24dp"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Separador -->
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/border_light"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- Precio y rating -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tv_preciooo"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/Preci"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/primary_blue"/>
+            </LinearLayout>
+                <!-- Rating -->
+                <LinearLayout
+                    android:id="@+id/layout_ratinggg"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        android:contentDescription="@string/calificacion"/>
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        android:layout_marginStart="2dp"
+                        android:contentDescription="@string/calificacion"/>
+
+                    <ImageView android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        android:layout_marginStart="2dp"
+                        android:contentDescription="@string/calificacion"/>
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        android:layout_marginStart="2dp"
+                        android:contentDescription="@string/calificacion"/>
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        android:layout_marginStart="2dp"
+                        android:contentDescription="@string/calificacion"/>
+                </LinearLayout>
+
+            <!-- Botón ver detalles -->
+            <com.google.android.material.button.MaterialButton
+
+                android:id="@+id/btn_ver_detallesss"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="@string/ver_detalles"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary_blue"
+                app:backgroundTint="@android:color/transparent"
+                app:cornerRadius="12dp"
+                app:strokeColor="@color/primary_blue"
+                app:strokeWidth="2dp"
+                android:layout_marginTop="16dp" style="@style/Widget.Material3.Button.OutlinedButton"/>
+        </LinearLayout>
+
+
+
+
+
+    </ScrollView>
+
+
+    <!-- ================= BOTTOM NAV ================= -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/card_background"
-        android:elevation="16dp"
         app:menu="@menu/bottom_navigation_menu"
-        app:labelVisibilityMode="labeled"
-        app:itemIconTint="@color/bottom_nav_color_selector"
-        app:itemTextColor="@color/bottom_nav_color_selector"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-

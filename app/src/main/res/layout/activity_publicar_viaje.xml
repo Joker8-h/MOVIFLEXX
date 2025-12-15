@@ -29,8 +29,8 @@
             android:layout_width="60dp"
             android:layout_height="60dp"
             android:padding="8dp"
-            android:src="@drawable/ic_arrow_back"
-            android:tint="@color/text_white" />
+            android:src="@drawable/ic_arrow_back">
+        </ImageView>
 
         <ImageView
             android:id="@+id/logo"
@@ -232,7 +232,6 @@
                             android:layout_width="20dp"
                             android:layout_height="20dp"
                             android:src="@drawable/ic_dropdown"
-                            android:tint="@color/text_secondary"
                             android:contentDescription="@string/seleccionar"/>
                     </LinearLayout>
                 </LinearLayout>
@@ -269,7 +268,7 @@
                             android:id="@+id/edit_precio"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="0.00"
+                            android:hint="@string/Preci"
                             android:inputType="numberDecimal"
                             android:textSize="14sp"/>
                     </com.google.android.material.textfield.TextInputLayout>
@@ -353,10 +352,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/card_background"
+        android:elevation="16dp"
         app:menu="@menu/bottom_navigation_menu"
+        app:labelVisibilityMode="labeled"
+        app:itemIconTint="@color/bottom_nav_color_selector"
+        app:itemTextColor="@color/bottom_nav_color_selector"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
 
     <!-- res/values/strings.xml (adicionales) -->
 

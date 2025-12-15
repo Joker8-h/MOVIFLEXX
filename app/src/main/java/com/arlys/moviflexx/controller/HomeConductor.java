@@ -11,14 +11,18 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class HomeConductor extends AppCompatActivity {
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_home_conductor);
 
-    }
+        @Override
+        protected void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            setContentView(R.layout.activity_home_conductor);
+
+        }
+
+
+
     public void irViajespasados(View view) {
-        Intent siguiente = new Intent(HomeConductor.this, ViajesPasados.class);
-        startActivity(siguiente);
+        startActivity(new Intent(this, ViajesPasados.class));
     }
+
 }

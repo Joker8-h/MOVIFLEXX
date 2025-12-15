@@ -14,6 +14,7 @@ public class EditarPerfil extends AppCompatActivity {
 
         setContentView(R.layout.activity_editar_perfil);
 
+
     }
 
 }

@@ -23,7 +23,6 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_arrow_back"
-            android:tint="@color/text_white"
             android:padding="0dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:layout_centerVertical="true"
@@ -60,7 +59,6 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_search"
-            android:tint="@color/text_white"
             android:padding="12dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:layout_alignParentEnd="true"
@@ -124,7 +122,6 @@
                             android:layout_height="20dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_camera"
-                            android:tint="@color/text_white"
                             android:contentDescription="@string/cambiar_foto"/>
                     </androidx.cardview.widget.CardView>
                 </RelativeLayout>
@@ -172,7 +169,7 @@
                         android:id="@+id/edit_nombre"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Alejandro Martínez"
+                        android:text="@string/nombrepropietario"
                         android:inputType="textPersonName"
                         android:textSize="15sp"
                         android:padding="16dp"/>
@@ -204,7 +201,7 @@
                         android:id="@+id/edit_telefono"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="+52 321 345 6782"
+                        android:text="@string/numero_telefono"
                         android:inputType="phone"
                         android:textSize="15sp"
                         android:padding="16dp"/>
@@ -236,7 +233,7 @@
                         android:id="@+id/edit_email"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="alejandro.martinez@email.com"
+                        android:text="@string/correo_electronico"
                         android:inputType="textEmailAddress"
                         android:textSize="15sp"
                         android:padding="16dp"/>
@@ -278,7 +275,7 @@
                         android:id="@+id/edit_modelo"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Toyota Corolla"
+                        android:text="@string/marca"
                         android:inputType="text"
                         android:textSize="15sp"
                         android:padding="16dp"/>
@@ -310,7 +307,7 @@
                         android:id="@+id/edit_anio"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="2019"
+                        android:text="@string/año"
                         android:inputType="number"
                         android:textSize="15sp"
                         android:padding="16dp"/>
@@ -342,7 +339,7 @@
                         android:id="@+id/edit_color"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Gris Plata"
+                        android:text="@string/color_carro"
                         android:inputType="text"
                         android:textSize="15sp"
                         android:padding="16dp"/>
@@ -374,7 +371,7 @@
                         android:id="@+id/edit_matricula"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="1234 ABC"
+                        android:text="@string/placa"
                         android:inputType="textCapCharacters"
                         android:textSize="15sp"
                         android:padding="16dp"/>
@@ -421,7 +418,6 @@
                             android:layout_height="48dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_camera"
-                            android:tint="@color/text_white"
                             android:contentDescription="@string/cambiar_foto"/>
                     </FrameLayout>
                 </androidx.cardview.widget.CardView>

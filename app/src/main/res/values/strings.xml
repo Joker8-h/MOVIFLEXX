@@ -230,11 +230,17 @@
     <!-- Success -->
     <string name="close">Cerrar</string>
     <string name="success_icon">Ícono de éxito</string>
-    <string name="success_message">
-    Ahora revise su correo electrónico para obtener el enlace de confirmación.
-</string>
+    <string name="success_message">Ahora revise su correo electrónico para obtener el enlace de confirmación.</string>
     <string name="didnt_receive">¿No lo recibiste? Haz clic aquí</string>
 
+
+
+
+    <string name="comentario">Excelente servicio, el conductor fue muy amable y llegó rápido. El auto estaba muy limpio.</string>
+    <string name="puntuacion">4.5</string>
+    <string name="marca">• Toyota Corolla • ABC-1234</string>
+    <string name="nombrepropietario">Carlos Rodriguez</string>
+    <string name="tarjeta">Tarjeta •••• 4522</string>
 
     <!-- Viajes pasados -->
     <string name="mis_viajes_pasados">Mis viajes pasados</string>
@@ -258,4 +264,14 @@
     <string name="punto"> •</string>
     <string name="Kilometros">4.5 km</string>
     <string name="Preci">$8.500</string>
+    <string name="tiempo_estimado">25 minutos</string>
+    <string name="lugar1">Ortigal</string>
+    <string name="lugar2">Sena</string>
+    <string name="fecha">15 de marzo, 2023 • 14:32</string>
+    <string name="color_carro">Gris Plata</string>
+    <string name="año">2019</string>
+    <string name="numero_telefono">+57 321 214 8615</string>
+    <string name="viajes_realizados">(124 viajes)</string>
+    <string name="gmail_usuario">carlosrodriguez@gmail.com</string>
+    <string name="tiempo_registrado">Miembro desde Mayo 2022</string>
 </resources>

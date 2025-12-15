@@ -59,7 +59,6 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_search"
-            android:tint="@color/text_white"
             android:padding="12dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:layout_alignParentEnd="true"
@@ -108,7 +107,7 @@
                     android:id="@+id/tv_nombre"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Carlos Mendoza"
+                    android:text="@string/nombrepropietario"
                     android:textSize="24sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
@@ -142,7 +141,7 @@
                         android:id="@+id/tv_rating"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="4.8"
+                        android:text="@string/puntuacion"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
@@ -152,7 +151,7 @@
                         android:id="@+id/tv_num_calificaciones"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="(124 viajes)"
+                        android:text="@string/viajes_realizados"
                         android:textSize="14sp"
                         android:textColor="@color/text_secondary"
                         android:layout_marginStart="6dp"/>
@@ -195,7 +194,6 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_email"
-                            android:tint="@color/primary_blue"
                             android:contentDescription="@string/email"/>
 
                         <TextView
@@ -203,7 +201,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="carlos.mendoza@email.com"
+                            android:text="@string/gmail_usuario"
                             android:textSize="14sp"
                             android:textColor="@color/text_secondary"
                             android:layout_marginStart="12dp"/>
@@ -221,7 +219,6 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_phone"
-                            android:tint="@color/primary_blue"
                             android:contentDescription="@string/telefono"/>
 
                         <TextView
@@ -229,7 +226,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="+52 555 123 4567"
+                            android:text="@string/numero_telefono"
                             android:textSize="14sp"
                             android:textColor="@color/text_secondary"
                             android:layout_marginStart="12dp"/>
@@ -246,7 +243,6 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_calendar"
-                            android:tint="@color/primary_blue"
                             android:contentDescription="@string/miembro_desde"/>
 
                         <TextView
@@ -254,7 +250,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Miembro desde Mayo 2022"
+                            android:text="@string/tiempo_registrado"
                             android:textSize="14sp"
                             android:textColor="@color/text_secondary"
                             android:layout_marginStart="12dp"/>
@@ -320,7 +316,7 @@
                                 android:id="@+id/tv_modelo_vehiculo"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Toyota Corolla 2019"
+                                android:text="@string/marca"
                                 android:textSize="16sp"
                                 android:textStyle="bold"
                                 android:textColor="@color/text_primary"/>
@@ -329,7 +325,7 @@
                                 android:id="@+id/tv_placa_vehiculo"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Azul • ABC-1234"
+                                android:text="@string/placa"
                                 android:textSize="14sp"
                                 android:textColor="@color/text_secondary"
                                 android:layout_marginTop="4dp"/>
@@ -354,7 +350,6 @@
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:src="@drawable/ic_check_circle"
-                                android:tint="@color/status_active"
                                 android:contentDescription="@string/verificado"/>
 
                             <TextView
@@ -379,7 +374,6 @@
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:src="@drawable/ic_shield"
-                                android:tint="@color/status_active"
                                 android:contentDescription="@string/seguro"/>
 
                             <TextView
@@ -403,7 +397,6 @@
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:src="@drawable/ic_seat"
-                                android:tint="@color/primary_blue"
                                 android:contentDescription="@string/asientos"/>
 
                             <TextView
@@ -411,7 +404,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="4 asientos disponibles"
+                                android:text="@string/asientos"
                                 android:textSize="14sp"
                                 android:textColor="@color/text_secondary"
                                 android:layout_marginStart="12dp"/>
