@@ -12,19 +12,34 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Moviflexx">
         <activity
-            android:name=".PublicarViaje"
+            android:name=".MapaActivity"
             android:exported="false" />
         <activity
-            android:name=".Perfil"
+            android:name=".Mapa"
             android:exported="false" />
         <activity
-            android:name=".Profile"
+            android:name=".BootomNavigationMenu"
+            android:exported="false" /> <!-- ===== CONTROLLER ===== -->
+        <activity
+            android:name=".controller.Login"
             android:exported="false" />
         <activity
-            android:name=".Inbox"
+            android:name=".controller.Register"
+            android:exported="false" />
+        <activity
+            android:name=".controller.Success"
+            android:exported="false" />
+        <activity
+            android:name=".controller.HomeConductor"
+            android:exported="false" />
+        <activity
+            android:name=".controller.Home"
             android:exported="false" />
         <activity
             android:name=".controller.Login02"
+            android:exported="false" /> <!-- ===== OTRAS PANTALLAS ===== -->
+        <activity
+            android:name=".HomeCliente"
             android:exported="false" />
         <activity
             android:name=".MenuConductor"
@@ -33,23 +48,29 @@
             android:name=".MenuCliente"
             android:exported="false" />
         <activity
-            android:name=".HomeConductor"
+            android:name=".Inbox"
             android:exported="false" />
         <activity
-            android:name=".HomeCliente"
+            android:name=".Profile"
             android:exported="false" />
         <activity
-            android:name=".controller.Success"
+            android:name=".controller.Perfil"
             android:exported="false" />
         <activity
-            android:name=".controller.Register"
+            android:name=".controller.PerfilUsuario"
             android:exported="false" />
         <activity
-            android:name=".controller.Login"
+            android:name=".controller.EditarPerfil"
             android:exported="false" />
         <activity
-            android:name=".controller.Home"
+            android:name=".controller.PublicarViaje"
             android:exported="false" />
+        <activity
+            android:name=".controller.ViajesPasados"
+            android:exported="false" />
+        <activity
+            android:name=".controller.DetalleViajePasado"
+            android:exported="false" /> <!-- ===== MAIN / LAUNCHER ===== -->
         <activity
             android:name=".controller.MainActivity"
             android:exported="true">

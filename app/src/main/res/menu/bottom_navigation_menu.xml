@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/menu/bottom_navigation_menu.xml -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/nav_inicio"
+        android:icon="@drawable/ic_home"
+        android:title="@string/nav_inicio" />
+
+    <item
+        android:id="@+id/nav_mis_viajes"
+        android:icon="@drawable/ic_car"
+        android:title="@string/nav_viajes" />
+
+    <item
+        android:id="@+id/nav_mapa"
+        android:icon="@drawable/ic_map"
+        android:title="@string/nav_mapa" />
+
+    <item
+        android:id="@+id/nav_mensajes"
+        android:icon="@drawable/ic_message"
+        android:title="@string/nav_mensajes" />
+
+    <item
+        android:id="@+id/nav_perfil"
+        android:icon="@drawable/ic_person"
+        android:title="@string/nav_perfil" />
+
+</menu>

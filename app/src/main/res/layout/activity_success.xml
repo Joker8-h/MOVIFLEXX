@@ -6,21 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_white"
-    >
+    android:name=".controller.Success">
 
-    <!-- Botón Cerrar -->
-    <ImageButton
-        android:id="@+id/btnClose"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/ic_close"
-        android:padding="12dp"
-        android:contentDescription="@string/close"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
 
     <!-- Contenido principal -->
     <LinearLayout

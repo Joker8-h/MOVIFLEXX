@@ -15,9 +15,9 @@
         <!-- Logo de la app -->
         <ImageView
             android:id="@+id/splash_logo"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:src="@drawable/ic_app_logo"
+            android:layout_width="220dp"
+            android:layout_height="220dp"
+            android:src="@drawable/movi"
             android:contentDescription="@string/splash_logo_description"
             android:scaleType="fitCenter"/>
 

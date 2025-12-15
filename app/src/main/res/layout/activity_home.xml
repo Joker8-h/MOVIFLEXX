@@ -30,11 +30,11 @@
     <!-- Logo -->
     <ImageView
         android:id="@+id/logoHome"
-        android:layout_width="140dp"
-        android:layout_height="140dp"
+        android:layout_width="240dp"
+        android:layout_height="200dp"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="70dp"
-        android:src="@drawable/fondomoviflex"
+        android:layout_marginTop="0dp"
+        android:src="@drawable/movi"
         android:elevation="8dp" />
 
     <!-- Título -->
