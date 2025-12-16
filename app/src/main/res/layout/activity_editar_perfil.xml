@@ -171,6 +171,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/nombrepropietario"
                         android:inputType="textPersonName"
+                        android:textColor="@color/black"
                         android:textSize="15sp"
                         android:padding="16dp"/>
                 </com.google.android.material.textfield.TextInputLayout>
@@ -203,6 +204,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/numero_telefono"
                         android:inputType="phone"
+                        android:textColor="@color/black"
                         android:textSize="15sp"
                         android:padding="16dp"/>
                 </com.google.android.material.textfield.TextInputLayout>
@@ -234,6 +236,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/correo_electronico"
+                        android:textColor="@color/black"
                         android:inputType="textEmailAddress"
                         android:textSize="15sp"
                         android:padding="16dp"/>
@@ -276,6 +279,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/marca"
+                        android:textColor="@color/black"
                         android:inputType="text"
                         android:textSize="15sp"
                         android:padding="16dp"/>
@@ -308,6 +312,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/año"
+                        android:textColor="@color/black"
                         android:inputType="number"
                         android:textSize="15sp"
                         android:padding="16dp"/>
@@ -340,6 +345,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/color_carro"
+                        android:textColor="@color/black"
                         android:inputType="text"
                         android:textSize="15sp"
                         android:padding="16dp"/>
@@ -372,6 +378,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/placa"
+                        android:textColor="@color/black"
                         android:inputType="textCapCharacters"
                         android:textSize="15sp"
                         android:padding="16dp"/>

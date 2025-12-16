@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Moviflexx">
         <activity
+            android:name=".MostrarDatos"
+            android:exported="false" />
+        <activity
             android:name=".controller.Mensajes"
             android:exported="false" />
         <activity

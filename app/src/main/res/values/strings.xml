@@ -11,7 +11,7 @@
     <string name="loading">Cargando…</string>
 
     <!-- HOME -->
-    <string name="home_title">Bienvenido a MoviFlex</string>
+    <string name="home_title">Bienvenido</string>
     <string name="home_subtitle">Viajes comunitarios más seguros, económicos y conectados con tu ciudad.</string>
     <string name="home_next">Siguiente</string>
 
@@ -275,10 +275,19 @@
     <string name="publicar">Publicar Viaje</string>
 
 
-
     <string name="mensajes">Mensajes</string>
     <string name="buscar_conversaciones">Buscar conversaciones…</string>
     <string name="conversaciones_recientes">Conversaciones recientes</string>
     <string name="sin_mensajes">No hay mensajes</string>
     <string name="nuevo_mensaje">Nuevo mensaje</string>
+
+
+    <string-array name="cupos">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+
+    </string-array>
+    <string name="Siguiente1">Siguiente</string>
 </resources>

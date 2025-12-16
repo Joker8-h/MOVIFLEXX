@@ -21,7 +21,6 @@ public class Register extends AppCompatActivity {
     private Spinner spinnerTipo;
     private CheckBox cbTerms;
 
-    // VEHÍCULO
     private LinearLayout layoutVehicle;
     private EditText edtPlaca, edtModelo, edtColor;
     private ImageView imgPreview;
@@ -36,8 +35,8 @@ public class Register extends AppCompatActivity {
 
         initViews();
         setupSpinner();
-        setupFotoButton();
         setupPasswordToggle();
+        setupFotoButton();
     }
 
     private void initViews() {
@@ -53,12 +52,11 @@ public class Register extends AppCompatActivity {
         spinnerTipo = findViewById(R.id.spinner_tipo);
         cbTerms = findViewById(R.id.cb_terms);
 
-        // VEHÍCULO
         layoutVehicle = findViewById(R.id.layout_vehicle);
-        imgPreview = findViewById(R.id.img_vehicle_preview);
         edtPlaca = findViewById(R.id.edtplaca);
         edtModelo = findViewById(R.id.edtmodelo);
         edtColor = findViewById(R.id.edtcolor);
+        imgPreview = findViewById(R.id.img_vehicle_preview);
     }
 
     private void setupSpinner() {
@@ -66,11 +64,9 @@ public class Register extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
                 String tipo = spinnerTipo.getSelectedItem().toString();
-                if (tipo.equalsIgnoreCase("Conductor")) {
-                    layoutVehicle.setVisibility(View.VISIBLE);
-                } else {
-                    layoutVehicle.setVisibility(View.GONE);
-                }
+                layoutVehicle.setVisibility(
+                        tipo.equalsIgnoreCase("Conductor") ? View.VISIBLE : View.GONE
+                );
             }
 
             @Override
@@ -79,24 +75,35 @@ public class Register extends AppCompatActivity {
     }
 
     private void setupFotoButton() {
-        Button btnFoto = findViewById(R.id.btn_upload_image);
-        btnFoto.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        findViewById(R.id.btn_upload_image).setOnClickListener(v -> {
+            Intent intent = new Intent(
+                    Intent.ACTION_PICK,
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            );
             startActivityForResult(intent, PICK_IMAGE);
         });
     }
 
     private void setupPasswordToggle() {
         btnShowPass.setOnClickListener(v -> togglePassword(edtPassword, btnShowPass));
-        btnShowPassConfirm.setOnClickListener(v -> togglePassword(edtConfirmPassword, btnShowPassConfirm));
+        btnShowPassConfirm.setOnClickListener(
+                v -> togglePassword(edtConfirmPassword, btnShowPassConfirm)
+        );
     }
 
     private void togglePassword(EditText edt, ImageButton btn) {
-        if (edt.getInputType() == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
-            edt.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+        if (edt.getInputType() ==
+                (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
+            edt.setInputType(
+                    InputType.TYPE_CLASS_TEXT |
+                            InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            );
             btn.setImageResource(R.drawable.ic_eye_open);
         } else {
-            edt.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            edt.setInputType(
+                    InputType.TYPE_CLASS_TEXT |
+                            InputType.TYPE_TEXT_VARIATION_PASSWORD
+            );
             btn.setImageResource(R.drawable.ic_eye_close);
         }
         edt.setSelection(edt.getText().length());
@@ -111,79 +118,77 @@ public class Register extends AppCompatActivity {
         }
     }
 
-    public void irLogin02(View view) {
-        startActivity(new Intent(this, Login.class));
-    }
-
     public void irSuccessRegister(View view) {
 
         if (!validarCampos()) return;
 
         String tipo = spinnerTipo.getSelectedItem().toString();
 
-        if (tipo.equalsIgnoreCase("Conductor")) {
-            if (edtPlaca.getText().toString().trim().isEmpty() ||
-                    edtModelo.getText().toString().trim().isEmpty() ||
-                    edtColor.getText().toString().trim().isEmpty()) {
-                Toast.makeText(this, "Complete todos los datos del vehículo", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        if (tipo.equalsIgnoreCase("Conductor") &&
+                (edtPlaca.getText().toString().trim().isEmpty() ||
+                        edtModelo.getText().toString().trim().isEmpty() ||
+                        edtColor.getText().toString().trim().isEmpty() ||
+                        imagenSeleccionada == null)) {
 
-            if (imagenSeleccionada == null) {
-                Toast.makeText(this, "Debe subir una foto del vehículo", Toast.LENGTH_SHORT).show();
-                return;
-            }
+            Toast.makeText(this,
+                    "Complete los datos del vehículo",
+                    Toast.LENGTH_SHORT).show();
+            return;
         }
 
         // 🔐 GUARDAR DATOS EN SHARED PREFERENCES
-        SharedPreferences prefs = getSharedPreferences("userData", MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
+        SharedPreferences.Editor editor =
+                getSharedPreferences("userData", MODE_PRIVATE).edit();
+
         editor.putString("nombre", edtNombre.getText().toString().trim());
         editor.putString("phone", edtPhone.getText().toString().trim());
         editor.putString("email", edtEmail.getText().toString().trim());
-        editor.putString("password", edtPassword.getText().toString().trim());
         editor.putString("rol", tipo);
-        if(tipo.equalsIgnoreCase("Conductor")) {
+
+        if (tipo.equalsIgnoreCase("Conductor")) {
             editor.putString("placa", edtPlaca.getText().toString().trim());
             editor.putString("modelo", edtModelo.getText().toString().trim());
             editor.putString("color", edtColor.getText().toString().trim());
         }
+
         editor.apply();
 
-        // Ir a Success
-        Intent intent = new Intent(Register.this, Success.class);
-        intent.putExtra("type", "register");
-        startActivity(intent);
+        // ✅ MENSAJE DE CONFIRMACIÓN
+        Toast.makeText(this,
+                "Datos guardados correctamente",
+                Toast.LENGTH_SHORT).show();
+
+        // 👉 IR A MOSTRAR DATOS
+        startActivity(new Intent(this, MostrarDatos.class));
+        finish();
     }
 
     private boolean validarCampos() {
-        String pass = edtPassword.getText().toString();
-        String email = edtEmail.getText().toString();
-
         if (edtNombre.getText().toString().trim().isEmpty() ||
                 edtPhone.getText().toString().trim().isEmpty() ||
-                email.isEmpty() || pass.isEmpty() ||
+                edtEmail.getText().toString().trim().isEmpty() ||
+                edtPassword.getText().toString().trim().isEmpty() ||
                 edtConfirmPassword.getText().toString().trim().isEmpty()) {
-            Toast.makeText(this, "Complete todos los campos", Toast.LENGTH_SHORT).show();
+
+            Toast.makeText(this,
+                    "Complete todos los campos",
+                    Toast.LENGTH_SHORT).show();
             return false;
         }
 
-        if (!pass.equals(edtConfirmPassword.getText().toString())) {
-            Toast.makeText(this, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
-            return false;
-        }
+        if (!edtPassword.getText().toString()
+                .equals(edtConfirmPassword.getText().toString())) {
 
-        if (pass.length() < 8 ||
-                !pass.matches(".*[A-Z].*") ||
-                !pass.matches(".*[0-9].*") ||
-                !pass.matches(".*[!@#$%^&*()].*")) {
-            Toast.makeText(this, "La contraseña debe tener:\n• 8 caracteres\n• 1 mayúscula\n• 1 número\n• 1 símbolo",
-                    Toast.LENGTH_LONG).show();
+            Toast.makeText(this,
+                    "Las contraseñas no coinciden",
+                    Toast.LENGTH_SHORT).show();
             return false;
         }
 
         if (!cbTerms.isChecked()) {
-            Toast.makeText(this, "Debe aceptar los términos y condiciones", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this,
+                    "Debe aceptar los términos",
+                    Toast.LENGTH_SHORT).show();
             return false;
         }
 

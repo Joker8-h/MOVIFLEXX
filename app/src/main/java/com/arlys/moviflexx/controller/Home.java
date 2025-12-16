@@ -24,7 +24,7 @@ public class Home extends AppCompatActivity {
         videoView = findViewById(R.id.backgroundVideo);
 
         // Cargar video
-        Uri video = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.moviflexxx);
+        Uri video = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.movilflexrelax);
         videoView.setVideoURI(video);
 
         // Listener para iniciar en loop

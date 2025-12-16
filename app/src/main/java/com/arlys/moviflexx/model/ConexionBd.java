@@ -92,6 +92,8 @@ public class ConexionBd extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE usuario_rol (idUsuarios INTEGER, idRol INTEGER," +
                 " PRIMARY KEY (idUsuarios, idRol), FOREIGN KEY (idUsuarios) REFERENCES USUARIOS(idUsuarios)," +
                 " FOREIGN KEY (idRol) REFERENCES roles(idRol))");
+
+        db.execSQL("CREATE TABLE PublicarViaje(ORIGEN TEXT, DESTINO TEXT, HORA )");
     }
 
     @Override
