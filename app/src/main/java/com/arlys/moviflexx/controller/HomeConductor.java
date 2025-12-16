@@ -11,18 +11,52 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class HomeConductor extends AppCompatActivity {
 
+    BottomNavigationView bottomNavigation;
 
-        @Override
-        protected void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            setContentView(R.layout.activity_home_conductor);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_home_conductor);
 
-        }
+        // 🔥 FALTA ESTO
+        bottomNavigation = findViewById(R.id.bottom_navigation);
 
+        // Marcar item actual
+        bottomNavigation.setSelectedItemId(R.id.nav_inicio);
 
+        bottomNavigation.setOnItemSelectedListener(item -> {
+
+            int id = item.getItemId();
+
+            if (id == R.id.nav_inicio) {
+                return true;
+
+            } else if (id == R.id.nav_mis_viajes) {
+                startActivity(new Intent(this, PublicarViaje.class));
+
+            } else if (id == R.id.nav_mapa) {
+                startActivity(new Intent(this, ViajesPasados.class));
+
+            } else if (id == R.id.nav_mensajes) {
+                startActivity(new Intent(this, Mensajes.class));
+
+            } else if (id == R.id.nav_perfil) {
+                startActivity(new Intent(this, PerfilUsuario.class));
+            }
+
+            overridePendingTransition(0, 0);
+            finish();
+            return true;
+        });
+    }
+
+    // ====== BOTONES ======
 
     public void irViajespasados(View view) {
         startActivity(new Intent(this, ViajesPasados.class));
     }
 
+    public void irPublicarViaje(View view) {
+        startActivity(new Intent(this, PublicarViaje.class));
+    }
 }

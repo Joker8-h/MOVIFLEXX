@@ -201,7 +201,7 @@
     <string name="documentacion_verificada">Documentación verificada</string>
     <string name="seguro">Seguro</string>
     <string name="seguro_vigente">Seguro vigente</string>
-    <string name="asientos">Asientos</string>
+    <string name="asientos">Asientos - 4</string>
     <string name="cerrar_sesion">Cerrar sesión</string>
 
     <!-- Publicar viaje -->
@@ -232,8 +232,6 @@
     <string name="success_icon">Ícono de éxito</string>
     <string name="success_message">Ahora revise su correo electrónico para obtener el enlace de confirmación.</string>
     <string name="didnt_receive">¿No lo recibiste? Haz clic aquí</string>
-
-
 
 
     <string name="comentario">Excelente servicio, el conductor fue muy amable y llegó rápido. El auto estaba muy limpio.</string>
@@ -274,4 +272,13 @@
     <string name="viajes_realizados">(124 viajes)</string>
     <string name="gmail_usuario">carlosrodriguez@gmail.com</string>
     <string name="tiempo_registrado">Miembro desde Mayo 2022</string>
+    <string name="publicar">Publicar Viaje</string>
+
+
+
+    <string name="mensajes">Mensajes</string>
+    <string name="buscar_conversaciones">Buscar conversaciones…</string>
+    <string name="conversaciones_recientes">Conversaciones recientes</string>
+    <string name="sin_mensajes">No hay mensajes</string>
+    <string name="nuevo_mensaje">Nuevo mensaje</string>
 </resources>

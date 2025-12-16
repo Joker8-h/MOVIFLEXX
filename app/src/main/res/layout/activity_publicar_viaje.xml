@@ -28,6 +28,7 @@
             android:id="@+id/btn_back"
             android:layout_width="60dp"
             android:layout_height="60dp"
+            android:onClick="irHomeConductor"
             android:padding="8dp"
             android:src="@drawable/ic_arrow_back">
         </ImageView>
@@ -101,7 +102,7 @@
                 app:boxCornerRadiusTopEnd="8dp"
                 app:boxCornerRadiusBottomStart="8dp"
                 app:boxCornerRadiusBottomEnd="8dp"
-                app:startIconDrawable="@drawable/ic_location_pin"
+                app:startIconDrawable="@drawable/ic_location_marker"
                 app:startIconTint="@color/accent_coral">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -333,6 +334,7 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_cancelar"
                 android:layout_width="match_parent"
+                android:onClick="irHomeConductor"
                 android:layout_height="56dp"
                 android:text="@string/cancelar"
                 android:textSize="16sp"
@@ -351,12 +353,7 @@
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/card_background"
-        android:elevation="16dp"
         app:menu="@menu/bottom_navigation_menu"
-        app:labelVisibilityMode="labeled"
-        app:itemIconTint="@color/bottom_nav_color_selector"
-        app:itemTextColor="@color/bottom_nav_color_selector"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

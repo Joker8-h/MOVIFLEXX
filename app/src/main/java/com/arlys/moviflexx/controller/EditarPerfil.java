@@ -1,6 +1,8 @@
 package com.arlys.moviflexx.controller;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -16,5 +18,9 @@ public class EditarPerfil extends AppCompatActivity {
 
 
     }
+    public void irPerfil(View view) {
+        startActivity(new Intent(this, PerfilUsuario.class));
+    }
+
 
 }

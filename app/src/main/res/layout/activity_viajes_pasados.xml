@@ -22,6 +22,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_arrow_back"
+            android:onClick="irHomeConductor"
             android:padding="0dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:layout_centerVertical="true"
@@ -545,7 +546,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:text="@string/ver_detalles"
-
+                android:onClick="irDetalle"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:textColor="@color/primary_blue"
@@ -736,7 +737,8 @@
                         android:layout_marginStart="2dp"
                         android:contentDescription="@string/calificacion"/>
 
-                    <ImageView android:layout_width="18dp"
+                    <ImageView
+                        android:layout_width="18dp"
                         android:layout_height="18dp"
                         android:src="@drawable/ic_star"
                         android:layout_marginStart="2dp"
@@ -759,11 +761,11 @@
 
             <!-- Botón ver detalles -->
             <com.google.android.material.button.MaterialButton
-
                 android:id="@+id/btn_ver_detallesss"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:text="@string/ver_detalles"
+                android:text="@string/completado"
+                android:onClick="irDetalle"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:textColor="@color/primary_blue"
@@ -771,7 +773,7 @@
                 app:cornerRadius="12dp"
                 app:strokeColor="@color/primary_blue"
                 app:strokeWidth="2dp"
-                android:layout_marginTop="16dp" style="@style/Widget.Material3.Button.OutlinedButton"/>
+                android:layout_marginTop="16dp"/>
         </LinearLayout>
 
 
@@ -786,7 +788,6 @@
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/card_background"
         app:menu="@menu/bottom_navigation_menu"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
