@@ -25,7 +25,7 @@
             android:layout_height="40dp"
             android:src="@android:drawable/ic_menu_revert"
             android:background="@android:color/transparent"
-            android:tint="@android:color/white"/>
+           />
 
         <TextView
             android:layout_width="0dp"
@@ -43,7 +43,7 @@
             android:layout_height="40dp"
             android:src="@android:drawable/ic_menu_more"
             android:background="@android:color/transparent"
-            android:tint="@android:color/white"/>
+           />
     </LinearLayout>
 
     <!-- BUSCADOR -->

@@ -419,6 +419,7 @@
                         android:id="@+id/btn_mensaje_conductor"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
+                        android:onClick="irMensaje"
                         android:src="@drawable/ic_message"
                         android:padding="12dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
