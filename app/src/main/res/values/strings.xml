@@ -27,28 +27,52 @@
     <string name="go_login">¿Ya tienes una cuenta? Iniciar sesión</string>
 
     <!-- REGISTRO -->
-    <string name="register_title">Registro</string>
-    <string name="hint_nombre">Nombres completos</string>
-    <string name="hint_phone">Teléfono</string>
-    <string name="hint_email">Correo electrónico</string>
-    <string name="hint_password">Contraseña</string>
-    <string name="hint_confirm_password">Confirmar contraseña</string>
 
-    <!-- ROLES -->
-    <string-array name="tipo_usuario">
-        <item>Rol</item>
-        <item>Pasajero</item>
-        <item>Conductor</item>
-    </string-array>
 
-    <!-- TÉRMINOS -->
-    <string name="terms">Acepto términos y condiciones</string>
+        <!-- Títulos -->
+        <string name="register_title">Crear Cuenta</string>
 
-    <!-- VEHÍCULO -->
+        <!-- Hints -->
+        <string name="hint_nombre">Nombre completo</string>
+        <string name="hint_email">Correo electrónico</string>
+        <string name="hint_password">Contraseña</string>
+        <string name="hint_confirm_password">Confirmar contraseña</string>
+
+        <!-- Botones -->
+        <string name="register_btn">REGISTRARSE</string>
+
+        <!-- Otros -->
+        <string name="select_role">Selecciona tu rol:</string>
+
+        <string name="show_password">Mostrar contraseña</string>
+
+        <!-- Roles spinner -->
+        <string-array name="tipo_usuario">
+            <item>Seleccione</item>
+            <item>Pasajero</item>
+            <item>Conductor</item>
+        </string-array>
+
+    <string name="informacion_vehiculo">Información del vehículo</string>
     <string name="placa">Placa</string>
     <string name="modelo">Modelo</string>
     <string name="color">Color</string>
-    <string name="subir_foto_vehiculo">Subir foto del vehículo</string>
+    <string name="matricula">matricula</string>
+    <string name="cancelar">cancelar</string>
+    <string name="anio">Año</string>
+    <string name="foto_vehiculo">Foto del vehículo</string>
+    <string name="Facil">Fácil</string>
+    <string name="Seguro">Seguro</string>
+    <string name="Rápido">Rápido</string>
+
+
+
+    <!--redes sociale -->
+    <string name="or_continue">o continuar con</string>
+    <string name="google">Continuar con Google</string>
+    <string name="github">Continuar con GitHub</string>
+    <string name="facebook">Continuar con Facebook</string>
+
 
     <!-- BOTONES GENERALES -->
     <string name="btn_register">Registrarme</string>
@@ -137,13 +161,9 @@
 
 
     <!-- Editar perfil -->
+
     <string name="correo_electronico">Correo electrónico</string>
-    <string name="informacion_vehiculo">Información del vehículo</string>
-    <string name="anio">Año</string>
-    <string name="matricula">Matrícula</string>
-    <string name="foto_vehiculo">Foto del vehículo</string>
     <string name="guardar_cambios">Guardar cambios</string>
-    <string name="cancelar">Cancelar</string>
 
     <!-- Home conductor -->
     <string name="modo_conductor">Modo Conductor</string>

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "790399875967",
+    "project_id": "moviflexx-f5069",
+    "storage_bucket": "moviflexx-f5069.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:790399875967:android:c7b72f316034b34e71b84a",
+        "android_client_info": {
+          "package_name": "com.arlys.moviflexx"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "790399875967-98gm9b7b68ij886jmj8qlmhjbbiv2rir.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQCGZnMp5SZJJr06MxLNK5gnrbUT302mM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "790399875967-98gm9b7b68ij886jmj8qlmhjbbiv2rir.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

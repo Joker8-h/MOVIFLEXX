@@ -11,10 +11,30 @@
     <color name="primary_blue">#4F8FFF</color>
     <color name="primary_green">#4CAF50</color>
 
+    <color name="white_bg">#FAFAFC</color>
+
+    <!-- 🎯 Fondo -->
+    <color name="white_soft">#FAFAFC</color>
+
     <!-- Acentos -->
     <color name="accent_coral">#FF6B7A</color>
     <color name="accent_orange">#FF9800</color>
     <color name="accent_yellow">#FFC107</color>
+    <color name="purple_primary">#6C3BFF</color>
+    <color name="purple_light">#EDE7FF</color>
+    <color name="primaryLight">#EDE7FF</color>
+
+    <!-- Grises -->
+    <color name="textPrimary">#2B2B2B</color>
+    <color name="textSecondary">#8A8A8A</color>
+
+    <color name="grayLight">#F4F4F6</color>
+
+    <!-- Blanco -->
+    <color name="pureWhite">#FFFFFF</color>
+
+    <!-- Adicionales -->
+    <color name="gray_border">#8A8A8A</color>
 
     <!-- Fondos -->
     <color name="background_light">#F8F9FA</color>

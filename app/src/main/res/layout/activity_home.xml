@@ -1,94 +1,250 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bgLight">
 
-    <LinearLayout
-        android:orientation="vertical"
-        android:layout_width="850dp"
-        android:layout_height="230dp"
-        android:layout_marginTop="420dp"
-        android:layout_marginLeft="0dp">
+    <!-- Fondo decorativo superior con gradiente -->
+    <View
+        android:id="@+id/topBackground"
+        android:layout_width="match_parent"
+        android:layout_height="360dp"
+        android:background="@drawable/home_top_background"
+        android:elevation="0dp" />
 
-        <VideoView
-            android:id="@+id/backgroundVideo"
+    <!-- Formas decorativas flotantes -->
+    <View
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="80dp"
+        android:layout_marginEnd="20dp"
+        android:alpha="0.15"
+        android:background="@drawable/circle_decoration"
+        android:elevation="1dp" />
+
+    <View
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="250dp"
+        android:alpha="0.12"
+        android:background="@drawable/circle_decoration"
+        android:elevation="1dp" />
+
+    <!-- Container principal centrado -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingHorizontal="32dp">
+
+        <!-- Logo con sombra y elevación -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:elevation="12dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="30dp"
+            app:cardElevation="12dp">
+
+            <ImageView
+                android:id="@+id/logoHome"
+                android:layout_width="200dp"
+                android:layout_height="120dp"
+                android:contentDescription="@string/app_name"
+                android:padding="16dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/movi" />
+        </androidx.cardview.widget.CardView>
+
+        <!-- Título principal -->
+        <TextView
+            android:id="@+id/txtTitulo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:fontFamily="sans-serif-black"
+            android:letterSpacing="0.02"
+            android:text="@string/home_title"
+            android:textColor="@color/primaryDark"
+            android:textSize="42sp"
+            android:textStyle="bold" />
+
+        <!-- Logo Moviflexx -->
+        <ImageView
+            android:id="@+id/Moviflex"
+            android:layout_width="220dp"
+            android:layout_height="60dp"
+            android:layout_marginTop="12dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/moviflexx" />
+
+        <!-- Subtítulo -->
+        <TextView
+            android:id="@+id/txtSubtitulo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:paddingHorizontal="24dp"
+            android:text="@string/home_subtitle"
+            android:textColor="@color/textSecondary"
+            android:textSize="16sp" />
+
+        <!-- Características en cards -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="755dp"
-            android:layout_weight="1"
-            android:bottomRightRadius="400dp"
-            android:bottomLeftRadius="50dp"
-            />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp">
+
+            <!-- Feature 1 -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/card_background"
+                android:elevation="4dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_speed"
+                    app:tint="@color/primary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/Rápido"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Feature 2 -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/card_background"
+                android:elevation="4dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_security"
+                    app:tint="@color/primary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/seguro"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Feature 3 -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/card_background"
+                android:elevation="4dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_easy"
+                    app:tint="@color/primary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/Facil"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
 
     </LinearLayout>
 
-
-
-    <!-- Fondo con curva -->
-    <View
+    <!-- Botón principal flotante en la parte inferior -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="280dp"
-        android:background="@drawable/home_top_background" />
-
-    <!-- Logo -->
-    <ImageView
-        android:id="@+id/logoHome"
-        android:layout_width="240dp"
-        android:layout_height="150dp"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="0dp"
-        android:src="@drawable/movi"
-        android:elevation="8dp" />
-
-    <!-- Título -->
-    <TextView
-        android:id="@+id/txtTitulo"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/home_title"
-        android:textSize="48sp"
-        android:textStyle="bold"
-        android:textColor="@color/primaryDark"
-        android:layout_below="@id/logoHome"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="0dp" />
-
-    <!-- Subtítulo -->
-    <ImageView
-        android:id="@+id/Moviflex"
-        android:layout_width="240dp"
-        android:layout_height="50dp"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="280dp"
-        android:src="@drawable/moviflexx"
-        android:elevation="2dp" />
-
-    <TextView
-        android:id="@+id/txtTitulo1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/home_subtitle"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="@color/black"
-        android:layout_below="@id/logoHome"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="175dp" />
-
-
-    <!-- Botón Siguiente -->
-    <Button
-        android:id="@+id/btnComenzar"
-        android:layout_width="250dp"
-        android:onClick="irLogin"
-        android:layout_height="55dp"
-        android:text="@string/home_next"
-        android:layout_centerHorizontal="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="90dp"
-        android:backgroundTint="@color/primary"
-        android:textColor="@color/white"
-        android:textSize="18sp"
-        android:elevation="6dp" />
+        android:layout_marginBottom="48dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingHorizontal="32dp">
+
+        <!-- Botón Comenzar con animación -->
+        <Button
+            android:id="@+id/btnComenzar"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:background="@drawable/button_primary"
+            android:elevation="8dp"
+            android:fontFamily="sans-serif-black"
+            android:letterSpacing="0.05"
+            android:onClick="irLogin"
+            android:stateListAnimator="@null"
+            android:text="@string/home_next"
+            android:textAllCaps="true"
+            android:textColor="@color/white"
+            android:textSize="17sp" />
+
+        <!-- Indicador decorativo -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <View
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/dot_active"
+                android:layout_marginHorizontal="4dp" />
+
+            <View
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/dot_inactive"
+                android:layout_marginHorizontal="4dp" />
+
+            <View
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/dot_inactive"
+                android:layout_marginHorizontal="4dp" />
+        </LinearLayout>
+    </LinearLayout>
 
 </RelativeLayout>

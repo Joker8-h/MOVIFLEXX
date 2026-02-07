@@ -54,8 +54,4 @@ public class ViajesPasados extends AppCompatActivity {
         Intent siguiente = new Intent(ViajesPasados.this, DetalleViajePasado.class);
         startActivity(siguiente);
     }
-    public void irMostrarDatos(View view) {
-        Intent siguiente = new Intent(ViajesPasados.this, MostrarDatos.class);
-        startActivity(siguiente);
-    }
 }
