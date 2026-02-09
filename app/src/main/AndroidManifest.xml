@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 🔐 Permisos -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
-        android:allowBackup="true"
+        android:usesCleartextTraffic="true"
+
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -13,12 +16,44 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Moviflexx">
-
-
-
+        <activity
+            android:name=".controller.DetalleViajeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".controller.DetalleViaje"
+            android:exported="false" />
+        <activity
+            android:name=".controller.PublicarRuta"
+            android:exported="false" />
+        <activity
+            android:name=".controller.ViajesConductor"
+            android:exported="false" />
         <activity
             android:name=".controller.Mensajes"
             android:exported="false" />
+        <activity
+            android:name=".controller.Chat"
+            android:exported="false" />
+        <activity
+            android:name=".controller.RutasFrecuentes"
+            android:exported="false" />
+
+        <activity
+            android:name=".controller.MapaPasajero"
+            android:exported="false" />
+        <activity
+            android:name=".controller.RegistrarVehiculo"
+            android:exported="false" /> <!-- 🗺️ GOOGLE MAPS API KEY (AQUÍ ES DONDE VA) -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/google_maps_key" /> <!-- ===== ACTIVITIES ===== -->
+        <activity
+            android:name=".controller.Mapa"
+            android:exported="false" />
+        <activity
+            android:name=".controller.HomePasajero"
+            android:exported="false" />
+   +
         <activity
             android:name=".controller.Login"
             android:exported="false" />
@@ -26,15 +61,11 @@
             android:name=".controller.Register"
             android:exported="false" />
         <activity
-            android:name=".controller.Success"
-            android:exported="false" />
-        <activity
             android:name=".controller.HomeConductor"
             android:exported="false" />
         <activity
             android:name=".controller.Home"
             android:exported="false" />
-
         <activity
             android:name=".controller.PerfilUsuario"
             android:exported="false" />
@@ -49,7 +80,7 @@
             android:exported="false" />
         <activity
             android:name=".controller.DetalleViajePasado"
-            android:exported="false" /> <!-- ===== MAIN / LAUNCHER ===== -->
+            android:exported="false" /> <!-- 🚀 LAUNCHER -->
         <activity
             android:name=".controller.MainActivity"
             android:exported="true">

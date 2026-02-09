@@ -49,12 +49,23 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-auth")
 
+    implementation("com.google.firebase:firebase-database")
+
     // 🔥 Google Login
     implementation("com.google.android.gms:play-services-auth:21.2.0")
 
     implementation("com.facebook.android:facebook-login:17.0.2")
 
     implementation("com.android.volley:volley:1.2.1")
+
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
+
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+
+
 
 
 }

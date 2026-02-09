@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_light"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- TÍTULO -->
+        <TextView
+            android:text="Registrar vehículo"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/primary_purple"
+            android:layout_marginBottom="8dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:text="Ingresa los datos de tu vehículo para comenzar a ofrecer viajes"
+            android:textSize="14sp"
+            android:textColor="@color/black"
+
+            android:layout_marginBottom="20dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <!-- MARCA -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            app:hintTextColor="@color/black"
+            android:layout_height="wrap_content"
+            android:hint="Marca"
+            app:startIconDrawable="@drawable/ic_car"
+            app:helperText="Ej: Toyota, Mazda, Chevrolet"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            <AutoCompleteTextView
+                android:id="@+id/edt_marca"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- MODELO -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Modelo"
+            app:hintTextColor="@color/black"
+            android:layout_marginTop="12dp"
+            app:startIconDrawable="@drawable/ic_model"
+            app:helperText="Ej: Corolla, CX-5, Spark"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            <AutoCompleteTextView
+                android:id="@+id/edt_modelo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- PLACA -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Placa"
+            app:hintTextColor="@color/black"
+            android:layout_marginTop="12dp"
+            app:startIconDrawable="@drawable/ic_plate"
+            app:helperText="Formato: ABC123 o ABC12D"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edt_placa"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapCharacters"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- CAPACIDAD -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Capacidad"
+            app:hintTextColor="@color/black"
+            android:layout_marginTop="12dp"
+            app:startIconDrawable="@drawable/ic_group"
+            app:helperText="Número de pasajeros"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edt_capacidad"
+                android:inputType="number"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- BOTÓN -->
+        <com.google.android.material.button.MaterialButton
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Registrar vehículo"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:layout_marginTop="32dp"
+            app:cornerRadius="16dp"
+            app:backgroundTint="@color/primary_purple"
+            android:textColor="@color/text_white"
+            android:onClick="registrarVehiculo"/>
+
+    </LinearLayout>
+</ScrollView>

@@ -81,9 +81,10 @@
             android:text="@string/login"
             android:textColor="#FAFAFC"
             android:textStyle="bold"
-            android:onClick="irSuccess"
+            android:onClick="login"
             app:cornerRadius="20dp"
             app:backgroundTint="#6C3BFF" />
+
 
         <!-- TEXTO REGISTER -->
         <TextView

@@ -15,38 +15,33 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.model.Constantes;
-import com.google.android.material.button.MaterialButton;
+import com.arlys.moviflexx.model.SesionUsuario;
+import com.arlys.moviflexx.model.SessionManager;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputEditText;
-
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.GoogleAuthProvider;
-
-import com.google.android.gms.auth.api.signin.*;
-import com.google.android.gms.tasks.Task;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Login extends AppCompatActivity {
 
-    // Firebase
     private FirebaseAuth mAuth;
     private GoogleSignInClient googleSignInClient;
-
-    // Inputs
     private TextInputEditText edtEmail, edtPassword;
 
-    // Google launcher
     private final ActivityResultLauncher<Intent> googleLauncher =
             registerForActivityResult(
                     new ActivityResultContracts.StartActivityForResult(),
                     result -> {
                         if (result.getData() == null) return;
-
-                        Task<GoogleSignInAccount> task =
-                                GoogleSignIn.getSignedInAccountFromIntent(result.getData());
-
+                        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
                         if (task.isSuccessful()) {
                             GoogleSignInAccount account = task.getResult();
                             firebaseAuthWithGoogle(account.getIdToken());
@@ -60,22 +55,14 @@ public class Login extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // Firebase
         mAuth = FirebaseAuth.getInstance();
-
-        // Inputs XML
         edtEmail = findViewById(R.id.edtEmail);
         edtPassword = findViewById(R.id.edtPassword);
 
-        // Google
         configurarGoogle();
     }
 
-    // =====================================
-    // 🔵 LOGIN NORMAL (RAILWAY + MYSQL)
-    // =====================================
-    public void irSuccess(View view) {
-
+    public void login(View view) {
         String email = edtEmail.getText() != null ? edtEmail.getText().toString().trim() : "";
         String password = edtPassword.getText() != null ? edtPassword.getText().toString().trim() : "";
 
@@ -89,78 +76,89 @@ public class Login extends AppCompatActivity {
             json.put("email", email);
             json.put("password", password);
         } catch (JSONException e) {
-            Toast.makeText(this, "Error creando JSON", Toast.LENGTH_SHORT).show();
             return;
         }
 
         RequestQueue queue = Volley.newRequestQueue(this);
-
         JsonObjectRequest request = new JsonObjectRequest(
                 Request.Method.POST,
                 Constantes.LOGIN,
                 json,
                 response -> {
-                    Toast.makeText(this, "Login exitoso", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(Login.this, Success.class));
-                    finish();
-                },
-                error -> {
-                    if (error.networkResponse != null && error.networkResponse.data != null) {
-                        String body = new String(error.networkResponse.data);
-                        Toast.makeText(this, body, Toast.LENGTH_LONG).show();
-                    } else {
-                        Toast.makeText(this,
-                                "No se pudo conectar con el servidor",
-                                Toast.LENGTH_LONG).show();
-                    }
-                }
-        );
+                    try {
+                        String token = null;
+                        int idUsuario = -1;
+                        int idRol = -1;
+                        String nombre = "";
+                        String emailReal = "";
+                        String telefono = "";
 
+                        // BUSCAR TOKEN
+                        if (response.has("token")) token = response.getString("token");
+                        else if (response.has("accessToken")) token = response.getString("accessToken");
+
+                        // BUSCAR DATOS DEL USUARIO
+                        if (response.has("usuario")) {
+                            JSONObject usuario = response.getJSONObject("usuario");
+
+                            idUsuario = usuario.optInt("idUsuarios", usuario.optInt("id", -1));
+                            nombre = usuario.optString("nombre", "Usuario");
+                            emailReal = usuario.optString("email", email);
+                            telefono = usuario.optString("telefono", "Sin teléfono");
+
+                            // Lógica de Rol
+                            if (usuario.has("idRol")) idRol = usuario.getInt("idRol");
+                            else if (usuario.has("rol")) idRol = usuario.getJSONObject("rol").optInt("idRol", -1);
+                        }
+
+                        if (token == null || idUsuario == -1 || idRol == -1) {
+                            Toast.makeText(this, "Error de credenciales", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        // --- GUARDADO DE SESIÓN ---
+                        SesionUsuario.setToken(token);
+
+                        // Guardar datos permanentes incluyendo idRol (CORRECCIÓN AQUÍ)
+                        SessionManager session = new SessionManager(this);
+                        session.saveUser(nombre, emailReal, telefono, idRol, idUsuario);
+                        // Se agregó idRol
+
+                        Intent intent = (idRol == 2) ?
+                                new Intent(this, HomeConductor.class) :
+                                new Intent(this, HomePasajero.class);
+
+                        startActivity(intent);
+                        finish();
+
+                    } catch (JSONException e) {
+                        Toast.makeText(this, "Error en respuesta", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> Toast.makeText(this, "Error de conexión", Toast.LENGTH_SHORT).show()
+        );
         queue.add(request);
     }
 
-    // =====================================
-    // 🔵 GOOGLE LOGIN (FIREBASE) — INTACTO
-    // =====================================
     private void configurarGoogle() {
-
-        GoogleSignInOptions gso =
-                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                        .requestIdToken(getString(R.string.default_web_client_id))
-                        .requestEmail()
-                        .build();
-
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.default_web_client_id))
+                .requestEmail().build();
         googleSignInClient = GoogleSignIn.getClient(this, gso);
-
-        MaterialButton btnGoogle = findViewById(R.id.btnGoogle);
-
-        btnGoogle.setOnClickListener(v -> {
-            Intent signInIntent = googleSignInClient.getSignInIntent();
-            googleLauncher.launch(signInIntent);
-        });
+        findViewById(R.id.btnGoogle).setOnClickListener(v -> googleLauncher.launch(googleSignInClient.getSignInIntent()));
     }
 
     private void firebaseAuthWithGoogle(String idToken) {
-
-        AuthCredential credential =
-                GoogleAuthProvider.getCredential(idToken, null);
-
-        mAuth.signInWithCredential(credential)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        startActivity(new Intent(Login.this, Success.class));
-                        finish();
-                    } else {
-                        Toast.makeText(this,
-                                "Error autenticando con Google",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                });
+        AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
+        mAuth.signInWithCredential(credential).addOnCompleteListener(this, task -> {
+            if (task.isSuccessful()) {
+                // Aquí podrías implementar una llamada a tu API para validar el rol de Google
+                startActivity(new Intent(Login.this, HomePasajero.class));
+                finish();
+            }
+        });
     }
 
-    // =====================================
-    // 🔵 IR A REGISTRO
-    // =====================================
     public void irRegister(View view) {
         startActivity(new Intent(Login.this, Register.class));
     }

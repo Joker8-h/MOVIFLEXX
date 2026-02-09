@@ -104,15 +104,39 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- ROL -->
-        <Spinner
-            android:id="@+id/spinner_rol"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:outlineAmbientShadowColor="@color/bgLight"
-            android:outlineSpotShadowColor="@color/bgLight"
-            android:background="@color/black"
+        <!-- ROL -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:entries="@array/tipo_usuario" />
+            android:text="Selecciona tu rol"
+            android:textStyle="bold"
+            android:textColor="@color/black" />
+
+        <RadioGroup
+            android:id="@+id/rgRol"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rbPasajero"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Pasajero"
+                android:textColor="@color/black" />
+
+            <RadioButton
+                android:id="@+id/rbConductor"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Conductor"
+                android:textColor="@color/black" />
+        </RadioGroup>
+
 
         <!-- BOTÓN REGISTRAR -->
         <com.google.android.material.button.MaterialButton

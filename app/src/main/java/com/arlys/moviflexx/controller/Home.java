@@ -2,14 +2,17 @@ package com.arlys.moviflexx.controller;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityOptionsCompat;
 
 import com.arlys.moviflexx.R;
 
@@ -25,7 +28,8 @@ public class Home extends AppCompatActivity {
         setContentView(R.layout.activity_home);
 
         initViews();
-        setupAnimations();
+        prepareInitialState();
+        startProfessionalAnimations();
     }
 
     private void initViews() {
@@ -34,44 +38,108 @@ public class Home extends AppCompatActivity {
         txtTitulo = findViewById(R.id.txtTitulo);
         txtSubtitulo = findViewById(R.id.txtSubtitulo);
         btnComenzar = findViewById(R.id.btnComenzar);
+
+        // Listener profesional para el botón con efecto de click
+        btnComenzar.setOnClickListener(v -> animateButtonAndGo());
     }
 
-    private void setupAnimations() {
-        // Animación de entrada para el logo
-        Animation fadeIn = AnimationUtils.loadAnimation(this, android.R.anim.fade_in);
-        fadeIn.setDuration(1000);
-        logoHome.startAnimation(fadeIn);
+    /**
+     * Ocultamos los elementos o los movemos fuera de pantalla
+     * antes de empezar para que la animación se note real.
+     */
+    private void prepareInitialState() {
+        logoHome.setAlpha(0f);
+        logoHome.setScaleX(0.5f);
+        logoHome.setScaleY(0.5f);
 
-        // Animación para el título
-        Animation slideUp = AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left);
-        slideUp.setDuration(800);
-        slideUp.setStartOffset(300);
-        txtTitulo.startAnimation(slideUp);
+        txtTitulo.setAlpha(0f);
+        txtTitulo.setTranslationY(100f);
 
-        // Animación para el logo Moviflexx
-        Animation fadeInMoviflexx = AnimationUtils.loadAnimation(this, android.R.anim.fade_in);
-        fadeInMoviflexx.setDuration(800);
-        fadeInMoviflexx.setStartOffset(500);
-        moviflexx.startAnimation(fadeInMoviflexx);
+        moviflexx.setAlpha(0f);
 
-        // Animación para el subtítulo
-        Animation fadeInSubtitle = AnimationUtils.loadAnimation(this, android.R.anim.fade_in);
-        fadeInSubtitle.setDuration(800);
-        fadeInSubtitle.setStartOffset(700);
-        txtSubtitulo.startAnimation(fadeInSubtitle);
+        txtSubtitulo.setAlpha(0f);
+        txtSubtitulo.setTranslationY(50f);
 
-        // Animación para el botón
-        Animation fadeInButton = AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left);
-        fadeInButton.setDuration(600);
-        fadeInButton.setStartOffset(900);
-        btnComenzar.startAnimation(fadeInButton);
+        btnComenzar.setAlpha(0f);
+        btnComenzar.setScaleX(0.8f);
     }
 
-    public void irLogin(View view) {
-        Intent intent = new Intent(this, Login.class);
-        startActivity(intent);
+    private void startProfessionalAnimations() {
+        // 1. Logo principal con efecto de "rebote" (Overshoot)
+        logoHome.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(1200)
+                .setInterpolator(new OvershootInterpolator())
+                .start();
 
-        // Transición suave entre actividades
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        // 2. Título con entrada elegante desde abajo
+        txtTitulo.animate()
+                .alpha(1f)
+                .translationY(0)
+                .setDuration(800)
+                .setStartDelay(400)
+                .setInterpolator(new AccelerateDecelerateInterpolator())
+                .start();
+
+        // 3. Logo secundario (Fade in suave)
+        moviflexx.animate()
+                .alpha(1f)
+                .setDuration(1000)
+                .setStartDelay(600)
+                .start();
+
+        // 4. Subtítulo
+        txtSubtitulo.animate()
+                .alpha(1f)
+                .translationY(0)
+                .setDuration(800)
+                .setStartDelay(800)
+                .start();
+
+        // 5. Botón con entrada de escala
+        btnComenzar.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .setDuration(600)
+                .setStartDelay(1100)
+                .setInterpolator(new OvershootInterpolator())
+                .withEndAction(this::startPulseAnimation) // Inicia un latido sutil
+                .start();
+    }
+
+    /**
+     * Hace que el botón "respire" para llamar la atención del usuario
+     */
+    private void startPulseAnimation() {
+        btnComenzar.animate()
+                .scaleX(1.05f)
+                .scaleY(1.05f)
+                .setDuration(1000)
+                .setInterpolator(new AccelerateDecelerateInterpolator())
+                .withEndAction(() -> {
+                    btnComenzar.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(1000)
+                            .withEndAction(this::startPulseAnimation)
+                            .start();
+                }).start();
+    }
+
+    private void animateButtonAndGo() {
+        // Pequeña animación de "feedback" al tocar el botón
+        btnComenzar.animate()
+                .scaleX(0.9f)
+                .scaleY(0.9f)
+                .setDuration(100)
+                .withEndAction(() -> {
+                    Intent intent = new Intent(this, Login.class);
+                    // Transición de explosión/zoom profesional
+                    ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
+                            this, android.R.anim.fade_in, android.R.anim.fade_out);
+                    startActivity(intent, options.toBundle());
+                }).start();
     }
 }

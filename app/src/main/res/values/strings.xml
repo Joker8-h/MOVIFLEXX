@@ -29,29 +29,30 @@
     <!-- REGISTRO -->
 
 
-        <!-- Títulos -->
-        <string name="register_title">Crear Cuenta</string>
+    <!-- Títulos -->
+    <string name="register_title">Crear Cuenta</string>
 
-        <!-- Hints -->
-        <string name="hint_nombre">Nombre completo</string>
-        <string name="hint_email">Correo electrónico</string>
-        <string name="hint_password">Contraseña</string>
-        <string name="hint_confirm_password">Confirmar contraseña</string>
+    <!-- Hints -->
+    <string name="hint_nombre">Nombre completo</string>
+    <string name="hint_email">Correo electrónico</string>
+    <string name="hint_password">Contraseña</string>
+    <string name="hint_confirm_password">Confirmar contraseña</string>
 
-        <!-- Botones -->
-        <string name="register_btn">REGISTRARSE</string>
+    <!-- Botones -->
+    <string name="register_btn">REGISTRARSE</string>
 
-        <!-- Otros -->
-        <string name="select_role">Selecciona tu rol:</string>
+    <!-- Otros -->
+    <string name="select_role">Selecciona tu rol:</string>
 
-        <string name="show_password">Mostrar contraseña</string>
 
-        <!-- Roles spinner -->
-        <string-array name="tipo_usuario">
-            <item>Seleccione</item>
-            <item>Pasajero</item>
-            <item>Conductor</item>
-        </string-array>
+    <string name="show_password">Mostrar contraseña</string>
+
+    <!-- Roles spinner -->
+    <string-array name="tipo_usuario">
+        <item>Seleccione</item>
+        <item>Pasajero</item>
+        <item>Conductor</item>
+    </string-array>
 
     <string name="informacion_vehiculo">Información del vehículo</string>
     <string name="placa">Placa</string>
@@ -64,7 +65,6 @@
     <string name="Facil">Fácil</string>
     <string name="Seguro">Seguro</string>
     <string name="Rápido">Rápido</string>
-
 
 
     <!--redes sociale -->

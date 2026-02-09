@@ -2,57 +2,60 @@ package com.arlys.moviflexx.controller;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.arlys.moviflexx.R;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
-public class EditarPerfil extends AppCompatActivity {
+public class HomePasajero extends AppCompatActivity {
 
-    BottomNavigationView bottomNavigation;
+    private BottomNavigationView bottomNavigation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        setContentView(R.layout.activity_editar_perfil);
-
+        setContentView(R.layout.activity_home_pasajero);
 
         bottomNavigation = findViewById(R.id.bottom_navigation);
+
+        if (bottomNavigation == null) {
+            // Evita crash si el layout cambia por error
+            return;
+        }
 
         // Marcar item actual
         bottomNavigation.setSelectedItemId(R.id.nav_inicio);
 
         bottomNavigation.setOnItemSelectedListener(item -> {
-
             int id = item.getItemId();
 
             if (id == R.id.nav_inicio) {
-                startActivity(new Intent(this, HomeConductor.class));
-
-            } else if (id == R.id.nav_mis_viajes) {
-                startActivity(new Intent(this, PublicarRuta.class));
-
-            } else if (id == R.id.nav_mapa) {
-                startActivity(new Intent(this, Mapa.class));
-
-            } else if (id == R.id.nav_mensajes) {
-                startActivity(new Intent(this, Mensajes.class));
-
-            } else if (id == R.id.nav_perfil) {
-                startActivity(new Intent(this, PerfilUsuario.class));
+                return true; // ya estamos aquí
             }
 
-            overridePendingTransition(0, 0);
-            finish();
+            Intent intent = null;
+
+            if (id == R.id.nav_mis_viajes) {
+                intent = new Intent(this, RutasFrecuentes.class);
+
+            } else if (id == R.id.nav_mapa) {
+                intent = new Intent(this, MapaPasajero.class);
+
+            } else if (id == R.id.nav_mensajes) {
+                intent = new Intent(this, Mensajes.class);
+
+            } else if (id == R.id.nav_perfil) {
+                intent = new Intent(this, PerfilUsuario.class);
+            }
+
+            if (intent != null) {
+                startActivity(intent);
+                overridePendingTransition(0, 0);
+                finish();
+            }
+
             return true;
         });
     }
-    public void irPerfil(View view) {
-        startActivity(new Intent(this, PerfilUsuario.class));
-    }
-
-
 }

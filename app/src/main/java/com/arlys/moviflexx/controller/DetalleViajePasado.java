@@ -34,7 +34,7 @@ public class DetalleViajePasado extends AppCompatActivity {
                 startActivity(new Intent(this, PublicarViaje.class));
 
             } else if (id == R.id.nav_mapa) {
-                startActivity(new Intent(this, ViajesPasados.class));
+                startActivity(new Intent(this, Mapa.class));
 
             } else if (id == R.id.nav_mensajes) {
                 startActivity(new Intent(this, Mensajes.class));
