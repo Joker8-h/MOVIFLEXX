@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Estado enfocado -->
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#FAFAFC"/>
+            <stroke
+                android:width="2dp"
+                android:color="#6C3BFF"/>
+            <corners android:radius="8dp"/>
+        </shape>
+    </item>
+
+    <!-- Estado presionado -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#F4F4F6"/>
+            <stroke
+                android:width="2dp"
+                android:color="#4B23C7"/>
+            <corners android:radius="8dp"/>
+        </shape>
+    </item>
+
+    <!-- Estado normal -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#F4F4F6"/>
+            <stroke
+                android:width="1dp"
+                android:color="#EDE7FF"/>
+            <corners android:radius="8dp"/>
+        </shape>
+    </item>
+
+</selector>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Fondo base rosado-morado -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:startColor="#FF5FA2"
+            android:endColor="#8E44FF"
+            android:angle="315" />
+        </shape>
+    </item>
+
+    <!-- Mancha superior rosada-lavanda -->
+    <item
+        android:left="-120dp"
+        android:top="-120dp">
+        <shape android:shape="oval">
+            <size
+                android:width="320dp"
+                android:height="320dp" />
+            <gradient
+                android:gradientRadius="220dp"
+                android:startColor="#FFD6EC"
+                android:type="radial"
+            android:endColor="@android:color/transparent" />
+        </shape>
+    </item>
+
+    <!-- Mancha inferior morado suave -->
+    <item
+        android:bottom="-150dp"
+        android:right="-150dp">
+        <shape android:shape="oval">
+            <size
+                android:width="360dp"
+                android:height="360dp" />
+            <gradient
+                android:gradientRadius="260dp"
+                android:startColor="#D9C2FF"
+                android:type="radial"
+            android:endColor="@android:color/transparent" />
+        </shape>
+    </item>
+
+</layer-list>

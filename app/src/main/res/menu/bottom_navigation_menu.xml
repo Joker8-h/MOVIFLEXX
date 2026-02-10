@@ -4,26 +4,31 @@
     <item
         android:id="@+id/nav_inicio"
         android:icon="@drawable/ic_home"
-        android:title="@string/nav_inicio" />
+        android:title="Inicio"
+        android:enabled="true"/>
 
     <item
         android:id="@+id/nav_mis_viajes"
         android:icon="@drawable/ic_car"
-        android:title="@string/nav_viajes" />
+        android:title="Viajes"
+        android:enabled="true"/>
 
     <item
         android:id="@+id/nav_mapa"
         android:icon="@drawable/ic_map"
-        android:title="@string/nav_mapa" />
+        android:title="Mapa"
+        android:enabled="true"/>
 
     <item
         android:id="@+id/nav_mensajes"
         android:icon="@drawable/ic_message"
-        android:title="@string/nav_mensajes" />
+        android:title="Mensajes"
+        android:enabled="true"/>
 
     <item
         android:id="@+id/nav_perfil"
         android:icon="@drawable/ic_person"
-        android:title="@string/nav_perfil" />
+        android:title="Perfil"
+        android:enabled="true"/>
 
 </menu>

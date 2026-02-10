@@ -3,14 +3,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#EDE7FF"
+    android:background="@drawable/gradient_background"
     android:fillViewport="true">
+
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="28dp">
+
+
 
         <!-- LOGO -->
         <ImageView
@@ -45,6 +48,7 @@
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edtEmail"
+                android:background="@color/morado_claro"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textEmailAddress"
@@ -66,6 +70,7 @@
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edtPassword"
+                android:background="@color/morado_claro"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textPassword"
@@ -83,7 +88,7 @@
             android:textStyle="bold"
             android:onClick="login"
             app:cornerRadius="20dp"
-            app:backgroundTint="#6C3BFF" />
+            app:backgroundTint="@color/morado_oscuro" />
 
 
         <!-- TEXTO REGISTER -->

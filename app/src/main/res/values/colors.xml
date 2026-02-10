@@ -1,6 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+        <!-- MORADOS -->
+        <color name="morado_principal">#6C3BFF</color>
+        <color name="morado_oscuro">#4B23C7</color>
+        <color name="morado_claro">#EDE7FF</color>
+
+        <!-- GRISES -->
+        <color name="gris_texto">#2B2B2B</color>
+        <color name="gris_iconos">#8A8A8A</color>
+        <color name="gris_claro">#F4F4F6</color>
+
+        <!-- BLANCO PREMIUM -->
+        <color name="blanco_suave">#FAFAFC</color>
+
+        <!-- SEMÁNTICOS -->
+
+        <color name="divider_light">#F4F4F6</color>
+
+    <color name="purple_main">#6C3BFF</color>
+        <color name="purple_dark">#4B23C7</color>
+        <color name="border_gray">#8A8A8A</color>
+        <color name="purple_main_pressed">#5A2FE6</color>
+
     <!-- Básicos -->
     <color name="black">#000000</color>
     <color name="white">#FFFFFF</color>
