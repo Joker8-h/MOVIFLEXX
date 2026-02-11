@@ -5,6 +5,13 @@
     android:layout_height="match_parent"
     android:background="@drawable/gradient_background">
 
+    <com.arlys.moviflexx.views.BubbleView
+        android:id="@+id/bubbleView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:focusable="false"/>
+
 
 
     <!-- Formas decorativas flotantes -->

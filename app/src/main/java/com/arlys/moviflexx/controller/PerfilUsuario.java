@@ -65,7 +65,7 @@ public class PerfilUsuario extends AppCompatActivity {
             if (id == R.id.nav_inicio) {
                 startActivity(new Intent(this, HomeConductor.class));
             } else if (id == R.id.nav_mis_viajes) {
-                startActivity(new Intent(this, PublicarViaje.class));
+                startActivity(new Intent(this, PublicarRuta.class));
             } else if (id == R.id.nav_mensajes) {
                 startActivity(new Intent(this, Mensajes.class));
             } else if (id == R.id.nav_perfil) {

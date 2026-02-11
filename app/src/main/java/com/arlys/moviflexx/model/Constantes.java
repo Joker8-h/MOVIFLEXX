@@ -2,6 +2,9 @@ package com.arlys.moviflexx.model;
 
 public class Constantes {
 
+    // ================= AUTH GOOGLE =================
+
+
     // ================= BASE =================
     public static final String BASE_URL =
             "https://backendmovi-production.up.railway.app";
@@ -15,6 +18,10 @@ public class Constantes {
 
     public static final String USUARIO_POR_ID =
             BASE_URL + "/api/auth/"; // + id (perfil propio / conductor)
+
+    // ================= AUTH GOOGLE =================
+    public static final String LOGIN_GOOGLE =
+            BASE_URL + "/api/auth/google";
 
     // ================= ROLES =================
     // (solo lectura, permitido)

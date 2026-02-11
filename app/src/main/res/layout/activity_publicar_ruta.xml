@@ -17,7 +17,7 @@
             android:text="Planifica tu viaje"
             android:textSize="24sp"
             android:textStyle="bold"
-            android:textColor="#1A1C1E"
+            android:textColor="#004D40"
             android:layout_marginBottom="20dp"/>
 
         <com.google.android.material.card.MaterialCardView
@@ -37,7 +37,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:startIconDrawable="@android:drawable/ic_menu_mylocation"
-                    app:startIconTint="#6C3BFF"
+                    app:startIconTint="#00796B"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -53,7 +53,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     app:startIconDrawable="@android:drawable/ic_dialog_map"
-                    app:startIconTint="#6C3BFF"
+                    app:startIconTint="#00796B"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -73,7 +73,7 @@
                     android:textAllCaps="true"
                     android:letterSpacing="0.1"
                     app:cornerRadius="12dp"
-                    android:backgroundTint="#6C3BFF"/>
+                    android:backgroundTint="#00897B"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -82,7 +82,7 @@
             android:layout_height="250dp"
             android:layout_marginTop="20dp"
             app:cardCornerRadius="20dp"
-            app:strokeColor="#E0E0E0"
+            app:strokeColor="#80CBC4"
             app:strokeWidth="1dp">
 
             <FrameLayout
@@ -100,7 +100,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:visibility="gone"
-                    android:indeterminateTint="#6C3BFF"/>
+                    android:indeterminateTint="#00897B"/>
             </FrameLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -108,7 +108,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:cardBackgroundColor="#EFEAFF"
+            app:cardBackgroundColor="#B2DFDB"
             app:cardCornerRadius="12dp"
             app:strokeWidth="0dp">
 
@@ -119,7 +119,7 @@
                 android:text="Ingresa destino para ver distancia"
                 android:textAlignment="center"
                 android:padding="12dp"
-                android:textColor="#6C3BFF"
+                android:textColor="#004D40"
                 android:textStyle="bold" />
         </com.google.android.material.card.MaterialCardView>
 
@@ -133,7 +133,7 @@
             android:textSize="18sp"
             android:textStyle="bold"
             app:cornerRadius="16dp"
-            android:backgroundTint="#1A1C1E"
+            android:backgroundTint="#00796B"
             app:icon="@drawable/ic_car"
             app:iconSize="35dp"
             app:iconGravity="textStart"

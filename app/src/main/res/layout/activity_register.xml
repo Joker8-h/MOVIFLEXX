@@ -1,9 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/gradient_background"
+    android:background="@drawable/gradient_background">
+
+    <!-- FONDO ANIMADO -->
+    <com.arlys.moviflexx.views.BubbleView
+        android:id="@+id/bubbleView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:focusable="false" />
+
+<ScrollView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent"
     android:fillViewport="true">
 
     <LinearLayout
@@ -12,6 +25,7 @@
         android:orientation="vertical"
         android:padding="32dp">
 
+        <!-- LOGO -->
         <ImageView
             android:layout_width="90dp"
             android:layout_height="90dp"
@@ -20,6 +34,7 @@
             android:layout_marginBottom="12dp"
             android:src="@drawable/movi" />
 
+        <!-- TITULO -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -36,16 +51,26 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/hint_nombre"
-            app:hintTextColor="@color/black"
-            app:cursorColor="@color/black"
-            app:boxStrokeColor="#6C3BFF">
+
+            app:boxBackgroundColor="#FAFAFC"
+            app:boxStrokeColor="#2EC4B6"
+            app:boxStrokeWidth="1.5dp"
+            app:boxStrokeWidthFocused="2dp"
+            app:hintTextColor="#6FAFB0"
+
+            app:boxCornerRadiusTopStart="16dp"
+            app:boxCornerRadiusTopEnd="16dp"
+            app:boxCornerRadiusBottomStart="16dp"
+            app:boxCornerRadiusBottomEnd="16dp">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edt_nombre"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textPersonName"
-                android:textColor="@color/black" />
+                android:textColor="#2B2B2B"
+                android:textSize="15sp"
+                android:padding="14dp"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- EMAIL -->
@@ -55,15 +80,26 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:hint="@string/hint_email"
-            app:hintTextColor="@color/black"
-            app:boxStrokeColor="#6C3BFF">
+
+            app:boxBackgroundColor="#FAFAFC"
+            app:boxStrokeColor="#2EC4B6"
+            app:boxStrokeWidth="1.5dp"
+            app:boxStrokeWidthFocused="2dp"
+            app:hintTextColor="#6FAFB0"
+
+            app:boxCornerRadiusTopStart="16dp"
+            app:boxCornerRadiusTopEnd="16dp"
+            app:boxCornerRadiusBottomStart="16dp"
+            app:boxCornerRadiusBottomEnd="16dp">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edt_email"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textEmailAddress"
-                android:textColor="@color/black" />
+                android:textColor="#2B2B2B"
+                android:textSize="15sp"
+                android:padding="14dp"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- TELÉFONO -->
@@ -73,15 +109,26 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:hint="Teléfono"
-            app:hintTextColor="@color/black"
-            app:boxStrokeColor="#6C3BFF">
+
+            app:boxBackgroundColor="#FAFAFC"
+            app:boxStrokeColor="#2EC4B6"
+            app:boxStrokeWidth="1.5dp"
+            app:boxStrokeWidthFocused="2dp"
+            app:hintTextColor="#6FAFB0"
+
+            app:boxCornerRadiusTopStart="16dp"
+            app:boxCornerRadiusTopEnd="16dp"
+            app:boxCornerRadiusBottomStart="16dp"
+            app:boxCornerRadiusBottomEnd="16dp">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edt_telefono"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="phone"
-                android:textColor="@color/black" />
+                android:textColor="#2B2B2B"
+                android:textSize="15sp"
+                android:padding="14dp"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- PASSWORD -->
@@ -92,26 +139,36 @@
             android:layout_marginTop="16dp"
             android:hint="@string/hint_password"
             app:endIconMode="password_toggle"
-            app:hintTextColor="@color/black"
-            app:boxStrokeColor="#6C3BFF">
+
+            app:boxBackgroundColor="#FAFAFC"
+            app:boxStrokeColor="#2EC4B6"
+            app:boxStrokeWidth="1.5dp"
+            app:boxStrokeWidthFocused="2dp"
+            app:hintTextColor="#6FAFB0"
+
+            app:boxCornerRadiusTopStart="16dp"
+            app:boxCornerRadiusTopEnd="16dp"
+            app:boxCornerRadiusBottomStart="16dp"
+            app:boxCornerRadiusBottomEnd="16dp">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edt_password"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textPassword"
-                android:textColor="@color/black" />
+                android:textColor="#2B2B2B"
+                android:textSize="15sp"
+                android:padding="14dp"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- ROL -->
         <!-- ROL -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="20dp"
             android:text="Selecciona tu rol"
             android:textStyle="bold"
-            android:textColor="@color/black" />
+            android:textColor="#2B2B2B" />
 
         <RadioGroup
             android:id="@+id/rgRol"
@@ -126,7 +183,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Pasajero"
-                android:textColor="@color/black" />
+                android:textColor="#2B2B2B"
+                android:buttonTint="#2EC4B6"/>
 
             <RadioButton
                 android:id="@+id/rbConductor"
@@ -134,9 +192,9 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Conductor"
-                android:textColor="@color/black" />
+                android:textColor="#2B2B2B"
+                android:buttonTint="#2EC4B6"/>
         </RadioGroup>
-
 
         <!-- BOTÓN REGISTRAR -->
         <com.google.android.material.button.MaterialButton
@@ -145,16 +203,27 @@
             android:layout_height="60dp"
             android:layout_marginTop="32dp"
             android:onClick="registrarUsuario"
-            android:text="@string/register_btn" />
+            android:text="@string/register_btn"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_btn_login"
+            app:cornerRadius="22dp"
+            app:elevation="6dp"
+            app:backgroundTint="@null"
+            app:rippleColor="#80FFFFFF"
+            android:stateListAnimator="@null"/>
 
         <!-- IR A LOGIN -->
         <com.google.android.material.button.MaterialButton
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="18dp"
             android:onClick="irLogin"
             android:text="@string/go_login"
-            style="@style/Widget.Material3.Button.TextButton" />
+            android:textColor="#2EC4B6"
+            android:textStyle="bold"
+            style="@style/Widget.Material3.Button.TextButton"/>
 
     </LinearLayout>
 </ScrollView>
+</FrameLayout>

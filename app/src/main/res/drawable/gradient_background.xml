@@ -1,44 +1,106 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Fondo base rosado-morado -->
+    <!-- Fondo base blanco con verde turquesa visible -->
     <item>
         <shape android:shape="rectangle">
-            <gradient android:startColor="#FF5FA2"
-            android:endColor="#8E44FF"
-            android:angle="315" />
-        </shape>
-    </item>
-
-    <!-- Mancha superior rosada-lavanda -->
-    <item
-        android:left="-120dp"
-        android:top="-120dp">
-        <shape android:shape="oval">
-            <size
-                android:width="320dp"
-                android:height="320dp" />
             <gradient
-                android:gradientRadius="220dp"
-                android:startColor="#FFD6EC"
-                android:type="radial"
-            android:endColor="@android:color/transparent" />
+                android:startColor="#FFFFFF"
+                android:endColor="#D9F3EE"
+                android:angle="270" />
         </shape>
     </item>
 
-    <!-- Mancha inferior morado suave -->
+    <!-- Mancha turquesa superior (color principal) -->
     <item
-        android:bottom="-150dp"
-        android:right="-150dp">
+        android:left="-140dp"
+        android:top="-140dp">
         <shape android:shape="oval">
             <size
                 android:width="360dp"
                 android:height="360dp" />
             <gradient
-                android:gradientRadius="260dp"
-                android:startColor="#D9C2FF"
                 android:type="radial"
-            android:endColor="@android:color/transparent" />
+                android:gradientRadius="260dp"
+                android:startColor="#6FD7C6"
+                android:endColor="@android:color/transparent" />
+        </shape>
+    </item>
+
+    <!-- Luz blanca central -->
+    <item>
+        <shape android:shape="oval">
+            <size
+                android:width="420dp"
+                android:height="420dp" />
+            <gradient
+                android:type="radial"
+                android:gradientRadius="300dp"
+                android:startColor="#55FFFFFF"
+                android:endColor="@android:color/transparent" />
+        </shape>
+    </item>
+
+    <!-- Burbuja pequeña 1 -->
+    <item
+        android:left="60dp"
+        android:top="160dp">
+        <shape android:shape="oval">
+            <size
+                android:width="26dp"
+                android:height="26dp" />
+            <solid android:color="#2A6FD7C6" />
+        </shape>
+    </item>
+
+    <!-- Burbuja pequeña 2 -->
+    <item
+        android:right="80dp"
+        android:top="260dp">
+        <shape android:shape="oval">
+            <size
+                android:width="18dp"
+                android:height="18dp" />
+            <solid android:color="#226FD7C6" />
+        </shape>
+    </item>
+
+    <!-- Burbuja pequeña 3 -->
+    <item
+        android:left="100dp"
+        android:bottom="180dp">
+        <shape android:shape="oval">
+            <size
+                android:width="22dp"
+                android:height="22dp" />
+            <solid android:color="#1F6FD7C6" />
+        </shape>
+    </item>
+
+    <!-- Burbuja pequeña 4 -->
+    <item
+        android:right="140dp"
+        android:bottom="120dp">
+        <shape android:shape="oval">
+            <size
+                android:width="14dp"
+                android:height="14dp" />
+            <solid android:color="#1A6FD7C6" />
+        </shape>
+    </item>
+
+    <!-- Profundidad inferior muy sutil -->
+    <item
+        android:bottom="-200dp">
+        <shape android:shape="oval">
+            <size
+                android:width="480dp"
+                android:height="480dp" />
+            <gradient
+                android:type="radial"
+                android:gradientRadius="320dp"
+                android:startColor="#11000000"
+                android:endColor="@android:color/transparent" />
         </shape>
     </item>
 

@@ -14,10 +14,11 @@
         android:padding="16dp"
         android:text="Mensajes"
         android:textSize="20sp"
+        app:backgroundTint="@null"
         android:textStyle="bold"
         android:textColor="@android:color/white"
         android:gravity="center"
-        android:background="@drawable/gradient_header"
+        android:background="@drawable/bg_btn_login"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>

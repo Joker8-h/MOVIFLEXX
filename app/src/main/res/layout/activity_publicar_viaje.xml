@@ -6,14 +6,14 @@
     android:layout_height="match_parent"
     android:background="@drawable/gradient_background">
 
-    <!-- HEADER PROFESIONAL CON ELEVATION -->
+    <!-- HEADER CON TURQUESA OSCURO -->
     <androidx.cardview.widget.CardView
         android:id="@+id/header_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         app:cardCornerRadius="0dp"
-        app:cardElevation="12dp"
-        app:cardBackgroundColor="#6C3BFF"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="#00897B"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -22,37 +22,36 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="28dp"
-            android:background="@drawable/header_gradient">
+            android:padding="24dp"
+            android:background="@drawable/bg_btn_login"
+            app:backgroundTint="#00897B">
 
             <TextView
                 android:id="@+id/titulo_header"
                 android:text="PUBLICAR VIAJE"
-                android:textColor="#FAFAFC"
-                android:textSize="24sp"
+                android:textColor="#FFFFFF"
+                android:textSize="26sp"
                 android:textStyle="bold"
-                android:letterSpacing="0.15"
+                android:letterSpacing="0.08"
                 android:fontFamily="sans-serif-medium"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
 
             <View
-                android:layout_width="60dp"
-                android:layout_height="3dp"
-                android:background="#FAFAFC"
+                android:layout_width="50dp"
+                android:layout_height="4dp"
+                android:background="#4DD0E1"
                 android:layout_marginTop="8dp"
-                android:layout_marginBottom="12dp"
-                android:alpha="0.8"/>
+                android:layout_marginBottom="8dp"/>
 
             <TextView
                 android:text="Configure los detalles del servicio de transporte"
-                android:textColor="#EDE7FF"
-                android:textSize="13sp"
-                android:letterSpacing="0.02"
-                android:fontFamily="sans-serif-light"
+                android:textColor="#B2DFDB"
+                android:textSize="14sp"
+                android:letterSpacing="0.01"
+                android:fontFamily="sans-serif"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:alpha="0.95"/>
+                android:layout_height="wrap_content"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
@@ -73,17 +72,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:padding="16dp">
 
-            <!-- CARD PRINCIPAL CON GLASSMORPHISM -->
+            <!-- CARD PRINCIPAL CON ACENTOS TURQUESA -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/main_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="16dp"
-                app:cardBackgroundColor="#FAFAFC"
+                android:layout_marginTop="8dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="12dp"
+                app:cardBackgroundColor="#FFFFFF"
                 android:translationY="20dp"
                 android:alpha="0">
 
@@ -91,45 +90,54 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="28dp"
-                    android:background="@drawable/card_glassmorphism">
+                    android:padding="24dp">
 
                     <!-- SECCIÓN VEHÍCULO -->
                     <TextView
-                        android:text="VEHÍCULO ASIGNADO"
-                        android:textSize="11sp"
-                        android:textColor="#8A8A8A"
-                        android:letterSpacing="0.15"
+                        android:text="Vehículo Asignado"
+                        android:textSize="12sp"
+                        android:textColor="#00796B"
+                        android:letterSpacing="0.1"
                         android:textStyle="bold"
                         android:fontFamily="sans-serif-medium"
-                        android:layout_marginBottom="8dp"
+                        android:layout_marginBottom="12dp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"/>
 
-                    <Spinner
-                        android:id="@+id/spinnerVehiculo"
+                    <!-- SPINNER CON FONDO TURQUESA CLARO -->
+                    <androidx.cardview.widget.CardView
                         android:layout_width="match_parent"
-                        android:layout_height="58dp"
-                        android:background="@drawable/input_professional"
-                        android:padding="16dp"
-                        android:layout_marginBottom="28dp"/>
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="2dp"
+                        app:cardBackgroundColor="#E0F2F1"
+                        android:layout_marginBottom="24dp">
 
-                    <!-- DIVISOR SUTIL -->
+                        <Spinner
+                            android:id="@+id/spinnerVehiculo"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:background="@android:color/transparent"/>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- DIVISOR TURQUESA SUAVE -->
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#EDE7FF"
-                        android:layout_marginBottom="28dp"/>
+                        android:background="#B2DFDB"
+                        android:layout_marginBottom="24dp"/>
 
                     <!-- SECCIÓN FECHA Y HORA -->
                     <TextView
-                        android:text="FECHA Y HORA DE SALIDA"
-                        android:textSize="11sp"
-                        android:textColor="#8A8A8A"
-                        android:letterSpacing="0.15"
+                        android:text="Fecha y Hora de Salida"
+                        android:textSize="12sp"
+                        android:textColor="#00796B"
+                        android:letterSpacing="0.1"
                         android:textStyle="bold"
                         android:fontFamily="sans-serif-medium"
-                        android:layout_marginBottom="8dp"
+                        android:layout_marginBottom="12dp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"/>
 
@@ -137,17 +145,19 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="Seleccione fecha y hora"
-                        app:boxStrokeColor="#6C3BFF"
-                        app:hintTextColor="#6C3BFF"
+                        app:boxStrokeColor="#00BCD4"
+                        app:hintTextColor="#00ACC1"
                         app:boxStrokeWidth="2dp"
-                        app:boxCornerRadiusTopStart="8dp"
-                        app:boxCornerRadiusTopEnd="8dp"
-                        app:boxCornerRadiusBottomStart="8dp"
-                        app:boxCornerRadiusBottomEnd="8dp"
-                        app:boxBackgroundColor="#F4F4F6"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxBackgroundColor="#E0F2F1"
                         app:startIconDrawable="@android:drawable/ic_menu_my_calendar"
-                        app:startIconTint="#6C3BFF"
-                        android:layout_marginBottom="28dp"
+                        app:startIconTint="#00ACC1"
+                        app:endIconMode="clear_text"
+                        app:endIconTint="#00ACC1"
+                        android:layout_marginBottom="24dp"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -156,21 +166,21 @@
                             android:layout_height="wrap_content"
                             android:inputType="none"
                             android:focusable="false"
-                            android:textColor="#2B2B2B"
+                            android:textColor="#004D40"
                             android:textSize="15sp"
                             android:fontFamily="sans-serif"
-                            android:paddingTop="18dp"
-                            android:paddingBottom="18dp"/>
+                            android:paddingTop="16dp"
+                            android:paddingBottom="16dp"/>
                     </com.google.android.material.textfield.TextInputLayout>
 
-                    <!-- DIVISOR SUTIL -->
+                    <!-- DIVISOR TURQUESA SUAVE -->
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#EDE7FF"
-                        android:layout_marginBottom="28dp"/>
+                        android:background="#B2DFDB"
+                        android:layout_marginBottom="24dp"/>
 
-                    <!-- SECCIÓN CUPOS Y PRECIO EN GRID -->
+                    <!-- SECCIÓN CUPOS Y PRECIO -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -187,22 +197,32 @@
                             android:paddingEnd="8dp">
 
                             <TextView
-                                android:text="CUPOS DISPONIBLES"
-                                android:textSize="11sp"
-                                android:textColor="#8A8A8A"
-                                android:letterSpacing="0.15"
+                                android:text="Cupos Disponibles"
+                                android:textSize="12sp"
+                                android:textColor="#00796B"
+                                android:letterSpacing="0.1"
                                 android:textStyle="bold"
                                 android:fontFamily="sans-serif-medium"
-                                android:layout_marginBottom="8dp"
+                                android:layout_marginBottom="12dp"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"/>
 
-                            <Spinner
-                                android:id="@+id/spinnerCupo"
+                            <androidx.cardview.widget.CardView
                                 android:layout_width="match_parent"
-                                android:layout_height="58dp"
-                                android:entries="@array/cupos"
-                                android:padding="12dp"/>
+                                android:layout_height="wrap_content"
+                                app:cardCornerRadius="12dp"
+                                app:cardElevation="2dp"
+                                app:cardBackgroundColor="#E0F2F1">
+
+                                <Spinner
+                                    android:id="@+id/spinnerCupo"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="56dp"
+                                    android:entries="@array/cupos"
+                                    android:paddingStart="12dp"
+                                    android:paddingEnd="12dp"
+                                    android:background="@android:color/transparent"/>
+                            </androidx.cardview.widget.CardView>
                         </LinearLayout>
 
                         <!-- PRECIO -->
@@ -214,13 +234,13 @@
                             android:paddingStart="8dp">
 
                             <TextView
-                                android:text="PRECIO POR PASAJERO"
-                                android:textSize="11sp"
-                                android:textColor="#8A8A8A"
-                                android:letterSpacing="0.15"
+                                android:text="Precio por Pasajero"
+                                android:textSize="12sp"
+                                android:textColor="#00796B"
+                                android:letterSpacing="0.1"
                                 android:textStyle="bold"
                                 android:fontFamily="sans-serif-medium"
-                                android:layout_marginBottom="8dp"
+                                android:layout_marginBottom="12dp"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"/>
 
@@ -229,14 +249,14 @@
                                 android:layout_height="wrap_content"
                                 android:hint="Monto"
                                 app:prefixText="$ "
-                                app:boxStrokeColor="#6C3BFF"
-                                app:hintTextColor="#6C3BFF"
+                                app:boxStrokeColor="#00BCD4"
+                                app:hintTextColor="#00ACC1"
                                 app:boxStrokeWidth="2dp"
-                                app:boxCornerRadiusTopStart="8dp"
-                                app:boxCornerRadiusTopEnd="8dp"
-                                app:boxCornerRadiusBottomStart="8dp"
-                                app:boxCornerRadiusBottomEnd="8dp"
-                                app:boxBackgroundColor="#F4F4F6"
+                                app:boxCornerRadiusTopStart="12dp"
+                                app:boxCornerRadiusTopEnd="12dp"
+                                app:boxCornerRadiusBottomStart="12dp"
+                                app:boxCornerRadiusBottomEnd="12dp"
+                                app:boxBackgroundColor="#E0F2F1"
                                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                                 <com.google.android.material.textfield.TextInputEditText
@@ -244,43 +264,45 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:inputType="numberDecimal"
-                                    android:textColor="#2B2B2B"
+                                    android:textColor="#004D40"
                                     android:textSize="15sp"
                                     android:fontFamily="sans-serif"/>
                             </com.google.android.material.textfield.TextInputLayout>
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- BOTÓN PRINCIPAL ENTERPRISE -->
+                    <!-- BOTÓN PRINCIPAL CON GRADIENTE TURQUESA -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_publicar_viaje"
                         android:layout_width="match_parent"
-                        android:layout_height="62dp"
-                        android:layout_marginTop="36dp"
-                        android:text="PUBLICAR EN POPAYÁN"
-                        android:textSize="14sp"
+                        android:layout_height="58dp"
+                        android:layout_marginTop="32dp"
+                        android:text="PUBLICAR VIAJE EN POPAYÁN"
+                        android:textSize="15sp"
                         android:textStyle="bold"
-                        android:letterSpacing="0.12"
+                        android:letterSpacing="0.08"
                         android:fontFamily="sans-serif-medium"
-                        app:cornerRadius="8dp"
-                        app:backgroundTint="#6C3BFF"
-                        android:textColor="#FAFAFC"
-                        app:elevation="8dp"
-                        app:iconGravity="textStart"
-                        app:iconPadding="12dp"/>
+                        app:cornerRadius="12dp"
+                        app:backgroundTint="#00BCD4"
+                        android:textColor="#FFFFFF"
+                        app:elevation="6dp"
+                        app:rippleColor="#FFFFFF"
+                        app:strokeColor="#00ACC1"
+                        app:strokeWidth="0dp"
+                        android:stateListAnimator="@null"/>
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- METADATA CARD PROFESIONAL -->
+            <!-- CARD DE INFORMACIÓN CON ACENTO TURQUESA -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/metadata_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                app:cardCornerRadius="12dp"
+                app:cardCornerRadius="16dp"
                 app:cardElevation="8dp"
-                app:cardBackgroundColor="#FAFAFC"
+                app:cardBackgroundColor="#FFFFFF"
                 android:translationY="20dp"
                 android:alpha="0">
 
@@ -288,13 +310,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="20dp"
-                    android:background="@drawable/gradient_header">
+                    android:padding="20dp">
 
                     <View
-                        android:layout_width="4dp"
+                        android:layout_width="5dp"
                         android:layout_height="match_parent"
-                        android:background="#6C3BFF"
+                        android:background="@drawable/bg_btn_login"
+                        android:backgroundTint="#26C6DA"
                         android:layout_marginEnd="16dp"/>
 
                     <LinearLayout
@@ -304,38 +326,38 @@
                         android:orientation="vertical">
 
                         <TextView
-                            android:text="INFORMACIÓN DEL SERVICIO"
-                            android:textSize="11sp"
-                            android:textColor="#6C3BFF"
-                            android:letterSpacing="0.15"
+                            android:text="ℹ️ Información del Servicio"
+                            android:textSize="13sp"
+                            android:textColor="#00897B"
+                            android:letterSpacing="0.05"
                             android:textStyle="bold"
                             android:fontFamily="sans-serif-medium"
-                            android:layout_marginBottom="6dp"
+                            android:layout_marginBottom="8dp"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"/>
 
                         <TextView
                             android:text="El viaje estará visible para todos los usuarios en la ciudad de Popayán. Los pasajeros podrán reservar en tiempo real."
-                            android:textSize="12sp"
-                            android:textColor="#2B2B2B"
-                            android:lineSpacingExtra="3dp"
-                            android:fontFamily="sans-serif-light"
+                            android:textSize="13sp"
+                            android:textColor="#00695C"
+                            android:lineSpacingExtra="4dp"
+                            android:fontFamily="sans-serif"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:alpha="0.85"/>
+                            android:layout_height="wrap_content"/>
                     </LinearLayout>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- ESTADÍSTICAS RÁPIDAS -->
+            <!-- CARD DE ESTADÍSTICAS CON GRADIENTE TURQUESA -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/stats_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                app:cardCornerRadius="12dp"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="16dp"
                 app:cardElevation="8dp"
-                app:cardBackgroundColor="#6C3BFF"
+                app:cardBackgroundColor="#00897B"
                 android:translationY="20dp"
                 android:alpha="0">
 
@@ -344,7 +366,9 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:padding="20dp"
-                    android:weightSum="3">
+                    android:weightSum="3"
+                    android:background="@drawable/bg_btn_login"
+                    app:backgroundTint="#00897B">
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -355,19 +379,21 @@
 
                         <TextView
                             android:text="ESTADO"
-                            android:textSize="9sp"
-                            android:textColor="#EDE7FF"
+                            android:textSize="10sp"
+                            android:textColor="#B2DFDB"
                             android:letterSpacing="0.15"
                             android:textStyle="bold"
-                            android:layout_marginBottom="4dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:layout_marginBottom="6dp"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"/>
 
                         <TextView
                             android:text="Activo"
-                            android:textSize="13sp"
-                            android:textColor="#FAFAFC"
+                            android:textSize="15sp"
+                            android:textColor="#FFFFFF"
                             android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"/>
                     </LinearLayout>
@@ -375,8 +401,8 @@
                     <View
                         android:layout_width="1dp"
                         android:layout_height="match_parent"
-                        android:background="#EDE7FF"
-                        android:alpha="0.3"/>
+                        android:background="#80DEEA"
+                        android:alpha="0.5"/>
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -387,19 +413,21 @@
 
                         <TextView
                             android:text="CIUDAD"
-                            android:textSize="9sp"
-                            android:textColor="#EDE7FF"
+                            android:textSize="10sp"
+                            android:textColor="#B2DFDB"
                             android:letterSpacing="0.15"
                             android:textStyle="bold"
-                            android:layout_marginBottom="4dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:layout_marginBottom="6dp"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"/>
 
                         <TextView
                             android:text="Popayán"
-                            android:textSize="13sp"
-                            android:textColor="#FAFAFC"
+                            android:textSize="15sp"
+                            android:textColor="#FFFFFF"
                             android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"/>
                     </LinearLayout>
@@ -407,8 +435,8 @@
                     <View
                         android:layout_width="1dp"
                         android:layout_height="match_parent"
-                        android:background="#EDE7FF"
-                        android:alpha="0.3"/>
+                        android:background="#80DEEA"
+                        android:alpha="0.5"/>
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -419,19 +447,21 @@
 
                         <TextView
                             android:text="TIPO"
-                            android:textSize="9sp"
-                            android:textColor="#EDE7FF"
+                            android:textSize="10sp"
+                            android:textColor="#B2DFDB"
                             android:letterSpacing="0.15"
                             android:textStyle="bold"
-                            android:layout_marginBottom="4dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:layout_marginBottom="6dp"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"/>
 
                         <TextView
                             android:text="Compartido"
-                            android:textSize="13sp"
-                            android:textColor="#FAFAFC"
+                            android:textSize="15sp"
+                            android:textColor="#FFFFFF"
                             android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"/>
                     </LinearLayout>
@@ -441,24 +471,24 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- OVERLAY LOADER PROFESIONAL -->
+    <!-- OVERLAY LOADER -->
     <View
         android:id="@+id/overlay_background"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#80000000"
+        android:background="#B3000000"
         android:visibility="gone"
         android:clickable="true"
         android:focusable="true"/>
 
     <androidx.cardview.widget.CardView
         android:id="@+id/loader_container"
-        android:layout_width="160dp"
-        android:layout_height="160dp"
+        android:layout_width="180dp"
+        android:layout_height="180dp"
         android:visibility="gone"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="24dp"
-        app:cardBackgroundColor="#FAFAFC"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="16dp"
+        app:cardBackgroundColor="#FFFFFF"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -469,47 +499,47 @@
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:gravity="center"
-            android:padding="24dp">
+            android:padding="28dp">
 
             <ProgressBar
                 android:id="@+id/loader_viaje"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
-                android:indeterminateTint="#6C3BFF"/>
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:indeterminateTint="#00BCD4"/>
 
             <TextView
-                android:text="Publicando servicio..."
-                android:textColor="#2B2B2B"
+                android:text="Publicando viaje"
+                android:textColor="#00695C"
                 android:textStyle="bold"
-                android:layout_marginTop="16dp"
-                android:textSize="12sp"
+                android:layout_marginTop="20dp"
+                android:textSize="14sp"
                 android:fontFamily="sans-serif-medium"
-                android:letterSpacing="0.05"
+                android:letterSpacing="0.03"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
 
             <TextView
-                android:text="Por favor espere"
-                android:textColor="#8A8A8A"
-                android:layout_marginTop="4dp"
-                android:textSize="10sp"
-                android:fontFamily="sans-serif-light"
+                android:text="Por favor espere..."
+                android:textColor="#4DB6AC"
+                android:layout_marginTop="6dp"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- BOTTOM NAVIGATION PROFESIONAL -->
+    <!-- BOTTOM NAVIGATION -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#FAFAFC"
+        android:background="#FFFFFF"
         app:itemIconTint="@color/bottom_nav_color_selector"
         app:itemTextColor="@color/bottom_nav_color_selector"
         app:menu="@menu/bottom_navigation_menu"
         app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:elevation="20dp"/>
+        app:elevation="16dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

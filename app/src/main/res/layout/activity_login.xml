@@ -1,161 +1,160 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/gradient_background"
-    android:fillViewport="true">
+    android:background="@drawable/gradient_background">
 
-
-    <LinearLayout
+    <!-- FONDO ANIMADO -->
+    <com.arlys.moviflexx.views.BubbleView
+        android:id="@+id/bubbleView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="28dp">
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:focusable="false" />
 
+    <!-- CONTENIDO LOGIN -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent"
+        android:fillViewport="true">
 
-
-        <!-- LOGO -->
-        <ImageView
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:layout_gravity="center"
-            android:layout_marginTop="32dp"
-            android:layout_marginBottom="16dp"
-            android:src="@drawable/movi" />
-
-        <!-- TITULO -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/login"
-            android:textSize="26sp"
-            android:textStyle="bold"
-            android:textColor="#2B2B2B"
-            android:layout_gravity="center"
-            android:layout_marginBottom="28dp" />
-
-        <!-- EMAIL -->
-        <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/email"
-            app:boxBackgroundColor="#FAFAFC"
-            app:boxStrokeColor="#6C3BFF"
-            app:hintTextColor="#8A8A8A"
-            app:cursorColor="#2B2B2B">
+            android:orientation="vertical"
+            android:padding="28dp">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/edtEmail"
-                android:background="@color/morado_claro"
+            <!-- LOGO -->
+            <ImageView
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_gravity="center"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="16dp"
+                android:src="@drawable/movi" />
+
+            <!-- TITULO -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/login"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:textColor="#2B2B2B"
+                android:layout_gravity="center"
+                android:layout_marginBottom="28dp" />
+
+            <!-- EMAIL -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/layoutEmail"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textEmailAddress"
-                android:textColor="#2B2B2B" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:hint="@string/email"
+                app:boxBackgroundColor="#FAFAFC"
+                app:boxStrokeColor="#2EC4B6"
+                app:boxStrokeWidth="1.5dp"
+                app:hintTextColor="#6FAFB0"
+                app:boxCornerRadiusTopStart="16dp"
+                app:boxCornerRadiusTopEnd="16dp"
+                app:boxCornerRadiusBottomStart="16dp"
+                app:boxCornerRadiusBottomEnd="16dp">
 
-        <!-- PASSWORD -->
-        <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="@string/password"
-            app:endIconMode="password_toggle"
-            app:boxBackgroundColor="#FAFAFC"
-            app:boxStrokeColor="#6C3BFF"
-            app:hintTextColor="#8A8A8A"
-            app:cursorColor="#2B2B2B">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edtEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress"
+                    android:textColor="#2B2B2B"
+                    android:textSize="15sp"
+                    android:padding="14dp" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/edtPassword"
-                android:background="@color/morado_claro"
+            <!-- PASSWORD -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/layoutPassword"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textPassword"
-                android:textColor="#2B2B2B" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:layout_marginTop="16dp"
+                android:hint="@string/password"
+                app:endIconMode="password_toggle"
+                app:boxBackgroundColor="#FAFAFC"
+                app:boxStrokeColor="#2EC4B6"
+                app:boxStrokeWidth="1.5dp"
+                app:boxStrokeWidthFocused="2dp"
+                app:hintTextColor="#6FAFB0"
+                app:boxCornerRadiusTopStart="16dp"
+                app:boxCornerRadiusTopEnd="16dp"
+                app:boxCornerRadiusBottomStart="16dp"
+                app:boxCornerRadiusBottomEnd="16dp">
 
-        <!-- BOTON LOGIN -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnLogin"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="28dp"
-            android:text="@string/login"
-            android:textColor="#FAFAFC"
-            android:textStyle="bold"
-            android:onClick="login"
-            app:cornerRadius="20dp"
-            app:backgroundTint="@color/morado_oscuro" />
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edtPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPassword"
+                    android:textColor="#2B2B2B"
+                    android:textSize="15sp"
+                    android:padding="14dp" />
+            </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- BOTON LOGIN -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnLogin"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="28dp"
+                android:text="@string/login"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:onClick="login"
+                android:background="@drawable/bg_btn_login"
+                app:backgroundTint="@null"
+                app:cornerRadius="20dp"
+                app:elevation="6dp"
+                app:rippleColor="#80FFFFFF"
+                app:strokeWidth="0dp"
+                android:stateListAnimator="@null" />
 
-        <!-- TEXTO REGISTER -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/register"
-            android:textColor="#8A8A8A"
-            android:textSize="14sp"
-            android:layout_gravity="center"
-            android:layout_marginTop="28dp"
-            android:layout_marginBottom="14dp" />
+            <!-- REGISTER -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/register"
+                android:textColor="#8A8A8A"
+                android:layout_gravity="center"
+                android:layout_marginTop="28dp"
+                android:layout_marginBottom="14dp" />
 
-        <!-- GOOGLE -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnGoogle"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="54dp"
-            android:text="@string/google"
-            android:textColor="#2B2B2B"
-            app:icon="@drawable/ic_google"
-            app:iconTint="#8A8A8A"
-            app:iconPadding="12dp"
-            app:strokeColor="#8A8A8A"
-            app:cornerRadius="14dp" />
+            <!-- GOOGLE -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGoogle"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:text="@string/google"
+                android:textColor="#2B2B2B"
+                app:icon="@drawable/ic_google"
+                app:iconPadding="12dp"
+                app:strokeColor="#8A8A8A"
+                app:cornerRadius="14dp" />
 
-        <!-- GITHUB -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnGithub"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="54dp"
-            android:layout_marginTop="10dp"
-            android:text="@string/github"
-            android:textColor="#2B2B2B"
-            app:icon="@drawable/ic_github"
-            app:iconTint="#8A8A8A"
-            app:strokeColor="#8A8A8A"
-            app:iconPadding="12dp"
-            app:cornerRadius="14dp" />
+            <!-- IR A REGISTRO -->
+            <com.google.android.material.button.MaterialButton
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="@string/registerr"
+                android:textColor="#2EC4B6"
+                android:textStyle="bold"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:onClick="irRegister" />
 
-        <!-- FACEBOOK -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnFacebook"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="54dp"
-            android:layout_marginTop="10dp"
-            android:text="@string/facebook"
-            android:textColor="#2B2B2B"
-            app:icon="@drawable/ic_facebook"
-            app:iconTint="#8A8A8A"
-            app:strokeColor="#8A8A8A"
-            app:iconPadding="12dp"
-            app:cornerRadius="14dp" />
+        </LinearLayout>
+    </ScrollView>
 
-        <!-- IR A REGISTRO -->
-        <com.google.android.material.button.MaterialButton
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="@string/registerr"
-            android:textColor="#6C3BFF"
-            android:textStyle="bold"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:onClick="irRegister" />
-
-    </LinearLayout>
-</ScrollView>
+</FrameLayout>

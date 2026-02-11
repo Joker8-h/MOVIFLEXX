@@ -15,35 +15,40 @@
         <!-- TÍTULO -->
         <TextView
             android:text="Registrar vehículo"
-            android:textSize="24sp"
+            android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="@color/primary_purple"
+            android:textColor="#004D40"
             android:layout_marginBottom="8dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
         <TextView
             android:text="Ingresa los datos de tu vehículo para comenzar a ofrecer viajes"
-            android:textSize="14sp"
-            android:textColor="@color/black"
-
-            android:layout_marginBottom="20dp"
+            android:textSize="15sp"
+            android:textColor="#546E7A"
+            android:lineSpacingExtra="2dp"
+            android:layout_marginBottom="28dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
         <!-- MARCA -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
-            app:hintTextColor="@color/black"
+            app:hintTextColor="#00796B"
+            app:boxStrokeColor="#00897B"
             android:layout_height="wrap_content"
             android:hint="Marca"
             app:startIconDrawable="@drawable/ic_car"
+            app:startIconTint="#00796B"
             app:helperText="Ej: Toyota, Mazda, Chevrolet"
+            app:helperTextTextColor="#546E7A"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
             <AutoCompleteTextView
                 android:id="@+id/edt_marca"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:textColor="#004D40"
+                android:textSize="16sp"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- MODELO -->
@@ -51,15 +56,20 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Modelo"
-            app:hintTextColor="@color/black"
-            android:layout_marginTop="12dp"
+            app:hintTextColor="#00796B"
+            app:boxStrokeColor="#00897B"
+            android:layout_marginTop="16dp"
             app:startIconDrawable="@drawable/ic_model"
+            app:startIconTint="#00796B"
             app:helperText="Ej: Corolla, CX-5, Spark"
+            app:helperTextTextColor="#546E7A"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
             <AutoCompleteTextView
                 android:id="@+id/edt_modelo"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:textColor="#004D40"
+                android:textSize="16sp"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- PLACA -->
@@ -67,16 +77,21 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Placa"
-            app:hintTextColor="@color/black"
-            android:layout_marginTop="12dp"
+            app:hintTextColor="#00796B"
+            app:boxStrokeColor="#00897B"
+            android:layout_marginTop="16dp"
             app:startIconDrawable="@drawable/ic_plate"
+            app:startIconTint="#00796B"
             app:helperText="Formato: ABC123 o ABC12D"
+            app:helperTextTextColor="#546E7A"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edt_placa"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textCapCharacters"/>
+                android:inputType="textCapCharacters"
+                android:textColor="#004D40"
+                android:textSize="16sp"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- CAPACIDAD -->
@@ -84,30 +99,72 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Capacidad"
-            app:hintTextColor="@color/black"
-            android:layout_marginTop="12dp"
+            app:hintTextColor="#00796B"
+            app:boxStrokeColor="#00897B"
+            android:layout_marginTop="16dp"
             app:startIconDrawable="@drawable/ic_group"
+            app:startIconTint="#00796B"
             app:helperText="Número de pasajeros"
+            app:helperTextTextColor="#546E7A"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edt_capacidad"
                 android:inputType="number"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:textColor="#004D40"
+                android:textSize="16sp"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- BOTÓN -->
+        <!-- BOTÓN PROFESIONAL Y MODERNO -->
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_registrar_vehiculo"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="64dp"
             android:text="Registrar vehículo"
             android:textAllCaps="false"
-            android:textSize="16sp"
-            android:layout_marginTop="32dp"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.02"
+            android:layout_marginTop="40dp"
+            android:layout_marginBottom="24dp"
             app:cornerRadius="16dp"
-            app:backgroundTint="@color/primary_purple"
-            android:textColor="@color/text_white"
-            android:onClick="registrarVehiculo"/>
+            app:backgroundTint="#00897B"
+            android:textColor="#FFFFFF"
+            app:elevation="6dp"
+            app:icon="@drawable/ic_check_circle"
+            app:iconGravity="textStart"
+            app:iconSize="24dp"
+            app:iconPadding="8dp"
+            app:iconTint="#FFFFFF"
+            android:onClick="registrarVehiculo"
+            android:stateListAnimator="@null"
+            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"/>
+
+        <!-- TEXTO DE AYUDA ADICIONAL -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:padding="16dp"
+            android:layout_marginTop="8dp">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_menu_compass"
+                android:tint="@color/turquesa"
+                android:contentDescription="Información"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tus datos están seguros y protegidos"
+                android:textSize="13sp"
+                android:textColor="#80CBC4"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
 
     </LinearLayout>
 </ScrollView>

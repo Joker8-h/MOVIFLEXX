@@ -8,11 +8,7 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.Toast;
-
+import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -29,18 +25,13 @@ import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.Marker;
-import org.osmdroid.views.overlay.Polyline;
-import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
-import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
+import org.osmdroid.views.overlay.*;
+import org.osmdroid.views.overlay.mylocation.*;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public class PublicarRuta extends AppCompatActivity {
 
@@ -52,7 +43,7 @@ public class PublicarRuta extends AppCompatActivity {
     private ProgressBar loader;
     private Button btnCalcular, btnPublicar;
 
-    private GeoPoint origenPoint;
+    private GeoPoint origenPoint, destinoPoint;
     private MyLocationNewOverlay myLocationOverlay;
     private Polyline rutaActual;
     private Marker marcadorOrigen, marcadorDestino;
@@ -63,16 +54,6 @@ public class PublicarRuta extends AppCompatActivity {
         Configuration.getInstance().setUserAgentValue(getPackageName());
         setContentView(R.layout.activity_publicar_ruta);
 
-        initViews();
-        configurarMapa();
-        verificarPermisosUbicacion();
-        configurarBottomNav();
-
-        btnCalcular.setOnClickListener(v -> buscarRutaEnMapa());
-        btnPublicar.setOnClickListener(v -> crearRutaTecnica());
-    }
-
-    private void initViews() {
         editOrigen = findViewById(R.id.edit_origen);
         editDestino = findViewById(R.id.edit_destino);
         txtInfoRuta = findViewById(R.id.txt_info_ruta);
@@ -80,27 +61,27 @@ public class PublicarRuta extends AppCompatActivity {
         loader = findViewById(R.id.loader_ruta);
         btnCalcular = findViewById(R.id.btn_calcular_ruta);
         btnPublicar = findViewById(R.id.btn_publicar_ruta);
-    }
 
-    /* ================= MAPA ================= */
-
-    private void configurarMapa() {
         map.setTileSource(TileSourceFactory.MAPNIK);
         map.setMultiTouchControls(true);
         map.getController().setZoom(17.0);
+
+        verificarPermisosUbicacion();
+
+        btnCalcular.setOnClickListener(v -> buscarRutaEnMapa());
+        btnPublicar.setOnClickListener(v -> crearRuta());
     }
 
     /* ================= GPS ================= */
 
     private void verificarPermisosUbicacion() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
 
-            ActivityCompat.requestPermissions(
-                    this,
+            ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    REQ_LOCATION
-            );
+                    REQ_LOCATION);
         } else {
             activarUbicacion();
         }
@@ -114,44 +95,36 @@ public class PublicarRuta extends AppCompatActivity {
         myLocationOverlay.enableFollowLocation();
         map.getOverlays().add(myLocationOverlay);
 
-        myLocationOverlay.runOnFirstFix(() -> runOnUiThread(() -> {
-            origenPoint = myLocationOverlay.getMyLocation();
-            if (origenPoint != null) {
-                mostrarOrigen(origenPoint);
-            }
-        }));
+        myLocationOverlay.runOnFirstFix(() ->
+                runOnUiThread(() -> {
+                    origenPoint = myLocationOverlay.getMyLocation();
+                    if (origenPoint != null) {
+                        editOrigen.setText(obtenerDireccion(origenPoint));
+                        map.getController().animateTo(origenPoint);
+                    }
+                }));
     }
 
-    private void mostrarOrigen(GeoPoint punto) {
-        map.getController().animateTo(punto);
-
-        if (marcadorOrigen != null) {
-            map.getOverlays().remove(marcadorOrigen);
-        }
-
-        marcadorOrigen = new Marker(map);
-        marcadorOrigen.setPosition(punto);
-        marcadorOrigen.setIcon(getDrawable(R.drawable.ic_car));
-        marcadorOrigen.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        marcadorOrigen.setTitle("Mi ubicación actual");
-        map.getOverlays().add(marcadorOrigen);
-
-        editOrigen.setText(obtenerDireccion(punto));
-        map.invalidate();
-    }
-
-    /* ================= RUTA ================= */
+    /* ================= BUSCAR RUTA ================= */
 
     private void buscarRutaEnMapa() {
-        if (origenPoint == null) return;
+
+        if (origenPoint == null) {
+            Toast.makeText(this,"Esperando GPS...",Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         String destinoTxt = editDestino.getText().toString().trim();
-        if (destinoTxt.isEmpty()) return;
+        if (destinoTxt.isEmpty()) {
+            Toast.makeText(this,"Ingrese destino",Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         loader.setVisibility(View.VISIBLE);
 
         new Thread(() -> {
             try {
+
                 String geoUrl = "https://nominatim.openstreetmap.org/search?q="
                         + destinoTxt + ",Popayan&format=json&limit=1";
 
@@ -159,7 +132,8 @@ public class PublicarRuta extends AppCompatActivity {
                 if (geoArr.length() == 0) return;
 
                 JSONObject obj = geoArr.getJSONObject(0);
-                GeoPoint destinoPoint = new GeoPoint(
+
+                destinoPoint = new GeoPoint(
                         obj.getDouble("lat"),
                         obj.getDouble("lon")
                 );
@@ -176,6 +150,7 @@ public class PublicarRuta extends AppCompatActivity {
                 JSONArray coords = route.getJSONObject("geometry").getJSONArray("coordinates");
 
                 ArrayList<GeoPoint> puntos = new ArrayList<>();
+
                 for (int i = 0; i < coords.length(); i++) {
                     puntos.add(new GeoPoint(
                             coords.getJSONArray(i).getDouble(1),
@@ -183,7 +158,7 @@ public class PublicarRuta extends AppCompatActivity {
                     ));
                 }
 
-                runOnUiThread(() -> dibujarRuta(puntos, km, destinoPoint));
+                runOnUiThread(() -> dibujarRuta(puntos, km));
 
             } catch (Exception e) {
                 runOnUiThread(() -> loader.setVisibility(View.GONE));
@@ -191,11 +166,11 @@ public class PublicarRuta extends AppCompatActivity {
         }).start();
     }
 
-    private void dibujarRuta(ArrayList<GeoPoint> puntos, double km, GeoPoint destino) {
+    private void dibujarRuta(ArrayList<GeoPoint> puntos, double km) {
+
         loader.setVisibility(View.GONE);
 
         if (rutaActual != null) map.getOverlays().remove(rutaActual);
-        if (marcadorDestino != null) map.getOverlays().remove(marcadorDestino);
 
         rutaActual = new Polyline();
         rutaActual.setPoints(puntos);
@@ -203,41 +178,70 @@ public class PublicarRuta extends AppCompatActivity {
         rutaActual.setWidth(12f);
         map.getOverlays().add(rutaActual);
 
-        marcadorDestino = new Marker(map);
-        marcadorDestino.setPosition(destino);
-        marcadorDestino.setTitle("Destino");
-        marcadorDestino.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        map.getOverlays().add(marcadorDestino);
-
-        map.zoomToBoundingBox(rutaActual.getBounds(), true, 150);
-        txtInfoRuta.setText(String.format("Distancia aproximada: %.1f km", km));
+        txtInfoRuta.setText("Distancia: " + String.format("%.1f km", km));
         map.invalidate();
     }
 
-    /* ================= DIRECCIÓN ================= */
+    /* ================= PUBLICAR ================= */
 
-    private String obtenerDireccion(GeoPoint punto) {
+    private void crearRuta() {
+
+        if (rutaActual == null || destinoPoint == null) {
+            Toast.makeText(this,
+                    "Primero calcula la ruta",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
         try {
-            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-            List<Address> list = geocoder.getFromLocation(
-                    punto.getLatitude(),
-                    punto.getLongitude(),
-                    1
+            JSONObject body = new JSONObject();
+            body.put("nombre","Ruta desde GPS");
+            body.put("descripcion","Ruta generada automáticamente");
+            body.put("origen", editOrigen.getText().toString());
+            body.put("destino", editDestino.getText().toString());
+            body.put("latOrigen", origenPoint.getLatitude());
+            body.put("lngOrigen", origenPoint.getLongitude());
+            body.put("latDestino", destinoPoint.getLatitude());
+            body.put("lngDestino", destinoPoint.getLongitude());
+            body.put("estado","DISPONIBLE");
+
+            ConexionApi.getInstance(this).post(
+                    Constantes.RUTAS,
+                    body,
+                    response -> {
+
+                        int idRuta = 0;
+
+                        if (response.has("idRuta"))
+                            idRuta = response.optInt("idRuta");
+                        else if (response.has("id"))
+                            idRuta = response.optInt("id");
+
+                        if (idRuta == 0) {
+                            Toast.makeText(this,
+                                    "No se obtuvo ID de ruta",
+                                    Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        Intent i = new Intent(this, PublicarViaje.class);
+                        i.putExtra("ID_RUTA_CREADA", idRuta);
+                        startActivity(i);
+                        finish();
+                    },
+                    error -> Toast.makeText(this,
+                            "Error creando ruta",
+                            Toast.LENGTH_LONG).show()
             );
 
-            if (list != null && !list.isEmpty()) {
-                Address a = list.get(0);
-                return a.getAddressLine(0);
-            }
-        } catch (Exception ignored) {}
-        return "Mi ubicación actual";
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-
-    /* ================= API ================= */
 
     private String peticionHttp(String url) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-        c.setRequestProperty("User-Agent", "Moviflexx");
+        c.setRequestProperty("User-Agent","Moviflexx");
         BufferedReader r = new BufferedReader(new InputStreamReader(c.getInputStream()));
         StringBuilder b = new StringBuilder();
         String l;
@@ -245,61 +249,29 @@ public class PublicarRuta extends AppCompatActivity {
         return b.toString();
     }
 
-    /* ================= PUBLICAR ================= */
-
-    private void crearRutaTecnica() {
-        if (editDestino.getText().toString().isEmpty()) return;
-
+    private String obtenerDireccion(GeoPoint punto) {
         try {
-            JSONObject body = new JSONObject();
-            body.put("nombre", "Ruta desde ubicación actual");
-            body.put("descripcion", "Ruta generada desde GPS");
-            body.put("origen", editOrigen.getText().toString());
-            body.put("destino", editDestino.getText().toString());
-            body.put("estado", "DISPONIBLE");
-
-            ConexionApi.getInstance(this).post(Constantes.RUTAS, body,
-                    response -> {
-                        int idRuta = response.optInt("idRuta");
-                        Intent i = new Intent(this, PublicarViaje.class);
-                        i.putExtra("ID_RUTA_CREADA", idRuta);
-                        startActivity(i);
-                        finish();
-                    },
-                    error -> Toast.makeText(this, "Error al crear ruta", Toast.LENGTH_SHORT).show()
-            );
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void configurarBottomNav() {
-        BottomNavigationView nav = findViewById(R.id.bottom_navigation);
-        if (nav == null) return;
-        nav.setOnItemSelectedListener(item -> {
-            if (item.getItemId() == R.id.nav_inicio) {
-                startActivity(new Intent(this, HomeConductor.class));
-                finish();
-            }
-            return true;
-        });
+            Geocoder g = new Geocoder(this, Locale.getDefault());
+            List<Address> list = g.getFromLocation(
+                    punto.getLatitude(),
+                    punto.getLongitude(),
+                    1);
+            if (list != null && !list.isEmpty())
+                return list.get(0).getAddressLine(0);
+        } catch (Exception ignored){}
+        return "Ubicación actual";
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        if (myLocationOverlay != null) myLocationOverlay.enableMyLocation();
-    }
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (myLocationOverlay != null) myLocationOverlay.disableMyLocation();
-    }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-    @Override
-    public void onRequestPermissionsResult(int code, @NonNull String[] p, @NonNull int[] r) {
-        if (code == REQ_LOCATION && r.length > 0 && r[0] == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == REQ_LOCATION
+                && grantResults.length > 0
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             activarUbicacion();
         }
     }
