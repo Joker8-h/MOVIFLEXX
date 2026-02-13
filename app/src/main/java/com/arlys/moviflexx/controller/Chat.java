@@ -62,7 +62,7 @@ public class Chat extends AppCompatActivity {
 
     // 📡 CARGAR MENSAJES
     private void cargarMensajes() {
-        String url = Constantes.CHAT_MENSAJES_POR_CONVERSACION
+        String url = Constantes.CHAT_MENSAJES
                 + idConversacion + "/mensajes";
 
         ConexionApi.getInstance(this).getArray(

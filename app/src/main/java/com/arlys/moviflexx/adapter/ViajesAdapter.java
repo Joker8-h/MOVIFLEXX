@@ -1,4 +1,4 @@
-package com.arlys.moviflexx.controller;
+package com.arlys.moviflexx.adapter;
 
 import android.content.Context;
 import android.content.Intent;
@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.arlys.moviflexx.R;
+import com.arlys.moviflexx.controller.DetalleViajeActivity;
 import com.arlys.moviflexx.model.ConexionApi;
 import com.arlys.moviflexx.model.Constantes;
 import com.arlys.moviflexx.model.SessionManager;

@@ -60,7 +60,7 @@ public class MapaPasajero extends AppCompatActivity {
     }
 
     private void cargarRutaViaje() {
-        String endpoint = Constantes.VIAJE_POR_ID + viajeId;
+        String endpoint = Constantes.viajePorId((long) viajeId);
         Log.d(TAG, "Cargando viaje: " + endpoint);
 
         ConexionApi.getInstance(this).getObject(
@@ -96,7 +96,7 @@ public class MapaPasajero extends AppCompatActivity {
     }
 
     private void cargarParadas(String origen, String destino) {
-        String endpoint = Constantes.PARADAS_POR_RUTA + rutaId;
+        String endpoint = Constantes.paradasPorRuta((long) rutaId);
         Log.d(TAG, "Cargando paradas: " + endpoint);
 
         ConexionApi.getInstance(this).getObject(

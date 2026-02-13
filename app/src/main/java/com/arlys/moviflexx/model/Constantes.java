@@ -2,12 +2,9 @@ package com.arlys.moviflexx.model;
 
 public class Constantes {
 
-    // ================= AUTH GOOGLE =================
-
-
     // ================= BASE =================
     public static final String BASE_URL =
-            "https://backendmovi-production.up.railway.app";
+            "https://backendmovi-production-c657.up.railway.app";
 
     // ================= AUTH =================
     public static final String LOGIN =
@@ -16,20 +13,20 @@ public class Constantes {
     public static final String REGISTER =
             BASE_URL + "/api/auth/registro";
 
-    public static final String USUARIO_POR_ID =
-            BASE_URL + "/api/auth/"; // + id (perfil propio / conductor)
-
-    // ================= AUTH GOOGLE =================
     public static final String LOGIN_GOOGLE =
             BASE_URL + "/api/auth/google";
 
+    public static String usuarioPorId(Long idUsuario) {
+        return BASE_URL + "/api/auth/" + idUsuario;
+    }
+
     // ================= ROLES =================
-    // (solo lectura, permitido)
     public static final String ROLES =
             BASE_URL + "/api/roles";
 
-    public static final String ROL_POR_ID =
-            BASE_URL + "/api/roles/"; // + id
+    public static String rolPorId(Long idRol) {
+        return BASE_URL + "/api/roles/" + idRol;
+    }
 
     // ================= VEHICULOS =================
     public static final String VEHICULOS =
@@ -38,8 +35,9 @@ public class Constantes {
     public static final String MIS_VEHICULOS =
             BASE_URL + "/api/vehiculos/mis-vehiculos";
 
-    public static final String VEHICULO_ELIMINAR =
-            BASE_URL + "/api/vehiculos/"; // + id
+    public static String vehiculoEliminar(Long idVehiculo) {
+        return BASE_URL + "/api/vehiculos/" + idVehiculo;
+    }
 
     // ================= RUTAS =================
     public static final String RUTAS =
@@ -48,11 +46,13 @@ public class Constantes {
     public static final String MIS_RUTAS =
             BASE_URL + "/api/rutas/mis-rutas";
 
-    public static final String RUTA_POR_ID =
-            BASE_URL + "/api/rutas/"; // + id
+    public static String rutaPorId(Long idRuta) {
+        return BASE_URL + "/api/rutas/" + idRuta;
+    }
 
-    public static final String RUTA_PARADAS =
-            BASE_URL + "/api/rutas/"; // + id + /paradas
+    public static String rutaParadas(Long idRuta) {
+        return BASE_URL + "/api/rutas/" + idRuta + "/paradas";
+    }
 
     // ================= VIAJES =================
     public static final String VIAJES =
@@ -64,17 +64,25 @@ public class Constantes {
     public static final String MIS_VIAJES =
             BASE_URL + "/api/viajes/mis-viajes";
 
-    public static final String VIAJE_POR_ID =
-            BASE_URL + "/api/viajes/"; // + id
+    public static String viajePorId(Long idViaje) {
+        return BASE_URL + "/api/viajes/" + idViaje;
+    }
 
-    public static final String VIAJE_INICIAR =
-            BASE_URL + "/api/viajes/"; // + id + /iniciar
+    public static String viajeIniciar(Long idViaje) {
+        return BASE_URL + "/api/viajes/" + idViaje + "/iniciar";
+    }
 
-    public static final String VIAJE_FINALIZAR =
-            BASE_URL + "/api/viajes/"; // + id + /finalizar
+    public static String viajeFinalizar(Long idViaje) {
+        return BASE_URL + "/api/viajes/" + idViaje + "/finalizar";
+    }
 
-    public static final String VIAJE_CANCELAR =
-            BASE_URL + "/api/viajes/"; // + id + /cancelar
+    public static String viajeCancelar(Long idViaje) {
+        return BASE_URL + "/api/viajes/" + idViaje + "/cancelar";
+    }
+
+    public static String viajeReservasDetalle(Long idViaje) {
+        return BASE_URL + "/api/viajes/" + idViaje + "/reservas-detalle";
+    }
 
     // ================= RESERVAS =================
     public static final String RESERVAS =
@@ -83,8 +91,9 @@ public class Constantes {
     public static final String MIS_RESERVAS =
             BASE_URL + "/api/reservas/mis-reservas";
 
-    public static final String RESERVA_CANCELAR =
-            BASE_URL + "/api/reservas/"; // + idViaje + /cancelar
+    public static String reservaCancelar(Long idReserva) {
+        return BASE_URL + "/api/reservas/" + idReserva + "/cancelar";
+    }
 
     // ================= PAGOS =================
     public static final String PAGOS =
@@ -97,15 +106,17 @@ public class Constantes {
     public static final String CHAT_MENSAJES =
             BASE_URL + "/api/chat/mensajes";
 
-    public static final String CHAT_MENSAJES_POR_CONVERSACION =
-            BASE_URL + "/api/chat/conversaciones/"; // + id + /mensajes
+    public static String chatMensajesPorConversacion(Long idConversacion) {
+        return BASE_URL + "/api/chat/conversaciones/" + idConversacion + "/mensajes";
+    }
 
     // ================= CALIFICACIONES =================
     public static final String CALIFICACIONES =
             BASE_URL + "/api/calificaciones";
 
-    public static final String CALIFICACION_PROMEDIO =
-            BASE_URL + "/api/calificaciones/"; // + idUsuario + /promedio
+    public static String calificacionPromedio(Long idUsuario) {
+        return BASE_URL + "/api/calificaciones/" + idUsuario + "/promedio";
+    }
 
     // ================= SUSCRIPCIONES =================
     public static final String PLANES_SUSCRIPCION =
@@ -121,18 +132,22 @@ public class Constantes {
     public static final String PARADAS =
             BASE_URL + "/api/paradas";
 
-    public static final String PARADAS_POR_RUTA =
-            BASE_URL + "/api/paradas/ruta/"; // + idRuta
+    public static String paradasPorRuta(Long idRuta) {
+        return BASE_URL + "/api/paradas/ruta/" + idRuta;
+    }
 
-    public static final String PARADA_POR_ID =
-            BASE_URL + "/api/paradas/"; // + id
+    public static String paradaPorId(Long idParada) {
+        return BASE_URL + "/api/paradas/" + idParada;
+    }
 
     // ================= VIAJE TRAMOS =================
-    public static final String VIAJE_TRAMOS_POR_VIAJE =
-            BASE_URL + "/api/viaje-tramos/viaje/"; // + idViaje
+    public static String viajeTramosPorViaje(Long idViaje) {
+        return BASE_URL + "/api/viaje-tramos/viaje/" + idViaje;
+    }
 
-    public static final String VIAJE_TRAMO_ESPECIFICO =
-            BASE_URL + "/api/viaje-tramos/"; // + idViaje/idInicio/idFin
+    public static String viajeTramoEspecifico(Long idViaje, Long idInicio, Long idFin) {
+        return BASE_URL + "/api/viaje-tramos/" + idViaje + "/" + idInicio + "/" + idFin;
+    }
 
     public static final String VIAJE_TRAMOS =
             BASE_URL + "/api/viaje-tramos";
@@ -152,4 +167,11 @@ public class Constantes {
 
     public static final String MIS_DOCUMENTOS =
             BASE_URL + "/api/documentacion/documentacion_mis";
+
+    // ================= RECONOCIMIENTO FACIAL =================
+    public static final String FACE_REGISTER =
+            "https://reconocimientofacial-production-7e30.up.railway.app/register-face";
+
+    public static final String FACE_VERIFY =
+            "https://reconocimientofacial-production-7e30.up.railway.app/verify-face";
 }

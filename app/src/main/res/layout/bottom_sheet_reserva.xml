@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_bottom_sheet"
+    android:paddingBottom="24dp">
+
+    <!-- Handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="16dp"
+        android:background="#CCCCCC"
+        android:backgroundTint="#CCCCCC"/>
+
+    <!-- Título -->
+    <TextView
+        android:id="@+id/txt_titulo_sheet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Selecciona tu parada de bajada"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#1A1C1E"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:layout_marginBottom="4dp"/>
+
+    <!-- Ruta resumida -->
+    <TextView
+        android:id="@+id/txt_ruta_sheet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Origen → Destino"
+        android:textSize="13sp"
+        android:textColor="#6C3BFF"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Separador -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E8E0F7"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- Instrucción -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="¿Dónde te vas a bajar?"
+        android:textSize="13sp"
+        android:textColor="#9E9E9E"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- Lista de paradas scrolleable -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_paradas_sheet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxHeight="320dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:nestedScrollingEnabled="true"
+        android:clipToPadding="false"/>
+
+    <!-- Separador -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E8E0F7"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Botón confirmar -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_confirmar_reserva"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:text="CONFIRMAR RESERVA"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:textSize="15sp"
+        android:letterSpacing="0.05"
+        app:cornerRadius="14dp"
+        app:backgroundTint="#6C3BFF"
+        android:enabled="false"
+        android:alpha="0.5"/>
+
+</LinearLayout>

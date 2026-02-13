@@ -120,6 +120,13 @@
                 app:strokeWidth="0dp"
                 android:stateListAnimator="@null" />
 
+            <Button
+                android:id="@+id/btnFaceLogin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Login con Reconocimiento Facial"/>
+
+
             <!-- REGISTER -->
             <TextView
                 android:layout_width="wrap_content"

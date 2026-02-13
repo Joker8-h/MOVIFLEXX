@@ -35,6 +35,7 @@ public class Login extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private GoogleSignInClient googleSignInClient;
     private TextInputEditText edtEmail, edtPassword;
+    private SessionManager sessionManager;
 
     private final ActivityResultLauncher<Intent> googleLauncher =
             registerForActivityResult(
@@ -56,6 +57,8 @@ public class Login extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         mAuth = FirebaseAuth.getInstance();
+        sessionManager = new SessionManager(this);
+
         edtEmail = findViewById(R.id.edtEmail);
         edtPassword = findViewById(R.id.edtPassword);
 
@@ -107,8 +110,12 @@ public class Login extends AppCompatActivity {
                             telefono = usuario.optString("telefono", "Sin teléfono");
 
                             // Lógica de Rol
-                            if (usuario.has("idRol")) idRol = usuario.getInt("idRol");
-                            else if (usuario.has("rol")) idRol = usuario.getJSONObject("rol").optInt("idRol", -1);
+                            if (usuario.has("idRol")) {
+                                idRol = usuario.getInt("idRol");
+                            } else if (usuario.has("rol")) {
+                                JSONObject rolObj = usuario.getJSONObject("rol");
+                                idRol = rolObj.optInt("idRol", -1);
+                            }
                         }
 
                         if (token == null || idUsuario == -1 || idRol == -1) {
@@ -116,14 +123,26 @@ public class Login extends AppCompatActivity {
                             return;
                         }
 
-                        // --- GUARDADO DE SESIÓN ---
+                        // ⚡ CRÍTICO: Guardar TODO en el orden correcto
+
+                        // 1. Guardar token
+                        sessionManager.saveToken(token);
                         SesionUsuario.setToken(token);
 
-                        // Guardar datos permanentes incluyendo idRol (CORRECCIÓN AQUÍ)
-                        SessionManager session = new SessionManager(this);
-                        session.saveUser(nombre, emailReal, telefono, idRol, idUsuario);
-                        // Se agregó idRol
+                        // 2. Guardar datos de usuario
+                        sessionManager.saveUser(nombre, emailReal, telefono, idRol, idUsuario);
+                        SesionUsuario.setIdUsuario(idUsuario);
+                        SesionUsuario.setIdRol(idRol);
 
+                        // 3. Marcar como logged in
+                        sessionManager.setLoggedIn(true);
+
+                        // 4. Cargar a memoria
+                        sessionManager.loadSessionToMemory();
+
+                        Toast.makeText(this, "Bienvenido " + nombre, Toast.LENGTH_SHORT).show();
+
+                        // Navegar según rol
                         Intent intent = (idRol == 2) ?
                                 new Intent(this, HomeConductor.class) :
                                 new Intent(this, HomePasajero.class);
@@ -132,10 +151,17 @@ public class Login extends AppCompatActivity {
                         finish();
 
                     } catch (JSONException e) {
-                        Toast.makeText(this, "Error en respuesta", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Error en respuesta del servidor", Toast.LENGTH_SHORT).show();
+                        e.printStackTrace();
                     }
                 },
-                error -> Toast.makeText(this, "Error de conexión", Toast.LENGTH_SHORT).show()
+                error -> {
+                    String mensaje = "Error de conexión";
+                    if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
+                        mensaje = "Email o contraseña incorrectos";
+                    }
+                    Toast.makeText(this, mensaje, Toast.LENGTH_SHORT).show();
+                }
         );
         queue.add(request);
     }
@@ -152,7 +178,8 @@ public class Login extends AppCompatActivity {
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
         mAuth.signInWithCredential(credential).addOnCompleteListener(this, task -> {
             if (task.isSuccessful()) {
-                // Aquí podrías implementar una llamada a tu API para validar el rol de Google
+                // ⚡ IMPORTANTE: Marcar como logged in
+                sessionManager.setLoggedIn(true);
                 startActivity(new Intent(Login.this, HomePasajero.class));
                 finish();
             }

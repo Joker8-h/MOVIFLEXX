@@ -35,6 +35,7 @@ public class HomePasajero extends AppCompatActivity {
     private CardView cardPromo1, cardPromo2, cardPromo3;
     private CardView cardDestinoAeropuerto, cardDestinoCentro, cardDestinoUniversidad, cardDestinoTerminal;
     private CardView cardNoticia1, cardNoticia2, cardNoticia3;
+
     private MaterialButton btnBuscarViaje;
     private BottomNavigationView bottomNavigation;
 
@@ -116,7 +117,7 @@ public class HomePasajero extends AppCompatActivity {
             return;
         }
 
-        String url = Constantes.USUARIO_POR_ID + idUsuario;
+        String url = Constantes.usuarioPorId((long) idUsuario);
 
         RequestQueue queue = Volley.newRequestQueue(this);
 
@@ -347,4 +348,6 @@ public class HomePasajero extends AppCompatActivity {
         // Recargar datos al volver a la pantalla
         cargarDatosUsuario();
     }
+
 }
+

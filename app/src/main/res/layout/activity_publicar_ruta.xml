@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scroll_principal"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/gradient_background">
@@ -20,34 +21,90 @@
             android:textColor="#004D40"
             android:layout_marginBottom="20dp"/>
 
+        <!-- ══ SELECTOR DE TRANSPORTE ══ -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeWidth="0dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tipo de transporte"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#00796B"
+                    android:layout_marginBottom="12dp"/>
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chip_group_transporte"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:singleSelection="true"
+                    app:chipSpacingHorizontal="12dp">
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_carro"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:layout_weight="1"
+                        android:text="Carro"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:chipIcon="@drawable/ic_car"
+                        app:chipIconSize="28dp"
+                        app:chipBackgroundColor="@drawable/chip_background_selector"
+                        app:chipStrokeColor="@drawable/chip_stroke_selector"
+                        app:chipStrokeWidth="2dp"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"/>
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_moto"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:layout_weight="1"
+                        android:text="Moto"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:chipIcon="@drawable/ic_moto"
+                        app:chipIconSize="28dp"
+                        app:chipBackgroundColor="@drawable/chip_background_selector"
+                        app:chipStrokeColor="@drawable/chip_stroke_selector"
+                        app:chipStrokeWidth="2dp"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"/>
+                </com.google.android.material.chip.ChipGroup>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ══ ORIGEN Y DESTINO ══ -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
             app:strokeWidth="0dp">
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="12dp">
-
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:startIconDrawable="@android:drawable/ic_menu_mylocation"
                     app:startIconTint="#00796B"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/edit_origen"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Punto de partida (ej: Ortigal)"
+                        android:hint="Punto de partida"
                         android:inputType="text"/>
                 </com.google.android.material.textfield.TextInputLayout>
-
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -55,35 +112,36 @@
                     app:startIconDrawable="@android:drawable/ic_dialog_map"
                     app:startIconTint="#00796B"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/edit_destino"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="¿A dónde vas? (ej: Sena)"
+                        android:hint="¿A dónde vas?"
                         android:inputType="text"/>
                 </com.google.android.material.textfield.TextInputLayout>
-
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_calcular_ruta"
                     android:layout_width="match_parent"
                     android:layout_height="55dp"
+                    android:background="@drawable/bg_btn_login"
                     android:layout_marginTop="16dp"
-                    android:text="Calcular Ruta"
+                    app:backgroundTint="@null"
+                    android:text="Calcular Rutas"
                     android:textAllCaps="true"
                     android:letterSpacing="0.1"
-                    app:cornerRadius="12dp"
-                    android:backgroundTint="#00897B"/>
+                    app:cornerRadius="12dp"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
-            android:layout_height="250dp"
+            android:layout_height="360dp"
             android:layout_marginTop="20dp"
             app:cardCornerRadius="20dp"
-            app:strokeColor="#80CBC4"
-            app:strokeWidth="1dp">
+            app:cardElevation="10dp"
+            app:strokeColor="#6C3BFF"
+            app:strokeWidth="2dp">
 
             <FrameLayout
                 android:layout_width="match_parent"
@@ -92,18 +150,122 @@
                 <org.osmdroid.views.MapView
                     android:id="@+id/map_mini"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
+                    android:layout_height="match_parent"/>
 
-                <ProgressBar
-                    android:id="@+id/loader_ruta"
+                <!-- Badge "Multi-Ruta" -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|start"
+                    android:layout_margin="10dp"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#EEFFFFFF">
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:paddingTop="5dp"
+                        android:paddingBottom="5dp"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="13dp"
+                            android:layout_height="13dp"
+                            android:src="@android:drawable/ic_menu_mylocation"
+                            android:tint="#6C3BFF"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="  Multi-Ruta"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#6C3BFF"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Loader mientras calcula -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/loader_container"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:visibility="gone"
-                    android:indeterminateTint="#00897B"/>
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="8dp"
+                    app:cardBackgroundColor="#F5FFFFFF">
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp"
+                        android:gravity="center">
+                        <ProgressBar
+                            android:id="@+id/loader_ruta"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:indeterminateTint="#6C3BFF"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Calculando rutas..."
+                            android:textSize="12sp"
+                            android:textColor="#6C3BFF"
+                            android:layout_marginTop="8dp"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- FAB Zoom In -->
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/fab_zoom_in"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="68dp"
+                    android:contentDescription="Acercar"
+                    app:fabSize="mini"
+                    app:backgroundTint="#FFFFFF"
+                    app:tint="#333333"
+                    app:srcCompat="@drawable/ic_zoom_in"
+                    app:elevation="6dp"/>
+
+                <!-- FAB Zoom Out -->
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/fab_zoom_out"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="16dp"
+                    android:contentDescription="Alejar"
+                    app:fabSize="mini"
+                    app:backgroundTint="#FFFFFF"
+                    app:tint="#333333"
+                    app:srcCompat="@drawable/ic_zoom_out"
+                    app:elevation="6dp"/>
+
+                <!-- FAB Mi Ubicación -->
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/fab_mi_ubicacion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|start"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginBottom="16dp"
+                    android:contentDescription="Mi ubicación"
+                    app:fabSize="mini"
+                    app:backgroundTint="#6C3BFF"
+                    app:tint="#FFFFFF"
+                    app:srcCompat="@android:drawable/ic_menu_mylocation"
+                    app:elevation="6dp"/>
+
             </FrameLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- ══ INFO RUTA SELECCIONADA ══ -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -111,18 +273,100 @@
             app:cardBackgroundColor="#B2DFDB"
             app:cardCornerRadius="12dp"
             app:strokeWidth="0dp">
-
             <TextView
                 android:id="@+id/txt_info_ruta"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Ingresa destino para ver distancia"
+                android:text="Selecciona transporte y destino"
                 android:textAlignment="center"
                 android:padding="12dp"
                 android:textColor="#004D40"
-                android:textStyle="bold" />
+                android:textStyle="bold"/>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- ══ LEYENDA DE COLORES ══ -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:strokeWidth="0dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="12dp"
+                android:gravity="center">
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
+                    <View android:layout_width="28dp" android:layout_height="7dp" android:background="#6C3BFF"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="  Rápida" android:textSize="11sp" android:textColor="#333333" android:textStyle="bold"/>
+                </LinearLayout>
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
+                    <View android:layout_width="28dp" android:layout_height="7dp" android:background="#FF9800"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="  Media" android:textSize="11sp" android:textColor="#333333" android:textStyle="bold"/>
+                </LinearLayout>
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
+                    <View android:layout_width="28dp" android:layout_height="7dp" android:background="#F44336"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="  Larga" android:textSize="11sp" android:textColor="#333333" android:textStyle="bold"/>
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ══ OPCIONES DE RUTAS ══ -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_rutas_opciones"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:strokeWidth="0dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_menu_directions"
+                        android:tint="#6C3BFF"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Elige tu ruta"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#004D40"
+                        android:layout_marginStart="8dp"/>
+                </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/container_rutas"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ══ BOTÓN PUBLICAR ══ -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_publicar_ruta"
             android:layout_width="match_parent"
@@ -133,7 +377,8 @@
             android:textSize="18sp"
             android:textStyle="bold"
             app:cornerRadius="16dp"
-            android:backgroundTint="#00796B"
+            app:backgroundTint="@null"
+            android:background="@drawable/bg_btn_login"
             app:icon="@drawable/ic_car"
             app:iconSize="35dp"
             app:iconGravity="textStart"

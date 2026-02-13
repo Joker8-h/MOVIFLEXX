@@ -10,22 +10,35 @@ public class SessionManager {
 
     private static final String PREF_NAME = "MoviFlexxPrefs";
 
-    private static final String KEY_TOKEN = "token";
-    private static final String KEY_NOMBRE = "nombre";
-    private static final String KEY_EMAIL = "email";
-    private static final String KEY_TELEFONO = "telefono";
-    private static final String KEY_ID_ROL = "idRol";
-    private static final String KEY_ID_USUARIO = "id_usuario";
+    private static final String KEY_IS_LOGGED_IN = "IS_LOGGED_IN";
+    private static final String KEY_TOKEN        = "token";
+    private static final String KEY_NOMBRE       = "nombre";
+    private static final String KEY_EMAIL        = "email";
+    private static final String KEY_TELEFONO     = "telefono";
+    private static final String KEY_ID_ROL       = "idRol";
+    private static final String KEY_ID_USUARIO   = "id_usuario";
 
-    private SharedPreferences prefs;
+    private SharedPreferences        prefs;
     private SharedPreferences.Editor editor;
 
     public SessionManager(Context context) {
-        prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        prefs  = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         editor = prefs.edit();
     }
 
+    // ================= LOGGED IN =================
+
+    public void setLoggedIn(boolean loggedIn) {
+        editor.putBoolean(KEY_IS_LOGGED_IN, loggedIn);
+        editor.apply();
+    }
+
+    public boolean isLoggedIn() {
+        return prefs.getBoolean(KEY_IS_LOGGED_IN, false);
+    }
+
     // ================= TOKEN =================
+
     public void saveToken(String token) {
         editor.putString(KEY_TOKEN, token);
         editor.apply();
@@ -36,20 +49,16 @@ public class SessionManager {
         return prefs.getString(KEY_TOKEN, null);
     }
 
-    public boolean isLoggedIn() {
-        return getToken() != null;
-    }
-
     // ================= USUARIO =================
+
     public void saveUser(String nombre, String email, String telefono, int idRol, int idUsuario) {
-        editor.putString(KEY_NOMBRE, nombre);
-        editor.putString(KEY_EMAIL, email);
-        editor.putString(KEY_TELEFONO, telefono);
-        editor.putInt(KEY_ID_ROL, idRol);
-        editor.putInt(KEY_ID_USUARIO, idUsuario);
+        editor.putString(KEY_NOMBRE,     nombre);
+        editor.putString(KEY_EMAIL,      email);
+        editor.putString(KEY_TELEFONO,   telefono);
+        editor.putInt(KEY_ID_ROL,        idRol);
+        editor.putInt(KEY_ID_USUARIO,    idUsuario);
         editor.apply();
 
-        // Guardar también en memoria
         SesionUsuario.setIdUsuario(idUsuario);
         SesionUsuario.setIdRol(idRol);
     }
@@ -78,27 +87,30 @@ public class SessionManager {
         return getIdRol() == 2;
     }
 
-    // ================= GET USER DATA (PARA HOMEPASAJERO) =================
+    // ================= GET USER DATA =================
+
     public Map<String, String> getUserData() {
         Map<String, String> user = new HashMap<>();
-        user.put("nombre", getNombre());
-        user.put("email", getEmail());
-        user.put("telefono", getTelefono());
+        user.put("nombre",    getNombre());
+        user.put("email",     getEmail());
+        user.put("telefono",  getTelefono());
         user.put("idUsuario", String.valueOf(getIdUsuario()));
-        user.put("idRol", String.valueOf(getIdRol()));
+        user.put("idRol",     String.valueOf(getIdRol()));
         return user;
     }
 
     // ================= VEHÍCULO POR USUARIO =================
+
+    /** Clave base única por usuario para aislar vehículos entre conductores. */
     private String vehiculoKey() {
         return "vehiculo_user_" + getIdUsuario();
     }
 
     public void saveVehiculo(int idVehiculo, String modeloFull, String placa, String capacidad) {
-        editor.putBoolean(vehiculoKey() + "_tiene", true);
-        editor.putInt(vehiculoKey() + "_id", idVehiculo);
-        editor.putString(vehiculoKey() + "_modelo", modeloFull);
-        editor.putString(vehiculoKey() + "_placa", placa);
+        editor.putBoolean(vehiculoKey() + "_tiene",    true);
+        editor.putInt(vehiculoKey()    + "_id",        idVehiculo);
+        editor.putString(vehiculoKey() + "_modelo",    modeloFull);
+        editor.putString(vehiculoKey() + "_placa",     placa);
         editor.putString(vehiculoKey() + "_capacidad", capacidad);
         editor.apply();
     }
@@ -123,7 +135,26 @@ public class SessionManager {
         return prefs.getString(vehiculoKey() + "_capacidad", "");
     }
 
+    // ─── Aliases usados en PublicarViaje para mostrar info del vehículo ───
+
+    /**
+     * Retorna el nombre completo del vehículo (marca + modelo).
+     * Alias de getVModelo() para mayor claridad en PublicarViaje.
+     */
+    public String getVehiculoNombre() {
+        return prefs.getString(vehiculoKey() + "_modelo", "Vehículo");
+    }
+
+    /**
+     * Retorna la placa del vehículo registrado.
+     * Alias de getVPlaca() para mayor claridad en PublicarViaje.
+     */
+    public String getVehiculoPlaca() {
+        return prefs.getString(vehiculoKey() + "_placa", "---");
+    }
+
     // ================= CARGAR SESIÓN EN MEMORIA =================
+
     public void loadSessionToMemory() {
         if (isLoggedIn()) {
             SesionUsuario.setIdUsuario(getIdUsuario());
@@ -133,6 +164,7 @@ public class SessionManager {
     }
 
     // ================= LOGOUT =================
+
     public void logout() {
         editor.clear();
         editor.apply();

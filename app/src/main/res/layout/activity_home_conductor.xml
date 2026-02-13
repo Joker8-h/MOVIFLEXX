@@ -6,41 +6,40 @@
     android:layout_height="match_parent"
     android:background="@drawable/gradient_background">
 
-    <!-- ================= HEADER ================= -->
+    <!-- HEADER -->
     <RelativeLayout
-        android:background="@drawable/gradient_background"
         android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="64dp"
-
-        android:elevation="4dp"
-        android:paddingHorizontal="16dp"
+        android:background="#00796B"
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
 
             <ImageView
-                android:layout_width="60dp"
-                android:layout_height="60dp"
-                android:src="@drawable/movi"/>
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/movi"
+                android:contentDescription="Logo MoviFlexx"/>
 
             <TextView
-                android:text="MoviFlexx"
-                android:textColor="@color/morado_oscuro"
+                android:text="MoviFlexx Conductor"
+                android:textColor="#FFFFFF"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:layout_marginStart="12dp"
+                android:layout_marginStart="10dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
         </LinearLayout>
+
     </RelativeLayout>
 
-    <!-- ================= CONTENIDO ================= -->
+    <!-- SCROLL -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -49,54 +48,128 @@
         app:layout_constraintBottom_toTopOf="@id/bottom_navigation">
 
         <LinearLayout
+            android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingBottom="16dp">
+            android:padding="16dp">
 
-
-
-
-
-            <!-- BOTÓN PUBLICAR VIAJE -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_publicar_viaje"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_margin="16dp"
-                android:text="Publicar viaje"
-                android:textStyle="bold"
-                android:textColor="@android:color/white"
-                app:backgroundTint="#6C3BFF"
-                app:cornerRadius="16dp"
-                app:iconTint="@android:color/white"
-                app:iconPadding="8dp"/>
-
-            <!-- LISTA VIAJES -->
-            <TextView
+            <!-- BOTONES DE ACCIONES -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:text="Acciones rápidas"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#004D40"
+                        android:layout_marginBottom="12dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_publicar_viaje"
+                        android:text="📍 Publicar Viaje"
+                        android:textSize="16sp"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_marginBottom="8dp"
+                        app:cornerRadius="8dp"
+                        app:backgroundTint="#00796B"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="2">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_mis_rutas"
+                            android:text="🗺️ Rutas"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="56dp"
+                            android:layout_marginEnd="4dp"
+                            app:cornerRadius="8dp"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_mis_vehiculos"
+                            android:text="🚗 Vehículos"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="56dp"
+                            android:layout_marginStart="4dp"
+                            app:cornerRadius="8dp"/>
+
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_mis_reservas"
+                        android:text="📋 Mis Reservas"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_marginTop="8dp"
+                        app:cornerRadius="8dp"
+                        app:strokeColor="#00796B"/>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- PROGRESS -->
+            <ProgressBar
+                android:id="@+id/progress"
+                android:layout_gravity="center"
+                android:layout_margin="20dp"
+                android:visibility="gone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <!-- TITULO VIAJES -->
+            <TextView
                 android:text="Tus viajes publicados"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:layout_margin="16dp"
-                android:textColor="#2B2B2B"/>
+                android:textColor="#004D40"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="12dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
 
+            <!-- RECYCLER VIAJES -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_viajes_activos"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:nestedScrollingEnabled="false"/>
+                android:clipToPadding="false"
+                android:paddingBottom="16dp"/>
+
         </LinearLayout>
+
     </ScrollView>
 
-    <!-- ================= BOTTOM NAV ================= -->
+    <!-- BOTTOM NAV -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
+        app:menu="@menu/bottom_navigation_menu"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#FAFAFC"
-        app:menu="@menu/bottom_navigation_menu"
+        android:background="#FFFFFF"
+        app:itemIconTint="@color/bottom_nav_color_selector"
+        app:itemTextColor="@color/bottom_nav_color_selector"
+        app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,5 +1,6 @@
 package com.arlys.moviflexx.controller;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AutoCompleteTextView;
@@ -22,7 +23,11 @@ public class RegistrarVehiculo extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_registrar_vehiculo);
+
         sessionManager = new SessionManager(this);
+
+        // ⚡ QUITAMOS LA VALIDACIÓN DE SESIÓN AQUÍ
+        // La validación ya se hizo en HomeConductor
 
         edtMarca = findViewById(R.id.edt_marca);
         edtModelo = findViewById(R.id.edt_modelo);
@@ -49,20 +54,25 @@ public class RegistrarVehiculo extends AppCompatActivity {
             body.put("capacidad", Integer.parseInt(capacidad));
 
             ConexionApi.getInstance(this).postJson(
-                    Constantes.VEHICULOS, // Usando tu clase Constantes
+                    Constantes.VEHICULOS,
                     body,
                     response -> {
-                        // Extraer ID de la respuesta de Railway
+                        // Extraer ID de la respuesta
                         int id = response.optInt("idVehiculos", response.optInt("id", -1));
 
-                        // Guardar permanentemente en el dispositivo
+                        // Guardar permanentemente
                         sessionManager.saveVehiculo(id, marca + " " + modelo, placa, capacidad);
 
-                        Toast.makeText(this, "Vehículo registrado correctamente", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "✅ Vehículo registrado correctamente", Toast.LENGTH_SHORT).show();
+
+                        // Volver a HomeConductor
                         finish();
                     },
                     error -> Toast.makeText(this, "Error en el servidor", Toast.LENGTH_SHORT).show()
             );
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error al procesar", Toast.LENGTH_SHORT).show();
+        }
     }
 }

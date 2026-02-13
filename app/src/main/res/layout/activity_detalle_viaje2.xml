@@ -4,158 +4,497 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8F9FA">
+    android:background="#E8F8F8">
 
-    <!-- ===== HEADER ===== -->
+    <!-- ══════════════════════════════════════
+         HEADER TURQUESA
+         ══════════════════════════════════════ -->
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="#6C3BFF"
-        android:padding="20dp"
+        android:background="#00897B"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="28dp"
+        android:paddingBottom="20dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:id="@+id/txt_titulo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Detalle del viaje"
-            android:textColor="@android:color/white"
-            android:textSize="20sp"
-            android:textStyle="bold"/>
-    </LinearLayout>
-
-    <!-- ===== MAPA ===== -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_mapa"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="20dp"
-        app:layout_constraintTop_toBottomOf="@id/header"
-        app:layout_constraintBottom_toTopOf="@id/card_info"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <org.osmdroid.views.MapView
-            android:id="@+id/map_mini"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- ===== INFO VIAJE ===== -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_info"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        app:cardCornerRadius="16dp"
-        app:layout_constraintBottom_toTopOf="@id/card_acciones"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:layout_weight="1"
+            android:orientation="vertical">
 
             <TextView
-                android:id="@+id/txt_info_ruta"
-                android:text="Origen → Destino"
+                android:text="Detalle del Viaje"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp"
                 android:textStyle="bold"
-                android:textSize="16sp"
-                android:textColor="#1A1C1E"
-                android:layout_width="match_parent"
+                android:fontFamily="sans-serif-medium"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
 
             <TextView
                 android:id="@+id/txt_estado"
                 android:text="Estado"
-                android:textColor="#6C3BFF"
-                android:textStyle="bold"
-                android:layout_marginTop="6dp"
-                android:layout_width="match_parent"
+                android:textColor="#B2DFDB"
+                android:textSize="13sp"
+                android:layout_marginTop="2dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
-
-            <TextView
-                android:id="@+id/txt_conductor"
-                android:text="👤 Conductor"
-                android:layout_marginTop="10dp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-
-            <TextView
-                android:id="@+id/txt_vehiculo"
-                android:text="🚘 Vehículo"
-                android:alpha="0.7"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-
         </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
 
-    <!-- ===== ACCIONES ===== -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_acciones"
+        <ProgressBar
+            android:id="@+id/loader_detalle"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:visibility="gone"
+            android:indeterminateTint="#FFFFFF"/>
+    </LinearLayout>
+
+    <!-- SCROLL principal -->
+    <androidx.core.widget.NestedScrollView
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="16dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:scrollbars="none"
+        android:clipToPadding="false"
+        android:paddingBottom="20dp"
+        app:layout_constraintTop_toBottomOf="@id/header"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
-            android:orientation="vertical"
-            android:padding="16dp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="14dp">
 
-            <!-- CONDUCTOR -->
-            <Button
-                android:id="@+id/btn_iniciar"
-                android:text="INICIAR VIAJE"
-                android:visibility="gone"
-                android:backgroundTint="#2E7D32"
-                android:textColor="@android:color/white"
+            <!-- ══════════════════════════════════════
+                 MAPA
+                 ══════════════════════════════════════ -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_mapa"
                 android:layout_width="match_parent"
-                android:layout_height="55dp"/>
+                android:layout_height="240dp"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="6dp">
 
-            <Button
-                android:id="@+id/btn_finalizar"
-                android:text="FINALIZAR VIAJE"
-                android:visibility="gone"
-                android:layout_marginTop="10dp"
-                android:backgroundTint="#C62828"
-                android:textColor="@android:color/white"
-                android:layout_width="match_parent"
-                android:layout_height="55dp"/>
+                <org.osmdroid.views.MapView
+                    android:id="@+id/map_mini"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:clickable="true"/>
 
-            <Button
-                android:id="@+id/btn_parada"
-                android:text="AGREGAR PARADA"
-                android:visibility="gone"
-                android:layout_marginTop="10dp"
-                android:backgroundTint="#6C3BFF"
-                android:textColor="@android:color/white"
-                android:layout_width="match_parent"
-                android:layout_height="55dp"/>
+            </com.google.android.material.card.MaterialCardView>
 
-            <!-- PASAJERO -->
-            <Button
-                android:id="@+id/btn_seleccionar_parada"
-                android:text="SELECCIONAR PARADA"
-                android:visibility="gone"
-                android:layout_marginTop="10dp"
-                android:backgroundTint="#455A64"
-                android:textColor="@android:color/white"
+            <!-- ══════════════════════════════════════
+                 CARD RUTA + CONDUCTOR + VEHÍCULO
+                 ══════════════════════════════════════ -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_info"
                 android:layout_width="match_parent"
-                android:layout_height="55dp"/>
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="#FFFFFF">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <!-- Ruta origen → destino -->
+                    <TextView
+                        android:id="@+id/txt_info_ruta"
+                        android:text="📍 Origen → Destino"
+                        android:textStyle="bold"
+                        android:textSize="16sp"
+                        android:textColor="#004D40"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#E0F2F1"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="10dp"/>
+
+                    <!-- Conductor -->
+                    <TextView
+                        android:id="@+id/txt_conductor"
+                        android:text="👤 Conductor"
+                        android:textColor="#004D40"
+                        android:textSize="14sp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+
+                    <!-- Vehículo -->
+                    <TextView
+                        android:id="@+id/txt_vehiculo"
+                        android:text="🚘 Vehículo"
+                        android:textColor="#546E7A"
+                        android:textSize="13sp"
+                        android:layout_marginTop="5dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#E0F2F1"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <!-- ══════════════════════════════════════
+                         FILA MÉTRICAS: distancia | duración | precio
+                         (cupos se mueve a su propia card abajo)
+                         ══════════════════════════════════════ -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="3">
+
+                        <!-- Distancia -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:text="📏"
+                                android:textSize="22sp"
+                                android:gravity="center"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
+
+                            <TextView
+                                android:id="@+id/txt_distancia_ruta"
+                                android:text="-- km"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:textColor="#00897B"
+                                android:gravity="center"
+                                android:layout_marginTop="4dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
+
+                            <TextView
+                                android:text="Distancia"
+                                android:textSize="11sp"
+                                android:textColor="#90A4AE"
+                                android:gravity="center"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
+                        </LinearLayout>
+
+                        <!-- Duración -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:text="⏱️"
+                                android:textSize="22sp"
+                                android:gravity="center"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
+
+                            <TextView
+                                android:id="@+id/txt_duracion_ruta"
+                                android:text="-- min"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:textColor="#00897B"
+                                android:gravity="center"
+                                android:layout_marginTop="4dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
+
+                            <TextView
+                                android:text="Duración"
+                                android:textSize="11sp"
+                                android:textColor="#90A4AE"
+                                android:gravity="center"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
+                        </LinearLayout>
+
+                        <!-- Precio -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:text="💵"
+                                android:textSize="22sp"
+                                android:gravity="center"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
+
+                            <TextView
+                                android:id="@+id/txt_precio"
+                                android:text="$ --"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:textColor="#FF6F00"
+                                android:gravity="center"
+                                android:layout_marginTop="4dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
+
+                            <TextView
+                                android:text="Precio"
+                                android:textSize="11sp"
+                                android:textColor="#90A4AE"
+                                android:gravity="center"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ══════════════════════════════════════
+                 CARD CUPOS EN TIEMPO REAL
+                 ══════════════════════════════════════ -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_cupos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="#FFFFFF">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <!-- Encabezado fila -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:text="💺 Disponibilidad de cupos"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="#004D40"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"/>
+
+                        <!-- Chip "En vivo" -->
+                        <TextView
+                            android:text=" 🔄 En vivo "
+                            android:textSize="11sp"
+                            android:textColor="#00897B"
+                            android:textStyle="bold"
+                            android:background="@drawable/bg_chip_teal"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+                    </LinearLayout>
+
+                    <!-- ★ Fila dinámica de cupos (llenada desde Java) -->
+                    <LinearLayout
+                        android:id="@+id/layout_cupos"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:layout_marginTop="14dp"
+                        android:layout_marginBottom="8dp"/>
+
+                    <!-- Leyenda -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:layout_marginTop="4dp">
+
+                        <View
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:background="#4CAF50"
+                            android:layout_marginEnd="4dp"/>
+
+                        <TextView
+                            android:text="Disponible"
+                            android:textSize="11sp"
+                            android:textColor="#546E7A"
+                            android:layout_marginEnd="20dp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+
+                        <View
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:background="#EF5350"
+                            android:layout_marginEnd="4dp"/>
+
+                        <TextView
+                            android:text="Ocupado"
+                            android:textSize="11sp"
+                            android:textColor="#546E7A"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ══════════════════════════════════════
+                 CARD HISTORIAL DE PARADAS
+                 ══════════════════════════════════════ -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_historial"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="#FFFFFF">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:text="🗺️ Recorrido del viaje"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#004D40"
+                        android:layout_marginBottom="4dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+
+                    <TextView
+                        android:text="Paradas por donde pasa esta ruta"
+                        android:textSize="12sp"
+                        android:textColor="#90A4AE"
+                        android:layout_marginBottom="12dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rv_historial_paradas"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false"
+                        android:background="#E0F2F1"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ══════════════════════════════════════
+                 CARD ACCIONES
+                 ══════════════════════════════════════ -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_acciones"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="#FFFFFF">
+
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:padding="18dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <!-- PASAJERO: Reservar cupo -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_reservar"
+                        android:text="RESERVAR CUPO"
+                        android:visibility="gone"
+                        app:cornerRadius="14dp"
+                        app:backgroundTint="#00897B"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.05"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"/>
+
+                    <!-- CONDUCTOR: Iniciar -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_iniciar"
+                        android:text="▶ INICIAR VIAJE"
+                        android:visibility="gone"
+                        android:layout_marginTop="8dp"
+                        app:cornerRadius="14dp"
+                        app:backgroundTint="#00897B"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"/>
+
+                    <!-- CONDUCTOR: Finalizar -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_finalizar"
+                        android:text="⏹ FINALIZAR VIAJE"
+                        android:visibility="gone"
+                        android:layout_marginTop="8dp"
+                        app:cornerRadius="14dp"
+                        app:backgroundTint="#00695C"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"/>
+
+                    <!-- CONDUCTOR: Agregar parada -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_parada"
+                        android:text="➕ AGREGAR PARADA"
+                        android:visibility="gone"
+                        android:layout_marginTop="8dp"
+                        app:cornerRadius="14dp"
+                        app:backgroundTint="#26A69A"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
