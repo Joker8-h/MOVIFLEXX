@@ -1,0 +1,33 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Glow exterior -->
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="60dp"
+                android:centerColor="#0000E5FF"/>
+        </shape>
+    </item>
+    <!-- Anillo turquesa -->
+    <item
+        android:top="10dp"
+        android:bottom="10dp"
+        android:left="10dp"
+        android:right="10dp">
+        <shape android:shape="oval">
+            <stroke
+                android:width="3dp"
+                android:color="#00BCD4"/>
+        </shape>
+    </item>
+    <!-- Centro blanco brillante -->
+    <item
+        android:top="25dp"
+        android:bottom="25dp"
+        android:left="25dp"
+        android:right="25dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF"/>
+        </shape>
+    </item>
+</layer-list>

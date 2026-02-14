@@ -1,0 +1,178 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Ray 1: Blanco -->
+    <item
+        android:top="-500dp"
+        android:bottom="200dp"
+        android:left="-3dp"
+        android:right="-3dp">
+        <rotate
+            android:fromDegrees="0"
+            android:toDegrees="0"
+            android:pivotX="50%"
+            android:pivotY="50%">
+            <shape android:shape="rectangle">
+                <gradient
+                    android:type="linear"
+                    android:angle="90"
+                    android:startColor="#00FFFFFF"
+                    android:centerColor="#40FFFFFF"
+                    android:endColor="#00FFFFFF"/>
+            </shape>
+        </rotate>
+    </item>
+
+    <!-- Ray 2: Cyan -->
+    <item
+        android:top="-500dp"
+        android:bottom="200dp"
+        android:left="-3dp"
+        android:right="-3dp">
+        <rotate
+            android:fromDegrees="45"
+            android:toDegrees="45"
+            android:pivotX="50%"
+            android:pivotY="50%">
+            <shape android:shape="rectangle">
+                <gradient
+                    android:type="linear"
+                    android:angle="90"
+                    android:startColor="#0000E5FF"
+                    android:centerColor="#4000E5FF"
+                    android:endColor="#0000E5FF"/>
+            </shape>
+        </rotate>
+    </item>
+
+    <!-- Ray 3: Turquesa -->
+    <item
+        android:top="-500dp"
+        android:bottom="200dp"
+        android:left="-3dp"
+        android:right="-3dp">
+        <rotate
+            android:fromDegrees="90"
+            android:toDegrees="90"
+            android:pivotX="50%"
+            android:pivotY="50%">
+            <shape android:shape="rectangle">
+                <gradient
+                    android:type="linear"
+                    android:angle="90"
+                    android:startColor="#0000BCD4"
+                    android:centerColor="#4000BCD4"
+                    android:endColor="#0000BCD4"/>
+            </shape>
+        </rotate>
+    </item>
+
+    <!-- Ray 4: Blanco -->
+    <item
+        android:top="-500dp"
+        android:bottom="200dp"
+        android:left="-3dp"
+        android:right="-3dp">
+        <rotate
+            android:fromDegrees="135"
+            android:toDegrees="135"
+            android:pivotX="50%"
+            android:pivotY="50%">
+            <shape android:shape="rectangle">
+                <gradient
+                    android:type="linear"
+                    android:angle="90"
+                    android:startColor="#00FFFFFF"
+                    android:centerColor="#40FFFFFF"
+                    android:endColor="#00FFFFFF"/>
+            </shape>
+        </rotate>
+    </item>
+
+    <!-- Ray 5: Cyan brillante -->
+    <item
+        android:top="-500dp"
+        android:bottom="200dp"
+        android:left="-2dp"
+        android:right="-2dp">
+        <rotate
+            android:fromDegrees="22.5"
+            android:toDegrees="22.5"
+            android:pivotX="50%"
+            android:pivotY="50%">
+            <shape android:shape="rectangle">
+                <gradient
+                    android:type="linear"
+                    android:angle="90"
+                    android:startColor="#0000E5FF"
+                    android:centerColor="#3000E5FF"
+                    android:endColor="#0000E5FF"/>
+            </shape>
+        </rotate>
+    </item>
+
+    <!-- Ray 6: Turquesa -->
+    <item
+        android:top="-500dp"
+        android:bottom="200dp"
+        android:left="-2dp"
+        android:right="-2dp">
+        <rotate
+            android:fromDegrees="67.5"
+            android:toDegrees="67.5"
+            android:pivotX="50%"
+            android:pivotY="50%">
+            <shape android:shape="rectangle">
+                <gradient
+                    android:type="linear"
+                    android:angle="90"
+                    android:startColor="#0026A69A"
+                    android:centerColor="#3026A69A"
+                    android:endColor="#0026A69A"/>
+            </shape>
+        </rotate>
+    </item>
+
+    <!-- Ray 7: Blanco suave -->
+    <item
+        android:top="-500dp"
+        android:bottom="200dp"
+        android:left="-2dp"
+        android:right="-2dp">
+        <rotate
+            android:fromDegrees="112.5"
+            android:toDegrees="112.5"
+            android:pivotX="50%"
+            android:pivotY="50%">
+            <shape android:shape="rectangle">
+                <gradient
+                    android:type="linear"
+                    android:angle="90"
+                    android:startColor="#00FFFFFF"
+                    android:centerColor="#30FFFFFF"
+                    android:endColor="#00FFFFFF"/>
+            </shape>
+        </rotate>
+    </item>
+
+    <!-- Ray 8: Cyan neón -->
+    <item
+        android:top="-500dp"
+        android:bottom="200dp"
+        android:left="-2dp"
+        android:right="-2dp">
+        <rotate
+            android:fromDegrees="157.5"
+            android:toDegrees="157.5"
+            android:pivotX="50%"
+            android:pivotY="50%">
+            <shape android:shape="rectangle">
+                <gradient
+                    android:type="linear"
+                    android:angle="90"
+                    android:startColor="#0000BCD4"
+                    android:centerColor="#3000BCD4"
+                    android:endColor="#0000BCD4"/>
+            </shape>
+        </rotate>
+    </item>
+</layer-list>

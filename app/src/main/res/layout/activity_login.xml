@@ -13,7 +13,6 @@
         android:clickable="false"
         android:focusable="false" />
 
-    <!-- CONTENIDO LOGIN -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -101,17 +100,17 @@
                     android:padding="14dp" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- BOTON LOGIN -->
+            <!-- BOTÓN LOGIN NORMAL -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnLogin"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="28dp"
+                android:onClick="login"
                 android:text="@string/login"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"
                 android:textSize="16sp"
-                android:onClick="login"
                 android:background="@drawable/bg_btn_login"
                 app:backgroundTint="@null"
                 app:cornerRadius="20dp"
@@ -120,14 +119,64 @@
                 app:strokeWidth="0dp"
                 android:stateListAnimator="@null" />
 
-            <Button
-                android:id="@+id/btnFaceLogin"
+            <!-- SEPARADOR "O" -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Login con Reconocimiento Facial"/>
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="20dp">
 
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    android:background="#DDDDDD" />
 
-            <!-- REGISTER -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="  O  "
+                    android:textColor="#AAAAAA"
+                    android:textSize="13sp" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    android:background="#DDDDDD" />
+            </LinearLayout>
+
+            <!-- BOTÓN LOGIN FACIAL -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFaceLogin"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:onClick="irFaceLogin"
+                android:text="📷  Ingresar con reconocimiento facial"
+                android:textColor="#2EC4B6"
+                android:textStyle="bold"
+                app:strokeColor="#2EC4B6"
+                app:strokeWidth="2dp"
+                app:cornerRadius="20dp" />
+
+            <!-- GOOGLE -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGoogle"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="12dp"
+                android:text="@string/google"
+                android:textColor="#2B2B2B"
+                app:icon="@drawable/ic_google"
+                app:iconPadding="12dp"
+                app:strokeColor="#8A8A8A"
+                app:cornerRadius="14dp" />
+
+            <!-- TEXTO IR A REGISTRO -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -137,29 +186,16 @@
                 android:layout_marginTop="28dp"
                 android:layout_marginBottom="14dp" />
 
-            <!-- GOOGLE -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnGoogle"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="54dp"
-                android:text="@string/google"
-                android:textColor="#2B2B2B"
-                app:icon="@drawable/ic_google"
-                app:iconPadding="12dp"
-                app:strokeColor="#8A8A8A"
-                app:cornerRadius="14dp" />
-
             <!-- IR A REGISTRO -->
             <com.google.android.material.button.MaterialButton
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="8dp"
+                android:onClick="irRegister"
                 android:text="@string/registerr"
                 android:textColor="#2EC4B6"
                 android:textStyle="bold"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:onClick="irRegister" />
+                style="@style/Widget.Material3.Button.TextButton" />
 
         </LinearLayout>
     </ScrollView>

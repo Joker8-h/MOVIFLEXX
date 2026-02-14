@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ic_sparkle.xml
+    Punto de luz con halo difuso — estilo partícula flotante premium.
+    Sin ninguna forma de estrella ni punta.
+    Usado en apps como Spotify, Apple Music, Notion, Linear.
+    Tres círculos concéntricos: halo exterior → anillo suave → núcleo.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Halo exterior difuso — turquesa muy suave -->
+    <path
+        android:fillColor="#4DD9C8"
+        android:fillAlpha="0.10"
+        android:pathData="M12,2 A10,10 0 1,0 12,22 A10,10 0 1,0 12,2Z"/>
+
+    <!-- Anillo medio — turquesa más visible -->
+    <path
+        android:fillColor="#66E8D6"
+        android:fillAlpha="0.22"
+        android:pathData="M12,5.5 A6.5,6.5 0 1,0 12,18.5 A6.5,6.5 0 1,0 12,5.5Z"/>
+
+    <!-- Núcleo — turquesa sólido pequeño -->
+    <path
+        android:fillColor="#A8F0E6"
+        android:fillAlpha="0.95"
+        android:pathData="M12,9 A3,3 0 1,0 12,15 A3,3 0 1,0 12,9Z"/>
+
+</vector>

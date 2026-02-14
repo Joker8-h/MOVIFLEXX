@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    line_gradient_premium.xml
+    Línea decorativa — degradado turquesa → azul rey → turquesa
+    Refuerza la paleta principal en cada aparición
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <gradient
+        android:type="linear"
+        android:angle="0"
+        android:startColor="#004DD9C8"
+        android:centerColor="#FF66E8D6"
+        android:endColor="#004DD9C8"
+        android:centerX="0.5"/>
+
+    <corners android:radius="2dp"/>
+
+</shape>

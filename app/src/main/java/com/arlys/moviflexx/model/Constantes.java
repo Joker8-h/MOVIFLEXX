@@ -2,7 +2,7 @@ package com.arlys.moviflexx.model;
 
 public class Constantes {
 
-    // ================= BASE =================
+    // ================= BASE BACKEND PRINCIPAL =================
     public static final String BASE_URL =
             "https://backendmovi-production-c657.up.railway.app";
 
@@ -141,14 +141,6 @@ public class Constantes {
     }
 
     // ================= VIAJE TRAMOS =================
-    public static String viajeTramosPorViaje(Long idViaje) {
-        return BASE_URL + "/api/viaje-tramos/viaje/" + idViaje;
-    }
-
-    public static String viajeTramoEspecifico(Long idViaje, Long idInicio, Long idFin) {
-        return BASE_URL + "/api/viaje-tramos/" + idViaje + "/" + idInicio + "/" + idFin;
-    }
-
     public static final String VIAJE_TRAMOS =
             BASE_URL + "/api/viaje-tramos";
 
@@ -161,6 +153,14 @@ public class Constantes {
     public static final String VIAJE_TRAMOS_DISPONIBILIDAD =
             BASE_URL + "/api/viaje-tramos/verificar-disponibilidad";
 
+    public static String viajeTramosPorViaje(Long idViaje) {
+        return BASE_URL + "/api/viaje-tramos/viaje/" + idViaje;
+    }
+
+    public static String viajeTramoEspecifico(Long idViaje, Long idInicio, Long idFin) {
+        return BASE_URL + "/api/viaje-tramos/" + idViaje + "/" + idInicio + "/" + idFin;
+    }
+
     // ================= DOCUMENTACION =================
     public static final String DOCUMENTOS_SUBIR =
             BASE_URL + "/api/documentacion/documentacion_subir";
@@ -169,9 +169,11 @@ public class Constantes {
             BASE_URL + "/api/documentacion/documentacion_mis";
 
     // ================= RECONOCIMIENTO FACIAL =================
+
+    // ✅ CORRECTO — con / antes de api
     public static final String FACE_REGISTER =
-            "https://reconocimientofacial-production-7e30.up.railway.app/register-face";
+            BASE_URL + "/api/auth/registro-facial";
 
     public static final String FACE_VERIFY =
-            "https://reconocimientofacial-production-7e30.up.railway.app/verify-face";
+            BASE_URL + "/api/auth/login-facial";
 }

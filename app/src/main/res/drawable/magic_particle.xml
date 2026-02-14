@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    magic_particle.xml
+    Partícula flotante — punto difuso turquesa claro
+    Estilo: nube de destinos en un mapa de viajes
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+
+    <gradient
+        android:type="radial"
+        android:gradientRadius="50%p"
+        android:startColor="#BB66E8D6"
+        android:centerColor="#554DD9C8"
+        android:endColor="#00000000"
+        android:centerX="0.5"
+        android:centerY="0.5"/>
+
+</shape>

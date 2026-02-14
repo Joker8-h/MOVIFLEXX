@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    circle_glow_inner.xml
+    Círculo interno — halo turquesa intenso más cercano al logo
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+
+    <gradient
+        android:type="radial"
+        android:gradientRadius="50%p"
+        android:startColor="#554DD9C8"
+        android:centerColor="#221A4FBF"
+        android:endColor="#00000000"
+        android:centerX="0.5"
+        android:centerY="0.5"/>
+
+    <stroke
+        android:width="1.5dp"
+        android:color="#7766E8D6"/>
+
+</shape>

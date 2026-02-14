@@ -1,49 +1,180 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    activity_main.xml
+    MOVIFLEX — Splash Screen Premium · App de Viajes
+    ─────────────────────────────────────────────────
+    Sin confeti. Sin emojis. Sin colores neón.
+    Paleta: negro grafito · azul noche · blanco puro
+    Efectos: radar waves · puntos de destino · letra por letra
+-->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/gradient_background">
+    android:background="@drawable/gradient_background"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
-    <!-- Efecto de brillo animado en el fondo -->
+    <!-- ─────────────────────────────────────────────────────── -->
+    <!-- CAPA 1 · EFECTOS DE FONDO                               -->
+    <!-- ─────────────────────────────────────────────────────── -->
+
+    <!-- Flash inicial sutil -->
+    <View
+        android:id="@+id/cinematic_flash"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FFFFFF"
+        android:alpha="0.0"/>
+
+    <!-- Explosión radial (azul noche) -->
+    <View
+        android:id="@+id/radial_glow"
+        android:layout_width="700dp"
+        android:layout_height="700dp"
+        android:layout_centerInParent="true"
+        android:background="@drawable/radial_burst"
+        android:alpha="0.0"/>
+
+    <!-- Rayos de luz rotativos (muy sutiles) -->
+    <ImageView
+        android:id="@+id/light_rays"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/light_rays"
+        android:scaleType="centerCrop"
+        android:alpha="0.0"
+        android:contentDescription="@null"/>
+
+    <!-- Barrido de brillo -->
     <View
         android:id="@+id/shine_effect"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:alpha="0.0"
-        android:background="@drawable/movi"/>
+        android:background="@drawable/shine_gradient"
+        android:alpha="0.0"/>
 
-    <!-- Partículas flotantes decorativas -->
+    <!-- ─────────────────────────────────────────────────────── -->
+    <!-- CAPA 2 · ONDAS RADAR EXPANSIVAS                         -->
+    <!-- ─────────────────────────────────────────────────────── -->
+
     <View
-        android:id="@+id/particle_1"
-        android:layout_width="8dp"
-        android:layout_height="8dp"
-        android:layout_marginStart="50dp"
-        android:layout_marginTop="100dp"
-        android:background="@drawable/particle_circle"
+        android:id="@+id/wave_1"
+        android:layout_width="360dp"
+        android:layout_height="360dp"
+        android:layout_centerInParent="true"
+        android:background="@drawable/wave_ring"
         android:alpha="0.0"/>
 
     <View
-        android:id="@+id/particle_2"
-        android:layout_width="6dp"
-        android:layout_height="6dp"
-        android:layout_marginEnd="80dp"
-        android:layout_marginTop="200dp"
-        android:layout_alignParentEnd="true"
-        android:background="@drawable/particle_circle"
+        android:id="@+id/wave_2"
+        android:layout_width="480dp"
+        android:layout_height="480dp"
+        android:layout_centerInParent="true"
+        android:background="@drawable/wave_ring"
         android:alpha="0.0"/>
 
     <View
-        android:id="@+id/particle_3"
-        android:layout_width="10dp"
-        android:layout_height="10dp"
-        android:layout_marginStart="100dp"
-        android:layout_marginBottom="150dp"
-        android:layout_alignParentBottom="true"
-        android:background="@drawable/particle_circle"
+        android:id="@+id/wave_3"
+        android:layout_width="600dp"
+        android:layout_height="600dp"
+        android:layout_centerInParent="true"
+        android:background="@drawable/wave_ring"
         android:alpha="0.0"/>
 
-    <!-- Contenedor principal con CardView para efecto de elevación -->
+    <View
+        android:id="@+id/wave_4"
+        android:layout_width="720dp"
+        android:layout_height="720dp"
+        android:layout_centerInParent="true"
+        android:background="@drawable/wave_ring"
+        android:alpha="0.0"/>
+
+    <!-- ─────────────────────────────────────────────────────── -->
+    <!-- CAPA 3 · PARTÍCULAS ATMOSFÉRICAS (20 puntos)            -->
+    <!-- ─────────────────────────────────────────────────────── -->
+
+    <View android:id="@+id/particle_1"  android:layout_width="5dp"  android:layout_height="5dp"
+        android:layout_marginStart="35dp"  android:layout_marginTop="75dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_2"  android:layout_width="7dp"  android:layout_height="7dp"
+        android:layout_marginStart="110dp" android:layout_marginTop="140dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_3"  android:layout_width="4dp"  android:layout_height="4dp"
+        android:layout_marginStart="190dp" android:layout_marginTop="95dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_4"  android:layout_width="6dp"  android:layout_height="6dp"
+        android:layout_marginStart="270dp" android:layout_marginTop="170dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_5"  android:layout_width="5dp"  android:layout_height="5dp"
+        android:layout_alignParentEnd="true" android:layout_marginEnd="35dp"
+        android:layout_marginTop="110dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_6"  android:layout_width="7dp"  android:layout_height="7dp"
+        android:layout_alignParentEnd="true" android:layout_marginEnd="95dp"
+        android:layout_marginTop="80dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_7"  android:layout_width="4dp"  android:layout_height="4dp"
+        android:layout_alignParentEnd="true" android:layout_marginEnd="170dp"
+        android:layout_marginTop="150dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_8"  android:layout_width="6dp"  android:layout_height="6dp"
+        android:layout_alignParentEnd="true" android:layout_marginEnd="240dp"
+        android:layout_marginTop="115dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_9"  android:layout_width="5dp"  android:layout_height="5dp"
+        android:layout_centerHorizontal="true" android:layout_marginTop="190dp"
+        android:layout_marginStart="-90dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_10" android:layout_width="7dp"  android:layout_height="7dp"
+        android:layout_centerHorizontal="true" android:layout_marginTop="240dp"
+        android:layout_marginStart="85dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_11" android:layout_width="5dp"  android:layout_height="5dp"
+        android:layout_marginStart="55dp"
+        android:layout_alignParentBottom="true" android:layout_marginBottom="190dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_12" android:layout_width="7dp"  android:layout_height="7dp"
+        android:layout_marginStart="135dp"
+        android:layout_alignParentBottom="true" android:layout_marginBottom="140dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_13" android:layout_width="4dp"  android:layout_height="4dp"
+        android:layout_marginStart="215dp"
+        android:layout_alignParentBottom="true" android:layout_marginBottom="240dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_14" android:layout_width="6dp"  android:layout_height="6dp"
+        android:layout_marginStart="295dp"
+        android:layout_alignParentBottom="true" android:layout_marginBottom="170dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_15" android:layout_width="5dp"  android:layout_height="5dp"
+        android:layout_alignParentEnd="true" android:layout_marginEnd="55dp"
+        android:layout_alignParentBottom="true" android:layout_marginBottom="210dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_16" android:layout_width="7dp"  android:layout_height="7dp"
+        android:layout_alignParentEnd="true" android:layout_marginEnd="125dp"
+        android:layout_alignParentBottom="true" android:layout_marginBottom="160dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_17" android:layout_width="4dp"  android:layout_height="4dp"
+        android:layout_alignParentEnd="true" android:layout_marginEnd="195dp"
+        android:layout_alignParentBottom="true" android:layout_marginBottom="230dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_18" android:layout_width="6dp"  android:layout_height="6dp"
+        android:layout_alignParentEnd="true" android:layout_marginEnd="265dp"
+        android:layout_alignParentBottom="true" android:layout_marginBottom="180dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_19" android:layout_width="5dp"  android:layout_height="5dp"
+        android:layout_centerInParent="true"
+        android:layout_marginStart="-130dp" android:layout_marginTop="-90dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+    <View android:id="@+id/particle_20" android:layout_width="7dp"  android:layout_height="7dp"
+        android:layout_centerInParent="true"
+        android:layout_marginStart="120dp" android:layout_marginTop="85dp"
+        android:background="@drawable/magic_particle" android:alpha="0.0"/>
+
+    <!-- ─────────────────────────────────────────────────────── -->
+    <!-- CAPA 4 · CONTENIDO CENTRAL                              -->
+    <!-- ─────────────────────────────────────────────────────── -->
+
     <androidx.cardview.widget.CardView
         android:id="@+id/main_container"
         android:layout_width="wrap_content"
@@ -51,7 +182,7 @@
         android:layout_centerInParent="true"
         app:cardBackgroundColor="#00000000"
         app:cardElevation="0dp"
-        app:cardCornerRadius="24dp">
+        app:cardCornerRadius="0dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -60,37 +191,62 @@
             android:gravity="center"
             android:padding="24dp">
 
-            <!-- Círculo decorativo detrás del logo -->
+            <!-- ── Logo + anillos ───────────────────────────── -->
             <FrameLayout
                 android:layout_width="260dp"
-                android:layout_height="260dp">
+                android:layout_height="260dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
 
-                <!-- Círculo exterior animado -->
+                <View
+                    android:id="@+id/orbit_ring_1"
+                    android:layout_width="260dp"
+                    android:layout_height="260dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/orbital_ring"
+                    android:alpha="0.0"/>
+
+                <View
+                    android:id="@+id/orbit_ring_2"
+                    android:layout_width="242dp"
+                    android:layout_height="242dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/orbital_ring_thick"
+                    android:alpha="0.0"/>
+
                 <View
                     android:id="@+id/circle_outer"
                     android:layout_width="260dp"
                     android:layout_height="260dp"
                     android:layout_gravity="center"
-                    android:background="@drawable/circle_ripple"
+                    android:background="@drawable/circle_glow_outer"
                     android:alpha="0.0"/>
 
-                <!-- Círculo medio -->
                 <View
                     android:id="@+id/circle_middle"
                     android:layout_width="240dp"
                     android:layout_height="240dp"
                     android:layout_gravity="center"
-                    android:background="@drawable/circle_glow"
+                    android:background="@drawable/circle_glow_middle"
                     android:alpha="0.0"/>
 
-                <!-- Logo con sombra -->
-                <androidx.cardview.widget.CardView
+                <View
+                    android:id="@+id/circle_inner"
                     android:layout_width="220dp"
                     android:layout_height="220dp"
                     android:layout_gravity="center"
-                    app:cardCornerRadius="110dp"
-                    app:cardElevation="12dp"
-                    app:cardBackgroundColor="#FFFFFF">
+                    android:background="@drawable/circle_glow_inner"
+                    android:alpha="0.0"/>
+
+                <!-- Card del logo -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/logo_card"
+                    android:layout_width="200dp"
+                    android:layout_height="200dp"
+                    android:layout_gravity="center"
+                    app:cardCornerRadius="100dp"
+                    app:cardElevation="20dp"
+                    app:cardBackgroundColor="#111827">
 
                     <ImageView
                         android:id="@+id/splash_logo"
@@ -99,92 +255,128 @@
                         android:src="@drawable/movi"
                         android:contentDescription="@string/splash_logo_description"
                         android:scaleType="fitCenter"
-                        android:padding="40dp"
+                        android:padding="36dp"
                         android:alpha="0.0"/>
                 </androidx.cardview.widget.CardView>
+
+                <!-- Puntos de destino (reemplazan sparkles decorativos) -->
+                <ImageView android:id="@+id/sparkle_1"
+                    android:layout_width="18dp" android:layout_height="18dp"
+                    android:src="@drawable/ic_sparkle"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="18dp" android:layout_marginEnd="18dp"
+                    android:alpha="0.0"/>
+
+                <ImageView android:id="@+id/sparkle_2"
+                    android:layout_width="14dp" android:layout_height="14dp"
+                    android:src="@drawable/ic_sparkle"
+                    android:layout_gravity="bottom|start"
+                    android:layout_marginBottom="22dp" android:layout_marginStart="22dp"
+                    android:alpha="0.0"/>
+
+                <ImageView android:id="@+id/sparkle_3"
+                    android:layout_width="16dp" android:layout_height="16dp"
+                    android:src="@drawable/ic_sparkle"
+                    android:layout_gravity="center_vertical|end"
+                    android:layout_marginEnd="8dp"
+                    android:alpha="0.0"/>
+
+                <ImageView android:id="@+id/sparkle_4"
+                    android:layout_width="20dp" android:layout_height="20dp"
+                    android:src="@drawable/ic_sparkle"
+                    android:layout_gravity="top|start"
+                    android:layout_marginTop="22dp" android:layout_marginStart="22dp"
+                    android:alpha="0.0"/>
+
+                <ImageView android:id="@+id/sparkle_5"
+                    android:layout_width="12dp" android:layout_height="12dp"
+                    android:src="@drawable/ic_sparkle"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginBottom="24dp" android:layout_marginEnd="24dp"
+                    android:alpha="0.0"/>
+
+                <ImageView android:id="@+id/sparkle_6"
+                    android:layout_width="16dp" android:layout_height="16dp"
+                    android:src="@drawable/ic_sparkle"
+                    android:layout_gravity="center_vertical|start"
+                    android:layout_marginStart="10dp"
+                    android:alpha="0.0"/>
             </FrameLayout>
 
-            <!-- Contenedor del nombre con efecto glassmorphism -->
+            <!-- ── Texto ─────────────────────────────────────── -->
             <LinearLayout
                 android:id="@+id/text_container"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="28dp"
                 android:alpha="0.0">
 
-                <!-- Nombre de la app con gradiente -->
-                <TextView
-                    android:id="@+id/app_name"
+                <!--
+                    NOMBRE LETRA POR LETRA
+                    El código Java inserta un TextView por letra en este LinearLayout.
+                    El TextView @+id/app_name ya NO se usa para el nombre principal.
+                -->
+                <LinearLayout
+                    android:id="@+id/letters_container"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/app_name"
-                    android:textSize="42sp"
-                    android:textColor="#FFFFFF"
-                    android:textStyle="bold"
-                    android:fontFamily="sans-serif-medium"
-                    android:letterSpacing="0.05"
-                    android:shadowColor="#80000000"
-                    android:shadowDx="0"
-                    android:shadowDy="4"
-                    android:shadowRadius="8"/>
+                    android:orientation="horizontal"
+                    android:gravity="center"/>
 
-                <!-- Línea decorativa -->
+                <!-- Línea decorativa bajo el nombre -->
                 <View
                     android:id="@+id/decorative_line"
-                    android:layout_width="120dp"
-                    android:layout_height="3dp"
+                    android:layout_width="160dp"
+                    android:layout_height="2dp"
                     android:layout_marginTop="12dp"
-                    android:background="@drawable/line_gradient"
-                    android:alpha="0.9"/>
+                    android:background="@drawable/line_gradient_premium"
+                    android:alpha="0.0"/>
 
-                <!-- Slogan con animación -->
+                <!-- Slogan de la app de viajes -->
                 <TextView
                     android:id="@+id/app_slogan"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/splash_slogan"
-                    android:textSize="18sp"
-                    android:textColor="#FFFFFF"
-                    android:alpha="0.95"
+                    android:textSize="15sp"
+                    android:textColor="#CCFFFFFF"
+                    android:alpha="0.0"
                     android:fontFamily="sans-serif-light"
-                    android:letterSpacing="0.08"
-                    android:layout_marginTop="12dp"
-                    android:shadowColor="#40000000"
-                    android:shadowDx="0"
-                    android:shadowDy="2"
-                    android:shadowRadius="4"/>
+                    android:letterSpacing="0.18"
+                    android:layout_marginTop="12dp"/>
             </LinearLayout>
 
-            <!-- Indicador de carga moderno -->
+            <!-- Indicador de carga -->
             <FrameLayout
                 android:id="@+id/progress_container"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="40dp"
+                android:layout_marginTop="44dp"
                 android:alpha="0.0">
 
-                <!-- Círculo de fondo -->
                 <ProgressBar
                     android:id="@+id/splash_progress_bg"
                     style="?android:attr/progressBarStyle"
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:indeterminateTint="#40FFFFFF"/>
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:indeterminateTint="#33FFFFFF"/>
 
-                <!-- Círculo principal -->
                 <ProgressBar
                     android:id="@+id/splash_progress"
                     style="?android:attr/progressBarStyle"
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
                     android:indeterminateTint="#FFFFFF"/>
             </FrameLayout>
+
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- Versión con diseño premium -->
+    <!-- ─────────────────────────────────────────────────────── -->
+    <!-- CAPA 5 · PIE DE VERSIÓN                                 -->
+    <!-- ─────────────────────────────────────────────────────── -->
     <LinearLayout
         android:id="@+id/version_container"
         android:layout_width="wrap_content"
@@ -193,30 +385,29 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="40dp"
-        android:alpha="0.0"
-        android:gravity="center">
+        android:gravity="center"
+        android:alpha="0.0">
 
         <View
             android:layout_width="40dp"
             android:layout_height="1dp"
-            android:background="#60FFFFFF"
+            android:background="#40FFFFFF"
             android:layout_gravity="center_vertical"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/splash_version"
-            android:textSize="13sp"
-            android:textColor="#FFFFFF"
-            android:alpha="0.85"
+            android:textSize="12sp"
+            android:textColor="#99FFFFFF"
             android:fontFamily="sans-serif-light"
-            android:letterSpacing="0.1"
-            android:layout_marginHorizontal="12dp"/>
+            android:letterSpacing="0.14"
+            android:layout_marginHorizontal="14dp"/>
 
         <View
             android:layout_width="40dp"
             android:layout_height="1dp"
-            android:background="#60FFFFFF"
+            android:background="#40FFFFFF"
             android:layout_gravity="center_vertical"/>
     </LinearLayout>
 
