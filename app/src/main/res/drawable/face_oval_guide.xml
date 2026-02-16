@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ARCHIVO: res/drawable/face_oval_guide.xml -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+
+    <!-- Borde blanco brillante -->
+    <stroke
+        android:width="4dp"
+        android:color="#FFFFFF"
+        android:dashWidth="10dp"
+        android:dashGap="5dp" />
+
+    <!-- Fondo transparente para ver a través -->
+    <solid android:color="#00FFFFFF" />
+
+</shape>

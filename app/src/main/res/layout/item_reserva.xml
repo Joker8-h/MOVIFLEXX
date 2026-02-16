@@ -4,9 +4,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
+    android:layout_marginBottom="12dp"
     app:cardCornerRadius="16dp"
-    app:cardElevation="4dp">
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="#FFFFFF"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -14,42 +18,155 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- TITULO -->
-        <TextView
-            android:id="@+id/txtTitulo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Reserva"
-            android:textStyle="bold"
-            android:textSize="16sp"/>
-
-        <!-- BOTONES -->
+        <!-- ══════════════════════════════════════
+             HEADER: Estado + Código
+             ══════════════════════════════════════ -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="12dp">
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnAceptar"
+            <!-- Estado (llenado dinámicamente por el adapter) -->
+            <TextView
+                android:id="@+id/tv_estado"
+                android:text=""
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#4CAF50"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Aceptar"
-                app:backgroundTint="#4CAF50"
-                android:textColor="@android:color/white"/>
+                android:layout_height="wrap_content"/>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnDetalle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Detalle"
-                android:layout_marginStart="8dp"
-                app:backgroundTint="#2196F3"
-                android:textColor="@android:color/white"/>
-
+            <!-- Código de reserva (oculto si no viene del API) -->
+            <TextView
+                android:id="@+id/tv_codigo"
+                android:text=""
+                android:textSize="11sp"
+                android:textColor="#90A4AE"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:visibility="gone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
         </LinearLayout>
+
+        <!-- ══════════════════════════════════════
+             RUTA: Origen → Destino
+             ══════════════════════════════════════ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="10dp">
+
+            <!-- Origen (llenado dinámicamente) -->
+            <TextView
+                android:id="@+id/tv_origen"
+                android:text=""
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#004D40"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+            <!-- Flecha -->
+            <TextView
+                android:text="    ↓"
+                android:textSize="12sp"
+                android:textColor="#90A4AE"
+                android:layout_marginTop="3dp"
+                android:layout_marginBottom="3dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <!-- Destino (llenado dinámicamente) -->
+            <TextView
+                android:id="@+id/tv_destino"
+                android:text=""
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#004D40"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- ══════════════════════════════════════
+             PARADA (llenada dinámicamente, siempre visible)
+             ══════════════════════════════════════ -->
+        <TextView
+            android:id="@+id/tv_parada"
+            android:text=""
+            android:textSize="13sp"
+            android:textColor="#00897B"
+            android:textStyle="bold"
+            android:background="#E0F2F1"
+            android:padding="8dp"
+            android:layout_marginBottom="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <!-- ══════════════════════════════════════
+             DETALLES: Fecha + Asientos
+             ══════════════════════════════════════ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="6dp">
+
+            <!-- Fecha (visible solo si viene del API) -->
+            <TextView
+                android:id="@+id/tv_fecha"
+                android:text=""
+                android:textSize="12sp"
+                android:textColor="#546E7A"
+                android:visibility="gone"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"/>
+
+            <!-- Asientos (llenado dinámicamente) -->
+            <TextView
+                android:id="@+id/tv_asientos"
+                android:text=""
+                android:textSize="12sp"
+                android:textColor="#546E7A"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- ══════════════════════════════════════
+             PRECIO (visible solo si viene del API)
+             ══════════════════════════════════════ -->
+        <TextView
+            android:id="@+id/tv_precio"
+            android:text=""
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FF6F00"
+            android:visibility="gone"
+            android:layout_marginBottom="12dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <!-- ══════════════════════════════════════
+             BOTÓN CANCELAR (mostrado solo si el estado lo permite)
+             ══════════════════════════════════════ -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_cancelar"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:text="Cancelar Reserva"
+            android:textColor="#EF5350"
+            android:visibility="gone"
+            app:cornerRadius="12dp"
+            app:strokeColor="#EF5350"
+            app:strokeWidth="1dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
     </LinearLayout>
 

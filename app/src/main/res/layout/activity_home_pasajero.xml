@@ -4,18 +4,61 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#E0F2F1">
+    android:background="#E8F8F8">
 
-    <!-- SCROLL VIEW PRINCIPAL -->
+    <!-- ══════════════ HEADER ══════════════ -->
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#00897B"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="32dp"
+        android:paddingBottom="22dp"
+        android:orientation="vertical"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/tv_saludo"
+            android:text="Buenos días ☀️"
+            android:textColor="#B2DFDB"
+            android:textSize="14sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/tv_nombre_usuario"
+            android:text="Cargando..."
+            android:textColor="#FFFFFF"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:layout_marginTop="2dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:text="¿A dónde vas hoy? 🚗"
+            android:textColor="#B2DFDB"
+            android:textSize="13sp"
+            android:layout_marginTop="4dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+
+    <!-- ══════════════ SCROLL PRINCIPAL ══════════════ -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
-        android:clipToPadding="false"
-        android:paddingBottom="80dp"
         android:scrollbars="none"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
+        android:clipToPadding="false"
+        android:paddingBottom="20dp"
+        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -24,62 +67,18 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- HEADER CON NOMBRE DINÁMICO -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardCornerRadius="0dp"
-                app:cardElevation="0dp"
-                app:cardBackgroundColor="#00796B">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="24dp"
-                    android:paddingTop="16dp"
-                    android:paddingBottom="32dp"
-                    android:background="@drawable/bg_btn_login">
-
-                    <TextView
-                        android:text="Hola 👋"
-                        android:textColor="#B2DFDB"
-                        android:textSize="16sp"
-                        android:fontFamily="sans-serif"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
-
-                    <TextView
-                        android:id="@+id/tv_nombre_usuario"
-                        android:text="Cargando..."
-                        android:textColor="#FFFFFF"
-                        android:textSize="28sp"
-                        android:textStyle="bold"
-                        android:fontFamily="sans-serif-medium"
-                        android:layout_marginTop="4dp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
-
-                    <TextView
-                        android:text="Viajes disponibles para ti"
-                        android:textColor="#B2DFDB"
-                        android:textSize="13sp"
-                        android:fontFamily="sans-serif"
-                        android:layout_marginTop="4dp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <!-- SECCIÓN: PROMOCIONES DESTACADAS -->
+            <!-- ══════════════════════════════════════
+                 SECCIÓN 1: RUTAS FRECUENTES DEL SISTEMA
+                 ══════════════════════════════════════ -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="20dp"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp">
 
+                <!-- Título -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -87,31 +86,42 @@
                     android:gravity="center_vertical"
                     android:layout_marginBottom="12dp">
 
-                    <TextView
-                        android:text="🎉 Promociones"
-                        android:textColor="#004D40"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:fontFamily="sans-serif-medium"
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_weight="1"
-                        android:layout_height="wrap_content"/>
-
-                    <TextView
-                        android:id="@+id/tv_ver_todas_promociones"
-                        android:text="Ver todo"
-                        android:textColor="#00796B"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:fontFamily="sans-serif-medium"
-                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:padding="8dp"/>
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:text="📍 Rutas Frecuentes"
+                            android:textColor="#004D40"
+                            android:textSize="17sp"
+                            android:textStyle="bold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+
+                        <TextView
+                            android:text="Destinos más usados del sistema"
+                            android:textColor="#90A4AE"
+                            android:textSize="12sp"
+                            android:layout_marginTop="2dp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+                    </LinearLayout>
+
                 </LinearLayout>
 
-                <!-- SCROLL HORIZONTAL DE PROMOCIONES -->
+                <!-- Loader rutas -->
+                <ProgressBar
+                    android:id="@+id/pb_rutas"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:visibility="visible"
+                    android:layout_gravity="center_horizontal"
+                    android:indeterminateTint="#00897B"
+                    android:layout_marginBottom="8dp"/>
+
+                <!-- Scroll horizontal con cards de rutas dinámicas -->
                 <HorizontalScrollView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -119,171 +129,37 @@
                     android:clipToPadding="false">
 
                     <LinearLayout
+                        android:id="@+id/layout_rutas_frecuentes"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:paddingEnd="8dp">
+                        android:paddingEnd="8dp"/>
 
-                        <!-- TARJETA PROMOCIÓN 1 - CLICABLE -->
-                        <androidx.cardview.widget.CardView
-                            android:id="@+id/card_promo_1"
-                            android:layout_width="280dp"
-                            android:layout_height="160dp"
-                            android:layout_marginEnd="12dp"
-                            app:cardCornerRadius="16dp"
-                            app:cardElevation="4dp"
-                            app:cardBackgroundColor="#26A69A"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?android:attr/selectableItemBackground">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:orientation="vertical"
-                                android:padding="20dp"
-                                android:gravity="center_vertical">
-
-                                <TextView
-                                    android:text="20% OFF"
-                                    android:textColor="#FFFFFF"
-                                    android:textSize="32sp"
-                                    android:textStyle="bold"
-                                    android:fontFamily="sans-serif-black"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"/>
-
-                                <TextView
-                                    android:text="En tu primer viaje"
-                                    android:textColor="#FFFFFF"
-                                    android:textSize="16sp"
-                                    android:fontFamily="sans-serif-medium"
-                                    android:layout_marginTop="4dp"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"/>
-
-                                <TextView
-                                    android:text="Código: BIENVENIDO"
-                                    android:textColor="#B2DFDB"
-                                    android:textSize="12sp"
-                                    android:fontFamily="sans-serif"
-                                    android:layout_marginTop="8dp"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"/>
-                            </LinearLayout>
-                        </androidx.cardview.widget.CardView>
-
-                        <!-- TARJETA PROMOCIÓN 2 - CLICABLE -->
-                        <androidx.cardview.widget.CardView
-                            android:id="@+id/card_promo_2"
-                            android:layout_width="280dp"
-                            android:layout_height="160dp"
-                            android:layout_marginEnd="12dp"
-                            app:cardCornerRadius="16dp"
-                            app:cardElevation="4dp"
-                            app:cardBackgroundColor="#00ACC1"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?android:attr/selectableItemBackground">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:orientation="vertical"
-                                android:padding="20dp"
-                                android:gravity="center_vertical">
-
-                                <TextView
-                                    android:text="🎁 GRATIS"
-                                    android:textColor="#FFFFFF"
-                                    android:textSize="28sp"
-                                    android:textStyle="bold"
-                                    android:fontFamily="sans-serif-black"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"/>
-
-                                <TextView
-                                    android:text="Viaje al aeropuerto"
-                                    android:textColor="#FFFFFF"
-                                    android:textSize="16sp"
-                                    android:fontFamily="sans-serif-medium"
-                                    android:layout_marginTop="4dp"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"/>
-
-                                <TextView
-                                    android:text="Reserva 3 viajes y gana"
-                                    android:textColor="#B2EBF2"
-                                    android:textSize="12sp"
-                                    android:fontFamily="sans-serif"
-                                    android:layout_marginTop="8dp"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"/>
-                            </LinearLayout>
-                        </androidx.cardview.widget.CardView>
-
-                        <!-- TARJETA PROMOCIÓN 3 - CLICABLE -->
-                        <androidx.cardview.widget.CardView
-                            android:id="@+id/card_promo_3"
-                            android:layout_width="280dp"
-                            android:layout_height="160dp"
-                            android:layout_marginEnd="12dp"
-                            app:cardCornerRadius="16dp"
-                            app:cardElevation="4dp"
-                            app:cardBackgroundColor="#00897B"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?android:attr/selectableItemBackground">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:orientation="vertical"
-                                android:padding="20dp"
-                                android:gravity="center_vertical">
-
-                                <TextView
-                                    android:text="🚗 2x1"
-                                    android:textColor="#FFFFFF"
-                                    android:textSize="32sp"
-                                    android:textStyle="bold"
-                                    android:fontFamily="sans-serif-black"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"/>
-
-                                <TextView
-                                    android:text="Viajes compartidos"
-                                    android:textColor="#FFFFFF"
-                                    android:textSize="16sp"
-                                    android:fontFamily="sans-serif-medium"
-                                    android:layout_marginTop="4dp"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"/>
-
-                                <TextView
-                                    android:text="Válido hasta el 28 Feb"
-                                    android:textColor="#A7FFEB"
-                                    android:textSize="12sp"
-                                    android:fontFamily="sans-serif"
-                                    android:layout_marginTop="8dp"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"/>
-                            </LinearLayout>
-                        </androidx.cardview.widget.CardView>
-
-                    </LinearLayout>
                 </HorizontalScrollView>
+
             </LinearLayout>
 
-            <!-- SECCIÓN: DESTINOS POPULARES -->
+            <!-- SEPARADOR -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#D0EEEB"
+                android:layout_marginTop="24dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"/>
+
+            <!-- ══════════════════════════════════════
+                 SECCIÓN 2: VIAJES DISPONIBLES AHORA
+                 ══════════════════════════════════════ -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="28dp"
+                android:layout_marginTop="20dp"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp">
 
+                <!-- Título + contador -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -291,514 +167,121 @@
                     android:gravity="center_vertical"
                     android:layout_marginBottom="12dp">
 
-                    <TextView
-                        android:text="📍 Destinos Populares"
-                        android:textColor="#004D40"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:fontFamily="sans-serif-medium"
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_weight="1"
-                        android:layout_height="wrap_content"/>
-
-                    <TextView
-                        android:id="@+id/tv_ver_mapa"
-                        android:text="Ver mapa"
-                        android:textColor="#00796B"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:fontFamily="sans-serif-medium"
-                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:padding="8dp"/>
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:text="🚗 Viajes Disponibles"
+                            android:textColor="#004D40"
+                            android:textSize="17sp"
+                            android:textStyle="bold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+
+                        <TextView
+                            android:id="@+id/tv_contador_viajes"
+                            android:text="Cargando..."
+                            android:textColor="#00897B"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+                    </LinearLayout>
+
+                    <!-- Badge "En vivo" -->
+                    <TextView
+                        android:text=" 🔄 En vivo "
+                        android:textSize="10sp"
+                        android:textColor="#00897B"
+                        android:textStyle="bold"
+                        android:background="@drawable/bg_chip_teal"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:paddingTop="3dp"
+                        android:paddingBottom="3dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
                 </LinearLayout>
 
-                <!-- SCROLL HORIZONTAL DE DESTINOS -->
-                <HorizontalScrollView
+                <!-- Loader viajes -->
+                <ProgressBar
+                    android:id="@+id/pb_viajes"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:visibility="visible"
+                    android:layout_gravity="center_horizontal"
+                    android:indeterminateTint="#00897B"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Empty state -->
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:scrollbars="none"
-                    android:clipToPadding="false">
+                    android:visibility="gone"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:cardBackgroundColor="#FFFFFF">
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:paddingEnd="8dp">
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="32dp">
 
-                        <!-- DESTINO 1: AEROPUERTO - CLICABLE -->
-                        <androidx.cardview.widget.CardView
-                            android:id="@+id/card_destino_aeropuerto"
-                            android:layout_width="140dp"
-                            android:layout_height="180dp"
-                            android:layout_marginEnd="12dp"
-                            app:cardCornerRadius="16dp"
-                            app:cardElevation="4dp"
-                            app:cardBackgroundColor="#FFFFFF"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?android:attr/selectableItemBackground">
+                        <TextView
+                            android:text="🚌"
+                            android:textSize="48sp"
+                            android:gravity="center"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"/>
 
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/tv_empty_viajes"
+                            android:text="No hay viajes disponibles ahora"
+                            android:textColor="#90A4AE"
+                            android:textSize="14sp"
+                            android:gravity="center"
+                            android:layout_marginTop="12dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"/>
 
-                                <FrameLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="100dp"
-                                    android:background="#B2DFDB">
-
-                                    <TextView
-                                        android:text="✈️"
-                                        android:textSize="48sp"
-                                        android:gravity="center"
-                                        android:layout_gravity="center"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-                                </FrameLayout>
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:orientation="vertical"
-                                    android:padding="12dp"
-                                    android:gravity="center_vertical">
-
-                                    <TextView
-                                        android:text="Aeropuerto"
-                                        android:textColor="#004D40"
-                                        android:textSize="15sp"
-                                        android:textStyle="bold"
-                                        android:fontFamily="sans-serif-medium"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-
-                                    <TextView
-                                        android:text="Desde $25.000"
-                                        android:textColor="#00796B"
-                                        android:textSize="12sp"
-                                        android:textStyle="bold"
-                                        android:fontFamily="sans-serif"
-                                        android:layout_marginTop="4dp"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-                                </LinearLayout>
-                            </LinearLayout>
-                        </androidx.cardview.widget.CardView>
-
-                        <!-- DESTINO 2: CENTRO - CLICABLE -->
-                        <androidx.cardview.widget.CardView
-                            android:id="@+id/card_destino_centro"
-                            android:layout_width="140dp"
-                            android:layout_height="180dp"
-                            android:layout_marginEnd="12dp"
-                            app:cardCornerRadius="16dp"
-                            app:cardElevation="4dp"
-                            app:cardBackgroundColor="#FFFFFF"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?android:attr/selectableItemBackground">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:orientation="vertical">
-
-                                <FrameLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="100dp"
-                                    android:background="#80CBC4">
-
-                                    <TextView
-                                        android:text="🏛️"
-                                        android:textSize="48sp"
-                                        android:gravity="center"
-                                        android:layout_gravity="center"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-                                </FrameLayout>
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:orientation="vertical"
-                                    android:padding="12dp"
-                                    android:gravity="center_vertical">
-
-                                    <TextView
-                                        android:text="Centro"
-                                        android:textColor="#004D40"
-                                        android:textSize="15sp"
-                                        android:textStyle="bold"
-                                        android:fontFamily="sans-serif-medium"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-
-                                    <TextView
-                                        android:text="Desde $8.000"
-                                        android:textColor="#00796B"
-                                        android:textSize="12sp"
-                                        android:textStyle="bold"
-                                        android:fontFamily="sans-serif"
-                                        android:layout_marginTop="4dp"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-                                </LinearLayout>
-                            </LinearLayout>
-                        </androidx.cardview.widget.CardView>
-
-                        <!-- DESTINO 3: UNIVERSIDAD - CLICABLE -->
-                        <androidx.cardview.widget.CardView
-                            android:id="@+id/card_destino_universidad"
-                            android:layout_width="140dp"
-                            android:layout_height="180dp"
-                            android:layout_marginEnd="12dp"
-                            app:cardCornerRadius="16dp"
-                            app:cardElevation="4dp"
-                            app:cardBackgroundColor="#FFFFFF"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?android:attr/selectableItemBackground">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:orientation="vertical">
-
-                                <FrameLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="100dp"
-                                    android:background="#4DB6AC">
-
-                                    <TextView
-                                        android:text="🎓"
-                                        android:textSize="48sp"
-                                        android:gravity="center"
-                                        android:layout_gravity="center"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-                                </FrameLayout>
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:orientation="vertical"
-                                    android:padding="12dp"
-                                    android:gravity="center_vertical">
-
-                                    <TextView
-                                        android:text="Universidad"
-                                        android:textColor="#004D40"
-                                        android:textSize="15sp"
-                                        android:textStyle="bold"
-                                        android:fontFamily="sans-serif-medium"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-
-                                    <TextView
-                                        android:text="Desde $6.000"
-                                        android:textColor="#00796B"
-                                        android:textSize="12sp"
-                                        android:textStyle="bold"
-                                        android:fontFamily="sans-serif"
-                                        android:layout_marginTop="4dp"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-                                </LinearLayout>
-                            </LinearLayout>
-                        </androidx.cardview.widget.CardView>
-
-                        <!-- DESTINO 4: TERMINAL - CLICABLE -->
-                        <androidx.cardview.widget.CardView
-                            android:id="@+id/card_destino_terminal"
-                            android:layout_width="140dp"
-                            android:layout_height="180dp"
-                            android:layout_marginEnd="12dp"
-                            app:cardCornerRadius="16dp"
-                            app:cardElevation="4dp"
-                            app:cardBackgroundColor="#FFFFFF"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?android:attr/selectableItemBackground">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:orientation="vertical">
-
-                                <FrameLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="100dp"
-                                    android:background="#26A69A">
-
-                                    <TextView
-                                        android:text="🚌"
-                                        android:textSize="48sp"
-                                        android:gravity="center"
-                                        android:layout_gravity="center"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-                                </FrameLayout>
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:orientation="vertical"
-                                    android:padding="12dp"
-                                    android:gravity="center_vertical">
-
-                                    <TextView
-                                        android:text="Terminal"
-                                        android:textColor="#004D40"
-                                        android:textSize="15sp"
-                                        android:textStyle="bold"
-                                        android:fontFamily="sans-serif-medium"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-
-                                    <TextView
-                                        android:text="Desde $10.000"
-                                        android:textColor="#00796B"
-                                        android:textSize="12sp"
-                                        android:textStyle="bold"
-                                        android:fontFamily="sans-serif"
-                                        android:layout_marginTop="4dp"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-                                </LinearLayout>
-                            </LinearLayout>
-                        </androidx.cardview.widget.CardView>
-
+                        <TextView
+                            android:text="Vuelve a intentarlo más tarde"
+                            android:textColor="#B0BEC5"
+                            android:textSize="12sp"
+                            android:gravity="center"
+                            android:layout_marginTop="4dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"/>
                     </LinearLayout>
-                </HorizontalScrollView>
-            </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
-            <!-- SECCIÓN: NOTICIAS Y CONSEJOS -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginTop="28dp"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
-
-                <TextView
-                    android:text="📰 Noticias y Consejos"
-                    android:textColor="#004D40"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:fontFamily="sans-serif-medium"
-                    android:layout_marginBottom="12dp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-
-                <!-- SCROLL HORIZONTAL DE NOTICIAS -->
-                <HorizontalScrollView
+                <!-- Lista de viajes disponibles -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_viajes_disponibles"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:scrollbars="none"
-                    android:clipToPadding="false">
+                    android:nestedScrollingEnabled="false"
+                    android:visibility="gone"/>
 
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:paddingEnd="8dp">
-
-                        <!-- NOTICIA 1 - CLICABLE -->
-                        <androidx.cardview.widget.CardView
-                            android:id="@+id/card_noticia_1"
-                            android:layout_width="260dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="12dp"
-                            app:cardCornerRadius="12dp"
-                            app:cardElevation="3dp"
-                            app:cardBackgroundColor="#FFFFFF"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?android:attr/selectableItemBackground">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical">
-
-                                <FrameLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="120dp"
-                                    android:background="#80CBC4">
-
-                                    <TextView
-                                        android:text="💡"
-                                        android:textSize="56sp"
-                                        android:gravity="center"
-                                        android:layout_gravity="center"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-                                </FrameLayout>
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="vertical"
-                                    android:padding="16dp">
-
-                                    <TextView
-                                        android:text="Consejos de seguridad"
-                                        android:textColor="#004D40"
-                                        android:textSize="15sp"
-                                        android:textStyle="bold"
-                                        android:fontFamily="sans-serif-medium"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-
-                                    <TextView
-                                        android:text="Aprende cómo viajar de forma segura y cómoda"
-                                        android:textColor="#546E7A"
-                                        android:textSize="12sp"
-                                        android:fontFamily="sans-serif"
-                                        android:lineSpacingExtra="2dp"
-                                        android:layout_marginTop="6dp"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-                                </LinearLayout>
-                            </LinearLayout>
-                        </androidx.cardview.widget.CardView>
-
-                        <!-- NOTICIA 2 - CLICABLE -->
-                        <androidx.cardview.widget.CardView
-                            android:id="@+id/card_noticia_2"
-                            android:layout_width="260dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="12dp"
-                            app:cardCornerRadius="12dp"
-                            app:cardElevation="3dp"
-                            app:cardBackgroundColor="#FFFFFF"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?android:attr/selectableItemBackground">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical">
-
-                                <FrameLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="120dp"
-                                    android:background="#4DB6AC">
-
-                                    <TextView
-                                        android:text="🌱"
-                                        android:textSize="56sp"
-                                        android:gravity="center"
-                                        android:layout_gravity="center"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-                                </FrameLayout>
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="vertical"
-                                    android:padding="16dp">
-
-                                    <TextView
-                                        android:text="Viajes eco-friendly"
-                                        android:textColor="#004D40"
-                                        android:textSize="15sp"
-                                        android:textStyle="bold"
-                                        android:fontFamily="sans-serif-medium"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-
-                                    <TextView
-                                        android:text="Comparte tu viaje y reduce tu huella de carbono"
-                                        android:textColor="#546E7A"
-                                        android:textSize="12sp"
-                                        android:fontFamily="sans-serif"
-                                        android:lineSpacingExtra="2dp"
-                                        android:layout_marginTop="6dp"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-                                </LinearLayout>
-                            </LinearLayout>
-                        </androidx.cardview.widget.CardView>
-
-                        <!-- NOTICIA 3 - CLICABLE -->
-                        <androidx.cardview.widget.CardView
-                            android:id="@+id/card_noticia_3"
-                            android:layout_width="260dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="12dp"
-                            app:cardCornerRadius="12dp"
-                            app:cardElevation="3dp"
-                            app:cardBackgroundColor="#FFFFFF"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?android:attr/selectableItemBackground">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical">
-
-                                <FrameLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="120dp"
-                                    android:background="#26A69A">
-
-                                    <TextView
-                                        android:text="⭐"
-                                        android:textSize="56sp"
-                                        android:gravity="center"
-                                        android:layout_gravity="center"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-                                </FrameLayout>
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="vertical"
-                                    android:padding="16dp">
-
-                                    <TextView
-                                        android:text="Programa de puntos"
-                                        android:textColor="#004D40"
-                                        android:textSize="15sp"
-                                        android:textStyle="bold"
-                                        android:fontFamily="sans-serif-medium"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-
-                                    <TextView
-                                        android:text="Acumula puntos y obtén viajes gratis"
-                                        android:textColor="#546E7A"
-                                        android:textSize="12sp"
-                                        android:fontFamily="sans-serif"
-                                        android:lineSpacingExtra="2dp"
-                                        android:layout_marginTop="6dp"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"/>
-                                </LinearLayout>
-                            </LinearLayout>
-                        </androidx.cardview.widget.CardView>
-
-                    </LinearLayout>
-                </HorizontalScrollView>
             </LinearLayout>
 
-            <!-- SECCIÓN: ACCIÓN RÁPIDA -->
-            <androidx.cardview.widget.CardView
+            <!-- ══════════════════════════════════════
+                 CTA: BUSCAR VIAJE
+                 ══════════════════════════════════════ -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
                 android:layout_marginTop="28dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="6dp"
                 app:cardBackgroundColor="#00796B">
@@ -817,19 +300,17 @@
                         android:orientation="vertical">
 
                         <TextView
-                            android:text="¿Necesitas un viaje?"
+                            android:text="¿No encuentras tu viaje?"
                             android:textColor="#FFFFFF"
-                            android:textSize="18sp"
+                            android:textSize="15sp"
                             android:textStyle="bold"
-                            android:fontFamily="sans-serif-medium"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"/>
 
                         <TextView
-                            android:text="Encuentra conductores cerca de ti"
+                            android:text="Busca por origen y destino"
                             android:textColor="#B2DFDB"
-                            android:textSize="13sp"
-                            android:fontFamily="sans-serif"
+                            android:textSize="12sp"
                             android:layout_marginTop="4dp"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"/>
@@ -840,20 +321,20 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Buscar"
-                        android:textSize="14sp"
+                        android:textSize="13sp"
                         android:textStyle="bold"
                         android:textColor="#00796B"
                         app:cornerRadius="20dp"
                         app:backgroundTint="#FFFFFF"
-                        android:paddingStart="24dp"
-                        android:paddingEnd="24dp"/>
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"/>
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- BOTTOM NAVIGATION -->
+    <!-- ══════════════ BOTTOM NAVIGATION ══════════════ -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"

@@ -16,8 +16,17 @@ public class Constantes {
     public static final String LOGIN_GOOGLE =
             BASE_URL + "/api/auth/google";
 
+
     public static String usuarioPorId(Long idUsuario) {
         return BASE_URL + "/api/auth/" + idUsuario;
+    }
+
+    // ================= USUARIOS =================
+    public static final String USUARIOS =
+            BASE_URL + "/api/usuarios";
+
+    public static String usuarioDetalle(Long idUsuario) {
+        return BASE_URL + "/api/usuarios/" + idUsuario;
     }
 
     // ================= ROLES =================
@@ -167,13 +176,4 @@ public class Constantes {
 
     public static final String MIS_DOCUMENTOS =
             BASE_URL + "/api/documentacion/documentacion_mis";
-
-    // ================= RECONOCIMIENTO FACIAL =================
-
-    // ✅ CORRECTO — con / antes de api
-    public static final String FACE_REGISTER =
-            BASE_URL + "/api/auth/registro-facial";
-
-    public static final String FACE_VERIFY =
-            BASE_URL + "/api/auth/login-facial";
 }

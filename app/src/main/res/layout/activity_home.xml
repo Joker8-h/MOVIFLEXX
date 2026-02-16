@@ -59,7 +59,7 @@
                 android:contentDescription="@string/app_name"
                 android:padding="16dp"
                 android:scaleType="fitCenter"
-                android:src="@drawable/movi" />
+                android:src="@drawable/logomoviflex" />
         </androidx.cardview.widget.CardView>
 
         <!-- Título principal -->

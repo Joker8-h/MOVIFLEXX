@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ARCHIVO: res/layout/face_overlay.xml -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Capa oscura semitransparente -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000" />
+
+    <!-- Contenedor centrado para el óvalo -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Óvalo transparente para el rostro -->
+        <View
+            android:id="@+id/faceOval"
+            android:layout_width="280dp"
+            android:layout_height="360dp"
+            android:layout_centerInParent="true"
+            android:background="@drawable/face_oval_guide" />
+
+        <!-- Instrucciones arriba del óvalo -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/faceOval"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="24dp"
+            android:text="Centra tu rostro"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:shadowColor="#000000"
+            android:shadowDx="2"
+            android:shadowDy="2"
+            android:shadowRadius="4" />
+
+        <!-- Instrucciones debajo del óvalo -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/faceOval"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="24dp"
+            android:text="Mira directamente a la cámara"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:shadowColor="#000000"
+            android:shadowDx="2"
+            android:shadowDy="2"
+            android:shadowRadius="4" />
+
+    </RelativeLayout>
+
+</FrameLayout>
