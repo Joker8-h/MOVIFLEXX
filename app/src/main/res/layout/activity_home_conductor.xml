@@ -22,20 +22,20 @@
             android:layout_height="wrap_content">
 
             <ImageView
-                android:layout_width="130dp"
+                android:layout_width="75dp"
                 android:layout_height="130dp"
                 android:layout_gravity="center"
-                android:src="@drawable/logomoviflex"
-                android:contentDescription="Logo MoviFlexx"
                 android:adjustViewBounds="true"
-                android:scaleType="fitCenter"/>
+                android:contentDescription="Logo MoviFlexx"
+                android:scaleType="fitCenter"
+                android:src="@drawable/logomoviflex" />
 
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
-                android:text="MoviFlexx Conductor"
+                android:text="MoviFlex Conductor"
                 android:textColor="#FFFFFF"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -118,15 +118,6 @@
 
                     </LinearLayout>
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_mis_reservas"
-                        android:text="📋 Mis Reservas"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="56dp"
-                        android:layout_marginTop="8dp"
-                        app:cornerRadius="8dp"
-                        app:strokeColor="#00796B"/>
 
                 </LinearLayout>
 

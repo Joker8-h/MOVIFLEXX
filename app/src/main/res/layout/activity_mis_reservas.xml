@@ -6,9 +6,7 @@
     android:layout_height="match_parent"
     android:background="#E8F8F8">
 
-    <!-- ══════════════════════════════════════
-         HEADER
-         ══════════════════════════════════════ -->
+    <!-- HEADER -->
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="0dp"
@@ -24,20 +22,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Botón volver -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_volver"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:padding="0dp"
-            android:minWidth="0dp"
-            android:minHeight="0dp"
-            android:text="←"
-            android:textColor="#FFFFFF"
-            android:textSize="24sp"
-            android:layout_marginEnd="12dp"/>
-
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -49,6 +33,7 @@
                 android:textColor="#FFFFFF"
                 android:textSize="22sp"
                 android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
 
@@ -60,110 +45,385 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
         </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/loader_mis_reservas"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:visibility="gone"
+            android:indeterminateTint="#FFFFFF"/>
     </LinearLayout>
 
-    <!-- ══════════════════════════════════════
-         PROGRESS BAR (centrado en pantalla)
-         ══════════════════════════════════════ -->
-    <ProgressBar
-        android:id="@+id/progress_bar"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:visibility="gone"
-        android:indeterminateTint="#00897B"
-        app:layout_constraintTop_toBottomOf="@id/header"
-        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <!-- ══════════════════════════════════════
-         LISTA DE RESERVAS
-         ══════════════════════════════════════ -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_reservas"
+    <!-- SCROLL PRINCIPAL -->
+    <androidx.core.widget.NestedScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:fillViewport="true"
+        android:scrollbars="none"
         android:clipToPadding="false"
-        android:padding="12dp"
-        android:visibility="gone"
+        android:paddingBottom="20dp"
         app:layout_constraintTop_toBottomOf="@id/header"
-        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <!-- ══════════════════════════════════════
-         ESTADO VACÍO
-         ID: layout_sin_reservas  (LinearLayout, NO TextView)
-         ══════════════════════════════════════ -->
-    <LinearLayout
-        android:id="@+id/layout_sin_reservas"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:padding="24dp"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/header"
-        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:text="🎫"
-            android:textSize="64sp"
-            android:gravity="center"
-            android:layout_marginBottom="16dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="14dp">
 
-        <TextView
-            android:text="No tienes reservas aún"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#004D40"
-            android:gravity="center"
-            android:layout_marginBottom="8dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            <!-- ══════════════════════════════════════
+                 CARD: PUBLICAR MI RUTA
+                 ══════════════════════════════════════ -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_publicar_ruta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="6dp"
+                app:cardBackgroundColor="#FFFFFF">
 
-        <TextView
-            android:text="Encuentra un viaje y reserva tu próximo trayecto"
-            android:textSize="13sp"
-            android:textColor="#90A4AE"
-            android:gravity="center"
-            android:layout_marginBottom="28dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_buscar_viajes"
-            android:text="🔍  Buscar Viajes"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            app:cornerRadius="14dp"
-            app:backgroundTint="#00897B"
-            android:layout_width="wrap_content"
-            android:layout_height="52dp"
-            android:paddingStart="28dp"
-            android:paddingEnd="28dp"/>
+                    <!-- Título -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="14dp">
 
-    </LinearLayout>
+                        <TextView
+                            android:text="🔍"
+                            android:textSize="22sp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="10dp"/>
 
-    <!-- ══════════════════════════════════════
-         BOTTOM NAVIGATION
-         ══════════════════════════════════════ -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_navigation"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="#FFFFFF"
-        app:menu="@menu/bottom_navigation_menu"
-        app:labelVisibilityMode="labeled"
-        app:itemIconTint="@color/bottom_nav_color_selector"
-        app:itemTextColor="@color/bottom_nav_color_selector"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:elevation="16dp"/>
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:text="Publica tu ruta"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                android:textColor="#004D40"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+
+                            <TextView
+                                android:text="Te mostramos conductores que van por tu camino"
+                                android:textSize="12sp"
+                                android:textColor="#90A4AE"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Campo ORIGEN -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="10dp">
+
+                        <LinearLayout
+                            android:layout_width="24dp"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center_horizontal"
+                            android:layout_marginEnd="10dp">
+
+                            <View
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                />
+                        </LinearLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+                            app:boxCornerRadiusTopStart="12dp"
+                            app:boxCornerRadiusTopEnd="12dp"
+                            app:boxCornerRadiusBottomStart="12dp"
+                            app:boxCornerRadiusBottomEnd="12dp"
+                            app:boxStrokeColor="#00897B"
+                            app:hintTextColor="#00897B">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/edit_origen_pasajero"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="📍 ¿Desde dónde sales?"
+                                android:textSize="14sp"
+                                android:textColor="#004D40"
+                                android:inputType="textPostalAddress"
+                                android:imeOptions="actionNext"/>
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+                    <!-- Línea conectora vertical -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="10dp">
+
+                        <LinearLayout
+                            android:layout_width="24dp"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:layout_marginEnd="10dp">
+                            <View
+                                android:layout_width="2dp"
+                                android:layout_height="16dp"
+                                android:background="#B2DFDB"/>
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"/>
+                    </LinearLayout>
+
+                    <!-- Campo DESTINO -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp">
+
+                        <LinearLayout
+                            android:layout_width="24dp"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center_horizontal"
+                            android:layout_marginEnd="10dp">
+
+                            <View
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"/>
+                        </LinearLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+                            app:boxCornerRadiusTopStart="12dp"
+                            app:boxCornerRadiusTopEnd="12dp"
+                            app:boxCornerRadiusBottomStart="12dp"
+                            app:boxCornerRadiusBottomEnd="12dp"
+                            app:boxStrokeColor="#EF5350"
+                            app:hintTextColor="#EF5350">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/edit_destino_pasajero"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="🏁 ¿A dónde vas? (opcional)"
+                                android:textSize="14sp"
+                                android:textColor="#004D40"
+                                android:inputType="textPostalAddress"
+                                android:imeOptions="actionSearch"/>
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+                    <!-- Botón buscar -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_buscar_viajes"
+                        android:text="🚗  Buscar viajes disponibles"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:textSize="14sp"
+                        app:cornerRadius="14dp"
+                        app:backgroundTint="#00897B"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ══════════════════════════════════════
+                 ESTADO: BUSCANDO
+                 ══════════════════════════════════════ -->
+            <LinearLayout
+                android:id="@+id/layout_buscando"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="24dp"
+                android:visibility="gone">
+
+                <ProgressBar
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:indeterminateTint="#00897B"/>
+
+                <TextView
+                    android:text="Buscando conductores cerca de tu ruta..."
+                    android:textSize="14sp"
+                    android:textColor="#546E7A"
+                    android:gravity="center"
+                    android:layout_marginTop="12dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+
+            <!-- ══════════════════════════════════════
+                 LABEL: VIAJES ENCONTRADOS
+                 ══════════════════════════════════════ -->
+            <LinearLayout
+                android:id="@+id/layout_label_resultados"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone">
+
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="20dp"
+                    android:background="#00897B"
+                    android:layout_marginEnd="10dp"/>
+
+                <TextView
+                    android:id="@+id/txt_label_resultados"
+                    android:text="Viajes disponibles para tu ruta"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="#004D40"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"/>
+
+                <TextView
+                    android:id="@+id/txt_contador_resultados"
+                    android:text="0"
+                    android:textSize="13sp"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:background="@drawable/bg_chip_teal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+
+            <!-- ══════════════════════════════════════
+                 RESULTADOS: VIAJES CONDUCTOR
+                 ══════════════════════════════════════ -->
+            <LinearLayout
+                android:id="@+id/layout_resultados_viajes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"/>
+
+            <!-- ══════════════════════════════════════
+                 ESTADO: SIN RESULTADOS
+                 ══════════════════════════════════════ -->
+            <LinearLayout
+                android:id="@+id/layout_vacio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:text="🎟️"
+                    android:textSize="56sp"
+                    android:gravity="center"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <TextView
+                    android:id="@+id/txt_vacio"
+                    android:text="No tienes reservas aún"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#004D40"
+                    android:gravity="center"
+                    android:layout_marginTop="16dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <TextView
+                    android:id="@+id/txt_vacio_sub"
+                    android:text="Encuentra un viaje y reserva tu próximo trayecto"
+                    android:textSize="14sp"
+                    android:textColor="#90A4AE"
+                    android:gravity="center"
+                    android:layout_marginTop="8dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_buscar_desde_vacio"
+                    android:text="🔍  Buscar Viajes"
+                    android:layout_width="280dp"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="24dp"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:textSize="15sp"
+                    app:cornerRadius="26dp"
+                    app:backgroundTint="#00897B"/>
+            </LinearLayout>
+
+            <!-- ══════════════════════════════════════
+                 MIS RESERVAS ACTIVAS
+                 ══════════════════════════════════════ -->
+            <LinearLayout
+                android:id="@+id/layout_label_mis_reservas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone">
+
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="20dp"
+                    android:background="#0097A7"
+                    android:layout_marginEnd="10dp"/>
+
+                <TextView
+                    android:text="Tus reservas activas"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="#004D40"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layout_mis_reservas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"/>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

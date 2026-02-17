@@ -10,6 +10,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.model.ConexionApi;
 import com.arlys.moviflexx.model.Constantes;
+import com.arlys.moviflexx.model.Manager.RouteManager;
+import com.arlys.moviflexx.model.pojo.RouteOption;
+import com.arlys.moviflexx.model.pojo.RouteOptionsResponse;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -34,6 +37,13 @@ public class MapaPasajero extends AppCompatActivity {
     private int viajeId;
     private int rutaId;
 
+    // RouteManager para rutas optimizadas desde el backend FastAPI
+    private RouteManager routeManager;
+
+    // Guardamos los puntos origen/destino geocodificados para reusar
+    private GeoPoint puntoOrigenGeocod;
+    private GeoPoint puntoDestinoGeocod;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,15 +60,25 @@ public class MapaPasajero extends AppCompatActivity {
 
         map = findViewById(R.id.map_pasajero);
         configurarMapa();
+
+        // Inicializar RouteManager
+        routeManager = new RouteManager();
+
         cargarRutaViaje();
     }
 
+    // ─────────────────────────────────────────────
+    // 🗺️ CONFIGURACIÓN DEL MAPA
+    // ─────────────────────────────────────────────
     private void configurarMapa() {
         map.setTileSource(TileSourceFactory.MAPNIK);
         map.setMultiTouchControls(true);
         map.getController().setZoom(13.5);
     }
 
+    // ─────────────────────────────────────────────
+    // 📡 CARGAR VIAJE DESDE API
+    // ─────────────────────────────────────────────
     private void cargarRutaViaje() {
         String endpoint = Constantes.viajePorId((long) viajeId);
         Log.d(TAG, "Cargando viaje: " + endpoint);
@@ -95,6 +115,9 @@ public class MapaPasajero extends AppCompatActivity {
         );
     }
 
+    // ─────────────────────────────────────────────
+    // 📍 CARGAR PARADAS
+    // ─────────────────────────────────────────────
     private void cargarParadas(String origen, String destino) {
         String endpoint = Constantes.paradasPorRuta((long) rutaId);
         Log.d(TAG, "Cargando paradas: " + endpoint);
@@ -115,17 +138,24 @@ public class MapaPasajero extends AppCompatActivity {
                 },
                 error -> {
                     Log.e(TAG, "Error cargando paradas", error);
-                    // Si no hay paradas, dibujar solo origen-destino
+                    // Sin paradas: dibujar solo origen → destino
                     dibujarRutaSimple(origen, destino);
                 }
         );
     }
 
+    // ─────────────────────────────────────────────
+    // 🛣️ DIBUJAR RUTA SIMPLE (sin paradas)
+    // ─────────────────────────────────────────────
     private void dibujarRutaSimple(String origen, String destino) {
         new Thread(() -> {
             try {
                 GeoPoint pOrigen = geocodificar(origen);
                 GeoPoint pDestino = geocodificar(destino);
+
+                // Guardamos para usarlos luego en RouteManager
+                puntoOrigenGeocod = pOrigen;
+                puntoDestinoGeocod = pDestino;
 
                 String coords = pOrigen.getLongitude() + "," + pOrigen.getLatitude() + ";" +
                         pDestino.getLongitude() + "," + pDestino.getLatitude();
@@ -145,7 +175,11 @@ public class MapaPasajero extends AppCompatActivity {
                     puntos.add(new GeoPoint(c.getDouble(1), c.getDouble(0)));
                 }
 
-                runOnUiThread(() -> mostrarEnMapa(puntos, pOrigen, pDestino, null, null));
+                runOnUiThread(() -> {
+                    mostrarEnMapa(puntos, pOrigen, pDestino, null, null);
+                    // Tras mostrar la ruta base, pedimos rutas optimizadas al backend
+                    solicitarRutasOptimizadas(pOrigen, pDestino);
+                });
 
             } catch (Exception e) {
                 Log.e(TAG, "Error dibujando ruta simple", e);
@@ -153,11 +187,18 @@ public class MapaPasajero extends AppCompatActivity {
         }).start();
     }
 
+    // ─────────────────────────────────────────────
+    // 🛣️ DIBUJAR RUTA CON PARADAS
+    // ─────────────────────────────────────────────
     private void dibujarRuta(String origen, String destino, JSONArray paradas) {
         new Thread(() -> {
             try {
                 GeoPoint pOrigen = geocodificar(origen);
                 GeoPoint pDestino = geocodificar(destino);
+
+                // Guardamos para usarlos luego en RouteManager
+                puntoOrigenGeocod = pOrigen;
+                puntoDestinoGeocod = pDestino;
 
                 ArrayList<GeoPoint> waypoints = new ArrayList<>();
                 waypoints.add(pOrigen);
@@ -180,7 +221,7 @@ public class MapaPasajero extends AppCompatActivity {
 
                 waypoints.add(pDestino);
 
-                // Construir URL OSRM
+                // Construir URL OSRM con waypoints
                 StringBuilder coordsStr = new StringBuilder();
                 for (int i = 0; i < waypoints.size(); i++) {
                     GeoPoint p = waypoints.get(i);
@@ -189,7 +230,7 @@ public class MapaPasajero extends AppCompatActivity {
                 }
 
                 String url = "https://router.project-osrm.org/route/v1/driving/" +
-                        coordsStr.toString() + "?overview=full&geometries=geojson";
+                        coordsStr + "?overview=full&geometries=geojson";
 
                 JSONObject res = new JSONObject(http(url));
                 JSONArray coords = res.getJSONArray("routes")
@@ -206,7 +247,11 @@ public class MapaPasajero extends AppCompatActivity {
                 final ArrayList<GeoPoint> paradasFinal = puntosParada;
                 final ArrayList<String> nombresFinal = nombresParada;
 
-                runOnUiThread(() -> mostrarEnMapa(puntosRuta, pOrigen, pDestino, paradasFinal, nombresFinal));
+                runOnUiThread(() -> {
+                    mostrarEnMapa(puntosRuta, pOrigen, pDestino, paradasFinal, nombresFinal);
+                    // Tras mostrar la ruta base, pedimos rutas optimizadas al backend
+                    solicitarRutasOptimizadas(pOrigen, pDestino);
+                });
 
             } catch (Exception e) {
                 Log.e(TAG, "Error dibujando ruta completa", e);
@@ -214,11 +259,87 @@ public class MapaPasajero extends AppCompatActivity {
         }).start();
     }
 
-    private void mostrarEnMapa(ArrayList<GeoPoint> ruta, GeoPoint origen, GeoPoint destino,
-                               ArrayList<GeoPoint> paradas, ArrayList<String> nombres) {
+    // ─────────────────────────────────────────────
+    // 🚀 RUTAS OPTIMIZADAS (RouteManager → FastAPI)
+    // ─────────────────────────────────────────────
+
+    /**
+     * Consulta el backend FastAPI para obtener rutas alternativas optimizadas
+     * entre origen y destino. Muestra la mejor opción en un Toast.
+     */
+    private void solicitarRutasOptimizadas(GeoPoint origen, GeoPoint destino) {
+
+        Log.d(TAG, "Consultando rutas optimizadas al backend...");
+
+        routeManager.fetchRoutes(
+                origen.getLatitude(),
+                origen.getLongitude(),
+                destino.getLatitude(),
+                destino.getLongitude(),
+                "CHEAPEST",                          // para el pasajero, la más económica
+                new RouteManager.RouteCallback() {
+
+                    @Override
+                    public void onSuccess(RouteOptionsResponse response) {
+                        runOnUiThread(() -> mostrarInfoRutas(response));
+                    }
+
+                    @Override
+                    public void onError(String errorMessage) {
+                        runOnUiThread(() -> {
+                            Log.e(TAG, "Error rutas optimizadas: " + errorMessage);
+                            // No interrumpir al usuario: el mapa ya tiene la ruta básica
+                        });
+                    }
+                }
+        );
+    }
+
+    /**
+     * Muestra en pantalla la información de las rutas recibidas del backend.
+     * La primera ruta (índice 0) siempre es la mejor según la preferencia.
+     */
+    private void mostrarInfoRutas(RouteOptionsResponse response) {
+        if (response.routes == null || response.routes.isEmpty()) return;
+
+        RouteOption mejor = response.routes.get(0);
+
+        Log.d(TAG, "=== Rutas optimizadas del backend ===");
+        for (RouteOption r : response.routes) {
+            Log.d(TAG, r.id
+                    + " | " + r.distanceKm + " km"
+                    + " | " + r.durationMin + " min"
+                    + " | " + r.fuelLiters + " L"
+                    + " | $" + (int) r.fuelCostCop + " COP");
+        }
+
+        String msg = "Ruta más económica: "
+                + mejor.distanceKm + " km | "
+                + (int) mejor.durationMin + " min | "
+                + "$" + (int) mejor.fuelCostCop + " COP";
+
+        Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+
+        // TODO: Aquí puedes también pintar las rutas alternativas con distintos colores:
+        // for (RouteOption r : response.routes) {
+        //     Polyline poly = GeoJsonHelper.toPolyline(r.geojson, map);
+        //     poly.setColor(r.id.equals("r1") ? Color.BLUE : Color.GRAY);
+        //     map.getOverlays().add(poly);
+        // }
+        // map.invalidate();
+    }
+
+    // ─────────────────────────────────────────────
+    // 🖼️ MOSTRAR EN MAPA
+    // ─────────────────────────────────────────────
+    private void mostrarEnMapa(ArrayList<GeoPoint> ruta,
+                               GeoPoint origen,
+                               GeoPoint destino,
+                               ArrayList<GeoPoint> paradas,
+                               ArrayList<String> nombres) {
         map.getOverlays().clear();
 
-        // Línea de ruta
+        // Línea de ruta principal
         Polyline linea = new Polyline();
         linea.setPoints(ruta);
         linea.setColor(Color.parseColor("#6C3BFF"));
@@ -232,7 +353,7 @@ public class MapaPasajero extends AppCompatActivity {
         mOrigen.setTitle("🟢 Origen");
         map.getOverlays().add(mOrigen);
 
-        // Marcadores paradas
+        // Marcadores paradas intermedias
         if (paradas != null) {
             for (int i = 0; i < paradas.size(); i++) {
                 Marker m = new Marker(map);
@@ -257,24 +378,32 @@ public class MapaPasajero extends AppCompatActivity {
         map.invalidate();
     }
 
+    // ─────────────────────────────────────────────
+    // 🌍 GEOCODIFICACIÓN (Nominatim)
+    // ─────────────────────────────────────────────
     private GeoPoint geocodificar(String direccion) throws Exception {
         String url = "https://nominatim.openstreetmap.org/search?q=" +
                 direccion.replace(" ", "+") + ",Popayan&format=json&limit=1";
 
         JSONArray arr = new JSONArray(http(url));
-        if (arr.length() == 0) throw new Exception("No encontrado");
+        if (arr.length() == 0) throw new Exception("Dirección no encontrada: " + direccion);
 
         JSONObject obj = arr.getJSONObject(0);
         return new GeoPoint(obj.getDouble("lat"), obj.getDouble("lon"));
     }
 
+    // ─────────────────────────────────────────────
+    // 🌐 HTTP SIMPLE
+    // ─────────────────────────────────────────────
     private String http(String urlString) throws Exception {
         HttpURLConnection conn = (HttpURLConnection) new URL(urlString).openConnection();
         conn.setRequestProperty("User-Agent", "Moviflexx-App");
         conn.setConnectTimeout(15000);
         conn.setReadTimeout(15000);
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        BufferedReader reader = new BufferedReader(
+                new InputStreamReader(conn.getInputStream())
+        );
         StringBuilder builder = new StringBuilder();
         String line;
         while ((line = reader.readLine()) != null) builder.append(line);
@@ -284,6 +413,9 @@ public class MapaPasajero extends AppCompatActivity {
         return builder.toString();
     }
 
+    // ─────────────────────────────────────────────
+    // ♻️ CICLO DE VIDA
+    // ─────────────────────────────────────────────
     @Override
     protected void onResume() {
         super.onResume();

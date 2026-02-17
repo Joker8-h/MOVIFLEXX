@@ -1,23 +1,45 @@
 package com.arlys.moviflexx.controller;
 
 import android.Manifest;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Typeface;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
+import android.view.animation.BounceInterpolator;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
 import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.model.ConexionApi;
 import com.arlys.moviflexx.model.Constantes;
+import com.arlys.moviflexx.model.Manager.RouteManager;
+import com.arlys.moviflexx.model.pojo.RouteOption;
+import com.arlys.moviflexx.model.pojo.RouteOptionsResponse;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
@@ -37,34 +59,63 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class PublicarRuta extends AppCompatActivity {
 
-    private static final int REQ_LOCATION = 1001;
+    private static final String TAG          = "PublicarRuta";
+    private static final int    REQ_LOCATION = 1001;
 
     // ── UI ──
     private TextInputEditText    editOrigen, editDestino;
-    private TextView             txtInfoRuta;
+    private TextView             txtInfoRuta, txtContadorRutas, txtEstadoGps;
     private MapView              map;
     private ProgressBar          loader;
     private MaterialButton       btnCalcular, btnPublicar;
-    private MaterialCardView     cardRutasOpciones;
+    private LinearLayout         cardRutasOpciones;
     private LinearLayout         containerRutas;
     private ChipGroup            chipGroupTransporte;
     private Chip                 chipCarro, chipMoto;
     private FloatingActionButton btnZoomIn, btnZoomOut, btnMiUbicacion;
+    private View                 rootView;
+
+    // ── FIX 1: referencia al contenedor del loader y al chip del header ──
+    private View         loaderContainer;    // id: loader_container
+    private LinearLayout cardContadorHeader; // id: card_contador_rutas (chip verde del header)
+    private TextView     txtContadorHeader;  // id: txt_contador_header (renombrado en XML para evitar duplicado)
 
     // ── Datos ──
     private GeoPoint             origenPoint, destinoPoint;
     private MyLocationNewOverlay myLocationOverlay;
     private Marker               marcadorOrigen, marcadorDestino;
-    private List<RutaInfo>       listaRutas     = new ArrayList<>();
+    private final List<RutaInfo> listaRutas  = new ArrayList<>();
     private RutaInfo             rutaSeleccionada;
     private String               tipoTransporte = "driving";
 
-    private static final String COLOR_RAPIDA = "#6C3BFF";
-    private static final String COLOR_MEDIA  = "#FF9800";
-    private static final String COLOR_LARGA  = "#F44336";
+    // ── RouteManager ──
+    private RouteManager         routeManager;
+    private final List<Polyline> rutasBackend = new ArrayList<>();
+
+    // ── Threading ──
+    private final ExecutorService executor    = Executors.newSingleThreadExecutor();
+    private final Handler         mainHandler = new Handler(Looper.getMainLooper());
+
+    // ── Estilos de mapa ──
+    private int estiloMapaActual = 0;
+    private static final String[] ESTILOS_NOMBRES = {"Estándar", "Satélite", "Oscuro"};
+
+    // Colores para hasta 5 rutas
+    private static final int[] COLORES_INT = {
+            0xFF009B8D,  // turquesa
+            0xFFF59E0B,  // naranja
+            0xFFEF4444,  // rojo
+            0xFF3B82F6,  // azul
+            0xFF10B981,  // verde
+    };
+    private static final String[] COLORES_RUTAS = {
+            "#26C6B0", "#F59E0B", "#EF4444", "#3B82F6", "#10B981"
+    };
 
     /* ═══════════ CICLO DE VIDA ═══════════ */
 
@@ -74,27 +125,31 @@ public class PublicarRuta extends AppCompatActivity {
         Configuration.getInstance().setUserAgentValue(getPackageName());
         setContentView(R.layout.activity_publicar_ruta);
 
+        rootView = findViewById(android.R.id.content);
+
         initViews();
         configurarMapa();
         configurarZoomButtons();
         configurarTransporte();
         verificarPermisosUbicacion();
 
-        btnCalcular.setOnClickListener(v -> buscarRutasMultiples());
-        btnPublicar.setOnClickListener(v -> crearRuta());
+        routeManager = new RouteManager();
+
+        btnCalcular.setOnClickListener(v -> {
+            animarBoton(btnCalcular);
+            buscarRutasMultiples();
+        });
+        btnPublicar.setOnClickListener(v -> {
+            animarBoton(btnPublicar);
+            crearRuta();
+        });
+
+        configurarAutocompletado();
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (map != null) map.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (map != null) map.onPause();
-    }
+    @Override protected void onResume()  { super.onResume();  if (map != null) map.onResume(); }
+    @Override protected void onPause()   { super.onPause();   if (map != null) map.onPause();  }
+    @Override protected void onDestroy() { super.onDestroy(); executor.shutdown();              }
 
     /* ═══════════ INIT ═══════════ */
 
@@ -114,6 +169,13 @@ public class PublicarRuta extends AppCompatActivity {
         btnZoomIn           = findViewById(R.id.fab_zoom_in);
         btnZoomOut          = findViewById(R.id.fab_zoom_out);
         btnMiUbicacion      = findViewById(R.id.fab_mi_ubicacion);
+        txtContadorRutas    = findViewById(R.id.txt_contador_rutas);
+        txtEstadoGps        = findViewById(R.id.txt_estado_gps);
+
+        // FIX 1: guardar referencias que faltaban
+        loaderContainer    = findViewById(R.id.loader_container);
+        cardContadorHeader = findViewById(R.id.card_contador_rutas);
+        txtContadorHeader  = findViewById(R.id.txt_contador_header); // nuevo ID en XML
     }
 
     /* ═══════════ MAPA ═══════════ */
@@ -122,7 +184,7 @@ public class PublicarRuta extends AppCompatActivity {
         map.setTileSource(TileSourceFactory.MAPNIK);
         map.setMultiTouchControls(true);
         map.setBuiltInZoomControls(false);
-        map.getController().setZoom(17.0);
+        map.getController().setZoom(14.0);
         map.setMinZoomLevel(5.0);
         map.setMaxZoomLevel(20.0);
         map.setFlingEnabled(true);
@@ -130,31 +192,50 @@ public class PublicarRuta extends AppCompatActivity {
         map.setHorizontalMapRepetitionEnabled(false);
         map.setVerticalMapRepetitionEnabled(false);
         map.setUseDataConnection(true);
+        map.getController().setCenter(new GeoPoint(2.4448, -76.6147));
+
         Configuration.getInstance().setOsmdroidTileCache(
-                new java.io.File(getCacheDir(), "osmdroid_tiles"));
-        Configuration.getInstance().setTileFileSystemCacheMaxBytes(80L * 1024 * 1024);
-        Configuration.getInstance().setTileFileSystemCacheTrimBytes(60L * 1024 * 1024);
+                new File(getCacheDir(), "osmdroid_tiles"));
+        Configuration.getInstance().setTileFileSystemCacheMaxBytes(100L * 1024 * 1024);
+        Configuration.getInstance().setTileFileSystemCacheTrimBytes(80L * 1024 * 1024);
     }
 
-    /* ═══════════ ZOOM ═══════════ */
+    /* ═══════════ ZOOM Y CONTROLES ═══════════ */
 
     private void configurarZoomButtons() {
         btnZoomIn.setOnClickListener(v -> {
-            if (map.getZoomLevelDouble() < map.getMaxZoomLevel())
+            if (map.getZoomLevelDouble() < map.getMaxZoomLevel()) {
                 map.getController().zoomIn();
-        });
-        btnZoomOut.setOnClickListener(v -> {
-            if (map.getZoomLevelDouble() > map.getMinZoomLevel())
-                map.getController().zoomOut();
-        });
-        btnMiUbicacion.setOnClickListener(v -> {
-            if (origenPoint != null) {
-                map.getController().animateTo(origenPoint);
-                map.getController().setZoom(17.0);
-            } else {
-                Toast.makeText(this, "Esperando GPS…", Toast.LENGTH_SHORT).show();
+                animarFab(btnZoomIn);
             }
         });
+        btnZoomOut.setOnClickListener(v -> {
+            if (map.getZoomLevelDouble() > map.getMinZoomLevel()) {
+                map.getController().zoomOut();
+                animarFab(btnZoomOut);
+            }
+        });
+        btnMiUbicacion.setOnClickListener(v -> {
+            animarFab(btnMiUbicacion);
+            if (origenPoint != null) {
+                map.getController().animateTo(origenPoint);
+                map.getController().setZoom(16.0);
+                mostrarSnackbar("📍 Tu ubicación", false);
+            } else {
+                mostrarSnackbar("⏳ Esperando señal GPS...", false);
+            }
+        });
+    }
+
+    private void cambiarEstiloMapa() {
+        estiloMapaActual = (estiloMapaActual + 1) % 3;
+        switch (estiloMapaActual) {
+            case 0: map.setTileSource(TileSourceFactory.MAPNIK); break;
+            case 1: map.setTileSource(TileSourceFactory.USGS_SAT); break;
+            case 2: map.setTileSource(TileSourceFactory.DEFAULT_TILE_SOURCE); break;
+        }
+        map.invalidate();
+        mostrarSnackbar("🗺️ Mapa: " + ESTILOS_NOMBRES[estiloMapaActual], false);
     }
 
     /* ═══════════ TRANSPORTE ═══════════ */
@@ -163,7 +244,11 @@ public class PublicarRuta extends AppCompatActivity {
         chipCarro.setChecked(true);
         chipGroupTransporte.setOnCheckedChangeListener((group, checkedId) -> {
             tipoTransporte = (checkedId == R.id.chip_moto) ? "motorcycle" : "driving";
-            if (!listaRutas.isEmpty() && destinoPoint != null) buscarRutasMultiples();
+            if (!listaRutas.isEmpty() && destinoPoint != null) {
+                mostrarSnackbar("🔄 Recalculando para " +
+                        (tipoTransporte.equals("motorcycle") ? "moto" : "carro") + "...", false);
+                buscarRutasMultiples();
+            }
         });
     }
 
@@ -171,8 +256,7 @@ public class PublicarRuta extends AppCompatActivity {
 
     private void verificarPermisosUbicacion() {
         if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQ_LOCATION);
         } else {
@@ -181,21 +265,36 @@ public class PublicarRuta extends AppCompatActivity {
     }
 
     private void activarUbicacion() {
-        myLocationOverlay = new MyLocationNewOverlay(
-                new GpsMyLocationProvider(this), map);
+        myLocationOverlay = new MyLocationNewOverlay(new GpsMyLocationProvider(this), map);
         myLocationOverlay.enableMyLocation();
+        myLocationOverlay.enableFollowLocation();
+
+        try {
+            Bitmap carBmp = android.graphics.BitmapFactory.decodeResource(
+                    getResources(), R.drawable.ic_car);
+            if (carBmp != null) {
+                myLocationOverlay.setPersonIcon(carBmp);
+                myLocationOverlay.setDirectionIcon(carBmp);
+            }
+        } catch (Exception ignored) {}
+
         map.getOverlays().add(myLocationOverlay);
 
-        myLocationOverlay.runOnFirstFix(() ->
-                runOnUiThread(() -> {
-                    origenPoint = myLocationOverlay.getMyLocation();
-                    if (origenPoint != null) {
-                        editOrigen.setText(obtenerDireccion(origenPoint));
-                        if (listaRutas.isEmpty())
-                            map.getController().animateTo(origenPoint);
-                        agregarMarcadorOrigen();
-                    }
-                }));
+        myLocationOverlay.runOnFirstFix(() -> mainHandler.post(() -> {
+            origenPoint = myLocationOverlay.getMyLocation();
+            if (origenPoint != null) {
+                myLocationOverlay.disableFollowLocation();
+                editOrigen.setText(obtenerDireccion(origenPoint));
+                map.getController().animateTo(origenPoint);
+                map.getController().setZoom(15.0);
+                agregarMarcadorOrigen();
+                if (txtEstadoGps != null) {
+                    txtEstadoGps.setText("GPS ✓");
+                    txtEstadoGps.setTextColor(Color.parseColor("#10B981"));
+                }
+                mostrarSnackbar("📍 GPS activo — Ubicación detectada", false);
+            }
+        }));
     }
 
     @Override
@@ -207,145 +306,441 @@ public class PublicarRuta extends AppCompatActivity {
                 && grantResults.length > 0
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             activarUbicacion();
+        } else {
+            mostrarSnackbar("⚠️ Sin permiso de ubicación", true);
         }
+    }
+
+    /* ═══════════ AUTOCOMPLETADO ═══════════ */
+
+    private Runnable autocompletadoRunnable;
+    private final Handler autoHandler = new Handler(Looper.getMainLooper());
+
+    private void configurarAutocompletado() {
+        editDestino.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void afterTextChanged(android.text.Editable s) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (autocompletadoRunnable != null) autoHandler.removeCallbacks(autocompletadoRunnable);
+                String txt = s.toString().trim();
+                if (txt.length() < 3) return;
+                autocompletadoRunnable = () -> sugerirDestinos(txt);
+                autoHandler.postDelayed(autocompletadoRunnable, 600);
+            }
+        });
+    }
+
+    private void sugerirDestinos(String texto) {
+        executor.execute(() -> {
+            try {
+                String url = "https://nominatim.openstreetmap.org/search?q="
+                        + java.net.URLEncoder.encode(texto + " Popayan Colombia", "UTF-8")
+                        + "&format=json&limit=5&addressdetails=1";
+                JSONArray arr = new JSONArray(peticionHttp(url));
+                List<String> sugerencias = new ArrayList<>();
+                for (int i = 0; i < arr.length(); i++) {
+                    String nombre = arr.getJSONObject(i).optString("display_name", "");
+                    if (!nombre.isEmpty()) sugerencias.add(nombre);
+                }
+            } catch (Exception ignored) {}
+        });
     }
 
     /* ═══════════ MARCADORES ═══════════ */
 
     private void agregarMarcadorOrigen() {
         if (marcadorOrigen != null) map.getOverlays().remove(marcadorOrigen);
-        marcadorOrigen = new Marker(map);
-        marcadorOrigen.setPosition(origenPoint);
-        marcadorOrigen.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        marcadorOrigen.setTitle("Origen");
-        marcadorOrigen.setSnippet(editOrigen.getText().toString());
-        marcadorOrigen.setIcon(getResources().getDrawable(android.R.drawable.ic_menu_mylocation));
+        marcadorOrigen = crearMarcadorPersonalizado(
+                origenPoint,
+                "🚗 Origen",
+                editOrigen.getText() != null ? editOrigen.getText().toString() : "",
+                COLORES_INT[0],
+                "A"
+        );
         map.getOverlays().add(marcadorOrigen);
         map.invalidate();
     }
 
     private void agregarMarcadorDestino() {
         if (marcadorDestino != null) map.getOverlays().remove(marcadorDestino);
-        marcadorDestino = new Marker(map);
-        marcadorDestino.setPosition(destinoPoint);
-        marcadorDestino.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        marcadorDestino.setTitle("Destino");
-        marcadorDestino.setSnippet(editDestino.getText().toString());
-        marcadorDestino.setIcon(getResources().getDrawable(android.R.drawable.ic_dialog_map));
+        marcadorDestino = crearMarcadorPersonalizado(
+                destinoPoint,
+                "📍 Destino",
+                editDestino.getText() != null ? editDestino.getText().toString() : "",
+                0xFFEF4444,
+                "B"
+        );
         map.getOverlays().add(marcadorDestino);
         map.invalidate();
     }
 
-    /* ═══════════ RUTAS ═══════════ */
+    private Marker crearMarcadorPersonalizado(GeoPoint punto, String titulo,
+                                              String snippet, int colorInt, String letra) {
+        Marker m = new Marker(map);
+        m.setPosition(punto);
+        m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        m.setTitle(titulo);
+        m.setSnippet(snippet);
+
+        int size = 96;
+        Bitmap bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(bmp);
+
+        Paint sombra = new Paint(Paint.ANTI_ALIAS_FLAG);
+        sombra.setColor(Color.argb(80, 0, 0, 0));
+        c.drawCircle(size / 2f + 3, size / 2f + 5, size / 2f - 6, sombra);
+
+        Paint circulo = new Paint(Paint.ANTI_ALIAS_FLAG);
+        circulo.setColor(colorInt);
+        c.drawCircle(size / 2f, size / 2f - 4, size / 2f - 8, circulo);
+
+        Paint borde = new Paint(Paint.ANTI_ALIAS_FLAG);
+        borde.setColor(Color.WHITE);
+        borde.setStyle(Paint.Style.STROKE);
+        borde.setStrokeWidth(4f);
+        c.drawCircle(size / 2f, size / 2f - 4, size / 2f - 8, borde);
+
+        Paint texto = new Paint(Paint.ANTI_ALIAS_FLAG);
+        texto.setColor(Color.WHITE);
+        texto.setTextSize(36f);
+        texto.setTypeface(Typeface.DEFAULT_BOLD);
+        texto.setTextAlign(Paint.Align.CENTER);
+        c.drawText(letra, size / 2f, size / 2f + 9, texto);
+
+        m.setIcon(new BitmapDrawable(getResources(), bmp));
+        return m;
+    }
+
+    /* ═══════════ BUSCAR RUTAS ═══════════ */
 
     private void buscarRutasMultiples() {
         if (origenPoint == null) {
-            Toast.makeText(this, "Esperando GPS…", Toast.LENGTH_SHORT).show();
+            mostrarSnackbar("⏳ Esperando señal GPS...", true);
             return;
         }
-        String destinoTxt = editDestino.getText().toString().trim();
+        String destinoTxt = editDestino.getText() != null
+                ? editDestino.getText().toString().trim() : "";
         if (destinoTxt.isEmpty()) {
-            Toast.makeText(this, "Ingrese destino", Toast.LENGTH_SHORT).show();
+            mostrarSnackbar("📌 Ingresa un destino primero", true);
             return;
         }
 
-        loader.setVisibility(View.VISIBLE);
-        cardRutasOpciones.setVisibility(View.GONE);
-        containerRutas.removeAllViews();
-        limpiarRutasDelMapa();
+        setLoadingState(true);
 
-        new Thread(() -> {
+        executor.execute(() -> {
             try {
                 String geoUrl = "https://nominatim.openstreetmap.org/search?q="
-                        + java.net.URLEncoder.encode(destinoTxt, "UTF-8")
-                        + ",Popayan&format=json&limit=1";
+                        + java.net.URLEncoder.encode(destinoTxt + " Popayan Colombia", "UTF-8")
+                        + "&format=json&limit=1";
                 JSONArray geoArr = new JSONArray(peticionHttp(geoUrl));
 
                 if (geoArr.length() == 0) {
-                    runOnUiThread(() -> {
-                        loader.setVisibility(View.GONE);
-                        Toast.makeText(this, "Destino no encontrado", Toast.LENGTH_SHORT).show();
+                    mainHandler.post(() -> {
+                        setLoadingState(false);
+                        mostrarSnackbar("❌ Destino no encontrado. Intenta ser más específico", true);
                     });
                     return;
                 }
 
-                JSONObject obj = geoArr.getJSONObject(0);
-                destinoPoint = new GeoPoint(obj.getDouble("lat"), obj.getDouble("lon"));
+                JSONObject geoObj = geoArr.getJSONObject(0);
+                destinoPoint = new GeoPoint(geoObj.getDouble("lat"), geoObj.getDouble("lon"));
 
-                String osrmUrl = "https://router.project-osrm.org/route/v1/"
-                        + tipoTransporte + "/"
-                        + origenPoint.getLongitude() + "," + origenPoint.getLatitude() + ";"
-                        + destinoPoint.getLongitude() + "," + destinoPoint.getLatitude()
-                        + "?overview=full&geometries=geojson&alternatives=true&steps=true";
+                String coordsOSRM = origenPoint.getLongitude() + "," + origenPoint.getLatitude()
+                        + ";" + destinoPoint.getLongitude() + "," + destinoPoint.getLatitude();
 
-                JSONObject res    = new JSONObject(peticionHttp(osrmUrl));
-                JSONArray  routes = res.getJSONArray("routes");
                 listaRutas.clear();
 
-                for (int i = 0; i < Math.min(routes.length(), 3); i++) {
-                    JSONObject route     = routes.getJSONObject(i);
-                    double     distancia = route.getDouble("distance") / 1000;
-                    double     duracion  = route.getDouble("duration") / 60;
-                    JSONArray  coords    = route.getJSONObject("geometry").getJSONArray("coordinates");
-
-                    ArrayList<GeoPoint> puntos = new ArrayList<>();
-                    for (int j = 0; j < coords.length(); j++) {
-                        puntos.add(new GeoPoint(
-                                coords.getJSONArray(j).getDouble(1),
-                                coords.getJSONArray(j).getDouble(0)
-                        ));
-                    }
-
-                    RutaInfo info  = new RutaInfo();
-                    info.puntos    = puntos;
-                    info.distancia = distancia;
-                    info.duracion  = duracion;
-                    info.indice    = i;
-
-                    switch (i) {
-                        case 0:
-                            info.tipo = "Ruta Rápida"; info.color = COLOR_RAPIDA;
-                            info.descripcion = "La ruta más rápida"; break;
-                        case 1:
-                            info.tipo = "Ruta Media";  info.color = COLOR_MEDIA;
-                            info.descripcion = "Ruta alternativa"; break;
-                        default:
-                            info.tipo = "Ruta Larga";  info.color = COLOR_LARGA;
-                            info.descripcion = "Ruta más larga";
-                    }
-                    listaRutas.add(info);
+                mainHandler.post(() -> actualizarMensajeLoader("🔍 Consultando OSRM Popayán..."));
+                try {
+                    String urlPropio = "https://osrm-popayan-production.up.railway.app"
+                            + "/route/v1/driving/" + coordsOSRM
+                            + "?overview=full&geometries=geojson&alternatives=true";
+                    agregarRutasDeOSRM(urlPropio, "OSRM-Popayan");
+                } catch (Exception e) {
+                    Log.w(TAG, "OSRM propio no disponible: " + e.getMessage());
                 }
 
-                runOnUiThread(this::mostrarRutas);
+                mainHandler.post(() -> actualizarMensajeLoader("🌐 Consultando OSRM público..."));
+                try {
+                    String modoOsrm = tipoTransporte.equals("motorcycle") ? "driving" : tipoTransporte;
+                    String urlPublico = "https://router.project-osrm.org/route/v1/"
+                            + modoOsrm + "/" + coordsOSRM
+                            + "?overview=full&geometries=geojson&alternatives=true";
+                    agregarRutasDeOSRM(urlPublico, "OSRM-Public");
+                } catch (Exception e) {
+                    Log.w(TAG, "OSRM público no disponible: " + e.getMessage());
+                }
+
+                mainHandler.post(() -> actualizarMensajeLoader("🗺️ Consultando GraphHopper..."));
+                try {
+                    String perfilGH = tipoTransporte.equals("motorcycle") ? "motorcycle" : "car";
+                    String urlGH = "https://graphhopper.com/api/1/route"
+                            + "?point=" + origenPoint.getLatitude() + "," + origenPoint.getLongitude()
+                            + "&point=" + destinoPoint.getLatitude() + "," + destinoPoint.getLongitude()
+                            + "&profile=" + perfilGH
+                            + "&alternative_route.max_paths=3"
+                            + "&alternative_route.max_weight_factor=1.8"
+                            + "&alternative_route.max_share_factor=0.6"
+                            + "&points_encoded=false"
+                            + "&key=";
+                    agregarRutasDeGraphHopper(urlGH);
+                } catch (Exception e) {
+                    Log.w(TAG, "GraphHopper no disponible: " + e.getMessage());
+                }
+
+                if (listaRutas.isEmpty()) {
+                    mainHandler.post(() -> {
+                        setLoadingState(false);
+                        mostrarSnackbar("⚠️ No se encontraron rutas. Verifica conectividad.", true);
+                    });
+                    return;
+                }
+
+                String[] nombresTipo = {"⚡ Ruta Rápida", "🔵 Alternativa 1",
+                        "🔴 Alternativa 2", "🟡 Alternativa 3", "🟢 Alternativa 4"};
+                for (int i = 0; i < listaRutas.size(); i++) {
+                    RutaInfo r = listaRutas.get(i);
+                    r.indice      = i;
+                    r.colorHex    = COLORES_RUTAS[Math.min(i, COLORES_RUTAS.length - 1)];
+                    r.colorInt    = COLORES_INT[Math.min(i, COLORES_INT.length - 1)];
+                    r.tipo        = nombresTipo[Math.min(i, nombresTipo.length - 1)];
+                    r.descripcion = String.format("%.1f km · %.0f min · desde %s",
+                            r.distancia, r.duracion, r.fuente);
+                }
+
+                mainHandler.post(() -> {
+                    mostrarRutas();
+                    consultarBackendFastAPI();
+                });
 
             } catch (Exception e) {
-                e.printStackTrace();
-                runOnUiThread(() -> {
-                    loader.setVisibility(View.GONE);
-                    Toast.makeText(this, "Error calculando rutas", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Error buscando rutas", e);
+                mainHandler.post(() -> {
+                    setLoadingState(false);
+                    mostrarSnackbar("❌ Error de red calculando rutas", true);
                 });
             }
-        }).start();
+        });
     }
 
+    private void agregarRutasDeOSRM(String url, String fuente) throws Exception {
+        String json = peticionHttp(url);
+        if (json == null || json.isEmpty()) return;
+
+        JSONObject res = new JSONObject(json);
+        if (!"Ok".equals(res.optString("code"))) return;
+
+        JSONArray routes = res.optJSONArray("routes");
+        if (routes == null) return;
+
+        for (int i = 0; i < routes.length() && listaRutas.size() < 5; i++) {
+            JSONObject route = routes.getJSONObject(i);
+            JSONObject geometry = route.optJSONObject("geometry");
+            if (geometry == null) continue;
+
+            JSONArray coordinates = geometry.optJSONArray("coordinates");
+            if (coordinates == null || coordinates.length() < 2) continue;
+
+            ArrayList<GeoPoint> puntos = coordsOSRMaGeoPoints(coordinates);
+            if (puntos.size() < 2 || esRutaDuplicada(puntos)) continue;
+
+            RutaInfo info  = new RutaInfo();
+            info.puntos    = puntos;
+            info.distancia = route.getDouble("distance") / 1000.0;
+            info.duracion  = route.getDouble("duration") / 60.0;
+            info.fuente    = fuente;
+            listaRutas.add(info);
+        }
+    }
+
+    private void agregarRutasDeGraphHopper(String url) throws Exception {
+        String json = peticionHttp(url);
+        if (json == null || json.isEmpty()) return;
+
+        JSONObject res = new JSONObject(json);
+        JSONArray paths = res.optJSONArray("paths");
+        if (paths == null) return;
+
+        for (int i = 0; i < paths.length() && listaRutas.size() < 5; i++) {
+            JSONObject path = paths.getJSONObject(i);
+            JSONObject pointsObj = path.optJSONObject("points");
+            if (pointsObj == null) continue;
+
+            JSONArray coords = pointsObj.optJSONArray("coordinates");
+            if (coords == null || coords.length() < 2) continue;
+
+            ArrayList<GeoPoint> puntos = new ArrayList<>();
+            for (int j = 0; j < coords.length(); j++) {
+                JSONArray c = coords.getJSONArray(j);
+                puntos.add(new GeoPoint(c.getDouble(1), c.getDouble(0)));
+            }
+
+            if (puntos.size() < 2 || esRutaDuplicada(puntos)) continue;
+
+            RutaInfo info  = new RutaInfo();
+            info.puntos    = puntos;
+            info.distancia = path.getDouble("distance") / 1000.0;
+            info.duracion  = path.getDouble("time") / 60000.0;
+            info.fuente    = "GraphHopper";
+            listaRutas.add(info);
+        }
+    }
+
+    private boolean esRutaDuplicada(ArrayList<GeoPoint> nuevos) {
+        if (listaRutas.isEmpty()) return false;
+        GeoPoint midNuevo = nuevos.get(nuevos.size() / 2);
+        for (RutaInfo existente : listaRutas) {
+            if (existente.puntos == null || existente.puntos.isEmpty()) continue;
+            GeoPoint midExistente = existente.puntos.get(existente.puntos.size() / 2);
+            if (distanciaEnMetros(midNuevo, midExistente) < 200) return true;
+        }
+        return false;
+    }
+
+    private double distanciaEnMetros(GeoPoint a, GeoPoint b) {
+        double lat1 = Math.toRadians(a.getLatitude());
+        double lat2 = Math.toRadians(b.getLatitude());
+        double dLat = Math.toRadians(b.getLatitude() - a.getLatitude());
+        double dLon = Math.toRadians(b.getLongitude() - a.getLongitude());
+        double h = Math.sin(dLat/2) * Math.sin(dLat/2)
+                + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon/2) * Math.sin(dLon/2);
+        return 6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+    }
+
+    private ArrayList<GeoPoint> coordsOSRMaGeoPoints(JSONArray coords) throws Exception {
+        ArrayList<GeoPoint> puntos = new ArrayList<>();
+        for (int i = 0; i < coords.length(); i++) {
+            JSONArray c = coords.getJSONArray(i);
+            puntos.add(new GeoPoint(c.getDouble(1), c.getDouble(0)));
+        }
+        return puntos;
+    }
+
+    /* ═══════════ BACKEND FastAPI ═══════════ */
+
+    private void consultarBackendFastAPI() {
+        if (origenPoint == null || destinoPoint == null) return;
+
+        routeManager.fetchRoutes(
+                origenPoint.getLatitude(),  origenPoint.getLongitude(),
+                destinoPoint.getLatitude(), destinoPoint.getLongitude(),
+                "FASTEST",
+                new RouteManager.RouteCallback() {
+                    @Override
+                    public void onSuccess(RouteOptionsResponse response) {
+                        mainHandler.post(() -> actualizarCardsConDatosBackend(response));
+                    }
+                    @Override
+                    public void onError(String errorMessage) {
+                        Log.w(TAG, "Backend sin datos de combustible: " + errorMessage);
+                        mainHandler.post(() -> {
+                            for (int i = 0; i < containerRutas.getChildCount(); i++) {
+                                View v = containerRutas.getChildAt(i);
+                                TextView tc = v.findViewById(R.id.txt_combustible);
+                                TextView tp = v.findViewById(R.id.txt_costo);
+                                if (tc != null) tc.setText("N/D");
+                                if (tp != null) tp.setText("N/D");
+                            }
+                        });
+                    }
+                }
+        );
+    }
+
+    private void actualizarCardsConDatosBackend(RouteOptionsResponse response) {
+        if (response == null || response.routes == null || response.routes.isEmpty()) return;
+
+        for (Polyline p : rutasBackend) map.getOverlays().remove(p);
+        rutasBackend.clear();
+
+        for (int i = 0; i < response.routes.size() && i < listaRutas.size(); i++) {
+            RouteOption br = response.routes.get(i);
+            RutaInfo    lr = listaRutas.get(i);
+
+            lr.distancia   = br.distanceKm;
+            lr.duracion    = br.durationMin;
+            lr.fuelLiters  = br.fuelLiters;
+            lr.fuelCostCop = br.fuelCostCop;
+
+            if (i < containerRutas.getChildCount()) {
+                View cv = containerRutas.getChildAt(i);
+                setTextoSeguro(cv, R.id.txt_distancia,   String.format("%.1f km", br.distanceKm));
+                setTextoSeguro(cv, R.id.txt_duracion,    String.format("%.0f min", br.durationMin));
+                setTextoSeguro(cv, R.id.txt_combustible, String.format("%.2f L", br.fuelLiters));
+                setTextoSeguro(cv, R.id.txt_costo,       String.format("$%,.0f COP", br.fuelCostCop));
+                setTextoSeguro(cv, R.id.txt_descripcion, lr.descripcion
+                        + "  ·  Score " + String.format("%.1f", br.score));
+                animarEntradaCard(cv, i * 80L);
+            }
+
+            if (br.geojson != null) {
+                Polyline line = geojsonAPolyline(br.geojson,
+                        COLORES_RUTAS[Math.min(i, COLORES_RUTAS.length - 1)], 6f, 160);
+                if (line != null) {
+                    map.getOverlays().add(line);
+                    rutasBackend.add(line);
+                }
+            }
+        }
+
+        rePinMarkers();
+        map.invalidate();
+
+        RouteOption mejor = response.routes.get(0);
+        mostrarSnackbar(String.format("✅ %.1f km · %d min · %.2f L · $%,.0f COP",
+                mejor.distanceKm, (int) mejor.durationMin,
+                mejor.fuelLiters, mejor.fuelCostCop), false);
+    }
+
+    /* ═══════════ MOSTRAR RUTAS ═══════════ */
+
     private void mostrarRutas() {
-        loader.setVisibility(View.GONE);
+        setLoadingState(false);
+
         if (listaRutas.isEmpty()) {
-            Toast.makeText(this, "No se encontraron rutas", Toast.LENGTH_SHORT).show();
+            mostrarSnackbar("⚠️ Sin rutas disponibles", true);
             return;
         }
 
         limpiarRutasDelMapa();
-        for (RutaInfo ruta : listaRutas) dibujarRutaEnMapa(ruta, false);
+
+        for (int i = listaRutas.size() - 1; i >= 0; i--) {
+            dibujarRutaEnMapa(listaRutas.get(i), i == 0);
+        }
+
         agregarMarcadorDestino();
-        ajustarVistaRuta(listaRutas.get(0).puntos);
+        agregarMarcadorOrigen();
+        ajustarVistaTodasLasRutas();
 
         containerRutas.removeAllViews();
-        for (RutaInfo ruta : listaRutas) containerRutas.addView(crearCardRuta(ruta));
+        for (int i = 0; i < listaRutas.size(); i++) {
+            View card = crearCardRuta(listaRutas.get(i));
+            containerRutas.addView(card);
+            animarEntradaCard(card, i * 100L);
+        }
 
         cardRutasOpciones.setVisibility(View.VISIBLE);
+        animarEntradaCard(cardRutasOpciones, 0);
+
         rutaSeleccionada = null;
-        txtInfoRuta.setText("Selecciona una ruta para continuar");
+        String msg = listaRutas.size() == 1
+                ? "1 ruta encontrada"
+                : listaRutas.size() + " rutas encontradas — toca para ver detalles";
+        txtInfoRuta.setText(msg);
+
+        // FIX 2: actualizar AMBOS contadores con sus referencias directas (sin buscar hijos)
+        String textoContador = listaRutas.size() + " rutas";
+        if (txtContadorRutas != null)
+            txtContadorRutas.setText(textoContador);       // texto gris en "OPCIONES DE RUTA"
+        if (txtContadorHeader != null)
+            txtContadorHeader.setText(textoContador);      // texto blanco en chip del header
+        if (cardContadorHeader != null)
+            cardContadorHeader.setVisibility(View.VISIBLE); // mostrar chip del header
+
+        mainHandler.postDelayed(() -> {
+            if (!listaRutas.isEmpty()) seleccionarRuta(listaRutas.get(0));
+        }, 800);
     }
 
     private void limpiarRutasDelMapa() {
@@ -353,190 +748,448 @@ public class PublicarRuta extends AppCompatActivity {
         for (Overlay o : map.getOverlays())
             if (o instanceof Polyline) toRemove.add(o);
         map.getOverlays().removeAll(toRemove);
+        rutasBackend.clear();
     }
+
+    /* ═══════════ CARD DE RUTA ═══════════ */
 
     private View crearCardRuta(RutaInfo ruta) {
         View view = getLayoutInflater().inflate(R.layout.item_ruta_opcion, null);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, 0, 0, 12);
+        view.setLayoutParams(lp);
 
-        MaterialCardView card    = view.findViewById(R.id.card_ruta);
-        View  indicadorColor     = view.findViewById(R.id.indicador_color);
-        TextView txtTipo         = view.findViewById(R.id.txt_tipo_ruta);
-        TextView txtDistancia    = view.findViewById(R.id.txt_distancia);
-        TextView txtDuracion     = view.findViewById(R.id.txt_duracion);
-        TextView txtDescripcion  = view.findViewById(R.id.txt_descripcion);
-        android.widget.ImageView iconTransporte = view.findViewById(R.id.icon_transporte);
+        MaterialCardView card   = view.findViewById(R.id.card_ruta);
+        View indicadorColor     = view.findViewById(R.id.indicador_color);
+        ImageView iconTransport = view.findViewById(R.id.icon_transporte);
 
-        indicadorColor.setBackgroundColor(Color.parseColor(ruta.color));
-        txtTipo.setText(ruta.tipo);
-        txtDistancia.setText(String.format("%.1f km", ruta.distancia));
-        txtDuracion.setText(String.format("%.0f min", ruta.duracion));
-        txtDescripcion.setText(ruta.descripcion);
-        iconTransporte.setImageResource(
-                tipoTransporte.equals("motorcycle") ? R.drawable.ic_moto : R.drawable.ic_car);
+        if (indicadorColor != null) indicadorColor.setBackgroundColor(ruta.colorInt);
+        if (iconTransport  != null)
+            iconTransport.setImageResource(
+                    tipoTransporte.equals("motorcycle") ? R.drawable.ic_moto : R.drawable.ic_car);
 
-        card.setOnClickListener(v -> seleccionarRuta(ruta));
+        setTextoSeguro(view, R.id.txt_tipo_ruta,   ruta.tipo);
+        setTextoSeguro(view, R.id.txt_distancia,   String.format("%.1f km", ruta.distancia));
+        setTextoSeguro(view, R.id.txt_duracion,    String.format("%.0f min", ruta.duracion));
+        setTextoSeguro(view, R.id.txt_combustible, "⏳ calculando...");
+        setTextoSeguro(view, R.id.txt_costo,       "⏳");
+        setTextoSeguro(view, R.id.txt_descripcion, "📡 " + ruta.fuente + " · "
+                + ruta.puntos.size() + " puntos de ruta");
+
+        if (card != null) card.setOnClickListener(v -> seleccionarRuta(ruta));
+        view.setOnClickListener(v -> seleccionarRuta(ruta));
+
+        if (ruta.indice == 0) {
+            TextView badgeMejor = view.findViewById(R.id.badge_mejor);
+            if (badgeMejor != null) badgeMejor.setVisibility(View.VISIBLE);
+        }
+
         return view;
     }
 
     private void seleccionarRuta(RutaInfo ruta) {
+        if (ruta == null) return;
         rutaSeleccionada = ruta;
 
         for (int i = 0; i < containerRutas.getChildCount(); i++) {
-            MaterialCardView card = containerRutas.getChildAt(i).findViewById(R.id.card_ruta);
+            View v = containerRutas.getChildAt(i);
+            MaterialCardView card = v.findViewById(R.id.card_ruta);
             if (card == null) continue;
+
             if (i == ruta.indice) {
-                card.setCardElevation(16f);
-                card.setStrokeWidth(4);
-                card.setStrokeColor(Color.parseColor(ruta.color));
+                card.setCardElevation(dp(8));
+                card.setStrokeWidth(dp(3));
+                card.setStrokeColor(ruta.colorInt);
+                ObjectAnimator scaleX = ObjectAnimator.ofFloat(card, "scaleX", 1f, 1.02f, 1f);
+                ObjectAnimator scaleY = ObjectAnimator.ofFloat(card, "scaleY", 1f, 1.02f, 1f);
+                AnimatorSet set = new AnimatorSet();
+                set.playTogether(scaleX, scaleY);
+                set.setDuration(300);
+                set.setInterpolator(new OvershootInterpolator());
+                set.start();
             } else {
-                card.setCardElevation(4f);
+                card.setCardElevation(dp(2));
                 card.setStrokeWidth(1);
-                card.setStrokeColor(Color.parseColor("#E0E0E0"));
+                card.setStrokeColor(0xFFE0E0E0);
             }
         }
 
         limpiarRutasDelMapa();
+        for (RutaInfo r : listaRutas) {
+            if (r.indice != ruta.indice) dibujarRutaAtenuada(r);
+        }
         dibujarRutaEnMapa(ruta, true);
-        if (marcadorOrigen != null) map.getOverlays().add(marcadorOrigen);
-        agregarMarcadorDestino();
+        rePinMarkers();
         map.invalidate();
 
-        String vehiculo = tipoTransporte.equals("motorcycle") ? "Moto" : "Carro";
-        txtInfoRuta.setText(String.format("%s • %s • %.1f km • %.0f min",
-                ruta.tipo, vehiculo, ruta.distancia, ruta.duracion));
+        String vehiculo = tipoTransporte.equals("motorcycle") ? "🏍 Moto" : "🚗 Carro";
+        StringBuilder info = new StringBuilder();
+        info.append(ruta.tipo).append("  ·  ").append(vehiculo).append("\n");
+        info.append(String.format("📏 %.1f km  ·  ⏱ %.0f min", ruta.distancia, ruta.duracion));
+        if (ruta.fuelCostCop > 0) {
+            info.append(String.format("  ·  ⛽ %.2f L  ·  💰 $%,.0f", ruta.fuelLiters, ruta.fuelCostCop));
+        }
+        txtInfoRuta.setText(info.toString());
+
+        ajustarVistaRuta(ruta);
     }
 
-    /* ═══════════ DIBUJAR RUTAS ═══════════ */
+    /* ═══════════ DIBUJAR POLYLINES ═══════════ */
 
     private void dibujarRutaEnMapa(RutaInfo ruta, boolean esSeleccionada) {
-        Polyline sombra = new Polyline();
+        if (ruta.puntos == null || ruta.puntos.size() < 2) return;
+
+        float anchoSombra = esSeleccionada ? 24f : 16f;
+        float anchoBorde  = esSeleccionada ? 20f : 13f;
+        float anchoLinea  = esSeleccionada ? 13f : 8f;
+
+        Polyline sombra = new Polyline(map);
         sombra.setPoints(ruta.puntos);
-        sombra.setColor(Color.parseColor("#55000000"));
-        sombra.setWidth(esSeleccionada ? 24f : 16f);
+        sombra.setColor(Color.argb(60, 0, 0, 0));
+        sombra.setWidth(anchoSombra);
         map.getOverlays().add(sombra);
 
-        Polyline borde = new Polyline();
+        Polyline borde = new Polyline(map);
         borde.setPoints(ruta.puntos);
         borde.setColor(Color.WHITE);
-        borde.setWidth(esSeleccionada ? 20f : 13f);
+        borde.setWidth(anchoBorde);
         map.getOverlays().add(borde);
 
-        Polyline linea = new Polyline();
+        Polyline linea = new Polyline(map);
         linea.setPoints(ruta.puntos);
-        linea.setColor(Color.parseColor(ruta.color));
-        linea.setWidth(esSeleccionada ? 14f : 9f);
+        linea.setColor(ruta.colorInt);
+        linea.setWidth(anchoLinea);
+        linea.setOnClickListener((poly, mapView, point) -> { seleccionarRuta(ruta); return true; });
         map.getOverlays().add(linea);
         ruta.polyline = linea;
     }
 
-    /* ═══════════ FIT VISTA ═══════════ */
+    private void dibujarRutaAtenuada(RutaInfo ruta) {
+        if (ruta.puntos == null || ruta.puntos.size() < 2) return;
 
-    private void ajustarVistaRuta(ArrayList<GeoPoint> puntos) {
-        if (puntos == null || puntos.isEmpty()) return;
+        Polyline linea = new Polyline(map);
+        linea.setPoints(ruta.puntos);
+        linea.setColor(Color.argb(60,
+                Color.red(ruta.colorInt),
+                Color.green(ruta.colorInt),
+                Color.blue(ruta.colorInt)));
+        linea.setWidth(6f);
+        linea.setOnClickListener((poly, mapView, point) -> { seleccionarRuta(ruta); return true; });
+        map.getOverlays().add(linea);
+        ruta.polyline = linea;
+    }
+
+    private Polyline geojsonAPolyline(Map<String, Object> geojson,
+                                      String hexColor, float ancho, int alpha) {
+        try {
+            JSONObject geo = new JSONObject(geojson);
+            JSONArray coordsArray = geo.optJSONArray("coordinates");
+            if (coordsArray == null) return null;
+
+            ArrayList<GeoPoint> puntos = new ArrayList<>();
+            for (int i = 0; i < coordsArray.length(); i++) {
+                JSONArray c = coordsArray.getJSONArray(i);
+                puntos.add(new GeoPoint(c.getDouble(1), c.getDouble(0)));
+            }
+            if (puntos.size() < 2) return null;
+
+            int base = Color.parseColor(hexColor);
+            Polyline poly = new Polyline(map);
+            poly.setPoints(puntos);
+            poly.setColor(Color.argb(alpha, Color.red(base), Color.green(base), Color.blue(base)));
+            poly.setWidth(ancho);
+            return poly;
+        } catch (Exception e) {
+            Log.e(TAG, "Error parsing GeoJSON polyline", e);
+            return null;
+        }
+    }
+
+    private void rePinMarkers() {
+        if (marcadorOrigen  != null) { map.getOverlays().remove(marcadorOrigen);  map.getOverlays().add(marcadorOrigen);  }
+        if (marcadorDestino != null) { map.getOverlays().remove(marcadorDestino); map.getOverlays().add(marcadorDestino); }
+    }
+
+    /* ═══════════ AJUSTE DE VISTA ═══════════ */
+
+    private void ajustarVistaTodasLasRutas() {
+        if (listaRutas.isEmpty()) return;
 
         double minLat = Double.MAX_VALUE, maxLat = -Double.MAX_VALUE;
         double minLon = Double.MAX_VALUE, maxLon = -Double.MAX_VALUE;
 
-        for (GeoPoint p : puntos) {
-            if (p.getLatitude()  < minLat) minLat = p.getLatitude();
-            if (p.getLatitude()  > maxLat) maxLat = p.getLatitude();
-            if (p.getLongitude() < minLon) minLon = p.getLongitude();
-            if (p.getLongitude() > maxLon) maxLon = p.getLongitude();
+        for (RutaInfo r : listaRutas) {
+            if (r.puntos == null) continue;
+            for (GeoPoint p : r.puntos) {
+                minLat = Math.min(minLat, p.getLatitude());
+                maxLat = Math.max(maxLat, p.getLatitude());
+                minLon = Math.min(minLon, p.getLongitude());
+                maxLon = Math.max(maxLon, p.getLongitude());
+            }
         }
 
-        double padLat = Math.max((maxLat - minLat) * 0.15, 0.001);
-        double padLon = Math.max((maxLon - minLon) * 0.15, 0.001);
+        double padLat = Math.max((maxLat - minLat) * 0.2, 0.008);
+        double padLon = Math.max((maxLon - minLon) * 0.2, 0.008);
 
         BoundingBox bbox = new BoundingBox(
                 maxLat + padLat, maxLon + padLon,
                 minLat - padLat, minLon - padLon);
 
-        map.post(() -> map.zoomToBoundingBox(bbox, true, 80));
+        map.post(() -> {
+            try { map.zoomToBoundingBox(bbox, true, 80); }
+            catch (Exception e) { Log.e(TAG, "zoomToBoundingBox error", e); }
+        });
     }
 
-    /* ═══════════ PUBLICAR ═══════════ */
+    private void ajustarVistaRuta(RutaInfo ruta) {
+        if (ruta.puntos == null || ruta.puntos.isEmpty()) return;
+
+        double minLat = Double.MAX_VALUE, maxLat = -Double.MAX_VALUE;
+        double minLon = Double.MAX_VALUE, maxLon = -Double.MAX_VALUE;
+
+        for (GeoPoint p : ruta.puntos) {
+            minLat = Math.min(minLat, p.getLatitude());
+            maxLat = Math.max(maxLat, p.getLatitude());
+            minLon = Math.min(minLon, p.getLongitude());
+            maxLon = Math.max(maxLon, p.getLongitude());
+        }
+
+        double padLat = Math.max((maxLat - minLat) * 0.25, 0.006);
+        double padLon = Math.max((maxLon - minLon) * 0.25, 0.006);
+
+        BoundingBox bbox = new BoundingBox(
+                maxLat + padLat, maxLon + padLon,
+                minLat - padLat, minLon - padLon);
+
+        map.post(() -> {
+            try { map.zoomToBoundingBox(bbox, true, 60); }
+            catch (Exception e) { Log.e(TAG, "ajustarVistaRuta error", e); }
+        });
+    }
+
+    /* ═══════════ PUBLICAR VIAJE ═══════════ */
+
+  /* ═══════════════════════════════════════════════════════════════
+       REEMPLAZA el método crearRuta() COMPLETO en PublicarRuta.java
+       ═══════════════════════════════════════════════════════════════ */
 
     private void crearRuta() {
         if (rutaSeleccionada == null || destinoPoint == null) {
-            Toast.makeText(this, "Primero selecciona una ruta", Toast.LENGTH_LONG).show();
+            mostrarSnackbar("⚠️ Primero selecciona una ruta del mapa", true);
+            return;
+        }
+        if (origenPoint == null) {
+            mostrarSnackbar("⚠️ GPS no disponible", true);
             return;
         }
 
+        btnPublicar.setEnabled(false);
+        btnPublicar.setText("Publicando...");
+
+        // ── Capturar los valores de rutaSeleccionada AQUÍ, antes del lambda ──
+        // Dentro del callback de Volley no se puede acceder a variables de instancia
+        // que podrían cambiar, por eso los capturamos como final ahora mismo.
+        final double  _distanciaKm       = rutaSeleccionada.distancia;
+        final double  _duracionMin       = rutaSeleccionada.duracion;
+        final double  _fuelLitros        = rutaSeleccionada.fuelLiters;
+        final double  _costoCombustible  = rutaSeleccionada.fuelCostCop; // ← $1,592 COP
+        final String  _origen            = editOrigen.getText() != null
+                ? editOrigen.getText().toString() : "Origen";
+        final String  _destino           = editDestino.getText() != null
+                ? editDestino.getText().toString() : "Destino";
+
+        Log.d(TAG, "crearRuta → fuelCostCop=" + _costoCombustible
+                + "  fuelLiters=" + _fuelLitros
+                + "  distancia=" + _distanciaKm);
+
         try {
             JSONObject body = new JSONObject();
-            body.put("nombre",         rutaSeleccionada.tipo);
-            body.put("descripcion",    String.format("Ruta de %.1f km en %s",
-                    rutaSeleccionada.distancia,
-                    tipoTransporte.equals("motorcycle") ? "Moto" : "Carro"));
-            body.put("origen",         editOrigen.getText().toString());
-            body.put("destino",        editDestino.getText().toString());
+            body.put("nombre",         rutaSeleccionada.tipo.replaceAll("[^\\w\\s]", "").trim());
+            body.put("descripcion",    String.format("Ruta de %.1f km en %s (%.0f min)",
+                    _distanciaKm,
+                    tipoTransporte.equals("motorcycle") ? "Moto" : "Carro",
+                    _duracionMin));
+            body.put("origen",         _origen);
+            body.put("destino",        _destino);
             body.put("latOrigen",      origenPoint.getLatitude());
             body.put("lngOrigen",      origenPoint.getLongitude());
             body.put("latDestino",     destinoPoint.getLatitude());
             body.put("lngDestino",     destinoPoint.getLongitude());
-            body.put("distancia",      rutaSeleccionada.distancia);
-            body.put("duracion",       rutaSeleccionada.duracion);
+            body.put("distancia",      _distanciaKm);
+            body.put("duracion",       _duracionMin);
             body.put("tipoTransporte", tipoTransporte);
             body.put("estado",         "DISPONIBLE");
+            body.put("fuente",         rutaSeleccionada.fuente);
+            if (_costoCombustible > 0) {
+                body.put("combustibleLitros", _fuelLitros);
+                body.put("costoCombustible",  _costoCombustible);
+            }
 
             ConexionApi.getInstance(this).post(
-                    Constantes.RUTAS,
-                    body,
-
-                    // SUCCESS
+                    Constantes.RUTAS, body,
                     response -> {
+                        btnPublicar.setEnabled(true);
+                        btnPublicar.setText("PUBLICAR VIAJE");
 
+                        // Obtener el ID de ruta creada
                         int idRuta = 0;
-
-                        // Intentar obtener ID desde distintas posibles respuestas
-                        if (response.has("idRuta")) {
-                            idRuta = response.optInt("idRuta");
-                        } else if (response.has("id")) {
-                            idRuta = response.optInt("id");
-                        }
+                        if (response.has("idRuta"))       idRuta = response.optInt("idRuta");
+                        else if (response.has("id"))      idRuta = response.optInt("id");
+                        else if (response.has("idrutas")) idRuta = response.optInt("idrutas");
 
                         if (idRuta == 0) {
-                            Toast.makeText(this,
-                                    "No se pudo obtener el ID de la ruta",
-                                    Toast.LENGTH_LONG).show();
+                            mostrarSnackbar("❌ No se pudo obtener ID de ruta", true);
+                            Log.e(TAG, "Respuesta sin ID: " + response.toString());
                             return;
                         }
 
-                        // ───────────── AGREGADO IMPORTANTE ─────────────
+                        mostrarSnackbar("✅ ¡Ruta publicada! Configurando viaje...", false);
+
+                        // ── Intent con TODOS los datos para precio automático ──
                         Intent intent = new Intent(PublicarRuta.this, PublicarViaje.class);
 
-                        intent.putExtra("ID_RUTA_CREADA", idRuta);
-                        intent.putExtra("DESTINO_RUTA", editDestino.getText().toString());
-                        intent.putExtra("ORIGEN_RUTA", editOrigen.getText().toString());
+                        // Datos básicos
+                        intent.putExtra("ID_RUTA_CREADA",  idRuta);
+                        intent.putExtra("ORIGEN_RUTA",     _origen);
+                        intent.putExtra("DESTINO_RUTA",    _destino);
                         intent.putExtra("TIPO_TRANSPORTE", tipoTransporte);
+
+                        // Datos del precio — fuelCostCop es el $COP del backend FastAPI
+                        intent.putExtra("COSTO_COMBUSTIBLE", _costoCombustible); // ← $1,592
+                        intent.putExtra("FUEL_LITROS",       _fuelLitros);       // ← 0.11 L
+                        intent.putExtra("DISTANCIA_KM",      _distanciaKm);      // ← 1.4 km
+                        intent.putExtra("DURACION_MIN",      _duracionMin);      // ← 3 min
+
+                        Log.d(TAG, "Intent → COSTO_COMBUSTIBLE=" + _costoCombustible);
 
                         startActivity(intent);
                         finish();
-                        // ───────────────────────────────────────────────
                     },
-
-                    // ERROR
-                    error -> Toast.makeText(this,
-                            "Error creando ruta",
-                            Toast.LENGTH_LONG).show()
+                    error -> {
+                        btnPublicar.setEnabled(true);
+                        btnPublicar.setText("PUBLICAR VIAJE");
+                        mostrarSnackbar("❌ Error al publicar ruta. Verifica conexión.", true);
+                        Log.e(TAG, "Error Volley crearRuta: " + error.toString());
+                    }
             );
-
         } catch (Exception e) {
-            e.printStackTrace();
+            btnPublicar.setEnabled(true);
+            btnPublicar.setText("PUBLICAR VIAJE");
+            Log.e(TAG, "Error creando ruta", e);
+            mostrarSnackbar("❌ Error inesperado al publicar", true);
         }
     }
 
+    /* ═══════════ UTILIDADES UI ═══════════ */
 
-    /* ═══════════ UTILIDADES ═══════════ */
+    // FIX 3: setLoadingState ahora controla loader_container (el padre) en lugar de solo el ProgressBar hijo.
+    // También oculta el chip del header cuando empieza a cargar.
+    private void setLoadingState(boolean loading) {
+        // Mostrar u ocultar el contenedor completo del loader (fondo semitransparente + card)
+        if (loaderContainer != null)
+            loaderContainer.setVisibility(loading ? View.VISIBLE : View.GONE);
 
-    private String peticionHttp(String url) throws Exception {
-        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-        c.setRequestProperty("User-Agent", "Moviflexx");
-        BufferedReader r = new BufferedReader(new InputStreamReader(c.getInputStream()));
-        StringBuilder b = new StringBuilder();
-        String l;
-        while ((l = r.readLine()) != null) b.append(l);
-        return b.toString();
+        btnCalcular.setEnabled(!loading);
+        btnCalcular.setText(loading ? "Buscando rutas..." : "CALCULAR RUTAS");
+        btnCalcular.setAlpha(loading ? 0.7f : 1.0f);
+
+        if (loading) {
+            cardRutasOpciones.setVisibility(View.GONE);
+            containerRutas.removeAllViews();
+            // Ocultar el chip contador del header mientras carga
+            if (cardContadorHeader != null)
+                cardContadorHeader.setVisibility(View.GONE);
+        }
+    }
+
+    // FIX 3 (cont.): actualizarMensajeLoader ya no necesita buscar el contenedor por
+    // findViewById cada vez — usa la referencia guardada en initViews().
+    private void actualizarMensajeLoader(String msg) {
+        if (loaderContainer == null) return;
+        TextView tv = loaderContainer.findViewWithTag("loader_msg");
+        if (tv != null) tv.setText(msg);
+    }
+
+    private void mostrarSnackbar(String mensaje, boolean esError) {
+        Snackbar sb = Snackbar.make(rootView, mensaje,
+                esError ? Snackbar.LENGTH_LONG : Snackbar.LENGTH_SHORT);
+        View sbView = sb.getView();
+        sbView.setBackgroundColor(esError ? 0xFFB00020 : 0xFF1A2422);
+        TextView tv = sbView.findViewById(com.google.android.material.R.id.snackbar_text);
+        if (tv != null) {
+            tv.setTextColor(Color.WHITE);
+            tv.setTypeface(null, Typeface.BOLD);
+        }
+        sb.show();
+    }
+
+    private void animarBoton(View btn) {
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(btn, "scaleX", 1f, 0.95f, 1f);
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(btn, "scaleY", 1f, 0.95f, 1f);
+        AnimatorSet set = new AnimatorSet();
+        set.playTogether(scaleX, scaleY);
+        set.setDuration(200);
+        set.setInterpolator(new DecelerateInterpolator());
+        set.start();
+    }
+
+    private void animarFab(View fab) {
+        ObjectAnimator rot = ObjectAnimator.ofFloat(fab, "rotation", 0f, 15f, -15f, 0f);
+        rot.setDuration(300);
+        rot.start();
+    }
+
+    private void animarEntradaCard(View card, long delay) {
+        card.setAlpha(0f);
+        card.setTranslationY(40f);
+        card.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setStartDelay(delay)
+                .setDuration(350)
+                .setInterpolator(new DecelerateInterpolator())
+                .start();
+    }
+
+    private void setTextoSeguro(View parent, int id, String text) {
+        if (parent == null) return;
+        TextView tv = parent.findViewById(id);
+        if (tv != null) tv.setText(text);
+    }
+
+    private int dp(float dp) {
+        return (int) (dp * getResources().getDisplayMetrics().density);
+    }
+
+    /* ═══════════ HTTP ═══════════ */
+
+    private String peticionHttp(String urlStr) throws Exception {
+        HttpURLConnection c = null;
+        try {
+            c = (HttpURLConnection) new URL(urlStr).openConnection();
+            c.setRequestProperty("User-Agent", "Moviflexx/2.0 (Android)");
+            c.setRequestProperty("Accept", "application/json");
+            c.setConnectTimeout(15000);
+            c.setReadTimeout(20000);
+            c.setInstanceFollowRedirects(true);
+
+            int code = c.getResponseCode();
+            if (code != 200) {
+                Log.w(TAG, "HTTP " + code + " para: " + urlStr);
+                return "";
+            }
+
+            BufferedReader r = new BufferedReader(
+                    new InputStreamReader(c.getInputStream(), "UTF-8"));
+            StringBuilder b = new StringBuilder();
+            String line;
+            while ((line = r.readLine()) != null) b.append(line);
+            return b.toString();
+        } finally {
+            if (c != null) c.disconnect();
+        }
     }
 
     private String obtenerDireccion(GeoPoint punto) {
@@ -544,8 +1197,11 @@ public class PublicarRuta extends AppCompatActivity {
             Geocoder g = new Geocoder(this, Locale.getDefault());
             List<Address> list = g.getFromLocation(
                     punto.getLatitude(), punto.getLongitude(), 1);
-            if (list != null && !list.isEmpty())
-                return list.get(0).getAddressLine(0);
+            if (list != null && !list.isEmpty()) {
+                Address addr = list.get(0);
+                String linea = addr.getAddressLine(0);
+                return linea != null ? linea : "Ubicación actual";
+            }
         } catch (Exception ignored) {}
         return "Ubicación actual";
     }
@@ -554,9 +1210,16 @@ public class PublicarRuta extends AppCompatActivity {
 
     private static class RutaInfo {
         ArrayList<GeoPoint> puntos;
-        double   distancia, duracion;
-        String   tipo, color, descripcion;
-        int      indice;
+        double   distancia   = 0;
+        double   duracion    = 0;
+        double   fuelLiters  = 0;
+        double   fuelCostCop = 0;
+        String   tipo        = "";
+        String   colorHex    = "#26C6B0";
+        int      colorInt    = 0xFF009B8D;
+        String   descripcion = "";
+        String   fuente      = "";
+        int      indice      = 0;
         Polyline polyline;
     }
 }

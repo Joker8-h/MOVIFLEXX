@@ -100,12 +100,14 @@
                 app:cardCornerRadius="18dp"
                 app:cardElevation="4dp"
                 app:cardBackgroundColor="#FFFFFF">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="18dp">
 
+                    <!-- Ruta origen → destino -->
                     <TextView
                         android:id="@+id/txt_info_ruta"
                         android:text="📍 Origen → Destino"
@@ -115,17 +117,23 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"/>
 
-                    <View android:layout_width="match_parent" android:layout_height="1dp"
-                        android:background="#E0F2F1" android:layout_marginTop="12dp" android:layout_marginBottom="10dp"/>
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#E0F2F1"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="10dp"/>
 
+                    <!-- Conductor -->
                     <TextView
                         android:id="@+id/txt_conductor"
-                        android:text="👤 Conductor"
+                        android:text="🚗 Conductor"
                         android:textColor="#004D40"
                         android:textSize="14sp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"/>
 
+                    <!-- Vehículo -->
                     <TextView
                         android:id="@+id/txt_vehiculo"
                         android:text="🚘 Vehículo"
@@ -135,51 +143,158 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"/>
 
-                    <View android:layout_width="match_parent" android:layout_height="1dp"
-                        android:background="#E0F2F1" android:layout_marginTop="12dp" android:layout_marginBottom="12dp"/>
+                    <!-- Fecha y hora de salida -->
+                    <TextView
+                        android:id="@+id/txt_fecha_hora"
+                        android:text="📅 Fecha de salida"
+                        android:textColor="#546E7A"
+                        android:textSize="13sp"
+                        android:layout_marginTop="5dp"
+                        android:visibility="gone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
 
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#E0F2F1"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <!-- Métricas: distancia · duración · precio -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:weightSum="3">
 
-                        <LinearLayout android:layout_width="0dp" android:layout_weight="1"
-                            android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
-                            <TextView android:text="📏" android:textSize="22sp" android:gravity="center"
-                                android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                            <TextView android:id="@+id/txt_distancia_ruta" android:text="-- km"
-                                android:textSize="13sp" android:textStyle="bold" android:textColor="#00897B"
-                                android:gravity="center" android:layout_marginTop="4dp"
-                                android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                            <TextView android:text="Distancia" android:textSize="11sp" android:textColor="#90A4AE"
-                                android:gravity="center" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                        <!-- Distancia -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:text="📏"
+                                android:textSize="22sp"
+                                android:gravity="center"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
+
+                            <TextView
+                                android:id="@+id/txt_distancia_ruta"
+                                android:text="-- km"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:textColor="#00897B"
+                                android:gravity="center"
+                                android:layout_marginTop="4dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
+
+                            <TextView
+                                android:text="Distancia"
+                                android:textSize="11sp"
+                                android:textColor="#90A4AE"
+                                android:gravity="center"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
                         </LinearLayout>
 
-                        <LinearLayout android:layout_width="0dp" android:layout_weight="1"
-                            android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
-                            <TextView android:text="⏱️" android:textSize="22sp" android:gravity="center"
-                                android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                            <TextView android:id="@+id/txt_duracion_ruta" android:text="-- min"
-                                android:textSize="13sp" android:textStyle="bold" android:textColor="#00897B"
-                                android:gravity="center" android:layout_marginTop="4dp"
-                                android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                            <TextView android:text="Duración" android:textSize="11sp" android:textColor="#90A4AE"
-                                android:gravity="center" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                        <!-- Duración -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:text="⏱️"
+                                android:textSize="22sp"
+                                android:gravity="center"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
+
+                            <TextView
+                                android:id="@+id/txt_duracion_ruta"
+                                android:text="-- min"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:textColor="#00897B"
+                                android:gravity="center"
+                                android:layout_marginTop="4dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
+
+                            <TextView
+                                android:text="Duración"
+                                android:textSize="11sp"
+                                android:textColor="#90A4AE"
+                                android:gravity="center"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
                         </LinearLayout>
 
-                        <LinearLayout android:layout_width="0dp" android:layout_weight="1"
-                            android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
-                            <TextView android:text="💵" android:textSize="22sp" android:gravity="center"
-                                android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                            <TextView android:id="@+id/txt_precio" android:text="$ --"
-                                android:textSize="13sp" android:textStyle="bold" android:textColor="#FF6F00"
-                                android:gravity="center" android:layout_marginTop="4dp"
-                                android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                            <TextView android:text="Precio" android:textSize="11sp" android:textColor="#90A4AE"
-                                android:gravity="center" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                        <!-- Precio -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:text="💵"
+                                android:textSize="22sp"
+                                android:gravity="center"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
+
+                            <TextView
+                                android:id="@+id/txt_precio"
+                                android:text="$ --"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:textColor="#FF6F00"
+                                android:gravity="center"
+                                android:layout_marginTop="4dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
+
+                            <TextView
+                                android:text="Por pasajero"
+                                android:textSize="11sp"
+                                android:textColor="#90A4AE"
+                                android:gravity="center"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"/>
                         </LinearLayout>
                     </LinearLayout>
+
+                    <!-- Separador antes del desglose -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#E0F2F1"
+                        android:layout_marginTop="14dp"
+                        android:layout_marginBottom="10dp"/>
+
+                    <!-- Desglose de precio (igual al badge de PublicarViaje) -->
+                    <TextView
+                        android:id="@+id/txt_desglose_precio"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        android:textSize="11sp"
+                        android:textColor="#00695C"
+                        android:background="#F0FFFE"
+                        android:padding="10dp"
+                        android:visibility="gone"
+                        android:lineSpacingMultiplier="1.4"/>
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -203,15 +318,26 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical">
-                        <TextView android:text="💺 Disponibilidad de cupos"
-                            android:textSize="14sp" android:textStyle="bold" android:textColor="#004D40"
-                            android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
-                        <TextView android:text=" 🔄 En vivo "
-                            android:textSize="11sp" android:textColor="#00897B" android:textStyle="bold"
+                        <TextView
+                            android:text="💺 Disponibilidad de cupos"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="#004D40"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"/>
+                        <TextView
+                            android:text=" 🔄 En vivo "
+                            android:textSize="11sp"
+                            android:textColor="#00897B"
+                            android:textStyle="bold"
                             android:background="@drawable/bg_chip_teal"
-                            android:paddingStart="10dp" android:paddingEnd="10dp"
-                            android:paddingTop="4dp" android:paddingBottom="4dp"
-                            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
                     </LinearLayout>
 
                     <LinearLayout
@@ -229,12 +355,29 @@
                         android:orientation="horizontal"
                         android:gravity="center"
                         android:layout_marginTop="4dp">
-                        <View android:layout_width="12dp" android:layout_height="12dp" android:background="#4CAF50" android:layout_marginEnd="4dp"/>
-                        <TextView android:text="Disponible" android:textSize="11sp" android:textColor="#546E7A"
-                            android:layout_marginEnd="20dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                        <View android:layout_width="12dp" android:layout_height="12dp" android:background="#EF5350" android:layout_marginEnd="4dp"/>
-                        <TextView android:text="Ocupado" android:textSize="11sp" android:textColor="#546E7A"
-                            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                        <View
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:background="#4CAF50"
+                            android:layout_marginEnd="4dp"/>
+                        <TextView
+                            android:text="Disponible"
+                            android:textSize="11sp"
+                            android:textColor="#546E7A"
+                            android:layout_marginEnd="20dp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+                        <View
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:background="#EF5350"
+                            android:layout_marginEnd="4dp"/>
+                        <TextView
+                            android:text="Ocupado"
+                            android:textSize="11sp"
+                            android:textColor="#546E7A"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -254,14 +397,21 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="18dp">
-                    <TextView android:text="🗺️ Recorrido del viaje"
-                        android:textSize="14sp" android:textStyle="bold" android:textColor="#004D40"
+                    <TextView
+                        android:text="🗺️ Recorrido del viaje"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#004D40"
                         android:layout_marginBottom="4dp"
-                        android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                    <TextView android:text="Paradas por donde pasa esta ruta"
-                        android:textSize="12sp" android:textColor="#90A4AE"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+                    <TextView
+                        android:text="Paradas por donde pasa esta ruta"
+                        android:textSize="12sp"
+                        android:textColor="#90A4AE"
                         android:layout_marginBottom="12dp"
-                        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rv_historial_paradas"
                         android:layout_width="match_parent"
@@ -273,9 +423,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ══════════════════════════════════════
-                 CARD ACCIONES — Botones de acción
-                 ══════════════════════════════════════ -->
+            <!-- CARD ACCIONES -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_acciones"
                 android:layout_width="match_parent"
@@ -305,9 +453,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="56dp"/>
 
-                    <!-- ══════════════════════════════════════
-                         PASAJERO: Chat con el conductor
-                         ══════════════════════════════════════ -->
+                    <!-- PASAJERO: Chat con el conductor -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_mensaje_conductor"
                         android:text="💬  CHATEAR CON EL CONDUCTOR"

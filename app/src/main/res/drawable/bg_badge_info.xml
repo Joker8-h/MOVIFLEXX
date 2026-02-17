@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Fondo degradado turquesa elegante -->
+    <gradient
+        android:startColor="#26C6DA"
+        android:endColor="#00897B"
+        android:angle="90" />
+
+    <!-- Bordes redondeados tipo badge -->
+    <corners android:radius="20dp" />
+
+    <!-- Borde sutil -->
+    <stroke
+        android:width="1dp"
+        android:color="#B2EBF2" />
+
+    <!-- Padding interno visual -->
+    <padding
+        android:left="12dp"
+        android:top="4dp"
+        android:right="12dp"
+        android:bottom="4dp" />
+
+</shape>

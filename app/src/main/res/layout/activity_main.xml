@@ -246,7 +246,7 @@
                     android:layout_gravity="center"
                     app:cardCornerRadius="100dp"
                     app:cardElevation="20dp"
-                    app:cardBackgroundColor="#111827">
+                    app:cardBackgroundColor="#9940E0D0">
 
                     <ImageView
                         android:id="@+id/splash_logo"

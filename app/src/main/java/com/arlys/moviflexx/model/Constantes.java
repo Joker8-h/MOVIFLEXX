@@ -6,6 +6,8 @@ public class Constantes {
     public static final String BASE_URL =
             "https://backendmovi-production-c657.up.railway.app";
 
+
+
     // ================= AUTH =================
     public static final String LOGIN =
             BASE_URL + "/api/auth/login";

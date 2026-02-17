@@ -72,7 +72,7 @@ public class HomeConductor extends AppCompatActivity {
         btnPublicarViaje = findViewById(R.id.btn_publicar_viaje);
         btnMisRutas = findViewById(R.id.btn_mis_rutas);
         btnMisVehiculos = findViewById(R.id.btn_mis_vehiculos);
-        btnMisReservas = findViewById(R.id.btn_mis_reservas);
+
 
         rvViajes.setLayoutManager(new LinearLayoutManager(this));
 
@@ -168,24 +168,32 @@ public class HomeConductor extends AppCompatActivity {
         BottomNavigationView nav = findViewById(R.id.bottom_navigation);
         nav.setSelectedItemId(R.id.nav_inicio);
 
-        nav.setOnItemSelectedListener(item -> {
 
-            if (item.getItemId() == R.id.map_mini) {
-                startActivity(new Intent(this, HomeConductor.class));
+            nav.setSelectedItemId(R.id.nav_inicio);
 
-            } else if (item.getItemId() == R.id.nav_mis_viajes) {
-                startActivity(new Intent(this, PublicarRuta.class));
+            nav.setOnItemSelectedListener(item -> {
 
-            } else if (item.getItemId() == R.id.nav_mensajes) {
-                startActivity(new Intent(this, Mensajes.class));
+                int id = item.getItemId();
 
-            } else if (item.getItemId() == R.id.nav_perfil) {
-                startActivity(new Intent(this, PerfilUsuario.class));
+                if (id == R.id.nav_inicio) {
+                    return true; // Ya estamos aquí
 
-            } else return true;
+                } else if (id == R.id.nav_mis_viajes) {
+                    startActivity(new Intent(this, PublicarRuta.class));
 
-            finish();
-            return true;
-        });
+                } else if (id == R.id.nav_mapa) {
+                    startActivity(new Intent(this, Mapa.class)); // 👈 AQUÍ VA TU MAPA
+
+                } else if (id == R.id.nav_mensajes) {
+                    startActivity(new Intent(this, Mensajes.class));
+
+                } else if (id == R.id.nav_perfil) {
+                    startActivity(new Intent(this, PerfilUsuario.class));
+                }
+
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            });
+        }
     }
-}

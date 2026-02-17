@@ -171,13 +171,27 @@
         <color name="turquesa_pastel">#B2EBF2</color>
 
 
-        <!-- ============================================ -->
-        <!-- COLORES DE TEXTO -->
-        <!-- ============================================ -->
+    <!-- ── Rutas ── -->
+    <color name="ruta_rapida">#6C3BFF</color>
+    <color name="ruta_media">#FF9800</color>
+    <color name="ruta_larga">#F44336</color>
+    <color name="ruta_optima">#1A73E8</color>
 
-        <!-- ============================================ -->
-        <!-- COLORES PRINCIPALES DE LA APP -->
-        <!-- ============================================ -->
+    <!-- ── Estado / Semáforo ── -->
+    <color name="green_dot">#00C853</color>
+    <color name="red_dot">#F44336</color>
+    <color name="orange_accent">#FF6D00</color>
+    <color name="yellow_accent">#FFC107</color>
+
+    <!-- ── Superficies claras ── -->
+    <color name="surface_purple_light">#F0EEFF</color>
+    <color name="surface_orange_light">#FFF3E0</color>
+    <color name="surface_green_light">#E8F5E9</color>
+    <color name="surface_yellow_light">#FFF8E1</color>
+
+    <!-- ── Bordes ── -->
+    <color name="stroke_light">#E8E8F0</color>
+
 
 
 

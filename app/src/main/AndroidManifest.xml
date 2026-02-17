@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <!-- 🔐 PERMISOS -->
+    <!-- PERMISOS -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -14,6 +14,7 @@
         android:required="false" />
 
     <application
+        android:name=".MyApplication"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -25,6 +26,10 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".BuscarViajesPasajeros"
+            android:exported="false" />
+        <!-- Resto de activities... -->
+        <activity
             android:name=".Misreservasactivity"
             android:exported="false" />
         <activity
@@ -32,20 +37,22 @@
             android:exported="false" />
         <activity
             android:name=".controller.Conversaciones"
-            android:exported="false" /> <!-- 🔑 Google Maps API -->
+            android:exported="false" />
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
 
         <uses-library
             android:name="org.apache.http.legacy"
-            android:required="false" /> <!-- ===== FACE ===== -->
+            android:required="false" />
+
         <activity
             android:name=".controller.FaceLogin"
             android:exported="false" />
         <activity
             android:name=".controller.FaceRegister"
-            android:exported="false" /> <!-- ===== ACTIVITIES ===== -->
+            android:exported="false" />
         <activity
             android:name=".controller.MisVehiculosActivity"
             android:exported="false" />
@@ -120,7 +127,7 @@
             android:exported="false" />
         <activity
             android:name=".controller.DetalleViajePasado"
-            android:exported="false" /> <!-- 🚀 LAUNCHER -->
+            android:exported="false" /> <!-- LAUNCHER -->
         <activity
             android:name=".controller.MainActivity"
             android:exported="true">

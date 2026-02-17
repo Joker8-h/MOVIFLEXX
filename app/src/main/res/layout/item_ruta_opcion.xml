@@ -1,83 +1,231 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- item_ruta_opcion.xml -->
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/card_ruta"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="4dp"
-    app:strokeWidth="1dp"
+    android:layout_marginBottom="10dp"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="#FFFFFF"
+    app:strokeWidth="1.5dp"
     app:strokeColor="#E0E0E0">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="16dp"
-        android:gravity="center_vertical">
+        android:orientation="vertical">
 
-        <!-- Indicador de color -->
+        <!-- Barra de color superior de la card (fina, acento de ruta) -->
         <View
             android:id="@+id/indicador_color"
-            android:layout_width="6dp"
-            android:layout_height="match_parent"
-            android:background="#00BCD4"
-            android:layout_marginEnd="12dp"/>
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:background="#00897B"/>
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp">
 
-            <TextView
-                android:id="@+id/txt_tipo_ruta"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Ruta Rápida"
-                android:textStyle="bold"
-                android:textSize="16sp"/>
+            <!-- Icono vehículo -->
+            <ImageView
+                android:id="@+id/icon_transporte"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginEnd="12dp"
+                android:src="@drawable/ic_car"
+                android:tint="#444444"/>
 
-            <TextView
-                android:id="@+id/txt_descripcion"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Descripción"
-                android:textSize="13sp"
-                android:textColor="#757575"/>
-
+            <!-- Datos -->
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="6dp">
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/txt_distancia"
-                    android:layout_width="wrap_content"
+                <!-- Fila título + badge MEJOR -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="5.2 km"
-                    android:textStyle="bold"
-                    android:layout_marginEnd="12dp"/>
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
 
-                <TextView
-                    android:id="@+id/txt_duracion"
-                    android:layout_width="wrap_content"
+                    <TextView
+                        android:id="@+id/txt_tipo_ruta"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Ruta Rápida"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#1A1A1A"/>
+
+                    <!-- Badge MEJOR — solo visible en ruta 0 -->
+                    <TextView
+                        android:id="@+id/badge_mejor"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="MEJOR"
+                        android:textSize="8sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF"
+                        android:background="@drawable/bg_badge_teal"
+                        android:paddingStart="7dp"
+                        android:paddingEnd="7dp"
+                        android:paddingTop="3dp"
+                        android:paddingBottom="3dp"
+                        android:visibility="gone"/>
+                </LinearLayout>
+
+                <!-- Fila métricas: km / min / combustible / costo -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="12 min"
-                    android:textStyle="bold"/>
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="6dp">
+
+                    <!-- km -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/txt_distancia"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:textColor="#111111"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="km"
+                            android:textSize="9sp"
+                            android:textColor="#999999"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.06"/>
+                    </LinearLayout>
+
+                    <!-- Divisor -->
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="30dp"
+                        android:background="#EEEEEE"
+                        android:layout_marginEnd="10dp"/>
+
+                    <!-- min -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/txt_duracion"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:textColor="#111111"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="min"
+                            android:textSize="9sp"
+                            android:textColor="#999999"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.06"/>
+                    </LinearLayout>
+
+                    <!-- Divisor -->
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="30dp"
+                        android:background="#EEEEEE"
+                        android:layout_marginEnd="10dp"/>
+
+                    <!-- Litros -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/txt_combustible"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:textColor="#00897B"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="litros"
+                            android:textSize="9sp"
+                            android:textColor="#999999"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.06"/>
+                    </LinearLayout>
+
+                    <!-- Divisor -->
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="30dp"
+                        android:background="#EEEEEE"
+                        android:layout_marginEnd="10dp"/>
+
+                    <!-- Costo -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1.2"
+                        android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/txt_costo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:textColor="#111111"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="COP"
+                            android:textSize="9sp"
+                            android:textColor="#999999"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.06"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Descripción / fuente -->
+                <TextView
+                    android:id="@+id/txt_descripcion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Consultando fuente..."
+                    android:textSize="10sp"
+                    android:textColor="#AAAAAA"
+                    android:ellipsize="end"
+                    android:maxLines="1"/>
+
             </LinearLayout>
 
         </LinearLayout>
-
-        <ImageView
-            android:id="@+id/icon_transporte"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@drawable/ic_car"/>
-
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>
