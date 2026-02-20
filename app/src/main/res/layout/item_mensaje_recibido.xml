@@ -1,57 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Burbuja de mensaje RECIBIDO (izquierda) -->
-<FrameLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingStart="10dp"
-    android:paddingEnd="64dp"
-    android:paddingTop="2dp"
-    android:paddingBottom="2dp">
+    android:orientation="horizontal"
+    android:paddingStart="8dp"
+    android:paddingEnd="56dp"
+    android:paddingTop="3dp"
+    android:paddingBottom="3dp">
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="start"
         android:orientation="vertical"
-        android:background="@drawable/bg_bubble_received"
-        android:paddingStart="13dp"
-        android:paddingEnd="13dp"
-        android:paddingTop="9dp"
-        android:paddingBottom="7dp"
-        android:elevation="2dp">
+        android:background="@drawable/bg_bubble_recibido"
+        android:padding="10dp"
+        android:maxWidth="260dp">
 
-        <!-- Nombre del emisor (se oculta si está vacío) -->
         <TextView
             android:id="@+id/tvNombre"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="10.5sp"
-            android:textColor="#1565C0"
+            android:textSize="11sp"
             android:textStyle="bold"
-            android:fontFamily="sans-serif-medium"
-            android:layout_marginBottom="2dp"
+            android:textColor="#00897B"
+            android:paddingBottom="2dp"
             android:visibility="gone" />
 
-        <!-- Texto del mensaje -->
         <TextView
             android:id="@+id/tvMensaje"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#0D1F2D"
-            android:textSize="14.5sp"
-            android:lineSpacingMultiplier="1.25"
-            android:fontFamily="sans-serif" />
+            android:textSize="15sp"
+            android:textColor="#212121"
+            android:lineSpacingExtra="2dp" />
 
-        <!-- Hora -->
-        <TextView
-            android:id="@+id/tvHora"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_gravity="end"
-            android:textSize="9.5sp"
-            android:textColor="#90ABC0"
-            android:layout_marginTop="3dp" />
+            android:layout_marginTop="4dp">
+
+            <TextView
+                android:id="@+id/tvHora"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textColor="#9E9E9E" />
+
+            <View
+                android:id="@+id/dot_no_leido"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/circle_unread_dot"
+                android:visibility="gone" />
+
+        </LinearLayout>
     </LinearLayout>
 
-</FrameLayout>
+</LinearLayout>

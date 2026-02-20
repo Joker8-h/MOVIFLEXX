@@ -1,20 +1,20 @@
 package com.arlys.moviflexx.controller;
 
-import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Typeface;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -22,14 +22,16 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.model.ConexionApi;
 import com.arlys.moviflexx.model.Constantes;
+import com.arlys.moviflexx.model.Manager.RouteManager;
 import com.arlys.moviflexx.model.SessionManager;
+import com.arlys.moviflexx.model.pojo.RouteOption;
+import com.arlys.moviflexx.model.pojo.RouteOptionsResponse;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
@@ -38,17 +40,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.osmdroid.config.Configuration;
-import org.osmdroid.events.MapListener;
-import org.osmdroid.events.ScrollEvent;
-import org.osmdroid.events.ZoomEvent;
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.Polyline;
-import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
-import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -56,89 +53,124 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
+
 public class DetalleViajeActivity extends AppCompatActivity {
 
-    private static final String TAG              = "DetalleViaje";
-    private static final int    REQ_LOCATION     = 1002;
-    private static final int    POLLING_CUPOS_MS = 5000;
-    private static final int    POLLING_UBIC_MS  = 8000;
+    // ── Constantes ────────────────────────────────────────────────────────────
+    private static final String TAG        = "DetalleViaje";
+    private static final int    POLLING_MS = 5000;
+    private static final int    COLOR_RUTA = 0xFF00BCD4;
+    private static final String COLOR_LIBRE = "#4CAF50";
+    private static final String COLOR_OCUP  = "#EF5350";
+    private static final String COLOR_SEL   = "#FF9800";
+    private static final String OSRM_URL   =
+            "https://osrm-popayan-production.up.railway.app";
 
-    private static final String COLOR_RUTA       = "#00BCD4";
-    private static final String COLOR_SEGMENTO   = "#FF6F00";
-    private static final String COLOR_CUPO_LIBRE = "#4CAF50";
-    private static final String COLOR_CUPO_OCUP  = "#EF5350";
+    // ── Estados de reserva ────────────────────────────────────────────────────
+    private static final String EST_PENDIENTE          = "PENDIENTE";
+    private static final String EST_CONFIRMADA         = "CONFIRMADA";
+    private static final String EST_ESPERANDO_RECOGIDA = "ESPERANDO_RECOGIDA";
+    private static final String EST_RECOGIDO           = "RECOGIDO";
+    private static final String EST_COMPLETADO         = "COMPLETADO";
+    private static final String EST_CANCELADO          = "CANCELADO";
 
-    // ── UI principal ──────────────────────────────────────────────────────────
+    // ── Estados de viaje que permiten reservar al pasajero ───────────────────
+    private static final List<String> ESTADOS_RESERVABLES = Arrays.asList(
+            "EN_CURSO", "INICIADO"
+    );
+
+    // ── Estados de reserva activa (bloquean nueva reserva en otro viaje) ─────
+    private static final List<String> ESTADOS_RESERVA_ACTIVA = Arrays.asList(
+            "ACTIVA", "CONFIRMADA", "PENDIENTE",
+            "ESPERANDO_RECOGIDA", "RECOGIDO", "EN_CURSO", "INICIADO"
+    );
+
+    // ── IDs de marcadores ─────────────────────────────────────────────────────
+    private static final String MID_ORIGEN  = "m_origen";
+    private static final String MID_DESTINO = "m_destino";
+    private static final String MID_PARADA  = "m_parada";
+
+    // ── UI ────────────────────────────────────────────────────────────────────
     private MapView          map;
     private TextView         txtRuta, txtEstado, txtConductor, txtVehiculo;
-    private TextView         txtDistancia, txtDuracion, txtPrecio;
-    private TextView         txtFechaHora;       // ★ NUEVO
-    private TextView         txtDesglosePrecio;  // ★ NUEVO
+    private TextView         txtDistancia, txtDuracion, txtPrecio, txtFechaHora;
     private LinearLayout     layoutCupos;
-    private MaterialButton   btnReservar, btnIniciar, btnFinalizar, btnAgregarParada;
-    private MaterialButton   btnMensajeConductor;
+    private MaterialButton   btnAccionPrincipal;
+    private MaterialButton   btnIniciar, btnFinalizar, btnMensajeConductor;
+    private MaterialButton   btnRecoger;
     private RecyclerView     rvHistorialParadas;
     private MaterialCardView cardHistorial, cardAcciones;
     private ProgressBar      loaderDetalle;
-    private MyLocationNewOverlay myLocationOverlay;
-
-    // ── Card "Mi reserva" (pasajero) ──────────────────────────────────────────
     private MaterialCardView cardMiReserva;
     private TextView         txtMiReservaInfo;
-
-    // ── Card "Origen/Destino" (pasajero) ─────────────────────────────────────
-    private MaterialCardView cardOrigenDestino;
-
-    // ── Card "Pasajeros reservados" (conductor) ───────────────────────────────
     private MaterialCardView cardPasajeros;
     private LinearLayout     layoutListaPasajeros;
     private TextView         txtTotalPasajeros;
 
-    // ── Datos viaje ───────────────────────────────────────────────────────────
+    // ── Datos del viaje ───────────────────────────────────────────────────────
     private int     viajeId, rutaId;
     private boolean esConductor;
     private String  origenActual = "", destinoActual = "", estadoViaje = "";
     private double  latOrigen, lngOrigen, latDestino, lngDestino;
     private int     cuposTotales = 0, cuposDisponibles = 0;
+    private double  precioViaje  = 0;
+    private double  distanciaKm  = 0, duracionMin = 0;
     private SessionManager session;
 
-    // ★ NUEVO — métricas de la ruta (igual que en PublicarViaje)
-    private double distanciaKm      = 0;
-    private double duracionMin      = 0;
-    private double costoCombustible = 0;
-    private double fuelLitros       = 0;
-
     // ── Chat ──────────────────────────────────────────────────────────────────
-    private int    idContactoChat       = -1;
     private int    idPasajeroViaje      = -1;
     private int    idConductorViaje     = -1;
-    private String nombreContactoChat   = "";
     private String nombreConductorViaje = "";
     private String nombrePasajeroViaje  = "";
 
     // ── Paradas ───────────────────────────────────────────────────────────────
-    private final ArrayList<JSONObject> paradasRuta               = new ArrayList<>();
-    private JSONObject                  paradaSeleccionadaPasajero = null;
-    private GeoPoint                    paradaPersonalizadaPoint   = null;
-    private String                      paradaPersonalizadaNombre  = "";
+    private final ArrayList<JSONObject>     paradasRuta = new ArrayList<>();
+    private final ArrayList<ParadaDinamica> paradasDin  = new ArrayList<>();
 
-    private ArrayList<GeoPoint> puntosRutaConductor = new ArrayList<>();
-    private List<Marker>        marcadoresPasajeros  = new ArrayList<>();
+    // ── Geometría OSRM ────────────────────────────────────────────────────────
+    /** Ruta principal A→B — nunca se reemplaza */
+    private ArrayList<GeoPoint> puntosRutaPrincipal = new ArrayList<>();
+    /** Ruta A→parada→B — se calcula solo cuando el pasajero es RECOGIDO */
+    private ArrayList<GeoPoint> puntosRutaWaypoint  = new ArrayList<>();
+
+    // ── Posiciones clave ──────────────────────────────────────────────────────
+    private GeoPoint gpOrigen  = null;
+    private GeoPoint gpDestino = null;
+    // Para pasajero: su parada individual
+    private GeoPoint gpParada  = null;
+    private String   nombreParada = "";
+    // Para conductor: lista de TODAS las paradas de todos los pasajeros activos
+    private final ArrayList<GeoPoint> paradasPasajeros        = new ArrayList<>();
+    private final ArrayList<String>   nombresPasajerosParadas = new ArrayList<>();
+
+    // Paleta para diferenciar pasajeros visualmente en el mapa y en las cards
+    private static final int[] COLORES_PASAJEROS = {
+            0xFFFF9800, 0xFF9C27B0, 0xFF2196F3, 0xFFE91E63, 0xFF009688, 0xFFFF5722
+    };
+    private static final String[] COLORES_PASAJEROS_HEX = {
+            "#FF9800", "#9C27B0", "#2196F3", "#E91E63", "#009688", "#FF5722"
+    };
+
+    // ── Estado de la reserva ──────────────────────────────────────────────────
+    private boolean yaReservo        = false;
+    private int     cupoSeleccionado = -1;
+    private int     idReservaActual  = -1;
+    private String  estadoReserva    = "";
+
+    // ── Flags coord ───────────────────────────────────────────────────────────
+    private boolean coordsOrigenInvalidas  = false;
+    private boolean coordsDestinoInvalidas = false;
 
     // ── Polling ───────────────────────────────────────────────────────────────
-    private final Handler cuposHandler = new Handler(Looper.getMainLooper());
-    private Runnable      cuposRunnable;
-    private boolean       cuposActivo  = false;
-
-    private final Handler ubicHandler = new Handler(Looper.getMainLooper());
-    private Runnable      ubicRunnable;
-    private boolean       ubicActivo  = false;
-
-    private boolean mapaListo = false;
+    private final Handler pollingHandler = new Handler(Looper.getMainLooper());
+    private Runnable      pollingRunnable;
+    private boolean       pollingActivo = false;
 
     // =========================================================================
     //  LIFECYCLE
@@ -153,12 +185,6 @@ public class DetalleViajeActivity extends AppCompatActivity {
         viajeId     = getIntent().getIntExtra("ID_VIAJE", 0);
         esConductor = session.isConductor();
 
-        Log.d(TAG, "═══════════════════════════════════════");
-        Log.d(TAG, "🚀 INICIANDO DETALLE VIAJE");
-        Log.d(TAG, "viajeId=" + viajeId + " | esConductor=" + esConductor);
-        Log.d(TAG, "Mi ID de usuario: " + session.getIdUsuario());
-        Log.d(TAG, "═══════════════════════════════════════");
-
         if (viajeId == 0) {
             Toast.makeText(this, "ID de viaje inválido", Toast.LENGTH_SHORT).show();
             finish();
@@ -166,14 +192,17 @@ public class DetalleViajeActivity extends AppCompatActivity {
         }
 
         initViews();
-        configurarMapa();
-        verificarPermisos();
         cargarDetalleViaje();
     }
 
     @Override protected void onResume()  { super.onResume();  if (map != null) map.onResume(); }
-    @Override protected void onPause()   { super.onPause();   if (map != null) map.onPause();  detenerTodoPolling(); }
-    @Override protected void onDestroy() { super.onDestroy(); detenerTodoPolling(); }
+    @Override protected void onPause()   { super.onPause();   if (map != null) map.onPause(); detenerTodo(); }
+    @Override protected void onDestroy() { super.onDestroy(); detenerTodo(); }
+
+    private void detenerTodo() {
+        pollingActivo = false;
+        if (pollingRunnable != null) pollingHandler.removeCallbacks(pollingRunnable);
+    }
 
     // =========================================================================
     //  INIT VIEWS
@@ -187,13 +216,11 @@ public class DetalleViajeActivity extends AppCompatActivity {
         txtDistancia        = findViewById(R.id.txt_distancia_ruta);
         txtDuracion         = findViewById(R.id.txt_duracion_ruta);
         txtPrecio           = findViewById(R.id.txt_precio);
-        txtFechaHora        = findViewById(R.id.txt_fecha_hora);        // ★ NUEVO
-        txtDesglosePrecio   = findViewById(R.id.txt_desglose_precio);  // ★ NUEVO
+        txtFechaHora        = findViewById(R.id.txt_fecha_hora);
         layoutCupos         = findViewById(R.id.layout_cupos);
-        btnReservar         = findViewById(R.id.btn_reservar);
+        btnAccionPrincipal  = findViewById(R.id.btn_reservar);
         btnIniciar          = findViewById(R.id.btn_iniciar);
         btnFinalizar        = findViewById(R.id.btn_finalizar);
-        btnAgregarParada    = findViewById(R.id.btn_parada);
         btnMensajeConductor = findViewById(R.id.btn_mensaje_conductor);
         rvHistorialParadas  = findViewById(R.id.rv_historial_paradas);
         cardHistorial       = findViewById(R.id.card_historial);
@@ -202,1748 +229,895 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
         rvHistorialParadas.setLayoutManager(new LinearLayoutManager(this));
 
-        btnReservar.setOnClickListener(v -> mostrarBottomSheetReserva());
-        btnIniciar.setOnClickListener(v -> cambiarEstado("iniciar"));
+        if (btnAccionPrincipal != null)
+            btnAccionPrincipal.setOnClickListener(v -> mostrarBottomSheetParada());
+
+        btnIniciar.setOnClickListener(v -> cambiarEstadoViaje("iniciar"));
         btnFinalizar.setOnClickListener(v -> confirmarFinalizar());
-        btnAgregarParada.setOnClickListener(v -> mostrarDialogoAgregarParada());
         if (btnMensajeConductor != null)
             btnMensajeConductor.setOnClickListener(v -> abrirOCrearChat());
 
-        crearCardMiReservaSiNoExiste();
-        crearCardOrigenDestinoPasajero();
-        crearCardPasajerosSiNoExiste();
+        crearBotonRecoger();
+        crearCardMiReserva();
+        crearCardPasajeros();
     }
 
-    // =========================================================================
-    //  CARD Origen → Destino (pasajero)
-    // =========================================================================
-    private void crearCardOrigenDestinoPasajero() {
-        if (esConductor) return;
-
-        View raiz = findViewById(android.R.id.content);
-        if (!(raiz instanceof ViewGroup)) return;
-        ViewGroup contenedor = buscarScrollContent((ViewGroup) raiz);
-        if (contenedor == null) return;
-
-        float d   = getResources().getDisplayMetrics().density;
-        int   p16 = (int)(16 * d);
-        int   p12 = (int)(12 * d);
-        int   p8  = (int)(8  * d);
-
-        cardOrigenDestino = new MaterialCardView(this);
-        LinearLayout.LayoutParams lpCard = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpCard.setMargins(p16, p8, p16, p8);
-        cardOrigenDestino.setLayoutParams(lpCard);
-        cardOrigenDestino.setRadius(20 * d);
-        cardOrigenDestino.setCardElevation(6 * d);
-        cardOrigenDestino.setCardBackgroundColor(Color.WHITE);
-        cardOrigenDestino.setVisibility(View.GONE);
-
-        LinearLayout inner = new LinearLayout(this);
-        inner.setOrientation(LinearLayout.VERTICAL);
-        inner.setPadding(p16, p16, p16, p16);
-
-        TextView titulo = new TextView(this);
-        titulo.setText("🗺️ Ruta del viaje");
-        titulo.setTextSize(13f);
-        titulo.setTypeface(null, android.graphics.Typeface.BOLD);
-        titulo.setTextColor(Color.parseColor("#004D40"));
-        inner.addView(titulo);
-
-        View sep = new View(this);
-        LinearLayout.LayoutParams lpSep = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, (int)(1 * d));
-        lpSep.setMargins(0, p8, 0, p8);
-        sep.setLayoutParams(lpSep);
-        sep.setBackgroundColor(Color.parseColor("#E0F2F1"));
-        inner.addView(sep);
-
-        LinearLayout fila = new LinearLayout(this);
-        fila.setOrientation(LinearLayout.HORIZONTAL);
-        fila.setGravity(android.view.Gravity.CENTER_VERTICAL);
-
-        LinearLayout indicador = new LinearLayout(this);
-        indicador.setOrientation(LinearLayout.VERTICAL);
-        indicador.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
-        LinearLayout.LayoutParams lpInd = new LinearLayout.LayoutParams(
-                (int)(20 * d), LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpInd.setMargins(0, 0, p12, 0);
-        indicador.setLayoutParams(lpInd);
-
-        View circuloVerde = new View(this);
-        circuloVerde.setLayoutParams(new LinearLayout.LayoutParams((int)(14 * d), (int)(14 * d)));
-        GradientDrawable gv = new GradientDrawable();
-        gv.setShape(GradientDrawable.OVAL); gv.setColor(Color.parseColor("#4CAF50"));
-        gv.setStroke((int)(2 * d), Color.parseColor("#2E7D32"));
-        circuloVerde.setBackground(gv);
-        indicador.addView(circuloVerde);
-
-        View linea = new View(this);
-        LinearLayout.LayoutParams lpLinea = new LinearLayout.LayoutParams((int)(3 * d), (int)(36 * d));
-        lpLinea.setMargins((int)(5 * d), (int)(3 * d), (int)(5 * d), (int)(3 * d));
-        linea.setLayoutParams(lpLinea);
-        GradientDrawable glLinea = new GradientDrawable();
-        glLinea.setShape(GradientDrawable.RECTANGLE); glLinea.setCornerRadius(4 * d);
-        glLinea.setColor(Color.parseColor("#B2DFDB"));
-        linea.setBackground(glLinea);
-        indicador.addView(linea);
-
-        View circuloRojo = new View(this);
-        circuloRojo.setLayoutParams(new LinearLayout.LayoutParams((int)(14 * d), (int)(14 * d)));
-        GradientDrawable gr = new GradientDrawable();
-        gr.setShape(GradientDrawable.OVAL); gr.setColor(Color.parseColor("#EF5350"));
-        gr.setStroke((int)(2 * d), Color.parseColor("#C62828"));
-        circuloRojo.setBackground(gr);
-        indicador.addView(circuloRojo);
-
-        fila.addView(indicador);
-
-        LinearLayout colTextos = new LinearLayout(this);
-        colTextos.setOrientation(LinearLayout.VERTICAL);
-        colTextos.setLayoutParams(new LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-
-        TextView tvOrigen = new TextView(this);
-        tvOrigen.setTag("tv_origen_card");
-        tvOrigen.setText("Cargando origen...");
-        tvOrigen.setTextSize(14f);
-        tvOrigen.setTypeface(null, android.graphics.Typeface.BOLD);
-        tvOrigen.setTextColor(Color.parseColor("#004D40"));
-        tvOrigen.setMaxLines(2);
-        tvOrigen.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        colTextos.addView(tvOrigen);
-
-        View esp = new View(this);
-        esp.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, (int)(28 * d)));
-        colTextos.addView(esp);
-
-        TextView tvDestino = new TextView(this);
-        tvDestino.setTag("tv_destino_card");
-        tvDestino.setText("Cargando destino...");
-        tvDestino.setTextSize(14f);
-        tvDestino.setTypeface(null, android.graphics.Typeface.BOLD);
-        tvDestino.setTextColor(Color.parseColor("#546E7A"));
-        tvDestino.setMaxLines(2);
-        tvDestino.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        colTextos.addView(tvDestino);
-
-        fila.addView(colTextos);
-        inner.addView(fila);
-        cardOrigenDestino.addView(inner);
-
-        int posicionMapa = -1;
-        for (int i = 0; i < contenedor.getChildCount(); i++) {
-            View hijo = contenedor.getChildAt(i);
-            if (hijo instanceof MapView || (hijo.getId() != View.NO_ID && hijo.getId() == R.id.map_mini)) {
-                posicionMapa = i; break;
-            }
-        }
-        if (posicionMapa >= 0 && posicionMapa + 1 < contenedor.getChildCount())
-            contenedor.addView(cardOrigenDestino, posicionMapa + 1);
-        else
-            contenedor.addView(cardOrigenDestino, 0);
+    // ── Botón "Recoger pasajero" (solo conductor) ─────────────────────────────
+    private void crearBotonRecoger() {
+        if (cardAcciones == null) return;
+        LinearLayout inner = (LinearLayout) cardAcciones.getChildAt(0);
+        if (inner == null) return;
+        float d = getResources().getDisplayMetrics().density;
+        btnRecoger = new MaterialButton(this);
+        btnRecoger.setText("✅  RECOGER PASAJERO");
+        btnRecoger.setTextSize(14f); btnRecoger.setTextColor(Color.WHITE);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, (int)(56*d));
+        lp.topMargin = (int)(10*d); btnRecoger.setLayoutParams(lp);
+        btnRecoger.setCornerRadius((int)(14*d));
+        btnRecoger.setBackgroundColor(Color.parseColor("#1976D2"));
+        btnRecoger.setVisibility(View.GONE);
+        btnRecoger.setOnClickListener(v -> confirmarRecogida());
+        inner.addView(btnRecoger, 0);
     }
 
-    private void actualizarCardOrigenDestinoPasajero() {
-        if (esConductor || cardOrigenDestino == null) return;
-        runOnUiThread(() -> {
-            LinearLayout inner = (LinearLayout) cardOrigenDestino.getChildAt(0);
-            if (inner != null) {
-                for (int i = 0; i < inner.getChildCount(); i++) {
-                    View v = inner.getChildAt(i);
-                    if (v instanceof LinearLayout) {
-                        LinearLayout fila = (LinearLayout) v;
-                        for (int j = 0; j < fila.getChildCount(); j++) {
-                            View col = fila.getChildAt(j);
-                            if (col instanceof LinearLayout) {
-                                LinearLayout colTextos = (LinearLayout) col;
-                                int tvCount = 0;
-                                for (int k = 0; k < colTextos.getChildCount(); k++) {
-                                    View hijo = colTextos.getChildAt(k);
-                                    if (hijo instanceof TextView) {
-                                        tvCount++;
-                                        TextView tv = (TextView) hijo;
-                                        if (tvCount == 1) tv.setText("🟢 " + origenActual);
-                                        else if (tvCount == 2) tv.setText("🔴 " + destinoActual);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            cardOrigenDestino.setVisibility(View.VISIBLE);
-        });
-        agregarMarcadoresOrigenDestinoPasajero();
-    }
-
-    private void agregarMarcadoresOrigenDestinoPasajero() {
-        if (latOrigen == 0 && lngOrigen == 0) return;
-        map.post(() -> {
-            Marker marcadorOrigen = new Marker(map);
-            marcadorOrigen.setPosition(new GeoPoint(latOrigen, lngOrigen));
-            marcadorOrigen.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-            marcadorOrigen.setTitle("🟢 Origen: " + origenActual);
-            marcadorOrigen.setSnippet("Punto de partida del viaje");
-            marcadorOrigen.setIcon(getResources().getDrawable(android.R.drawable.ic_menu_mylocation));
-            map.getOverlays().add(marcadorOrigen);
-
-            if (latDestino != 0 || lngDestino != 0) {
-                Marker marcadorDestino = new Marker(map);
-                marcadorDestino.setPosition(new GeoPoint(latDestino, lngDestino));
-                marcadorDestino.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                marcadorDestino.setTitle("🔴 Destino: " + destinoActual);
-                marcadorDestino.setSnippet("Punto de llegada del viaje");
-                marcadorDestino.setIcon(getResources().getDrawable(android.R.drawable.ic_dialog_map));
-                map.getOverlays().add(marcadorDestino);
-            }
-
-            map.getController().animateTo(new GeoPoint(
-                    (latOrigen + latDestino) / 2,
-                    (lngOrigen + lngDestino) / 2));
-            map.getController().setZoom(13.0);
-            map.invalidate();
-        });
-    }
-
-    // =========================================================================
-    //  CARD "Mi reserva" (pasajero)
-    // =========================================================================
-    private void crearCardMiReservaSiNoExiste() {
-        View raiz = findViewById(android.R.id.content);
-        if (!(raiz instanceof ViewGroup)) return;
-        ViewGroup contenedor = buscarScrollContent((ViewGroup) raiz);
-        if (contenedor == null) return;
-
-        float d   = getResources().getDisplayMetrics().density;
-        int   p16 = (int)(16 * d);
-        int   p12 = (int)(12 * d);
-        int   p8  = (int)(8  * d);
-
+    // ── Cards dinámicas ────────────────────────────────────────────────────────
+    private void crearCardMiReserva() {
+        ViewGroup c = buscarScrollContent(); if (c == null) return;
+        float d = getResources().getDisplayMetrics().density;
+        int p16=(int)(16*d), p12=(int)(12*d), p8=(int)(8*d);
         cardMiReserva = new MaterialCardView(this);
-        LinearLayout.LayoutParams lpCard = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpCard.setMargins(p16, p8, p16, p8);
-        cardMiReserva.setLayoutParams(lpCard);
-        cardMiReserva.setRadius(16 * d);
-        cardMiReserva.setCardElevation(4 * d);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(p16,p8,p16,p8); cardMiReserva.setLayoutParams(lp);
+        cardMiReserva.setRadius(16*d); cardMiReserva.setCardElevation(4*d);
         cardMiReserva.setCardBackgroundColor(Color.parseColor("#E8F5E9"));
         cardMiReserva.setVisibility(View.GONE);
-
-        LinearLayout inner = new LinearLayout(this);
-        inner.setOrientation(LinearLayout.VERTICAL);
-        inner.setPadding(p16, p12, p16, p12);
-
-        TextView titulo = new TextView(this);
-        titulo.setText("🎫 Tu reserva");
-        titulo.setTextSize(13f);
-        titulo.setTypeface(null, android.graphics.Typeface.BOLD);
-        titulo.setTextColor(Color.parseColor("#2E7D32"));
-        inner.addView(titulo);
-
-        txtMiReservaInfo = new TextView(this);
-        txtMiReservaInfo.setTextSize(14f);
-        txtMiReservaInfo.setTextColor(Color.parseColor("#004D40"));
-        LinearLayout.LayoutParams lpTxt = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpTxt.topMargin = p8;
-        txtMiReservaInfo.setLayoutParams(lpTxt);
-        inner.addView(txtMiReservaInfo);
-
-        cardMiReserva.addView(inner);
-        contenedor.addView(cardMiReserva, 0);
+        LinearLayout inner = new LinearLayout(this); inner.setOrientation(LinearLayout.VERTICAL); inner.setPadding(p16,p12,p16,p12);
+        TextView titulo = new TextView(this); titulo.setText("🎫 Tu reserva"); titulo.setTextSize(13f); titulo.setTypeface(null,Typeface.BOLD); titulo.setTextColor(Color.parseColor("#2E7D32")); inner.addView(titulo);
+        txtMiReservaInfo = new TextView(this); txtMiReservaInfo.setTextSize(14f); txtMiReservaInfo.setTextColor(Color.parseColor("#004D40"));
+        LinearLayout.LayoutParams lpt = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT); lpt.topMargin=p8; txtMiReservaInfo.setLayoutParams(lpt); inner.addView(txtMiReservaInfo);
+        cardMiReserva.addView(inner); c.addView(cardMiReserva, 0);
     }
 
-    // =========================================================================
-    //  CARD "Pasajeros" (conductor)
-    // =========================================================================
-    private void crearCardPasajerosSiNoExiste() {
-        View raiz = findViewById(android.R.id.content);
-        if (!(raiz instanceof ViewGroup)) return;
-        ViewGroup contenedor = buscarScrollContent((ViewGroup) raiz);
-        if (contenedor == null) return;
-
-        float d   = getResources().getDisplayMetrics().density;
-        int   p16 = (int)(16 * d);
-        int   p12 = (int)(12 * d);
-        int   p8  = (int)(8  * d);
-
+    private void crearCardPasajeros() {
+        ViewGroup c = buscarScrollContent(); if (c == null) return;
+        float d = getResources().getDisplayMetrics().density;
+        int p16=(int)(16*d), p12=(int)(12*d), p8=(int)(8*d);
         cardPasajeros = new MaterialCardView(this);
-        LinearLayout.LayoutParams lpCard = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpCard.setMargins(p16, p8, p16, p8);
-        cardPasajeros.setLayoutParams(lpCard);
-        cardPasajeros.setRadius(16 * d);
-        cardPasajeros.setCardElevation(4 * d);
-        cardPasajeros.setCardBackgroundColor(Color.parseColor("#E3F2FD"));
-        cardPasajeros.setVisibility(View.GONE);
-
-        LinearLayout inner = new LinearLayout(this);
-        inner.setOrientation(LinearLayout.VERTICAL);
-        inner.setPadding(p16, p12, p16, p12);
-
-        LinearLayout filaTitulo = new LinearLayout(this);
-        filaTitulo.setOrientation(LinearLayout.HORIZONTAL);
-        filaTitulo.setGravity(android.view.Gravity.CENTER_VERTICAL);
-
-        TextView titulo = new TextView(this);
-        titulo.setText("🧑‍🤝‍🧑 Pasajeros reservados");
-        titulo.setTextSize(14f);
-        titulo.setTypeface(null, android.graphics.Typeface.BOLD);
-        titulo.setTextColor(Color.parseColor("#1565C0"));
-        titulo.setLayoutParams(new LinearLayout.LayoutParams(0,
-                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        filaTitulo.addView(titulo);
-
-        txtTotalPasajeros = new TextView(this);
-        txtTotalPasajeros.setTextSize(12f);
-        txtTotalPasajeros.setTextColor(Color.parseColor("#1565C0"));
-        filaTitulo.addView(txtTotalPasajeros);
-
-        inner.addView(filaTitulo);
-
-        View sep = new View(this);
-        LinearLayout.LayoutParams lpSep = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, (int)(1 * d));
-        lpSep.setMargins(0, p8, 0, p8);
-        sep.setLayoutParams(lpSep);
-        sep.setBackgroundColor(Color.parseColor("#BBDEFB"));
-        inner.addView(sep);
-
-        layoutListaPasajeros = new LinearLayout(this);
-        layoutListaPasajeros.setOrientation(LinearLayout.VERTICAL);
-        inner.addView(layoutListaPasajeros);
-
-        cardPasajeros.addView(inner);
-        contenedor.addView(cardPasajeros, 0);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(p16,p8,p16,p8); cardPasajeros.setLayoutParams(lp);
+        cardPasajeros.setRadius(16*d); cardPasajeros.setCardElevation(4*d);
+        cardPasajeros.setCardBackgroundColor(Color.parseColor("#E3F2FD")); cardPasajeros.setVisibility(View.GONE);
+        LinearLayout inner = new LinearLayout(this); inner.setOrientation(LinearLayout.VERTICAL); inner.setPadding(p16,p12,p16,p12);
+        LinearLayout fila = new LinearLayout(this); fila.setOrientation(LinearLayout.HORIZONTAL); fila.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        TextView titulo = new TextView(this); titulo.setText("🧑‍🤝‍🧑 Pasajeros reservados"); titulo.setTextSize(14f); titulo.setTypeface(null,Typeface.BOLD); titulo.setTextColor(Color.parseColor("#1565C0")); titulo.setLayoutParams(new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f)); fila.addView(titulo);
+        txtTotalPasajeros = new TextView(this); txtTotalPasajeros.setTextSize(12f); txtTotalPasajeros.setTextColor(Color.parseColor("#1565C0")); fila.addView(txtTotalPasajeros); inner.addView(fila);
+        View sep = new View(this); LinearLayout.LayoutParams ls = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,(int)(1*d)); ls.setMargins(0,p8,0,p8); sep.setLayoutParams(ls); sep.setBackgroundColor(Color.parseColor("#BBDEFB")); inner.addView(sep);
+        layoutListaPasajeros = new LinearLayout(this); layoutListaPasajeros.setOrientation(LinearLayout.VERTICAL); inner.addView(layoutListaPasajeros);
+        cardPasajeros.addView(inner); c.addView(cardPasajeros, 0);
     }
 
-    private ViewGroup buscarScrollContent(ViewGroup vg) {
-        for (int i = 0; i < vg.getChildCount(); i++) {
-            View child = vg.getChildAt(i);
-            if (child instanceof android.widget.ScrollView) {
-                android.widget.ScrollView sv = (android.widget.ScrollView) child;
-                if (sv.getChildCount() > 0 && sv.getChildAt(0) instanceof ViewGroup)
-                    return (ViewGroup) sv.getChildAt(0);
-            }
-            if (child instanceof LinearLayout) return (ViewGroup) child;
+    private ViewGroup buscarScrollContent() {
+        View raiz = findViewById(android.R.id.content);
+        if (!(raiz instanceof ViewGroup)) return null;
+        return buscarEn((ViewGroup) raiz);
+    }
+    private ViewGroup buscarEn(ViewGroup vg) {
+        for (int i=0; i<vg.getChildCount(); i++) {
+            View ch = vg.getChildAt(i);
+            if (ch instanceof androidx.core.widget.NestedScrollView) { androidx.core.widget.NestedScrollView sv=(androidx.core.widget.NestedScrollView)ch; if(sv.getChildCount()>0&&sv.getChildAt(0)instanceof ViewGroup)return(ViewGroup)sv.getChildAt(0); }
+            if (ch instanceof android.widget.ScrollView) { android.widget.ScrollView sv=(android.widget.ScrollView)ch; if(sv.getChildCount()>0&&sv.getChildAt(0)instanceof ViewGroup)return(ViewGroup)sv.getChildAt(0); }
+            if (ch instanceof LinearLayout) return (ViewGroup) ch;
         }
         return vg;
     }
 
     // =========================================================================
-    //  MAPA
-    // =========================================================================
-    private void configurarMapa() {
-        map.setTileSource(TileSourceFactory.MAPNIK);
-        map.setMultiTouchControls(true);
-        map.setBuiltInZoomControls(false);
-        map.setUseDataConnection(true);
-        map.setTilesScaledToDpi(true);
-        map.setHorizontalMapRepetitionEnabled(false);
-        map.setVerticalMapRepetitionEnabled(false);
-        map.getController().setZoom(14.0);
-        map.getController().setCenter(new GeoPoint(2.4419, -76.6063));
-        map.addMapListener(new MapListener() {
-            @Override public boolean onScroll(ScrollEvent e) { mapaListo = true; return false; }
-            @Override public boolean onZoom(ZoomEvent e)     { mapaListo = true; return false; }
-        });
-        map.post(() -> { map.invalidate(); mapaListo = true; });
-    }
-
-    // =========================================================================
-    //  GPS
-    // =========================================================================
-    private void verificarPermisos() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQ_LOCATION);
-        } else {
-            activarGPS();
-        }
-    }
-
-    private void activarGPS() {
-        myLocationOverlay = new MyLocationNewOverlay(new GpsMyLocationProvider(this), map);
-        myLocationOverlay.enableMyLocation();
-        map.getOverlays().add(myLocationOverlay);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int code, @NonNull String[] p, @NonNull int[] r) {
-        super.onRequestPermissionsResult(code, p, r);
-        if (code == REQ_LOCATION && r.length > 0 && r[0] == PackageManager.PERMISSION_GRANTED)
-            activarGPS();
-    }
-
-    // =========================================================================
-    //  CARGA DEL VIAJE
+    //  CARGA PRINCIPAL
     // =========================================================================
     private void cargarDetalleViaje() {
         loaderDetalle.setVisibility(View.VISIBLE);
-        ConexionApi.getInstance(this).getObject(
-                Constantes.viajePorId((long) viajeId),
-                response -> {
-                    loaderDetalle.setVisibility(View.GONE);
-                    Log.d(TAG, "📥 JSON VIAJE: " + response.toString());
-                    try { procesarRespuestaViaje(response); }
-                    catch (Exception e) {
-                        Log.e(TAG, "❌ Error procesando viaje", e);
-                        Toast.makeText(this, "Error cargando datos", Toast.LENGTH_SHORT).show();
-                    }
-                },
-                error -> {
-                    loaderDetalle.setVisibility(View.GONE);
-                    Log.e(TAG, "❌ Error de conexión: " + error);
-                    Toast.makeText(this, "Error de conexión", Toast.LENGTH_LONG).show();
-                }
-        );
+        ConexionApi.getInstance(this).getObject(Constantes.viajePorId((long)viajeId),
+                response -> { loaderDetalle.setVisibility(View.GONE); try { procesarViaje(response); } catch (Exception e) { Log.e(TAG,"Error procesando viaje",e); } },
+                error   -> { loaderDetalle.setVisibility(View.GONE); Toast.makeText(this,"Error de conexión",Toast.LENGTH_LONG).show(); });
     }
 
     // =========================================================================
-    //  PROCESAMIENTO PRINCIPAL DEL VIAJE
+    //  PROCESAMIENTO DEL JSON
     // =========================================================================
-    private void procesarRespuestaViaje(JSONObject r) throws Exception {
-        estadoViaje      = r.optString("estado", "DESCONOCIDO").trim().toUpperCase();
-        cuposTotales     = r.optInt("cuposTotales",     0);
-        cuposDisponibles = r.optInt("cuposDisponibles", 0);
+    private void procesarViaje(JSONObject r) throws Exception {
+        // ── LOG DE DIAGNÓSTICO ────────────────────────────────────────────────
+        try {
+            Log.d(TAG, "═══ JSON VIAJE ═══\n" + r.toString(2));
+            JSONObject rutaLog = r.optJSONObject("ruta");
+            if (rutaLog != null) Log.d(TAG, "═══ JSON RUTA ═══\n" + rutaLog.toString(2));
+        } catch (Exception ignored) {}
+        // ─────────────────────────────────────────────────────────────────────
 
-        // ── Ruta ─────────────────────────────────────────────────────────────
+        estadoViaje      = r.optString("estado","DESCONOCIDO").trim().toUpperCase();
+        cuposTotales     = r.optInt("cuposTotales",0);
+        cuposDisponibles = r.optInt("cuposDisponibles",0);
+        // ✅ Limpiar paradas de pasajeros al recargar
+        paradasPasajeros.clear();
+        nombresPasajerosParadas.clear();
+
         JSONObject ruta = r.optJSONObject("ruta");
-        if (ruta != null) {
-            rutaId        = ruta.optInt("idRuta", 0);
-            origenActual  = ruta.optString("origen",  "Origen");
-            destinoActual = ruta.optString("destino", "Destino");
-            latOrigen     = ruta.optDouble("latOrigen",  2.4419);
-            lngOrigen     = ruta.optDouble("lngOrigen",  -76.6063);
-            latDestino    = ruta.optDouble("latDestino", 2.4419);
-            lngDestino    = ruta.optDouble("lngDestino", -76.6063);
+        extraerCoordsYNombres(r, ruta);
+        extraerMetricas(r, ruta);
+        gpOrigen  = new GeoPoint(latOrigen,  lngOrigen);
+        gpDestino = new GeoPoint(latDestino, lngDestino);
 
-            // ★ Métricas de la ruta
-            distanciaKm      = ruta.optDouble("distanciaKm",      ruta.optDouble("distancia",  0));
-            duracionMin      = ruta.optDouble("duracionMin",       ruta.optDouble("duracion",   0));
-            costoCombustible = ruta.optDouble("costoCombustible",  ruta.optDouble("fuelCostCop", 0));
-            fuelLitros       = ruta.optDouble("combustibleLitros", ruta.optDouble("fuelLiters",  0));
+        double pr = r.optDouble("precio",-1);
+        if (pr<0) { try{pr=Double.parseDouble(r.optString("precio","0"));}catch(Exception ex){pr=0;} }
+        precioViaje = pr;
+        if (txtPrecio!=null) txtPrecio.setText(precioViaje>0?"$ "+String.format(Locale.getDefault(),"%,.0f",precioViaje):"Precio no definido");
 
-            if (txtDistancia != null && distanciaKm > 0)
-                txtDistancia.setText(String.format("%.1f km", distanciaKm));
-            if (txtDuracion  != null && duracionMin > 0)
-                txtDuracion.setText(String.format("%.0f min", duracionMin));
+        mostrarFechaHora(r.optString("fechaHoraSalida",r.optString("fechaSalida",r.optString("fecha",""))));
+        extraerConductor(r);
+        if (idConductorViaje<=0&&esConductor){idConductorViaje=session.getIdUsuario();nombreConductorViaje=session.getNombre();}
 
-        } else {
-            // fallback: datos en la raíz
-            rutaId        = r.optInt("idRuta", 0);
-            origenActual  = r.optString("origen",  "Origen");
-            destinoActual = r.optString("destino", "Destino");
-            latOrigen     = r.optDouble("latOrigen",  2.4419);
-            lngOrigen     = r.optDouble("lngOrigen",  -76.6063);
-            latDestino    = r.optDouble("latDestino", 2.4419);
-            lngDestino    = r.optDouble("lngDestino", -76.6063);
-
-            distanciaKm      = r.optDouble("distanciaKm",      r.optDouble("distancia", 0));
-            duracionMin      = r.optDouble("duracionMin",       r.optDouble("duracion",  0));
-            costoCombustible = r.optDouble("costoCombustible",  0);
-            fuelLitros       = r.optDouble("combustibleLitros", 0);
-
-            if (txtDistancia != null && distanciaKm > 0)
-                txtDistancia.setText(String.format("%.1f km", distanciaKm));
-            if (txtDuracion  != null && duracionMin > 0)
-                txtDuracion.setText(String.format("%.0f min", duracionMin));
-        }
-
-        // ── Precio ───────────────────────────────────────────────────────────
-        double precioViaje = r.optDouble("precio", 0);
-        if (txtPrecio != null)
-            txtPrecio.setText("$ " + String.format(Locale.getDefault(), "%,.0f", precioViaje));
-
-        // ★ Fecha/hora de salida — con formato legible (igual a PublicarViaje)
-        String fechaHora = r.optString("fechaHoraSalida",
-                r.optString("fechaSalida",
-                        r.optString("fecha", "")));
-        if (txtFechaHora != null) {
-            if (!fechaHora.isEmpty() && !fechaHora.equals("null")) {
-                try {
-                    SimpleDateFormat sdfIn  = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-                    SimpleDateFormat sdfOut = new SimpleDateFormat("EEE dd/MM/yyyy  🕐 HH:mm",
-                            new Locale("es", "CO"));
-                    Date date = sdfIn.parse(fechaHora);
-                    txtFechaHora.setText("📅 " + sdfOut.format(date));
-                } catch (Exception ex) {
-                    txtFechaHora.setText("📅 " + fechaHora);
-                }
-                txtFechaHora.setVisibility(View.VISIBLE);
-            } else {
-                txtFechaHora.setVisibility(View.GONE);
-            }
-        }
-
-        // ★ Desglose de precio (igual al badge de PublicarViaje)
-        mostrarDesglosePrecio(precioViaje);
-
-        extraerConductorDelJSON(r);
-
-        // ── Pasajero ─────────────────────────────────────────────────────────
-        JSONObject pasajero = r.optJSONObject("pasajero");
-        if (pasajero != null) {
-            idPasajeroViaje     = extractId(pasajero);
-            nombrePasajeroViaje = extractNombre(pasajero);
-        }
-
-        idContactoChat     = esConductor ? idPasajeroViaje : idConductorViaje;
-        nombreContactoChat = esConductor
-                ? (nombrePasajeroViaje.isEmpty() ? "Pasajero" : nombrePasajeroViaje)
-                : (nombreConductorViaje.isEmpty() ? "Conductor" : nombreConductorViaje);
-
-        // ── Vehículo ─────────────────────────────────────────────────────────
-        JSONObject vehiculo = r.optJSONObject("vehiculo");
-        if (vehiculo != null && txtVehiculo != null)
-            txtVehiculo.setText("🚘 " + vehiculo.optString("marca", "") + " "
-                    + vehiculo.optString("modelo", "") + " • "
-                    + vehiculo.optString("placa",  ""));
+        JSONObject pas=r.optJSONObject("pasajero"); if(pas!=null){idPasajeroViaje=extractId(pas);nombrePasajeroViaje=extractNombre(pas);}
+        JSONObject veh=r.optJSONObject("vehiculo"); if(veh!=null&&txtVehiculo!=null)txtVehiculo.setText("🚘 "+veh.optString("marca","")+" "+veh.optString("modelo","")+" • "+veh.optString("placa",""));
 
         actualizarNombreConductorUI();
-
-        txtRuta.setText("📍 " + origenActual + " → " + destinoActual);
-        txtEstado.setText(obtenerEtiquetaEstado(estadoViaje));
+        txtRuta.setText("📍 "+origenActual+" → "+destinoActual);
+        txtEstado.setText(etiquetaEstado(estadoViaje));
         actualizarChipsCupos(cuposTotales, cuposDisponibles);
-        configurarBotonesYFlujo(r);
+        configurarBotones();
         cargarParadasRuta();
-        iniciarPollingCupos();
+        iniciarPolling();
 
-        // ★ Card origen/destino y marcadores en mapa (solo pasajero)
-        actualizarCardOrigenDestinoPasajero();
-
-        if (esConductor) cargarReservasParaConductor();
-        else             cargarMiReservaParaPasajero();
+        if (esConductor) cargarReservasConductor();
+        else             cargarMiReservaPasajero();
     }
 
     // =========================================================================
-    //  ★ NUEVO — Desglose de precio (igual al badge txt_precio_sugerido de PublicarViaje)
+    //  ★ EXTRACCIÓN ROBUSTA DE COORDS Y NOMBRES ★
     // =========================================================================
-    private void mostrarDesglosePrecio(double precioViaje) {
-        if (txtDesglosePrecio == null) return;
+    private void extraerCoordsYNombres(JSONObject r, JSONObject ruta) {
+        // Usamos el objeto ruta si existe, si no el raíz
+        JSONObject src = ruta != null ? ruta : r;
+        rutaId = ruta != null ? ruta.optInt("idRuta", 0) : r.optInt("idRuta", 0);
 
-        StringBuilder sb = new StringBuilder();
+        // ── COORDENADAS ──────────────────────────────────────────────────────
+        latOrigen  = primeraCoord(src, new String[]{"latOrigen","latitudOrigen","latInicio","lat"}, Double.NaN);
+        lngOrigen  = primeraCoord(src, new String[]{"lngOrigen","longitudOrigen","lngInicio","lng"}, Double.NaN);
+        latDestino = primeraCoordDistinta(src, new String[]{"latDestino","latitudDestino","latFin"}, Double.isNaN(latOrigen)?0:latOrigen, Double.NaN);
+        lngDestino = primeraCoordDistinta(src, new String[]{"lngDestino","longitudDestino","lngFin"}, Double.isNaN(lngOrigen)?0:lngOrigen, Double.NaN);
 
-        if (costoCombustible > 0) {
-            sb.append("⛽ Combustible: $")
-                    .append(String.format(Locale.getDefault(), "%,.0f", costoCombustible))
-                    .append(" COP");
-        }
-        if (fuelLitros > 0) {
-            sb.append("  ·  🛢 ")
-                    .append(String.format(Locale.getDefault(), "%.2f", fuelLitros))
-                    .append(" L");
-        }
-        if (distanciaKm > 0) {
-            if (sb.length() > 0) sb.append("\n");
-            sb.append("📏 ")
-                    .append(String.format(Locale.getDefault(), "%.1f", distanciaKm))
-                    .append(" km");
-        }
-        if (duracionMin > 0) {
-            sb.append("  ·  ⏱ ")
-                    .append(String.format(Locale.getDefault(), "%.0f", duracionMin))
-                    .append(" min");
-        }
-        if (precioViaje > 0 && costoCombustible > 0 && cuposTotales > 0) {
-            double ganancia = (precioViaje * cuposTotales) - costoCombustible;
-            if (sb.length() > 0) sb.append("\n");
-            sb.append("💰 Ganancia estimada (")
-                    .append(cuposTotales).append(" pasajeros): $")
-                    .append(String.format(Locale.getDefault(), "%,.0f", ganancia))
-                    .append(" COP");
-        }
+        // Fallback coords a Popayán centro si son inválidas
+        if (Double.isNaN(latOrigen) || latOrigen == 0) { coordsOrigenInvalidas = true; latOrigen = 2.4419; lngOrigen = -76.6063; }
+        if (Double.isNaN(latDestino) || latDestino == 0 || sonIguales(latOrigen,lngOrigen,latDestino,lngDestino)) { coordsDestinoInvalidas = true; latDestino = 2.4550; lngDestino = -76.5980; }
 
-        if (sb.length() > 0) {
-            runOnUiThread(() -> {
-                txtDesglosePrecio.setText(sb.toString());
-                txtDesglosePrecio.setVisibility(View.VISIBLE);
+        // ── NOMBRE ORIGEN ─────────────────────────────────────────────────────
+        // 1) Buscar campo directo en objeto ruta/raíz
+        origenActual = primeraStr(src, new String[]{
+                "origen", "puntoOrigen", "inicio", "nombreOrigen", "lugarOrigen",
+                "direccionOrigen", "origenNombre"
+        });
+        // 2) Si no, buscar en el objeto raíz del viaje
+        if (origenActual.isEmpty() && ruta != null) {
+            origenActual = primeraStr(r, new String[]{
+                    "origen", "puntoOrigen", "inicio", "nombreOrigen"
             });
+        }
+        // 3) Si no, parsear del campo "nombre" que tiene formato "A → B"
+        if (origenActual.isEmpty()) {
+            origenActual = extraerOrigenDeNombre(src);
+        }
+        if (origenActual.isEmpty() && ruta != null) {
+            origenActual = extraerOrigenDeNombre(r);
+        }
+        if (origenActual.isEmpty()) origenActual = "Origen";
+
+        // ── NOMBRE DESTINO ─────────────────────────────────────────────────────
+        // 1) Buscar campo directo en objeto ruta/raíz
+        destinoActual = primeraStr(src, new String[]{
+                "destino", "puntoDestino", "fin", "nombreDestino", "lugarDestino",
+                "direccionDestino", "destinoNombre"
+        });
+        // 2) Si no, buscar en el objeto raíz del viaje
+        if (destinoActual.isEmpty() && ruta != null) {
+            destinoActual = primeraStr(r, new String[]{
+                    "destino", "puntoDestino", "fin", "nombreDestino"
+            });
+        }
+        // 3) Si no, parsear del campo "nombre" que tiene formato "A → B"
+        if (destinoActual.isEmpty()) {
+            destinoActual = extraerDestinoDeNombre(src);
+        }
+        if (destinoActual.isEmpty() && ruta != null) {
+            destinoActual = extraerDestinoDeNombre(r);
+        }
+        // 4) Último fallback: geocodificación reversa (asíncrona si todo falla)
+        if (destinoActual.isEmpty()) destinoActual = "Destino";
+
+        Log.d(TAG, "✅ Origen='" + origenActual + "' | Destino='" + destinoActual + "'");
+        Log.d(TAG, "✅ Coords: (" + latOrigen + "," + lngOrigen + ") → (" + latDestino + "," + lngDestino + ")");
+    }
+
+    /**
+     * Extrae la parte de origen del campo "nombre" con formato "Origen → Destino"
+     * También soporta " - " y " to " como separadores alternativos.
+     */
+    private String extraerOrigenDeNombre(JSONObject obj) {
+        String nombre = obj.optString("nombre", "").trim();
+        if (nombre.isEmpty() || nombre.equals("null")) return "";
+        // Separador principal: →
+        if (nombre.contains("→")) return nombre.split("→")[0].trim();
+        // Separador alternativo: ->
+        if (nombre.contains("->")) return nombre.split("->")[0].trim();
+        // Separador alternativo: " - "
+        if (nombre.contains(" - ")) return nombre.split(" - ")[0].trim();
+        return "";
+    }
+
+    /**
+     * Extrae la parte de destino del campo "nombre" con formato "Origen → Destino"
+     */
+    private String extraerDestinoDeNombre(JSONObject obj) {
+        String nombre = obj.optString("nombre", "").trim();
+        if (nombre.isEmpty() || nombre.equals("null")) return "";
+        String[] partes = null;
+        if (nombre.contains("→"))  partes = nombre.split("→",  2);
+        else if (nombre.contains("->")) partes = nombre.split("->", 2);
+        else if (nombre.contains(" - ")) partes = nombre.split(" - ", 2);
+        if (partes != null && partes.length > 1) return partes[1].trim();
+        return "";
+    }
+
+    private void extraerMetricas(JSONObject r, JSONObject ruta) {
+        JSONObject src=ruta!=null?ruta:r;
+        distanciaKm=src.optDouble("distanciaKm",src.optDouble("distancia",0));
+        duracionMin=src.optDouble("duracionMin",src.optDouble("duracion",0));
+        if(txtDistancia!=null&&distanciaKm>0)txtDistancia.setText(String.format("%.1f km",distanciaKm));
+        if(txtDuracion!=null&&duracionMin>0)txtDuracion.setText(String.format("%.0f min",duracionMin));
+    }
+
+    // =========================================================================
+    //  RENDERIZADO CENTRAL DEL MAPA
+    // =========================================================================
+    private void renderizarMapa() {
+        limpiarOverlays();
+        dibujarPolilinea(puntosRutaPrincipal, COLOR_RUTA);
+        agregarMarcador(MID_ORIGEN,  gpOrigen,  0xFF4CAF50, "A", "🟢 "+origenActual);
+        agregarMarcador(MID_DESTINO, gpDestino, 0xFFEF5350, "B", "🔴 "+destinoActual);
+
+        // Paradas estáticas de la ruta
+        for (int i=0; i<paradasRuta.size(); i++) {
+            JSONObject p=paradasRuta.get(i); double pLat=p.optDouble("lat",0),pLng=p.optDouble("lng",0);
+            if (pLat!=0) agregarMarcador("wp_"+i,new GeoPoint(pLat,pLng),COLOR_RUTA,String.valueOf(i+1),"🔵 "+p.optString("nombre","Parada "+(i+1)));
+        }
+
+        if (esConductor) {
+            // ✅ Conductor: un marcador por pasajero, cada uno con su color único
+            // Solo si realmente tiene coords de parada (latParada != 0)
+            for (int i = 0; i < paradasPasajeros.size(); i++) {
+                GeoPoint pp = paradasPasajeros.get(i);
+                if (pp == null) continue;
+                // Color único por índice de pasajero
+                int color = COLORES_PASAJEROS[i % COLORES_PASAJEROS.length];
+                String etiqueta = i < nombresPasajerosParadas.size()
+                        ? nombresPasajerosParadas.get(i) : "Pasajero";
+                // Letra del marcador: P1, P2, P3...
+                agregarMarcador("parada_pas_"+i, pp, color,
+                        "P"+(i+1), "🚏 "+etiqueta);
+            }
         } else {
-            runOnUiThread(() -> txtDesglosePrecio.setVisibility(View.GONE));
+            // Pasajero: solo su propia parada (si la eligió)
+            if (gpParada != null)
+                agregarMarcador(MID_PARADA, gpParada, 0xFFFF9800, "P", "🚏 Parada: "+nombreParada);
+            if ((EST_RECOGIDO.equals(estadoReserva)||EST_COMPLETADO.equals(estadoReserva))
+                    && !puntosRutaWaypoint.isEmpty())
+                dibujarPolilinea(puntosRutaWaypoint, 0xFF7B1FA2);
         }
+
+        ajustarCamara();
+        map.invalidate();
+    }
+
+    private void limpiarOverlays() {
+        List<Overlay> ol=map.getOverlays(); for(int i=ol.size()-1;i>=0;i--){Overlay o=ol.get(i);if(o instanceof Marker||o instanceof Polyline)ol.remove(i);}
+    }
+
+    private void dibujarPolilinea(ArrayList<GeoPoint> pts, int color) {
+        if(pts==null||pts.size()<2)return;
+        Polyline s=new Polyline(map);s.setPoints(pts);s.setColor(Color.argb(50,0,0,0));s.setWidth(22f);map.getOverlays().add(s);
+        Polyline b=new Polyline(map);b.setPoints(pts);b.setColor(Color.WHITE);b.setWidth(17f);map.getOverlays().add(b);
+        Polyline l=new Polyline(map);l.setPoints(pts);l.setColor(color);l.setWidth(11f);map.getOverlays().add(l);
+    }
+
+    private void agregarMarcador(String id, GeoPoint pos, int color, String letra, String titulo) {
+        if(pos==null)return;
+        Marker m=new Marker(map); m.setId(id); m.setPosition(pos); m.setAnchor(Marker.ANCHOR_CENTER,Marker.ANCHOR_BOTTOM); m.setTitle(titulo); m.setIcon(new BitmapDrawable(getResources(),crearBitmapMarcador(color,letra))); map.getOverlays().add(m);
+    }
+
+    private void ajustarCamara() {
+        ArrayList<GeoPoint> todos=new ArrayList<>(); if(puntosRutaPrincipal!=null)todos.addAll(puntosRutaPrincipal); if(gpParada!=null)todos.add(gpParada);
+        if(todos.size()<2){if(gpOrigen!=null){map.getController().animateTo(gpOrigen);map.getController().setZoom(14.0);}return;}
+        double mnLat=Double.MAX_VALUE,mxLat=-Double.MAX_VALUE,mnLng=Double.MAX_VALUE,mxLng=-Double.MAX_VALUE;
+        for(GeoPoint p:todos){mnLat=Math.min(mnLat,p.getLatitude());mxLat=Math.max(mxLat,p.getLatitude());mnLng=Math.min(mnLng,p.getLongitude());mxLng=Math.max(mxLng,p.getLongitude());}
+        double pLat=Math.max((mxLat-mnLat)*0.25,0.006),pLng=Math.max((mxLng-mnLng)*0.25,0.006);
+        final double fMxLat=mxLat,fMnLat=mnLat,fMxLng=mxLng,fMnLng=mnLng,fPLat=pLat,fPLng=pLng;
+        map.post(()->{try{map.zoomToBoundingBox(new BoundingBox(fMxLat+fPLat,fMxLng+fPLng,fMnLat-fPLat,fMnLng-fPLng),true,100);}catch(Exception ignored){}});
     }
 
     // =========================================================================
-    //  EXTRACCIÓN ROBUSTA DEL CONDUCTOR
+    //  OSRM — RUTAS
     // =========================================================================
-    private void extraerConductorDelJSON(JSONObject r) {
-        Log.d(TAG, "═══ Extrayendo conductor del JSON ═══");
+    private void cargarParadasRuta() {
+        if(rutaId==0){map.postDelayed(this::iniciarTrazadoRuta,800);return;}
+        ConexionApi.getInstance(this).getArrayNoCache(Constantes.paradasPorRuta((long)rutaId),
+                arr->{try{paradasRuta.clear();ArrayList<String>nombres=new ArrayList<>();for(int i=0;i<arr.length();i++){JSONObject p=arr.getJSONObject(i);paradasRuta.add(p);nombres.add(p.optString("nombre","Parada "+(i+1)));}rvHistorialParadas.setAdapter(new ParadaAdapter(nombres,origenActual,destinoActual));cardHistorial.setVisibility(nombres.isEmpty()?View.GONE:View.VISIBLE);}catch(Exception e){Log.e(TAG,"Error paradas",e);}map.postDelayed(this::iniciarTrazadoRuta,800);},
+                error->{cardHistorial.setVisibility(View.GONE);map.postDelayed(this::iniciarTrazadoRuta,800);});
+    }
 
-        JSONObject conductorObj = r.optJSONObject("conductor");
-        if (conductorObj != null) {
-            idConductorViaje     = extractId(conductorObj);
-            nombreConductorViaje = extractNombre(conductorObj);
-            if (idConductorViaje <= 0 || nombreConductorViaje.isEmpty()) {
-                JSONObject usuario = conductorObj.optJSONObject("usuario");
-                if (usuario != null) {
-                    if (idConductorViaje <= 0)     idConductorViaje     = extractId(usuario);
-                    if (nombreConductorViaje.isEmpty()) nombreConductorViaje = extractNombre(usuario);
-                }
+    private void iniciarTrazadoRuta() {
+        if(coordsOrigenInvalidas||coordsDestinoInvalidas){
+            new Thread(()->{
+                if(coordsOrigenInvalidas){double[]c=geocodificarTexto(origenActual);if(c!=null){latOrigen=c[0];lngOrigen=c[1];coordsOrigenInvalidas=false;gpOrigen=new GeoPoint(latOrigen,lngOrigen);}}
+                if(coordsDestinoInvalidas||sonIguales(latOrigen,lngOrigen,latDestino,lngDestino)){double[]c=geocodificarTexto(destinoActual);if(c!=null){latDestino=c[0];lngDestino=c[1];coordsDestinoInvalidas=false;gpDestino=new GeoPoint(latDestino,lngDestino);}}
+                runOnUiThread(this::pedirRutaPrincipal);
+            }).start();
+        } else pedirRutaPrincipal();
+    }
+
+    private void pedirRutaPrincipal() {
+        ArrayList<GeoPoint> wps=new ArrayList<>(); for(JSONObject p:paradasRuta){double pLat=p.optDouble("lat",0),pLng=p.optDouble("lng",0);if(pLat!=0)wps.add(new GeoPoint(pLat,pLng));}
+        new RouteManager().fetchRoutes(latOrigen,lngOrigen,latDestino,lngDestino,"FASTEST",new RouteManager.RouteCallback(){
+            @Override public void onSuccess(RouteOptionsResponse resp){
+                if(resp.routes==null||resp.routes.isEmpty()){fallbackOsrm(wps,false);return;}
+                RouteOption best=resp.routes.get(0);
+                if(best.distanceKm>0){distanciaKm=best.distanceKm;runOnUiThread(()->{if(txtDistancia!=null)txtDistancia.setText(String.format("%.1f km",distanciaKm));});}
+                if(best.durationMin>0){duracionMin=best.durationMin;runOnUiThread(()->{if(txtDuracion!=null)txtDuracion.setText(String.format("%.0f min",duracionMin));});}
+                ArrayList<GeoPoint> pts=parsearGeoJson(best.geojson);
+                if(pts==null||pts.size()<2){fallbackOsrm(wps,false);return;}
+                puntosRutaPrincipal=pts;
+                runOnUiThread(()->{generarParadasDinamicas();renderizarMapa();});
             }
-        }
+            @Override public void onError(String err){fallbackOsrm(wps,false);}
+        });
+    }
 
-        if (idConductorViaje <= 0) {
-            int[] candidatos = {
-                    r.optInt("idConductor",        -1),
-                    r.optInt("conductorId",        -1),
-                    r.optInt("conductor_id",       -1),
-                    r.optInt("idUsuarioCond",      -1),
-                    r.optInt("idUsuarioConductor", -1)
-            };
-            for (int c : candidatos) { if (c > 0) { idConductorViaje = c; break; } }
-        }
+    private void pedirRutaConWaypoint() {
+        if(gpParada==null)return;
+        new Thread(()->{
+            try{
+                String url=OSRM_URL+"/route/v1/driving/"+lngOrigen+","+latOrigen+";"+gpParada.getLongitude()+","+gpParada.getLatitude()+";"+lngDestino+","+latDestino+"?overview=full&geometries=geojson";
+                String json=peticionHttp(url); JSONObject obj=new JSONObject(json);
+                if(!"Ok".equals(obj.optString("code")))return;
+                JSONObject route=obj.getJSONArray("routes").getJSONObject(0);
+                JSONArray coords=route.getJSONObject("geometry").getJSONArray("coordinates");
+                ArrayList<GeoPoint> pts=new ArrayList<>(); for(int i=0;i<coords.length();i++){JSONArray c=coords.getJSONArray(i);pts.add(new GeoPoint(c.getDouble(1),c.getDouble(0)));}
+                if(pts.size()>=2){puntosRutaWaypoint=pts;runOnUiThread(this::renderizarMapa);}
+            }catch(Exception e){Log.w(TAG,"Ruta waypoint falló",e);}
+        }).start();
+    }
 
-        if (nombreConductorViaje.isEmpty()) {
-            String[] camposNombre = {
-                    "nombreConductor", "conductor", "conductorNombre",
-                    "nombreUsuarioConductor", "driverName"
-            };
-            for (String campo : camposNombre) {
-                String val = r.optString(campo, "");
-                if (!val.isEmpty() && !val.equals("null")) { nombreConductorViaje = val; break; }
+    private void fallbackOsrm(ArrayList<GeoPoint> wps, boolean esWaypoint) {
+        new Thread(()->{
+            try{
+                StringBuilder sb=new StringBuilder(OSRM_URL+"/route/v1/driving/");
+                sb.append(lngOrigen).append(",").append(latOrigen);
+                for(GeoPoint w:wps)sb.append(";").append(w.getLongitude()).append(",").append(w.getLatitude());
+                if(esWaypoint&&gpParada!=null)sb.append(";").append(gpParada.getLongitude()).append(",").append(gpParada.getLatitude());
+                sb.append(";").append(lngDestino).append(",").append(latDestino).append("?overview=full&geometries=geojson");
+                String json=peticionHttp(sb.toString()); JSONObject obj=new JSONObject(json);
+                JSONObject route=obj.getJSONArray("routes").getJSONObject(0);
+                JSONArray coords=route.getJSONObject("geometry").getJSONArray("coordinates");
+                ArrayList<GeoPoint> pts=new ArrayList<>(); for(int i=0;i<coords.length();i++){JSONArray c=coords.getJSONArray(i);pts.add(new GeoPoint(c.getDouble(1),c.getDouble(0)));}
+                if(pts.size()>=2){if(esWaypoint)puntosRutaWaypoint=pts;else{puntosRutaPrincipal=pts;runOnUiThread(this::generarParadasDinamicas);}}
+            }catch(Exception e){if(!esWaypoint){puntosRutaPrincipal=new ArrayList<>();puntosRutaPrincipal.add(gpOrigen);puntosRutaPrincipal.add(gpDestino);}}
+            runOnUiThread(this::renderizarMapa);
+        }).start();
+    }
+
+    // =========================================================================
+    //  MI RESERVA — pasajero
+    // =========================================================================
+    private void cargarMiReservaPasajero() {
+        if(esConductor||cardMiReserva==null)return;
+        ConexionApi.getInstance(this).getArray(Constantes.MIS_RESERVAS,response->{
+            for(int i=0;i<response.length();i++){
+                JSONObject res=response.optJSONObject(i); if(res==null)continue;
+                int idVR=res.optInt("idViaje",0); if(idVR==0){JSONObject vo=res.optJSONObject("viaje");if(vo!=null)idVR=vo.optInt("idViaje",vo.optInt("id",0));}
+                if(idVR!=viajeId)continue;
+                yaReservo=true; idReservaActual=res.optInt("idReserva",res.optInt("id",-1)); estadoReserva=res.optString("estado","").toUpperCase();
+                double latP=res.optDouble("latParada",0),lngP=res.optDouble("lngParada",0);
+                if(latP!=0){gpParada=new GeoPoint(latP,lngP);nombreParada=res.optString("nombreParada",destinoActual);}
+                final JSONObject mr=res;
+                runOnUiThread(()->{
+                    mostrarCardMiReserva(mr); actualizarBotonPasajero(); actualizarChipsCupos(cuposTotales,cuposDisponibles);
+                    if(EST_RECOGIDO.equals(estadoReserva)||EST_COMPLETADO.equals(estadoReserva))pedirRutaConWaypoint();
+                    else renderizarMapa();
+                });
+                return;
             }
+            runOnUiThread(()->{if(cardMiReserva!=null)cardMiReserva.setVisibility(View.GONE);actualizarBotonPasajero();renderizarMapa();});
+        },error->{Log.e(TAG,"Error cargando mis reservas");runOnUiThread(this::renderizarMapa);});
+    }
+
+    private void mostrarCardMiReserva(JSONObject reserva) {
+        if(cardMiReserva==null||txtMiReservaInfo==null)return;
+        String estado=reserva.optString("estado","").toUpperCase();
+        if(EST_CANCELADO.equals(estado)){cardMiReserva.setVisibility(View.GONE);yaReservo=false;return;}
+        String np=reserva.optString("nombreParada",destinoActual);
+        int asi=reserva.optInt("numeroAsientos",reserva.optInt("asientos",1));
+        String cod=reserva.optString("codigoReserva",reserva.optString("codigo",""));
+        double pre=reserva.optDouble("precio",precioViaje);
+        String nc=nombreConductorViaje.isEmpty()?"Conductor":nombreConductorViaje;
+        StringBuilder sb=new StringBuilder();
+        sb.append("🚗 Conductor: ").append(nc).append("\n");
+        sb.append("💺 Asientos: ").append(asi).append("\n");
+        sb.append("🚏 Bajarás en: ").append(np).append("\n");
+        sb.append(pre>0?"💰 $"+String.format(Locale.getDefault(),"%,.0f",pre)+" COP":"💰 Precio: no definido");
+        if(!cod.isEmpty())sb.append("\n📋 Código: ").append(cod);
+        String etiqueta; int bgColor;
+        switch(estado){
+            case EST_ESPERANDO_RECOGIDA:etiqueta="⏳ Esperando recogida";bgColor=Color.parseColor("#FFF9C4");break;
+            case EST_RECOGIDO:etiqueta="🚗 ¡Ya te recogieron!";bgColor=Color.parseColor("#E3F2FD");break;
+            case EST_COMPLETADO:etiqueta="🏁 Viaje completado";bgColor=Color.parseColor("#E8F5E9");break;
+            default:etiqueta="✅ Reserva activa";bgColor=Color.parseColor("#E8F5E9");break;
         }
-
-        if (idConductorViaje > 0 && nombreConductorViaje.isEmpty())
-            cargarNombreConductorDesdeAPI(idConductorViaje);
-
-        if (idConductorViaje <= 0 && esConductor) {
-            idConductorViaje     = session.getIdUsuario();
-            nombreConductorViaje = session.getNombre();
-        }
-
-        Log.d(TAG, "CONDUCTOR: ID=" + idConductorViaje + " | Nombre='" + nombreConductorViaje + "'");
-    }
-
-    private void actualizarNombreConductorUI() {
-        if (txtConductor == null) return;
-        String nombre = nombreConductorViaje.isEmpty() ? "Sin asignar" : nombreConductorViaje;
-        if (esConductor && idConductorViaje == session.getIdUsuario())
-            txtConductor.setText("🚗 Conductor: Tú (" + nombre + ")");
-        else
-            txtConductor.setText("🚗 Conductor: " + nombre
-                    + (idConductorViaje > 0 ? " (ID: " + idConductorViaje + ")" : ""));
-    }
-
-    private void cargarNombreConductorDesdeAPI(int idConductor) {
-        if (idConductor <= 0) return;
-        ConexionApi.getInstance(this).getObject(
-                Constantes.USUARIOS + "/" + idConductor,
-                response -> {
-                    String nombre = extractNombre(response);
-                    if (!nombre.isEmpty()) {
-                        nombreConductorViaje = nombre;
-                        nombreContactoChat   = nombre;
-                        runOnUiThread(() -> { actualizarNombreConductorUI(); actualizarBotonChat(); });
-                    }
-                },
-                error -> Log.e(TAG, "❌ Error cargando nombre conductor: " + error)
-        );
-    }
-
-    private void cargarConductorDelViaje() {
-        if (idConductorViaje > 0) return;
-        ConexionApi.getInstance(this).getObject(
-                Constantes.viajePorId((long) viajeId),
-                response -> {
-                    try {
-                        extraerConductorDelJSON(response);
-                        runOnUiThread(() -> { actualizarNombreConductorUI(); actualizarBotonChat(); });
-                    } catch (Exception e) { Log.e(TAG, "❌ Error extrayendo conductor", e); }
-                },
-                error -> Log.e(TAG, "❌ Error recargando viaje: " + error)
-        );
+        sb.append("\n").append(etiqueta);
+        txtMiReservaInfo.setText(sb.toString()); cardMiReserva.setCardBackgroundColor(bgColor); cardMiReserva.setVisibility(View.VISIBLE);
     }
 
     // =========================================================================
-    //  CARD PASAJEROS (conductor)
+    //  RESERVAS — conductor
     // =========================================================================
-    private void cargarReservasParaConductor() {
-        if (!esConductor || cardPasajeros == null) return;
-        ConexionApi.getInstance(this).getObject(
-                Constantes.viajeReservasDetalle((long) viajeId),
-                response -> runOnUiThread(() -> {
-                    try {
-                        JSONArray reservas = response.optJSONArray("reservas");
-                        if (reservas == null) reservas = response.optJSONArray("content");
-                        if (reservas == null) reservas = response.optJSONArray("data");
-                        if (reservas == null || reservas.length() == 0) {
-                            cardPasajeros.setVisibility(View.GONE); return;
-                        }
+    private void cargarReservasConductor() {
+        if(!esConductor||cardPasajeros==null)return;
+        ConexionApi.getInstance(this).getObject(Constantes.viajeReservasDetalle((long)viajeId),
+                response->runOnUiThread(()->{
+                    try{
+                        JSONArray reservas=extraerArray(response);
+                        // Limpiar paradas previas
+                        paradasPasajeros.clear();
+                        nombresPasajerosParadas.clear();
+
+                        if(reservas==null||reservas.length()==0){mostrarSinPasajeros();return;}
                         layoutListaPasajeros.removeAllViews();
-                        int totalAsientos = 0;
-                        for (int i = 0; i < reservas.length(); i++) {
-                            JSONObject res = reservas.getJSONObject(i);
-                            String estado  = res.optString("estado", "").toUpperCase();
-                            if (estado.equals("CANCELADA") || estado.equals("CANCELADO")) continue;
-                            String nombrePas = "";
-                            JSONObject pasObj = res.optJSONObject("pasajero");
-                            if (pasObj != null) nombrePas = extractNombre(pasObj);
-                            if (nombrePas.isEmpty()) nombrePas = res.optString("nombrePasajero", "");
-                            if (nombrePas.isEmpty()) nombrePas = res.optString("nombre", "Pasajero " + (i + 1));
-                            int asientos = res.optInt("numeroAsientos",
-                                    res.optInt("asientos", res.optInt("cantidadAsientos", 1)));
-                            totalAsientos += asientos;
-                            String nombreParada = res.optString("nombreParada", destinoActual);
-                            agregarFilaPasajero(nombrePas, asientos, nombreParada, estado);
+                        int total=0; boolean hayEsperando=false;
+                        // indice de color: solo sube cuando un pasajero TIENE parada real
+                        int colorIdx=0;
+
+                        for(int i=0;i<reservas.length();i++){
+                            JSONObject res=reservas.getJSONObject(i);
+                            String est=res.optString("estado","").toUpperCase();
+                            if(est.equals(EST_CANCELADO)||est.equals("CANCELADA"))continue;
+
+                            String np="";
+                            JSONObject po=res.optJSONObject("pasajero");
+                            if(po!=null)np=extractNombre(po);
+                            if(np.isEmpty())np=res.optString("nombrePasajero","Pasajero "+(colorIdx+1));
+
+                            int asi=res.optInt("numeroAsientos",res.optInt("asientos",1));
+                            total+=asi;
+                            String par=res.optString("nombreParada","");
+                            int idRes=res.optInt("idReserva",res.optInt("id",-1));
+
+                            // ¿Tiene coordenadas de parada reales?
+                            double latP=res.optDouble("latParada",0), lngP=res.optDouble("lngParada",0);
+                            boolean tieneParada = latP!=0 && lngP!=0;
+
+                            // Determinar color del pasajero (solo asignar color si tiene parada)
+                            int pasajeroColor = tieneParada
+                                    ? COLORES_PASAJEROS[colorIdx % COLORES_PASAJEROS.length]
+                                    : Color.parseColor("#607D8B"); // gris si no tiene parada
+                            String pasajeroColorHex = tieneParada
+                                    ? COLORES_PASAJEROS_HEX[colorIdx % COLORES_PASAJEROS_HEX.length]
+                                    : "#607D8B";
+
+                            if(tieneParada){
+                                paradasPasajeros.add(new GeoPoint(latP,lngP));
+                                // Texto del marcador: "P1 · Juan → Campanario"
+                                nombresPasajerosParadas.add(np+(par.isEmpty()?"":(" → "+par)));
+                            }
+
+                            // Agregar card del pasajero con su color de marcador
+                            agregarFilaPasajeroColoreado(
+                                    np, asi,
+                                    par.isEmpty() ? (tieneParada ? "Parada sin nombre" : "Sin parada asignada") : par,
+                                    est, idRes,
+                                    tieneParada ? "P"+(colorIdx+1) : "?",
+                                    pasajeroColor, pasajeroColorHex, tieneParada);
+
+                            if(tieneParada) colorIdx++;
+
+                            if(EST_ESPERANDO_RECOGIDA.equals(est)){
+                                hayEsperando=true;
+                                if(gpParada==null&&tieneParada){
+                                    gpParada=new GeoPoint(latP,lngP);
+                                    nombreParada=par.isEmpty()?np:par;
+                                }
+                            }
                         }
-                        if (layoutListaPasajeros.getChildCount() == 0) {
-                            cardPasajeros.setVisibility(View.GONE);
-                        } else {
-                            txtTotalPasajeros.setText(layoutListaPasajeros.getChildCount()
-                                    + " pasajero(s) · " + totalAsientos + " asiento(s)");
-                            cardPasajeros.setVisibility(View.VISIBLE);
-                        }
-                    } catch (Exception e) { Log.e(TAG, "Error mostrando reservas", e); }
+
+                        if(layoutListaPasajeros.getChildCount()==0){cardPasajeros.setVisibility(View.GONE);return;}
+                        txtTotalPasajeros.setText(layoutListaPasajeros.getChildCount()+" pasajero(s) · "+total+" asiento(s)");
+                        cardPasajeros.setVisibility(View.VISIBLE);
+                        btnRecoger.setVisibility(hayEsperando?View.VISIBLE:View.GONE);
+                        renderizarMapa();
+                    }catch(Exception e){Log.e(TAG,"Error reservas conductor",e);}
                 }),
-                error -> Log.e(TAG, "Error cargando reservas conductor")
-        );
+                error->runOnUiThread(this::mostrarSinPasajeros));
     }
 
-    private void agregarFilaPasajero(String nombre, int asientos, String parada, String estado) {
-        float d   = getResources().getDisplayMetrics().density;
-        int   p12 = (int)(12 * d);
-        int   p8  = (int)(8  * d);
-        int   p4  = (int)(4  * d);
+    private void mostrarSinPasajeros(){if(layoutListaPasajeros==null)return;layoutListaPasajeros.removeAllViews();TextView tv=new TextView(this);tv.setText("Sin pasajeros reservados aún");tv.setTextColor(Color.parseColor("#546E7A"));tv.setTextSize(13f);tv.setPadding(0,8,0,8);layoutListaPasajeros.addView(tv);if(txtTotalPasajeros!=null)txtTotalPasajeros.setText("0 pasajeros");if(cardPasajeros!=null)cardPasajeros.setVisibility(View.VISIBLE);}
+    private JSONArray extraerArray(JSONObject r){for(String k:new String[]{"reservas","content","data"}){JSONArray a=r.optJSONArray(k);if(a!=null)return a;}Iterator<String>keys=r.keys();while(keys.hasNext()){Object v=r.opt(keys.next());if(v instanceof JSONArray)return(JSONArray)v;}return null;}
 
-        MaterialCardView fila = new MaterialCardView(this);
-        LinearLayout.LayoutParams lpFila = new LinearLayout.LayoutParams(
+    /**
+     * Card del pasajero en la vista del conductor.
+     * Muestra: nombre, estado, asientos, parada y un círculo del mismo color
+     * que el marcador en el mapa para que el conductor identifique visualmente.
+     */
+    private void agregarFilaPasajeroColoreado(String nombre, int asientos, String parada,
+                                              String estado, int idRes, String etiqMarcador,
+                                              int colorMarcador, String colorHex, boolean tieneParada) {
+
+        float d=getResources().getDisplayMetrics().density;
+        int p12=(int)(12*d), p8=(int)(8*d), p6=(int)(6*d), p4=(int)(4*d);
+
+        MaterialCardView fila=new MaterialCardView(this);
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpFila.setMargins(0, p4, 0, p4);
-        fila.setLayoutParams(lpFila);
-        fila.setRadius(12 * d);
-        fila.setCardElevation(2 * d);
+        lp.setMargins(0,p4,0,p4);
+        fila.setLayoutParams(lp);
+        fila.setRadius(14*d);
+        fila.setCardElevation(3*d);
         fila.setCardBackgroundColor(Color.WHITE);
+        // Borde izquierdo del color del marcador
+        fila.setStrokeColor(tieneParada ? colorMarcador : Color.parseColor("#B0BEC5"));
+        fila.setStrokeWidth((int)(3*d));
 
-        LinearLayout inner = new LinearLayout(this);
-        inner.setOrientation(LinearLayout.VERTICAL);
-        inner.setPadding(p12, p8, p12, p8);
+        LinearLayout inner=new LinearLayout(this);
+        inner.setOrientation(LinearLayout.HORIZONTAL);
+        inner.setPadding(0, p8, p12, p8);
 
-        LinearLayout fila1 = new LinearLayout(this);
+        // ── Barra lateral de color ──────────────────────────────────────
+        View barra=new View(this);
+        LinearLayout.LayoutParams lpB=new LinearLayout.LayoutParams((int)(6*d), LinearLayout.LayoutParams.MATCH_PARENT);
+        lpB.setMargins(0,0,p12,0);
+        barra.setLayoutParams(lpB);
+        barra.setBackgroundColor(tieneParada ? colorMarcador : Color.parseColor("#B0BEC5"));
+        inner.addView(barra);
+
+        LinearLayout contenido=new LinearLayout(this);
+        contenido.setOrientation(LinearLayout.VERTICAL);
+        contenido.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT,1f));
+
+        // ── Fila 1: Nombre + badge estado ──────────────────────────────
+        LinearLayout fila1=new LinearLayout(this);
         fila1.setOrientation(LinearLayout.HORIZONTAL);
         fila1.setGravity(android.view.Gravity.CENTER_VERTICAL);
 
-        TextView tvNombre = new TextView(this);
-        tvNombre.setText("🧑 " + nombre);
-        tvNombre.setTextSize(14f);
-        tvNombre.setTypeface(null, android.graphics.Typeface.BOLD);
-        tvNombre.setTextColor(Color.parseColor("#004D40"));
-        tvNombre.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        fila1.addView(tvNombre);
+        TextView tn=new TextView(this);
+        tn.setText("🧑 "+nombre);
+        tn.setTextSize(14f);
+        tn.setTypeface(null, Typeface.BOLD);
+        tn.setTextColor(Color.parseColor("#004D40"));
+        tn.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT,1f));
+        fila1.addView(tn);
 
-        TextView tvAsientos = new TextView(this);
-        tvAsientos.setText("💺 " + asientos + (asientos == 1 ? " asiento" : " asientos"));
-        tvAsientos.setTextSize(11f);
-        tvAsientos.setTypeface(null, android.graphics.Typeface.BOLD);
-        tvAsientos.setTextColor(Color.parseColor("#1565C0"));
-        tvAsientos.setPadding(p8, p4, p8, p4);
-        GradientDrawable bgAsientos = new GradientDrawable();
-        bgAsientos.setShape(GradientDrawable.RECTANGLE); bgAsientos.setCornerRadius(20 * d);
-        bgAsientos.setColor(Color.parseColor("#E3F2FD"));
-        tvAsientos.setBackground(bgAsientos);
-        fila1.addView(tvAsientos);
-        inner.addView(fila1);
+        TextView tb=new TextView(this);
+        tb.setText(badgeEstado(estado));
+        tb.setTextSize(10f);
+        tb.setTypeface(null,Typeface.BOLD);
+        tb.setTextColor(Color.WHITE);
+        tb.setPadding(p8,p4,p8,p4);
+        GradientDrawable bgb=new GradientDrawable();
+        bgb.setShape(GradientDrawable.RECTANGLE);
+        bgb.setCornerRadius(20*d);
+        bgb.setColor(colorBadge(estado));
+        tb.setBackground(bgb);
+        fila1.addView(tb);
+        contenido.addView(fila1);
 
-        TextView tvParada = new TextView(this);
-        tvParada.setText("🔵 Baja en: " + parada);
-        tvParada.setTextSize(12f);
-        tvParada.setTextColor(Color.parseColor("#00695C"));
-        LinearLayout.LayoutParams lpParada = new LinearLayout.LayoutParams(
+        // ── Fila 2: Asientos ───────────────────────────────────────────
+        TextView ta=new TextView(this);
+        ta.setText("💺 "+asientos+(asientos==1?" asiento":" asientos"));
+        ta.setTextSize(12f);
+        ta.setTextColor(Color.parseColor("#00695C"));
+        LinearLayout.LayoutParams lpA=new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpParada.topMargin = p4;
-        tvParada.setLayoutParams(lpParada);
-        inner.addView(tvParada);
+        lpA.topMargin=p4;
+        ta.setLayoutParams(lpA);
+        contenido.addView(ta);
 
-        TextView tvEstado = new TextView(this);
-        String etiqueta; int colorEst;
-        switch (estado) {
-            case "ACTIVA": case "CONFIRMADA": etiqueta = "✅ Confirmada"; colorEst = 0xFF2E7D32; break;
-            case "PENDIENTE":                 etiqueta = "⏳ Pendiente";  colorEst = 0xFFE65100; break;
-            case "EN_CURSO": case "INICIADO": etiqueta = "🚗 En curso";   colorEst = 0xFF1565C0; break;
-            default:                          etiqueta = "📌 " + estado;  colorEst = 0xFF546E7A;
+        // ── Fila 3: Parada con chip de color del marcador ──────────────
+        LinearLayout filaParada=new LinearLayout(this);
+        filaParada.setOrientation(LinearLayout.HORIZONTAL);
+        filaParada.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams lpFP=new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpFP.topMargin=p6;
+        filaParada.setLayoutParams(lpFP);
+
+        // Chip "P1", "P2"... del color del marcador
+        TextView chipMarcador=new TextView(this);
+        chipMarcador.setText(etiqMarcador);
+        chipMarcador.setTextSize(11f);
+        chipMarcador.setTypeface(null,Typeface.BOLD);
+        chipMarcador.setTextColor(Color.WHITE);
+        chipMarcador.setPadding(p8,p4,p8,p4);
+        GradientDrawable bgChip=new GradientDrawable();
+        bgChip.setShape(GradientDrawable.OVAL);
+        bgChip.setColor(tieneParada ? colorMarcador : Color.parseColor("#B0BEC5"));
+        chipMarcador.setBackground(bgChip);
+        LinearLayout.LayoutParams lpChip=new LinearLayout.LayoutParams((int)(28*d),(int)(28*d));
+        lpChip.setMargins(0,0,p8,0);
+        chipMarcador.setLayoutParams(lpChip);
+        chipMarcador.setGravity(android.view.Gravity.CENTER);
+        filaParada.addView(chipMarcador);
+
+        TextView tParada=new TextView(this);
+        if(tieneParada){
+            tParada.setText("🚏 "+parada);
+            tParada.setTextColor(Color.parseColor(colorHex));
+            tParada.setTypeface(null,Typeface.BOLD);
+        } else {
+            tParada.setText("⚠️ "+parada);
+            tParada.setTextColor(Color.parseColor("#90A4AE"));
+            tParada.setTypeface(null,Typeface.ITALIC);
         }
-        tvEstado.setText(etiqueta); tvEstado.setTextSize(11f); tvEstado.setTextColor(colorEst);
-        LinearLayout.LayoutParams lpEst = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpEst.topMargin = p4;
-        tvEstado.setLayoutParams(lpEst);
-        inner.addView(tvEstado);
+        tParada.setTextSize(12f);
+        tParada.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT,1f));
+        tParada.setMaxLines(2);
+        tParada.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        filaParada.addView(tParada);
+        contenido.addView(filaParada);
 
+        // ── Botón recoger (solo si está esperando) ─────────────────────
+        if(EST_ESPERANDO_RECOGIDA.equals(estado)){
+            MaterialButton btnR=new MaterialButton(this);
+            btnR.setText("✅ Confirmar recogida");
+            btnR.setTextSize(12f);
+            btnR.setTextColor(Color.WHITE);
+            btnR.setCornerRadius((int)(10*d));
+            btnR.setBackgroundColor(tieneParada ? colorMarcador : Color.parseColor("#1976D2"));
+            LinearLayout.LayoutParams lpb=new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,(int)(42*d));
+            lpb.topMargin=p8;
+            btnR.setLayoutParams(lpb);
+            btnR.setOnClickListener(v->{idReservaActual=idRes;confirmarRecogida();});
+            contenido.addView(btnR);
+        }
+
+        inner.addView(contenido);
         fila.addView(inner);
         layoutListaPasajeros.addView(fila);
     }
 
-    // =========================================================================
-    //  CARD "Mi reserva" (pasajero)
-    // =========================================================================
-    private void cargarMiReservaParaPasajero() {
-        if (esConductor || cardMiReserva == null) return;
-        ConexionApi.getInstance(this).getArray(
-                Constantes.MIS_RESERVAS,
-                response -> {
-                    for (int i = 0; i < response.length(); i++) {
-                        JSONObject reserva = response.optJSONObject(i);
-                        if (reserva == null) continue;
-                        int idViajeRes = reserva.optInt("idViaje", 0);
-                        if (idViajeRes == 0) {
-                            JSONObject viajeObj = reserva.optJSONObject("viaje");
-                            if (viajeObj != null)
-                                idViajeRes = viajeObj.optInt("idViaje", viajeObj.optInt("id", 0));
-                        }
-                        if (idViajeRes != viajeId) continue;
-                        final JSONObject miReserva = reserva;
-                        runOnUiThread(() -> mostrarCardMiReserva(miReserva));
-                        return;
-                    }
-                    runOnUiThread(() -> { if (cardMiReserva != null) cardMiReserva.setVisibility(View.GONE); });
-                },
-                error -> Log.e(TAG, "Error cargando mis reservas")
-        );
+    // ── Versión antigua mantenida por si se llama desde otro lado ──────────────
+    private void agregarFilaPasajero(String nombre,int asientos,String parada,String estado,int idRes){
+        agregarFilaPasajeroColoreado(nombre,asientos,parada,estado,idRes,"?",
+                Color.parseColor("#607D8B"),"#607D8B",false);
     }
 
-    private void mostrarCardMiReserva(JSONObject reserva) {
-        if (cardMiReserva == null || txtMiReservaInfo == null) return;
-        String estado       = reserva.optString("estado", "").toUpperCase();
-        String nombreParada = reserva.optString("nombreParada", destinoActual);
-        int    asientos     = reserva.optInt("numeroAsientos", reserva.optInt("asientos", 1));
-        String codigo       = reserva.optString("codigoReserva", reserva.optString("codigo", ""));
-        String nombreCond   = nombreConductorViaje.isEmpty() ? "Conductor" : nombreConductorViaje;
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("🚗 Conductor: ").append(nombreCond).append("\n");
-        sb.append("💺 Asientos reservados: ").append(asientos).append("\n");
-        sb.append("🔵 Bajarás en: ").append(nombreParada);
-        if (!codigo.isEmpty()) sb.append("\n📋 Código: ").append(codigo);
-
-        txtMiReservaInfo.setText(sb.toString());
-
-        switch (estado) {
-            case "ACTIVA": case "CONFIRMADA":
-                cardMiReserva.setCardBackgroundColor(Color.parseColor("#E8F5E9")); break;
-            case "EN_CURSO": case "INICIADO":
-                cardMiReserva.setCardBackgroundColor(Color.parseColor("#E3F2FD")); break;
-            case "CANCELADA": case "CANCELADO":
-                cardMiReserva.setVisibility(View.GONE); return;
-            default:
-                cardMiReserva.setCardBackgroundColor(Color.parseColor("#FFF9C4"));
-        }
-        cardMiReserva.setVisibility(View.VISIBLE);
-    }
+    private String badgeEstado(String e){switch(e){case EST_ESPERANDO_RECOGIDA:return"⏳ Esperando";case EST_RECOGIDO:return"✅ Recogido";case EST_COMPLETADO:return"🏁 Completado";default:return"📋 "+e;}}
+    private int colorBadge(String e){switch(e){case EST_ESPERANDO_RECOGIDA:return Color.parseColor("#FB8C00");case EST_RECOGIDO:return Color.parseColor("#1976D2");case EST_COMPLETADO:return Color.parseColor("#388E3C");default:return Color.parseColor("#607D8B");}}
 
     // =========================================================================
-    //  HELPERS ID / NOMBRE
+    //  CONFIRMAR RECOGIDA — conductor
     // =========================================================================
-    private int extractId(JSONObject obj) {
-        if (obj == null) return -1;
-        String[] keys = { "id", "idUsuarios", "idUsuario", "userId",
-                "conductorId", "idConductor", "conductor_id",
-                "pasajeroId",  "idPasajero",  "pasajero_id",
-                "user_id", "id_usuario", "usuario_id" };
-        for (String key : keys) { int val = obj.optInt(key, -1); if (val > 0) return val; }
-        return -1;
-    }
+    private void confirmarRecogida(){if(idReservaActual<=0){Toast.makeText(this,"Sin reserva activa",Toast.LENGTH_SHORT).show();return;}new AlertDialog.Builder(this).setTitle("Confirmar recogida").setMessage("¿Confirmas que recogiste al pasajero?").setPositiveButton("Sí, lo recogí",(d,w)->ejecutarRecogida()).setNegativeButton("Cancelar",null).show();}
 
-    private String extractNombre(JSONObject obj) {
-        if (obj == null) return "";
-        String[] keys = { "nombre", "nombreCompleto", "name", "fullName",
-                "nombreUsuario", "displayName", "userName",
-                "nombres", "primerNombre", "firstName",
-                "apellido", "apellidos", "lastName",
-                "nombreConductor", "nombrePasajero" };
-        for (String key : keys) {
-            String val = obj.optString(key, "");
-            if (!val.isEmpty() && !val.equals("null")) return val;
-        }
-        String n = obj.optString("nombres", ""); String a = obj.optString("apellidos", "");
-        if (!n.isEmpty() || !a.isEmpty()) return (n + " " + a).trim();
-        String fn = obj.optString("firstName", ""); String ln = obj.optString("lastName", "");
-        if (!fn.isEmpty() || !ln.isEmpty()) return (fn + " " + ln).trim();
-        return "";
-    }
-
-    // =========================================================================
-    //  BOTONES
-    // =========================================================================
-    private void configurarBotonesYFlujo(JSONObject r) {
-        btnReservar.setVisibility(View.GONE);
-        btnIniciar.setVisibility(View.GONE);
-        btnFinalizar.setVisibility(View.GONE);
-        btnAgregarParada.setVisibility(View.GONE);
-        if (btnMensajeConductor != null) btnMensajeConductor.setVisibility(View.GONE);
-
-        if (esConductor) {
-            int     totalRes     = r.optInt("totalReservas", 0);
-            boolean puedeIniciar = estadoViaje.equals("CREADO")
-                    || estadoViaje.equals("PROGRAMADO")
-                    || estadoViaje.equals("DISPONIBLE");
-            if (puedeIniciar && totalRes > 0) btnIniciar.setVisibility(View.VISIBLE);
-            if (estadoViaje.equals("INICIADO")) {
-                btnFinalizar.setVisibility(View.VISIBLE);
-                btnAgregarParada.setVisibility(View.VISIBLE);
-                iniciarPollingUbicacionPasajeros();
-            }
-        } else {
-            boolean puedeReservar = (estadoViaje.equals("CREADO")
-                    || estadoViaje.equals("PROGRAMADO")
-                    || estadoViaje.equals("DISPONIBLE"))
-                    && cuposDisponibles > 0;
-            if (puedeReservar) btnReservar.setVisibility(View.VISIBLE);
-            if (estadoViaje.equals("INICIADO")) verificarReservaPasajero();
-        }
-
-        actualizarBotonChat();
-    }
-
-    private void actualizarBotonChat() {
-        if (btnMensajeConductor == null) return;
-        if (esConductor) {
-            String labelPas = nombrePasajeroViaje.isEmpty() ? "Pasajero" : nombrePasajeroViaje;
-            btnMensajeConductor.setText("💬  Chat con " + labelPas);
-            btnMensajeConductor.setVisibility(idPasajeroViaje > 0 ? View.VISIBLE : View.GONE);
-        } else {
-            if (idConductorViaje > 0) {
-                String labelCond = nombreConductorViaje.isEmpty() ? "Conductor" : nombreConductorViaje;
-                btnMensajeConductor.setText("💬  Chat con " + labelCond);
-                btnMensajeConductor.setVisibility(View.VISIBLE);
-                btnMensajeConductor.setEnabled(true);
-                btnMensajeConductor.setAlpha(1f);
-            } else {
-                btnMensajeConductor.setVisibility(View.GONE);
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    if (idConductorViaje <= 0) cargarConductorDelViaje();
-                }, 2000);
-            }
-        }
-    }
-
-    // =========================================================================
-    //  CHAT
-    // =========================================================================
-    private void abrirOCrearChat() {
-        if (!esConductor && idConductorViaje <= 0) {
-            Toast.makeText(this, "Cargando datos del conductor...", Toast.LENGTH_SHORT).show();
-            cargarConductorDelViaje();
-            return;
-        }
-        iniciarConversacion();
-    }
-
-    private void iniciarConversacion() {
-        int miId = session.getIdUsuario();
-        if (idConductorViaje <= 0) {
-            Toast.makeText(this, "Error: No se pudo identificar al conductor.\nRecargando...", Toast.LENGTH_LONG).show();
-            cargarDetalleViaje();
-            return;
-        }
-        int    idPasajero, idCond; String nombre;
-        if (esConductor) {
-            idPasajero = idPasajeroViaje > 0 ? idPasajeroViaje : miId;
-            idCond     = miId;
-            nombre     = nombrePasajeroViaje.isEmpty() ? "Pasajero" : nombrePasajeroViaje;
-        } else {
-            idPasajero = miId;
-            idCond     = idConductorViaje;
-            nombre     = nombreConductorViaje.isEmpty() ? "Conductor" : nombreConductorViaje;
-        }
+    private void ejecutarRecogida(){
         loaderDetalle.setVisibility(View.VISIBLE);
-        JSONObject body = new JSONObject();
-        try {
-            body.put("idViaje", viajeId);
-            body.put("idPasajero", idPasajero);
-            body.put("idConductor", idCond);
-        } catch (JSONException e) { loaderDetalle.setVisibility(View.GONE); return; }
-
-        final String nombreFinal    = nombre;
-        final int    conductorFinal = idCond;
-        final int    pasajeroFinal  = idPasajero;
-        ConexionApi.getInstance(this).post(Constantes.CHAT_CONVERSACIONES, body,
-                response -> {
-                    loaderDetalle.setVisibility(View.GONE);
-                    long idConv = extraerIdConversacion(response);
-                    if (idConv > 0) navegarAlChat(idConv, nombreFinal);
-                    else buscarConversacionExistente(pasajeroFinal, conductorFinal, nombreFinal);
-                },
-                error -> {
-                    loaderDetalle.setVisibility(View.GONE);
-                    buscarConversacionExistente(pasajeroFinal, conductorFinal, nombreFinal);
-                }
-        );
+        ConexionApi.getInstance(this).put(Constantes.RESERVAS+"/"+idReservaActual+"/recoger",null,
+                response->{loaderDetalle.setVisibility(View.GONE);estadoReserva=EST_RECOGIDO;Toast.makeText(this,"✅ Pasajero recogido",Toast.LENGTH_SHORT).show();runOnUiThread(()->{btnRecoger.setVisibility(View.GONE);pedirRutaConWaypoint();cargarReservasConductor();});},
+                error->{loaderDetalle.setVisibility(View.GONE);Toast.makeText(this,"Error al confirmar recogida",Toast.LENGTH_LONG).show();});
     }
 
-    private void buscarConversacionExistente(int idPasajero, int idConductor, String nombreFinal) {
-        String url = Constantes.CHAT_CONVERSACIONES
-                + "?idViaje=" + viajeId + "&idPasajero=" + idPasajero + "&idConductor=" + idConductor;
-        ConexionApi.getInstance(this).getObject(url,
-                response -> {
-                    long idConv = extraerIdConversacion(response);
-                    if (idConv <= 0) {
-                        for (String key : new String[]{"content", "conversaciones", "data"}) {
-                            JSONArray arr = response.optJSONArray(key);
-                            if (arr != null && arr.length() > 0) {
-                                idConv = extraerIdConversacion(arr.optJSONObject(0));
-                                if (idConv > 0) break;
-                            }
-                        }
-                    }
-                    if (idConv > 0) navegarAlChat(idConv, nombreFinal);
-                    else Toast.makeText(this, "No se pudo abrir el chat", Toast.LENGTH_LONG).show();
-                },
-                error -> Toast.makeText(this, "Error de conexión", Toast.LENGTH_SHORT).show()
-        );
+    // =========================================================================
+    //  BOTTOM SHEET — ELEGIR / CAMBIAR PARADA
+    // =========================================================================
+    private void mostrarBottomSheetParada(){
+        if(paradasDin.isEmpty())generarParadasDinamicas();
+        BottomSheetDialog sheet=new BottomSheetDialog(this,R.style.BottomSheetTheme);
+        float dp=getResources().getDisplayMetrics().density;int p16=(int)(16*dp),p12=(int)(12*dp),p8=(int)(8*dp),p4=(int)(4*dp),p24=(int)(24*dp);
+        LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(p16,p16,p16,p24);
+        View tiron=new View(this);LinearLayout.LayoutParams lpT=new LinearLayout.LayoutParams((int)(40*dp),(int)(4*dp));lpT.gravity=android.view.Gravity.CENTER_HORIZONTAL;lpT.bottomMargin=p12;tiron.setLayoutParams(lpT);GradientDrawable tGd=new GradientDrawable();tGd.setShape(GradientDrawable.RECTANGLE);tGd.setCornerRadius(4*dp);tGd.setColor(Color.parseColor("#BDBDBD"));tiron.setBackground(tGd);root.addView(tiron);
+        TextView tTitulo=new TextView(this);tTitulo.setText(yaReservo?"🔄 Cambiar parada de bajada":"🚏 ¿Dónde te vas a bajar?");tTitulo.setTextSize(18f);tTitulo.setTypeface(null,Typeface.BOLD);tTitulo.setTextColor(Color.parseColor("#004D40"));LinearLayout.LayoutParams lpTit=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpTit.bottomMargin=p12;tTitulo.setLayoutParams(lpTit);root.addView(tTitulo);
+        TextView tvElegida=new TextView(this);if(!nombreParada.isEmpty()){tvElegida.setText("🚏 "+nombreParada);tvElegida.setVisibility(View.VISIBLE);}else tvElegida.setVisibility(View.GONE);tvElegida.setTextSize(13f);tvElegida.setTextColor(Color.WHITE);tvElegida.setTypeface(null,Typeface.BOLD);tvElegida.setPadding(p12,p8,p12,p8);GradientDrawable bgC=new GradientDrawable();bgC.setShape(GradientDrawable.RECTANGLE);bgC.setCornerRadius(20*dp);bgC.setColor(Color.parseColor("#FF9800"));tvElegida.setBackground(bgC);LinearLayout.LayoutParams lpChip=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpChip.bottomMargin=p8;tvElegida.setLayoutParams(lpChip);root.addView(tvElegida);
+        android.widget.EditText editBuscar=new android.widget.EditText(this);editBuscar.setHint("✏️  Escribe un barrio o lugar...");editBuscar.setTextSize(14f);editBuscar.setTextColor(Color.parseColor("#212121"));editBuscar.setHintTextColor(Color.parseColor("#9E9E9E"));editBuscar.setSingleLine(true);editBuscar.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS);editBuscar.setPadding(p12,p12,p12,p12);GradientDrawable bgB=new GradientDrawable();bgB.setShape(GradientDrawable.RECTANGLE);bgB.setCornerRadius(12*dp);bgB.setColor(Color.parseColor("#F5F5F5"));bgB.setStroke((int)(1.5f*dp),Color.parseColor("#B2DFDB"));editBuscar.setBackground(bgB);LinearLayout.LayoutParams lpEdit=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpEdit.bottomMargin=p8;editBuscar.setLayoutParams(lpEdit);root.addView(editBuscar);
+        LinearLayout lista=new LinearLayout(this);lista.setOrientation(LinearLayout.VERTICAL);root.addView(lista);
+        final ParadaDinamica[]elegida={null};final MaterialButton[]btnRef={null};
+        poblarLista(lista,paradasDin,"",dp,p8,p4,pE->{elegida[0]=pE;tvElegida.setText("🚏 "+pE.nombre);tvElegida.setVisibility(View.VISIBLE);gpParada=pE.toGeoPoint();nombreParada=pE.nombre;renderizarMapa();if(btnRef[0]!=null)habilitarBtn(btnRef[0],pE.nombre);});
+        MaterialButton btnC=new MaterialButton(this);btnC.setText(yaReservo?"🔄 CAMBIAR PARADA":"🚏 ELEGIR PARADA");btnC.setTextSize(15f);btnC.setEnabled(false);btnC.setAlpha(0.5f);btnC.setBackgroundColor(Color.parseColor("#B0BEC5"));btnC.setTextColor(Color.WHITE);LinearLayout.LayoutParams lpBtn=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,(int)(52*dp));lpBtn.topMargin=p4;btnC.setLayoutParams(lpBtn);btnRef[0]=btnC;
+        btnC.setOnClickListener(v->{if(elegida[0]==null)return;sheet.dismiss();if(yaReservo)cambiarParada(elegida[0]);else publicarParadaYReservar(elegida[0]);});root.addView(btnC);
+        Handler autoH=new Handler(Looper.getMainLooper());Runnable[]autoR={null};
+        editBuscar.addTextChangedListener(new android.text.TextWatcher(){@Override public void beforeTextChanged(CharSequence s,int a,int b,int c){}@Override public void afterTextChanged(android.text.Editable s){}@Override public void onTextChanged(CharSequence s,int st,int b,int c){if(autoR[0]!=null)autoH.removeCallbacks(autoR[0]);String txt=s.toString().trim();autoR[0]=()->{ArrayList<ParadaDinamica>f=new ArrayList<>();for(ParadaDinamica pd:paradasDin)if(txt.isEmpty()||pd.nombre.toLowerCase().contains(txt.toLowerCase()))f.add(pd);runOnUiThread(()->poblarLista(lista,f,txt,dp,p8,p4,pE->{elegida[0]=pE;tvElegida.setText("🚏 "+pE.nombre);tvElegida.setVisibility(View.VISIBLE);gpParada=pE.toGeoPoint();nombreParada=pE.nombre;renderizarMapa();if(btnRef[0]!=null)habilitarBtn(btnRef[0],pE.nombre);}));};autoH.postDelayed(autoR[0],txt.isEmpty()?0:400);}});
+        android.widget.ScrollView sv=new android.widget.ScrollView(this);sv.addView(root);sheet.setContentView(sv);sheet.show();
     }
 
-    private long extraerIdConversacion(JSONObject r) {
-        if (r == null) return -1;
-        long id;
-        id = r.optLong("id", -1);             if (id > 0) return id;
-        id = r.optLong("idConversacion", -1); if (id > 0) return id;
-        id = r.optLong("conversacionId", -1); if (id > 0) return id;
-        JSONObject data = r.optJSONObject("data");
-        if (data != null) { id = data.optLong("id", -1); if (id > 0) return id; }
-        JSONObject conv = r.optJSONObject("conversacion");
-        if (conv != null) { id = conv.optLong("id", -1); if (id > 0) return id; }
-        return -1;
+    private void habilitarBtn(MaterialButton btn,String nombre){btn.setEnabled(true);btn.setAlpha(1f);btn.setBackgroundColor(Color.parseColor(yaReservo?"#1565C0":"#00897B"));btn.setText(yaReservo?"🔄 CAMBIAR A: "+nombre:"🚏 RESERVAR EN: "+nombre);}
+
+    // =========================================================================
+    //  CAMBIAR PARADA EN RESERVA EXISTENTE
+    // =========================================================================
+    private void cambiarParada(ParadaDinamica pd){loaderDetalle.setVisibility(View.VISIBLE);if(pd.idParadaBD>0){actualizarReservaParada(pd);return;}try{JSONObject body=new JSONObject();body.put("idRuta",rutaId);body.put("nombre",pd.nombre);body.put("lat",pd.lat);body.put("lng",pd.lng);body.put("tipo","AMBAS");ConexionApi.getInstance(this).post(Constantes.PARADAS,body,r->{pd.idParadaBD=r.optInt("idParada",r.optInt("id",0));actualizarReservaParada(pd);},e->actualizarReservaParada(pd));}catch(Exception e){actualizarReservaParada(pd);}}
+    private void actualizarReservaParada(ParadaDinamica pd){if(idReservaActual<=0){loaderDetalle.setVisibility(View.GONE);gpParada=pd.toGeoPoint();nombreParada=pd.nombre;renderizarMapa();actualizarBotonPasajero();return;}try{JSONObject body=new JSONObject();body.put("nombreParada",pd.nombre);body.put("latParada",pd.lat);body.put("lngParada",pd.lng);if(pd.idParadaBD>0)body.put("idParada",pd.idParadaBD);ConexionApi.getInstance(this).put(Constantes.RESERVAS+"/"+idReservaActual,body,r->{loaderDetalle.setVisibility(View.GONE);gpParada=pd.toGeoPoint();nombreParada=pd.nombre;renderizarMapa();actualizarBotonPasajero();Toast.makeText(this,"✅ Parada cambiada: "+pd.nombre,Toast.LENGTH_SHORT).show();cargarMiReservaPasajero();},e->{loaderDetalle.setVisibility(View.GONE);gpParada=pd.toGeoPoint();nombreParada=pd.nombre;renderizarMapa();Toast.makeText(this,"Parada actualizada",Toast.LENGTH_SHORT).show();});}catch(Exception e){loaderDetalle.setVisibility(View.GONE);}}
+
+    // =========================================================================
+    //  PUBLICAR PARADA + RESERVAR
+    // =========================================================================
+    private void publicarParadaYReservar(ParadaDinamica pd){loaderDetalle.setVisibility(View.VISIBLE);if(pd.idParadaBD>0){hacerReserva(pd);return;}try{JSONObject body=new JSONObject();body.put("idRuta",rutaId);body.put("nombre",pd.nombre);body.put("lat",pd.lat);body.put("lng",pd.lng);body.put("orden",paradasDin.indexOf(pd)+1);body.put("kmAcumulado",0);body.put("tipo","AMBAS");ConexionApi.getInstance(this).post(Constantes.PARADAS,body,r->{pd.idParadaBD=r.optInt("idParada",r.optInt("id",0));hacerReserva(pd);},e->hacerReserva(pd));}catch(Exception e){hacerReserva(pd);}}
+
+    private void hacerReserva(ParadaDinamica pd){try{JSONObject body=new JSONObject();body.put("idViaje",viajeId);body.put("idUsuario",session.getIdUsuario());body.put("precio",precioViaje>0?precioViaje:0);body.put("nombreParada",pd.nombre);body.put("latParada",pd.lat);body.put("lngParada",pd.lng);if(pd.idParadaBD>0)body.put("idParada",pd.idParadaBD);ConexionApi.getInstance(this).post(Constantes.RESERVAS,body,response->{loaderDetalle.setVisibility(View.GONE);yaReservo=true;idReservaActual=response.optInt("idReserva",response.optInt("id",-1));estadoReserva=response.optString("estado",EST_CONFIRMADA).toUpperCase();gpParada=pd.toGeoPoint();nombreParada=pd.nombre;String nc=nombreConductorViaje.isEmpty()?"el conductor":nombreConductorViaje;Toast.makeText(this,"✅ Reservado con "+nc+"\n🚏 Bajarás en: "+pd.nombre,Toast.LENGTH_LONG).show();runOnUiThread(()->{cuposDisponibles=Math.max(0,cuposDisponibles-1);actualizarChipsCupos(cuposTotales,cuposDisponibles);actualizarBotonPasajero();renderizarMapa();});cargarMiReservaPasajero();},error->{loaderDetalle.setVisibility(View.GONE);String msg="Error al reservar";if(error!=null&&error.networkResponse!=null){int code=error.networkResponse.statusCode;if(code==400)msg="Datos inválidos o sin cupos";else if(code==409){msg="Ya tienes una reserva activa";yaReservo=true;}else if(code==403)msg="Sin permiso";}Toast.makeText(this,msg,Toast.LENGTH_LONG).show();if(yaReservo)cargarMiReservaPasajero();});}catch(Exception e){loaderDetalle.setVisibility(View.GONE);}}
+
+    // =========================================================================
+    //  PARADAS DINÁMICAS
+    // =========================================================================
+    private void generarParadasDinamicas(){
+        paradasDin.clear();
+        if(puntosRutaPrincipal==null||puntosRutaPrincipal.size()<2){for(JSONObject p:paradasRuta){double lat=p.optDouble("lat",0),lng=p.optDouble("lng",0);if(lat!=0){ParadaDinamica pd=new ParadaDinamica(p.optString("nombre","Parada"),lat,lng,0);pd.idParadaBD=p.optInt("idParada",p.optInt("id",0));paradasDin.add(pd);}}paradasDin.add(new ParadaDinamica(destinoActual,latDestino,lngDestino,-1));return;}
+        int total=puntosRutaPrincipal.size(),num=Math.min(6,Math.max(3,total/20));List<Integer>indices=new ArrayList<>();double paso=(double)(total-2)/(num+1);for(int i=1;i<=num;i++){int idx=1+(int)(i*paso);if(idx<total-1)indices.add(idx);}
+        for(int i=0;i<indices.size();i++){int idx=indices.get(i);GeoPoint gp=puntosRutaPrincipal.get(idx);double pct=(double)idx/(total-1)*100;paradasDin.add(new ParadaDinamica(String.format("Punto %.0f%% de la ruta",pct),gp.getLatitude(),gp.getLongitude(),idx));}
+        paradasDin.add(new ParadaDinamica(destinoActual,latDestino,lngDestino,total-1));
+        geocodificarEnBackground(indices);
     }
 
-    private void navegarAlChat(long idConversacion, String nombreContacto) {
-        Intent i = new Intent(this, Chat.class);
-        i.putExtra("idConversacion", idConversacion);
-        i.putExtra("nombre", nombreContacto);
-        startActivity(i);
-    }
+    private void geocodificarEnBackground(List<Integer>indices){new Thread(()->{for(int i=0;i<indices.size()&&i<paradasDin.size()-1;i++){int idx=indices.get(i);GeoPoint gp=puntosRutaPrincipal.get(idx);try{String url="https://nominatim.openstreetmap.org/reverse?lat="+gp.getLatitude()+"&lon="+gp.getLongitude()+"&format=json&addressdetails=1&zoom=16&accept-language=es";String resp=peticionHttp(url);if(resp!=null&&!resp.isEmpty()){JSONObject geo=new JSONObject(resp);String nombre=extraerNombreNominatim(geo.optJSONObject("address"),geo);final int fi=i;final String fn=nombre;runOnUiThread(()->{if(fi<paradasDin.size()-1)paradasDin.get(fi).nombre=fn;});}Thread.sleep(500);}catch(Exception ignored){}}}).start();}
+    private String extraerNombreNominatim(JSONObject addr,JSONObject geo){if(addr==null)return geo.optString("display_name","Parada");for(String c:new String[]{"neighbourhood","suburb","quarter","city_district","road"}){String v=addr.optString(c,"");if(!v.isEmpty()&&!v.equals("null"))return v;}String d=geo.optString("display_name","");return d.isEmpty()?"Parada":d.split(",")[0].trim();}
+
+    private void poblarLista(LinearLayout container,ArrayList<ParadaDinamica>paradas,String filtro,float dp,int p8,int p4,java.util.function.Consumer<ParadaDinamica>onSelect){container.removeAllViews();if(paradas.isEmpty()){TextView tv=new TextView(this);tv.setText("Sin paradas disponibles");tv.setTextSize(13f);tv.setTextColor(Color.parseColor("#9E9E9E"));tv.setPadding(p8,p8,p8,p8);container.addView(tv);return;}container.addView(crearFilaParada("🟢  "+origenActual+"  (Inicio)",null,false,dp,p8,p4,onSelect));for(ParadaDinamica pd:paradas){boolean esD=pd.idxEnRuta==-1;container.addView(crearFilaParada((esD?"🔴":"🔵")+"  "+pd.nombre+(esD?"  (Destino final)":""),pd,true,dp,p8,p4,onSelect));}}
+    private View crearFilaParada(String label,ParadaDinamica pd,boolean sel,float dp,int p8,int p4,java.util.function.Consumer<ParadaDinamica>onSel){LinearLayout fila=new LinearLayout(this);fila.setOrientation(LinearLayout.VERTICAL);LinearLayout.LayoutParams lpF=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpF.setMargins(0,(int)(2*dp),0,(int)(2*dp));fila.setLayoutParams(lpF);GradientDrawable bg=new GradientDrawable();bg.setShape(GradientDrawable.RECTANGLE);bg.setCornerRadius(10*dp);bg.setColor(sel?Color.parseColor("#F9FAFB"):Color.parseColor("#F0F4F8"));bg.setStroke((int)(1*dp),sel?Color.parseColor("#B2DFDB"):Color.parseColor("#E0E0E0"));fila.setBackground(bg);fila.setPadding(p8,p8,p8,p8);TextView tv=new TextView(this);tv.setText(label);tv.setTextSize(14f);tv.setTextColor(sel?Color.parseColor("#004D40"):Color.parseColor("#9E9E9E"));if(!sel)tv.setTypeface(null,Typeface.ITALIC);tv.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT));fila.addView(tv);if(sel&&pd!=null){fila.setClickable(true);fila.setFocusable(true);fila.setOnClickListener(v->{GradientDrawable bgS=new GradientDrawable();bgS.setShape(GradientDrawable.RECTANGLE);bgS.setCornerRadius(10*dp);bgS.setColor(Color.parseColor("#E0F7FA"));bgS.setStroke((int)(2*dp),Color.parseColor("#00897B"));fila.setBackground(bgS);onSel.accept(pd);});}return fila;}
 
     // =========================================================================
     //  CUPOS
     // =========================================================================
-    private void actualizarChipsCupos(int total, int disponibles) {
-        if (layoutCupos == null) return;
-        runOnUiThread(() -> {
-            layoutCupos.removeAllViews();
-            float d      = getResources().getDisplayMetrics().density;
-            int dpSize   = (int)(28 * d);
-            int dpMargin = (int)(6  * d);
-            for (int i = 0; i < total; i++) {
-                boolean libre  = i < disponibles;
-                View    circle = new View(this);
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dpSize, dpSize);
-                lp.setMargins(dpMargin, 0, dpMargin, 0);
-                circle.setLayoutParams(lp);
-                GradientDrawable shape = new GradientDrawable();
-                shape.setShape(GradientDrawable.OVAL);
-                shape.setColor(Color.parseColor(libre ? COLOR_CUPO_LIBRE : COLOR_CUPO_OCUP));
-                shape.setStroke((int)(2 * d), Color.parseColor(libre ? "#388E3C" : "#C62828"));
-                circle.setBackground(shape);
-                layoutCupos.addView(circle);
-            }
-        });
-    }
-
-    private void iniciarPollingCupos() {
-        if (cuposActivo) return;
-        cuposActivo   = true;
-        cuposRunnable = new Runnable() {
-            @Override public void run() {
-                if (!cuposActivo) return;
-                refrescarCuposYEstado();
-                cuposHandler.postDelayed(this, POLLING_CUPOS_MS);
-            }
-        };
-        cuposHandler.postDelayed(cuposRunnable, POLLING_CUPOS_MS);
-    }
-
-    private void refrescarCuposYEstado() {
-        ConexionApi.getInstance(this).getObject(Constantes.viajePorId((long) viajeId),
-                response -> {
-                    int    nd = response.optInt("cuposDisponibles", cuposDisponibles);
-                    int    nt = response.optInt("cuposTotales",     cuposTotales);
-                    String ne = response.optString("estado", estadoViaje).trim().toUpperCase();
-                    if (nd != cuposDisponibles || nt != cuposTotales) {
-                        cuposDisponibles = nd; cuposTotales = nt;
-                        actualizarChipsCupos(cuposTotales, cuposDisponibles);
-                        if (esConductor) cargarReservasParaConductor();
-                        runOnUiThread(() -> {
-                            if (!esConductor)
-                                btnReservar.setVisibility(cuposDisponibles > 0 ? View.VISIBLE : View.GONE);
-                        });
-                    }
-                    if (!ne.equals(estadoViaje)) {
-                        estadoViaje = ne;
-                        runOnUiThread(() -> txtEstado.setText(obtenerEtiquetaEstado(estadoViaje)));
-                        if (ne.equals("INICIADO") || ne.equals("FINALIZADO")) cargarDetalleViaje();
-                    }
-                },
-                error -> {}
-        );
-    }
+    private void actualizarChipsCupos(int total,int disponibles){if(layoutCupos==null||total>8||total<=0)return;runOnUiThread(()->{layoutCupos.removeAllViews();float d=getResources().getDisplayMetrics().density;int s=(int)(32*d),m=(int)(6*d);for(int i=0;i<total;i++){final int idx=i;boolean libre=i<disponibles;boolean esMio=yaReservo&&cupoSeleccionado==i;View circle=new View(this);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(s,s);lp.setMargins(m,0,m,0);circle.setLayoutParams(lp);GradientDrawable sh=new GradientDrawable();sh.setShape(GradientDrawable.OVAL);if(esMio){sh.setColor(Color.parseColor(COLOR_SEL));sh.setStroke((int)(3*d),Color.parseColor("#E65100"));}else if(libre){sh.setColor(Color.parseColor(COLOR_LIBRE));sh.setStroke((int)(2*d),Color.parseColor("#388E3C"));}else{sh.setColor(Color.parseColor(COLOR_OCUP));sh.setStroke((int)(2*d),Color.parseColor("#C62828"));}circle.setBackground(sh);if(!esConductor){if(esMio){circle.setClickable(true);circle.setFocusable(true);circle.setOnClickListener(v->mostrarBottomSheetParada());}else if(libre&&!yaReservo){circle.setClickable(true);circle.setFocusable(true);circle.setOnClickListener(v->{cupoSeleccionado=idx;mostrarBottomSheetParada();});}}layoutCupos.addView(circle);}});}
 
     // =========================================================================
-    //  PARADAS DE LA RUTA
+    //  POLLING
     // =========================================================================
-    private void cargarParadasRuta() {
-        if (rutaId == 0) { map.postDelayed(this::dibujarRutaConductor, 800); return; }
-        ConexionApi.getInstance(this).getObject(Constantes.paradasPorRuta((long) rutaId),
-                response -> {
-                    try {
-                        JSONArray paradas = response.optJSONArray("paradas");
-                        paradasRuta.clear();
-                        ArrayList<String> nombres = new ArrayList<>();
-                        if (paradas != null)
-                            for (int i = 0; i < paradas.length(); i++) {
-                                JSONObject p = paradas.getJSONObject(i);
-                                paradasRuta.add(p);
-                                nombres.add(p.optString("nombre", "Parada " + (i + 1)));
-                            }
-                        rvHistorialParadas.setAdapter(new ParadaAdapter(nombres, origenActual, destinoActual));
-                        cardHistorial.setVisibility(nombres.isEmpty() ? View.GONE : View.VISIBLE);
-                    } catch (Exception e) { Log.e(TAG, "Error paradas", e); }
-                    map.postDelayed(this::dibujarRutaConductor, 800);
-                },
-                error -> { cardHistorial.setVisibility(View.GONE); map.postDelayed(this::dibujarRutaConductor, 800); }
-        );
-    }
+    private void iniciarPolling(){if(pollingActivo)return;pollingActivo=true;pollingRunnable=new Runnable(){@Override public void run(){if(!pollingActivo)return;refrescar();pollingHandler.postDelayed(this,POLLING_MS);}};pollingHandler.postDelayed(pollingRunnable,POLLING_MS);}
 
-    // =========================================================================
-    //  BOTTOM SHEET RESERVA
-    // =========================================================================
-    private void mostrarBottomSheetReserva() {
-        BottomSheetDialog sheet = new BottomSheetDialog(this, R.style.BottomSheetTheme);
-        View view = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_reserva, null);
-        sheet.setContentView(view);
+    private void refrescar(){ConexionApi.getInstance(this).getObject(Constantes.viajePorId((long)viajeId),response->{int nd=response.optInt("cuposDisponibles",cuposDisponibles),nt=response.optInt("cuposTotales",cuposTotales);String ne=response.optString("estado",estadoViaje).trim().toUpperCase();if(nd!=cuposDisponibles||nt!=cuposTotales){cuposDisponibles=nd;cuposTotales=nt;actualizarChipsCupos(cuposTotales,cuposDisponibles);if(esConductor)cargarReservasConductor();runOnUiThread(this::actualizarBotonPasajero);}if(!ne.equals(estadoViaje)){estadoViaje=ne;runOnUiThread(()->txtEstado.setText(etiquetaEstado(estadoViaje)));if(ne.equals("INICIADO")||ne.equals("FINALIZADO"))cargarDetalleViaje();}if(!esConductor&&yaReservo&&idReservaActual>0)actualizarEstadoReservaPorPolling();},error->{});}
 
-        RecyclerView   rvParadas    = view.findViewById(R.id.rv_paradas_sheet);
-        MaterialButton btnConfirmar = view.findViewById(R.id.btn_confirmar_reserva);
-        TextView       txtTitulo    = view.findViewById(R.id.txt_titulo_sheet);
-        TextView       txtRutaSheet = view.findViewById(R.id.txt_ruta_sheet);
-
-        String nombreCond = nombreConductorViaje.isEmpty() ? "Conductor" : nombreConductorViaje;
-        txtTitulo.setText("Reservar viaje con " + nombreCond);
-        txtRutaSheet.setText("📍 " + origenActual + " → " + destinoActual
-                + "\n💺 " + cuposDisponibles + " cupo(s) disponible(s)");
-
-        ArrayList<String> opciones = new ArrayList<>();
-        for (JSONObject p : paradasRuta) opciones.add("🔵 " + p.optString("nombre", "Parada"));
-        opciones.add("🏁 " + destinoActual + " (Destino final)");
-
-        final int[] sel = {-1};
-        ParadaSeleccionAdapter adapter = new ParadaSeleccionAdapter(opciones, idx -> {
-            sel[0] = idx;
-            paradaPersonalizadaPoint  = null;
-            paradaPersonalizadaNombre = "";
-            btnConfirmar.setEnabled(true);
-            btnConfirmar.setAlpha(1f);
-        });
-        rvParadas.setLayoutManager(new LinearLayoutManager(this));
-        rvParadas.setAdapter(adapter);
-
-        ViewGroup contenedor = encontrarContenedorPrincipal(view);
-        if (contenedor != null) agregarCampoParadaEscrita(contenedor, btnConfirmar);
-
-        btnConfirmar.setEnabled(false);
-        btnConfirmar.setAlpha(0.5f);
-        btnConfirmar.setOnClickListener(v -> {
-            if (paradaPersonalizadaPoint != null && !paradaPersonalizadaNombre.isEmpty()) {
-                sheet.dismiss();
-                confirmarReservaPersonalizada(paradaPersonalizadaNombre, paradaPersonalizadaPoint);
-            } else if (sel[0] >= 0) {
-                paradaSeleccionadaPasajero = sel[0] < paradasRuta.size() ? paradasRuta.get(sel[0]) : null;
-                sheet.dismiss();
-                confirmarReserva(opciones.get(sel[0]));
-            }
-        });
-        sheet.show();
-    }
-
-    private ViewGroup encontrarContenedorPrincipal(View rootView) {
-        if (rootView instanceof LinearLayout) return (ViewGroup) rootView;
-        if (rootView instanceof android.widget.ScrollView) {
-            android.widget.ScrollView sv = (android.widget.ScrollView) rootView;
-            if (sv.getChildCount() > 0 && sv.getChildAt(0) instanceof ViewGroup)
-                return (ViewGroup) sv.getChildAt(0);
-        }
-        if (rootView instanceof ViewGroup) {
-            ViewGroup vg = (ViewGroup) rootView;
-            for (int i = 0; i < vg.getChildCount(); i++)
-                if (vg.getChildAt(i) instanceof LinearLayout) return (ViewGroup) vg.getChildAt(i);
-            return vg;
-        }
-        return null;
-    }
-
-    private void agregarCampoParadaEscrita(ViewGroup contenedor, MaterialButton btnConfirmar) {
-        float d   = getResources().getDisplayMetrics().density;
-        int   p16 = (int)(16 * d);
-        int   p8  = (int)(8  * d);
-        int   p4  = (int)(4  * d);
-
-        TextView lblSep = new TextView(this);
-        lblSep.setText("─── o escribe tu parada ───");
-        lblSep.setTextColor(0xFF90A4AE); lblSep.setTextSize(12f);
-        lblSep.setGravity(android.view.Gravity.CENTER);
-        LinearLayout.LayoutParams lpSep = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpSep.setMargins(p16, p8, p16, p4);
-        lblSep.setLayoutParams(lpSep);
-
-        EditText editParada = new EditText(this);
-        editParada.setHint("Ej: Carrera 5 con Calle 10");
-        editParada.setTextSize(14f); editParada.setTextColor(0xFF004D40);
-        editParada.setHintTextColor(0xFF90A4AE); editParada.setSingleLine(true);
-        LinearLayout.LayoutParams lpEdit = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpEdit.setMargins(p16, p4, p16, p8);
-        editParada.setLayoutParams(lpEdit); editParada.setPadding(p16, p8, p16, p8);
-        GradientDrawable bgEdit = new GradientDrawable();
-        bgEdit.setShape(GradientDrawable.RECTANGLE); bgEdit.setCornerRadius(12 * d);
-        bgEdit.setStroke((int)(1.5f * d), 0xFF00897B); bgEdit.setColor(0xFFF0FFFE);
-        editParada.setBackground(bgEdit);
-
-        Button btnBuscar = new Button(this);
-        btnBuscar.setText("🔍  Buscar y usar esta parada");
-        btnBuscar.setAllCaps(false); btnBuscar.setTextColor(Color.WHITE); btnBuscar.setTextSize(13f);
-        GradientDrawable bgBtn = new GradientDrawable();
-        bgBtn.setShape(GradientDrawable.RECTANGLE); bgBtn.setCornerRadius(12 * d); bgBtn.setColor(0xFF00897B);
-        btnBuscar.setBackground(bgBtn);
-        LinearLayout.LayoutParams lpBtn = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, (int)(48 * d));
-        lpBtn.setMargins(p16, 0, p16, p4);
-        btnBuscar.setLayoutParams(lpBtn);
-
-        TextView tvResultado = new TextView(this);
-        tvResultado.setTextSize(12f); tvResultado.setTextColor(0xFF00897B);
-        tvResultado.setVisibility(View.GONE);
-        LinearLayout.LayoutParams lpRes = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpRes.setMargins(p16, 0, p16, p8);
-        tvResultado.setLayoutParams(lpRes);
-
-        contenedor.addView(lblSep);
-        contenedor.addView(editParada);
-        contenedor.addView(btnBuscar);
-        contenedor.addView(tvResultado);
-
-        btnBuscar.setOnClickListener(v -> {
-            String texto = editParada.getText().toString().trim();
-            if (texto.isEmpty()) { Toast.makeText(this, "Escribe una dirección primero", Toast.LENGTH_SHORT).show(); return; }
-            tvResultado.setText("🔄 Buscando..."); tvResultado.setTextColor(0xFF546E7A);
-            tvResultado.setVisibility(View.VISIBLE); btnBuscar.setEnabled(false);
-            new Thread(() -> {
-                try {
-                    GeoPoint pt = geocodificar(texto);
-                    paradaPersonalizadaPoint  = pt;
-                    paradaPersonalizadaNombre = texto;
-                    runOnUiThread(() -> {
-                        tvResultado.setText("✅ Parada encontrada: " + texto);
-                        tvResultado.setTextColor(0xFF2E7D32);
-                        btnConfirmar.setEnabled(true); btnConfirmar.setAlpha(1f); btnBuscar.setEnabled(true);
-                        bgEdit.setStroke((int)(2 * d), 0xFF2E7D32); editParada.setBackground(bgEdit);
-                    });
-                } catch (Exception e) {
-                    runOnUiThread(() -> {
-                        tvResultado.setText("❌ No se encontró. Intenta con más detalle.");
-                        tvResultado.setTextColor(0xFFC62828); btnBuscar.setEnabled(true);
-                        paradaPersonalizadaPoint = null; paradaPersonalizadaNombre = "";
-                    });
-                }
-            }).start();
-        });
-    }
-
-    // =========================================================================
-    //  RESERVA
-    // =========================================================================
-    private void confirmarReserva(String nombreParada) {
-        String nombreCond = nombreConductorViaje.isEmpty() ? "el conductor" : nombreConductorViaje;
-        new AlertDialog.Builder(this)
-                .setTitle("Confirmar reserva")
-                .setMessage("¿Reservar cupo con " + nombreCond + "?\n\nBajarás en: " + nombreParada)
-                .setPositiveButton("Reservar", (d, w) -> hacerReserva(nombreParada, null))
-                .setNegativeButton("Cancelar", null).show();
-    }
-
-    private void confirmarReservaPersonalizada(String nombreParada, GeoPoint punto) {
-        String nombreCond = nombreConductorViaje.isEmpty() ? "el conductor" : nombreConductorViaje;
-        new AlertDialog.Builder(this)
-                .setTitle("Confirmar reserva")
-                .setMessage("¿Reservar cupo con " + nombreCond + "?\n\nBajarás en: " + nombreParada)
-                .setPositiveButton("Reservar", (d, w) -> hacerReserva(nombreParada, punto))
-                .setNegativeButton("Cancelar", null).show();
-    }
-
-    private void hacerReserva(String nombreParada, GeoPoint puntoPersonalizado) {
-        loaderDetalle.setVisibility(View.VISIBLE);
-        try {
-            JSONObject body = new JSONObject();
-            body.put("idViaje",   viajeId);
-            body.put("idUsuario", session.getIdUsuario());
-            if (puntoPersonalizado != null) {
-                body.put("nombreParada", nombreParada);
-                body.put("latParada",    puntoPersonalizado.getLatitude());
-                body.put("lngParada",    puntoPersonalizado.getLongitude());
-            } else if (paradaSeleccionadaPasajero != null) {
-                body.put("idParada",     paradaSeleccionadaPasajero.optInt("idParada", 0));
-                body.put("nombreParada", paradaSeleccionadaPasajero.optString("nombre", nombreParada));
-                body.put("latParada",    paradaSeleccionadaPasajero.optDouble("latitud",  latDestino));
-                body.put("lngParada",    paradaSeleccionadaPasajero.optDouble("longitud", lngDestino));
-            } else {
-                body.put("nombreParada", destinoActual);
-                body.put("latParada",    latDestino);
-                body.put("lngParada",    lngDestino);
-            }
-            ConexionApi.getInstance(this).post(Constantes.RESERVAS, body,
-                    response -> {
-                        loaderDetalle.setVisibility(View.GONE);
-                        double latP, lonP;
-                        if (puntoPersonalizado != null) { latP = puntoPersonalizado.getLatitude(); lonP = puntoPersonalizado.getLongitude(); }
-                        else if (paradaSeleccionadaPasajero != null) {
-                            latP = paradaSeleccionadaPasajero.optDouble("latitud", latDestino);
-                            lonP = paradaSeleccionadaPasajero.optDouble("longitud", lngDestino);
-                        } else { latP = latDestino; lonP = lngDestino; }
-                        String nombreCond = nombreConductorViaje.isEmpty() ? "el conductor" : nombreConductorViaje;
-                        Toast.makeText(this, "✅ Reservado con " + nombreCond + "\nBajarás en: " + nombreParada, Toast.LENGTH_LONG).show();
-                        trazarSegmentoHastaParada(latP, lonP, nombreParada);
-                        refrescarCuposYEstado();
-                        cargarMiReservaParaPasajero();
-                        runOnUiThread(() -> btnReservar.setVisibility(View.GONE));
-                    },
-                    error -> {
-                        loaderDetalle.setVisibility(View.GONE);
-                        String msg = "Error al reservar";
-                        if (error != null && error.networkResponse != null) {
-                            int code = error.networkResponse.statusCode;
-                            if      (code == 400) msg = "Datos inválidos o sin cupos";
-                            else if (code == 409) msg = "Ya tienes una reserva en este viaje";
-                            else if (code == 403) msg = "Sin permiso para reservar";
-                        }
-                        Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
-                    }
-            );
-        } catch (Exception e) {
-            loaderDetalle.setVisibility(View.GONE);
-            Log.e(TAG, "Excepción hacerReserva", e);
-        }
-    }
-
-    private void verificarReservaPasajero() {
-        ConexionApi.getInstance(this).getObject(
-                Constantes.RESERVAS + "/pasajero/" + session.getIdUsuario() + "/viaje/" + viajeId,
-                response -> {
-                    String est = response.optString("estado", "");
-                    if (est.equals("ACTIVA") || est.equals("CONFIRMADA")) {
-                        String nomParada = response.optString("nombreParada", destinoActual);
-                        double latP = response.optDouble("latParada", latDestino);
-                        double lonP = response.optDouble("lngParada", lngDestino);
-                        int idParada = response.optInt("idParada", -1);
-                        for (JSONObject p : paradasRuta)
-                            if (p.optInt("idParada", -2) == idParada) {
-                                paradaSeleccionadaPasajero = p;
-                                latP = p.optDouble("latitud",  latDestino);
-                                lonP = p.optDouble("longitud", lngDestino);
-                                break;
-                            }
-                        final double fLat = latP, fLon = lonP;
-                        final String fNom = nomParada;
-                        runOnUiThread(() -> { trazarSegmentoHastaParada(fLat, fLon, fNom); mostrarCardMiReserva(response); });
-                    }
-                },
-                error -> {}
-        );
-    }
-
-    // =========================================================================
-    //  PASAJEROS EN MAPA (conductor)
-    // =========================================================================
-    private void cargarReservasPasajeros() {
-        if (!esConductor) return;
-        ConexionApi.getInstance(this).getObject(
-                Constantes.viajeReservasDetalle((long) viajeId),
-                response -> {
-                    try {
-                        JSONArray reservas = response.optJSONArray("reservas");
-                        if (reservas == null) return;
-                        limpiarMarcadoresPasajeros();
-                        for (int i = 0; i < reservas.length(); i++) {
-                            JSONObject res = reservas.getJSONObject(i);
-                            double lat = res.optDouble("latitud",  0);
-                            double lon = res.optDouble("longitud", 0);
-                            if (lat != 0 && lon != 0) {
-                                String nombrePas = res.optString("nombrePasajero", "");
-                                if (nombrePas.isEmpty()) {
-                                    JSONObject pasObj = res.optJSONObject("pasajero");
-                                    if (pasObj != null) nombrePas = extractNombre(pasObj);
-                                }
-                                if (nombrePas.isEmpty()) nombrePas = "Pasajero";
-                                agregarMarcadorReservaPasajero(lat, lon, nombrePas, res.optString("nombreParada", "Destino"));
-                            }
-                        }
-                        map.invalidate();
-                    } catch (Exception e) { Log.e(TAG, "Error reservas mapa", e); }
-                },
-                error -> {}
-        );
-    }
-
-    private void limpiarMarcadoresPasajeros() {
-        for (Marker m : marcadoresPasajeros) map.getOverlays().remove(m);
-        marcadoresPasajeros.clear();
-    }
-
-    private void agregarMarcadorReservaPasajero(double lat, double lon, String nombre, String parada) {
-        runOnUiThread(() -> {
-            Marker m = new Marker(map);
-            m.setPosition(new GeoPoint(lat, lon));
-            m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-            m.setTitle("🧑 " + nombre); m.setSnippet("Baja en: " + parada);
-            m.setIcon(getResources().getDrawable(android.R.drawable.ic_menu_myplaces));
-            map.getOverlays().add(m); marcadoresPasajeros.add(m);
-        });
-    }
-
-    private void iniciarPollingUbicacionPasajeros() {
-        if (ubicActivo) return;
-        ubicActivo   = true;
-        ubicRunnable = new Runnable() {
-            @Override public void run() {
-                if (!ubicActivo) return;
-                consultarUbicacionPasajeros();
-                ubicHandler.postDelayed(this, POLLING_UBIC_MS);
-            }
-        };
-        ubicHandler.post(ubicRunnable);
-    }
-
-    private void consultarUbicacionPasajeros() {
-        ConexionApi.getInstance(this).getObject(
-                Constantes.viajePorId((long) viajeId) + "/pasajeros-ubicacion",
-                response -> {
-                    try {
-                        JSONArray pasajeros = response.optJSONArray("pasajeros");
-                        if (pasajeros == null) return;
-                        for (int i = 0; i < pasajeros.length(); i++) {
-                            JSONObject p = pasajeros.getJSONObject(i);
-                            double lat = p.optDouble("latitud", 0); double lon = p.optDouble("longitud", 0);
-                            if (lat != 0 && lon != 0)
-                                agregarMarcadorPasajero(lat, lon, p.optString("nombre", "Pasajero"), p.optString("nombreParada", ""));
-                        }
-                    } catch (Exception e) { Log.e(TAG, "Error ubicacion", e); }
-                },
-                error -> {}
-        );
-    }
-
-    private void agregarMarcadorPasajero(double lat, double lon, String nombre, String parada) {
-        runOnUiThread(() -> {
-            Marker existing = null;
-            for (Marker m : marcadoresPasajeros)
-                if (m.getTitle() != null && m.getTitle().contains(nombre)) { existing = m; break; }
-            if (existing != null) { existing.setPosition(new GeoPoint(lat, lon)); }
-            else {
-                Marker m = new Marker(map);
-                m.setPosition(new GeoPoint(lat, lon));
-                m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                m.setTitle("🧑 " + nombre); m.setSnippet("Baja en: " + parada);
-                m.setIcon(getResources().getDrawable(android.R.drawable.ic_menu_myplaces));
-                map.getOverlays().add(m); marcadoresPasajeros.add(m);
-            }
-            map.invalidate();
-        });
-    }
-
-    private void detenerTodoPolling() {
-        cuposActivo = false; ubicActivo = false;
-        if (cuposRunnable != null) cuposHandler.removeCallbacks(cuposRunnable);
-        if (ubicRunnable  != null) ubicHandler.removeCallbacks(ubicRunnable);
-    }
+    private void actualizarEstadoReservaPorPolling(){ConexionApi.getInstance(this).getObject(Constantes.RESERVAS+"/"+idReservaActual,response->{String nuevo=response.optString("estado","").toUpperCase();if(!nuevo.equals(estadoReserva)){estadoReserva=nuevo;runOnUiThread(()->{mostrarCardMiReserva(response);if(EST_RECOGIDO.equals(estadoReserva)||EST_COMPLETADO.equals(estadoReserva))pedirRutaConWaypoint();else renderizarMapa();});}},error->{});}
 
     // =========================================================================
     //  ACCIONES CONDUCTOR
     // =========================================================================
-    private void cambiarEstado(String accion) {
-        loaderDetalle.setVisibility(View.VISIBLE);
-        ConexionApi.getInstance(this).post(
-                Constantes.viajePorId((long) viajeId) + "/" + accion, null,
+    private void cambiarEstadoViaje(String accion){loaderDetalle.setVisibility(View.VISIBLE);ConexionApi.getInstance(this).post(Constantes.viajePorId((long)viajeId)+"/"+accion,null,response->{loaderDetalle.setVisibility(View.GONE);Toast.makeText(this,"✅ Viaje "+accion+"do",Toast.LENGTH_SHORT).show();cargarDetalleViaje();},error->{loaderDetalle.setVisibility(View.GONE);Toast.makeText(this,"Error al "+accion,Toast.LENGTH_LONG).show();});}
+    private void confirmarFinalizar(){new AlertDialog.Builder(this).setTitle("Finalizar viaje").setMessage("¿Finalizar? Se liberarán todos los cupos.").setPositiveButton("Finalizar",(d,w)->finalizarViaje()).setNegativeButton("Cancelar",null).show();}
+    private void finalizarViaje(){loaderDetalle.setVisibility(View.VISIBLE);detenerTodo();ConexionApi.getInstance(this).post(Constantes.viajePorId((long)viajeId)+"/pasajeros-bajaron",null,r->ConexionApi.getInstance(this).post(Constantes.viajeFinalizar((long)viajeId),null,r2->{loaderDetalle.setVisibility(View.GONE);Toast.makeText(this,"✅ Viaje finalizado.",Toast.LENGTH_LONG).show();cargarDetalleViaje();},e2->{loaderDetalle.setVisibility(View.GONE);Toast.makeText(this,"Error finalizando",Toast.LENGTH_LONG).show();}),error->cambiarEstadoViaje("finalizar"));}
+
+    // =========================================================================
+    //  BOTONES UI
+    // =========================================================================
+    private void configurarBotones() {
+        if (btnAccionPrincipal != null) btnAccionPrincipal.setVisibility(View.GONE);
+        btnIniciar.setVisibility(View.GONE);
+        btnFinalizar.setVisibility(View.GONE);
+        if (btnMensajeConductor != null) btnMensajeConductor.setVisibility(View.GONE);
+        if (btnRecoger != null) btnRecoger.setVisibility(View.GONE);
+
+        if (esConductor) {
+            if (estadoViaje.equals("CREADO") || estadoViaje.equals("PROGRAMADO")
+                    || estadoViaje.equals("DISPONIBLE")) {
+                btnIniciar.setVisibility(View.VISIBLE);
+            }
+            if (estadoViaje.equals("EN_CURSO") || estadoViaje.equals("INICIADO")) {
+                btnFinalizar.setVisibility(View.VISIBLE);
+            }
+        } else {
+            if (ESTADOS_RESERVABLES.contains(estadoViaje)) {
+                verificarReservaActivaYMostrarBoton();
+            } else if (estadoViaje.equals("CREADO") || estadoViaje.equals("PROGRAMADO")
+                    || estadoViaje.equals("DISPONIBLE")) {
+                mostrarBannerEsperaInicio();
+            }
+        }
+        actualizarBotonChat();
+    }
+
+    private void verificarReservaActivaYMostrarBoton() {
+        ConexionApi.getInstance(this).getArray(Constantes.MIS_RESERVAS,
                 response -> {
-                    loaderDetalle.setVisibility(View.GONE);
-                    Toast.makeText(this, "✅ Viaje " + accion + "do", Toast.LENGTH_SHORT).show();
-                    cargarDetalleViaje();
-                },
-                error -> {
-                    loaderDetalle.setVisibility(View.GONE);
-                    Toast.makeText(this, "Error al " + accion, Toast.LENGTH_LONG).show();
-                }
-        );
-    }
-
-    private void confirmarFinalizar() {
-        new AlertDialog.Builder(this)
-                .setTitle("Finalizar viaje")
-                .setMessage("¿Finalizar? Se liberarán todos los cupos.")
-                .setPositiveButton("Finalizar", (d, w) -> finalizarViaje())
-                .setNegativeButton("Cancelar", null).show();
-    }
-
-    private void finalizarViaje() {
-        loaderDetalle.setVisibility(View.VISIBLE);
-        detenerTodoPolling();
-        ConexionApi.getInstance(this).post(
-                Constantes.viajePorId((long) viajeId) + "/pasajeros-bajaron", null,
-                r -> ConexionApi.getInstance(this).post(Constantes.viajeFinalizar((long) viajeId), null,
-                        r2 -> {
-                            loaderDetalle.setVisibility(View.GONE);
-                            Toast.makeText(this, "✅ Viaje finalizado.", Toast.LENGTH_LONG).show();
-                            cargarDetalleViaje();
-                        },
-                        e2 -> {
-                            loaderDetalle.setVisibility(View.GONE);
-                            Toast.makeText(this, "Error finalizando", Toast.LENGTH_LONG).show();
-                        }),
-                error -> cambiarEstado("finalizar")
-        );
-    }
-
-    private void mostrarDialogoAgregarParada() {
-        AlertDialog.Builder b = new AlertDialog.Builder(this);
-        b.setTitle("➕ Agregar Parada");
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(50, 40, 50, 10);
-        EditText inputNombre    = new EditText(this); inputNombre.setHint("Nombre");       layout.addView(inputNombre);
-        EditText inputDireccion = new EditText(this); inputDireccion.setHint("Dirección"); layout.addView(inputDireccion);
-        b.setView(layout);
-        b.setPositiveButton("Agregar", (d, w) -> {
-            String nom = inputNombre.getText().toString().trim();
-            String dir = inputDireccion.getText().toString().trim();
-            if (nom.isEmpty() || dir.isEmpty()) { Toast.makeText(this, "Complete todos los campos", Toast.LENGTH_SHORT).show(); return; }
-            new Thread(() -> {
-                try {
-                    GeoPoint pt = geocodificar(dir);
+                    boolean tieneOtraReservaActiva = false;
+                    for (int i = 0; i < response.length(); i++) {
+                        JSONObject r = response.optJSONObject(i);
+                        if (r == null) continue;
+                        String est = r.optString("estado", "").toUpperCase();
+                        int idV = r.optInt("idViaje", 0);
+                        if (idV == 0) {
+                            JSONObject vo = r.optJSONObject("viaje");
+                            if (vo != null) idV = vo.optInt("idViaje", vo.optInt("id", 0));
+                        }
+                        if (ESTADOS_RESERVA_ACTIVA.contains(est) && idV != viajeId) {
+                            tieneOtraReservaActiva = true;
+                            break;
+                        }
+                    }
+                    final boolean bloqueado = tieneOtraReservaActiva;
                     runOnUiThread(() -> {
-                        try {
-                            JSONObject body = new JSONObject();
-                            body.put("nombre",   nom);
-                            body.put("latitud",  pt.getLatitude());
-                            body.put("longitud", pt.getLongitude());
-                            ConexionApi.getInstance(this).post(Constantes.rutaParadas((long) rutaId), body,
-                                    r -> { Toast.makeText(this, "✅ Parada agregada", Toast.LENGTH_SHORT).show(); cargarParadasRuta(); },
-                                    e -> Toast.makeText(this, "Error agregando parada", Toast.LENGTH_LONG).show());
-                        } catch (Exception ex) { Log.e(TAG, "Error body parada", ex); }
+                        if (bloqueado) mostrarBannerReservaActiva();
+                        else           actualizarBotonPasajero();
                     });
-                } catch (Exception e) {
-                    runOnUiThread(() -> Toast.makeText(this, "Dirección no encontrada", Toast.LENGTH_LONG).show());
-                }
-            }).start();
-        });
-        b.setNegativeButton("Cancelar", null);
-        b.show();
+                },
+                error -> runOnUiThread(this::actualizarBotonPasajero)
+        );
     }
+
+    private void mostrarBannerEsperaInicio() {
+        if (btnAccionPrincipal == null) return;
+        btnAccionPrincipal.setText("⏳ El conductor aún no inició el viaje");
+        btnAccionPrincipal.setEnabled(false);
+        btnAccionPrincipal.setAlpha(0.65f);
+        btnAccionPrincipal.setBackgroundColor(Color.parseColor("#B0BEC5"));
+        btnAccionPrincipal.setVisibility(View.VISIBLE);
+    }
+
+    private void mostrarBannerReservaActiva() {
+        if (btnAccionPrincipal == null) return;
+        btnAccionPrincipal.setText("🔒 Ya tienes un viaje activo");
+        btnAccionPrincipal.setEnabled(false);
+        btnAccionPrincipal.setAlpha(0.75f);
+        btnAccionPrincipal.setBackgroundColor(Color.parseColor("#EF5350"));
+        btnAccionPrincipal.setVisibility(View.VISIBLE);
+    }
+
+    private void actualizarBotonPasajero(){
+        if(esConductor||btnAccionPrincipal==null)return;
+        if(yaReservo){
+            btnAccionPrincipal.setText("🔄 CAMBIAR PARADA");
+            btnAccionPrincipal.setEnabled(true);
+            btnAccionPrincipal.setAlpha(1f);
+            btnAccionPrincipal.setVisibility(View.VISIBLE);
+            btnAccionPrincipal.setBackgroundColor(Color.parseColor("#1565C0"));
+        } else if(cuposDisponibles>0 && ESTADOS_RESERVABLES.contains(estadoViaje)){
+            btnAccionPrincipal.setText("🚏 ELEGIR PARADA");
+            btnAccionPrincipal.setEnabled(true);
+            btnAccionPrincipal.setAlpha(1f);
+            btnAccionPrincipal.setVisibility(View.VISIBLE);
+            btnAccionPrincipal.setBackgroundColor(Color.parseColor("#00897B"));
+        } else {
+            btnAccionPrincipal.setVisibility(View.GONE);
+        }
+    }
+
+    private void actualizarBotonChat(){if(btnMensajeConductor==null)return;if(esConductor){String l=nombrePasajeroViaje.isEmpty()?"Pasajero":nombrePasajeroViaje;btnMensajeConductor.setText("💬  Chat con "+l);btnMensajeConductor.setVisibility(idPasajeroViaje>0?View.VISIBLE:View.GONE);}else{if(idConductorViaje>0){btnMensajeConductor.setText("💬  Chat con "+(nombreConductorViaje.isEmpty()?"Conductor":nombreConductorViaje));btnMensajeConductor.setVisibility(View.VISIBLE);btnMensajeConductor.setEnabled(true);btnMensajeConductor.setAlpha(1f);}else{btnMensajeConductor.setText("💬  Chat con Conductor");btnMensajeConductor.setVisibility(View.VISIBLE);btnMensajeConductor.setEnabled(false);btnMensajeConductor.setAlpha(0.5f);new Handler(Looper.getMainLooper()).postDelayed(this::cargarConductorDelViaje,1500);}}}
 
     // =========================================================================
-    //  MAPA — DIBUJO DE RUTA
+    //  CHAT
     // =========================================================================
-    private void dibujarRutaConductor() {
-        new Thread(() -> {
-            try {
-                GeoPoint origen  = new GeoPoint(latOrigen,  lngOrigen);
-                GeoPoint destino = new GeoPoint(latDestino, lngDestino);
-                ArrayList<GeoPoint> wp = new ArrayList<>();
-                ArrayList<String>   nm = new ArrayList<>();
-                for (JSONObject p : paradasRuta) {
-                    wp.add(new GeoPoint(p.optDouble("latitud", latOrigen), p.optDouble("longitud", lngOrigen)));
-                    nm.add(p.optString("nombre", "Parada"));
-                }
-                puntosRutaConductor = obtenerPuntosOsrm(buildOsrmUrl(origen, destino, wp));
-                runOnUiThread(() -> dibujarEnMapa(puntosRutaConductor, origen, destino, wp, nm));
-            } catch (Exception e) { Log.e(TAG, "Error dibujando ruta", e); }
-        }).start();
-    }
-
-    private void trazarSegmentoHastaParada(double latP, double lonP, String nombre) {
-        new Thread(() -> {
-            try {
-                String url = "https://router.project-osrm.org/route/v1/driving/"
-                        + lngOrigen + "," + latOrigen + ";" + lonP + "," + latP
-                        + "?overview=full&geometries=geojson";
-                JSONObject res    = new JSONObject(peticionHttp(url));
-                JSONArray  coords = res.getJSONArray("routes").getJSONObject(0)
-                        .getJSONObject("geometry").getJSONArray("coordinates");
-                ArrayList<GeoPoint> puntos = new ArrayList<>();
-                for (int i = 0; i < coords.length(); i++) {
-                    JSONArray c = coords.getJSONArray(i);
-                    puntos.add(new GeoPoint(c.getDouble(1), c.getDouble(0)));
-                }
-                runOnUiThread(() -> {
-                    Polyline seg = new Polyline();
-                    seg.setPoints(puntos); seg.setColor(Color.parseColor(COLOR_SEGMENTO)); seg.setWidth(9f);
-                    map.getOverlays().add(seg);
-                    Marker m = new Marker(map);
-                    m.setPosition(new GeoPoint(latP, lonP));
-                    m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                    m.setTitle("📍 Tu parada: " + nombre);
-                    m.setIcon(getResources().getDrawable(android.R.drawable.ic_menu_compass));
-                    map.getOverlays().add(m);
-                    map.getController().animateTo(new GeoPoint(latP, lonP));
-                    map.invalidate();
-                });
-            } catch (Exception e) { Log.e(TAG, "Error segmento", e); }
-        }).start();
-    }
-
-    private String buildOsrmUrl(GeoPoint o, GeoPoint d, ArrayList<GeoPoint> wp) {
-        StringBuilder sb = new StringBuilder("https://router.project-osrm.org/route/v1/driving/");
-        sb.append(o.getLongitude()).append(",").append(o.getLatitude());
-        for (GeoPoint w : wp) sb.append(";").append(w.getLongitude()).append(",").append(w.getLatitude());
-        sb.append(";").append(d.getLongitude()).append(",").append(d.getLatitude());
-        return sb.append("?overview=full&geometries=geojson").toString();
-    }
-
-    private ArrayList<GeoPoint> obtenerPuntosOsrm(String url) throws Exception {
-        JSONObject res    = new JSONObject(peticionHttp(url));
-        JSONArray  coords = res.getJSONArray("routes").getJSONObject(0)
-                .getJSONObject("geometry").getJSONArray("coordinates");
-        ArrayList<GeoPoint> puntos = new ArrayList<>();
-        for (int i = 0; i < coords.length(); i++) {
-            JSONArray c = coords.getJSONArray(i);
-            puntos.add(new GeoPoint(c.getDouble(1), c.getDouble(0)));
-        }
-        return puntos;
-    }
-
-    private void dibujarEnMapa(ArrayList<GeoPoint> puntos, GeoPoint origen, GeoPoint destino,
-                               ArrayList<GeoPoint> paradas, ArrayList<String> nombres) {
-        List<Overlay> overlays = map.getOverlays();
-        for (int i = overlays.size() - 1; i >= 0; i--) {
-            Overlay o = overlays.get(i);
-            if (o instanceof Marker || o instanceof Polyline) overlays.remove(i);
-        }
-        if (myLocationOverlay != null && !overlays.contains(myLocationOverlay))
-            overlays.add(myLocationOverlay);
-
-        Polyline sombra = new Polyline(); sombra.setPoints(puntos); sombra.setColor(Color.parseColor("#33000000")); sombra.setWidth(18f); overlays.add(sombra);
-        Polyline borde  = new Polyline(); borde.setPoints(puntos);  borde.setColor(Color.WHITE);                   borde.setWidth(14f); overlays.add(borde);
-        Polyline linea  = new Polyline(); linea.setPoints(puntos);  linea.setColor(Color.parseColor(COLOR_RUTA));  linea.setWidth(10f); overlays.add(linea);
-
-        Marker mO = new Marker(map); mO.setPosition(origen); mO.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        mO.setTitle("🟢 " + origenActual); mO.setIcon(getResources().getDrawable(android.R.drawable.ic_menu_mylocation)); overlays.add(mO);
-
-        for (int i = 0; i < paradas.size(); i++) {
-            Marker m = new Marker(map); m.setPosition(paradas.get(i)); m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-            m.setTitle("🔵 " + (i < nombres.size() ? nombres.get(i) : "Parada " + (i + 1)));
-            m.setIcon(getResources().getDrawable(android.R.drawable.ic_menu_add)); overlays.add(m);
-        }
-
-        Marker mD = new Marker(map); mD.setPosition(destino); mD.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        mD.setTitle("🔴 " + destinoActual); mD.setIcon(getResources().getDrawable(android.R.drawable.ic_dialog_map)); overlays.add(mD);
-
-        map.post(() -> {
-            try { map.zoomToBoundingBox(linea.getBounds(), true, 150); } catch (Exception ignored) {}
-            map.invalidate();
-            if (esConductor) map.postDelayed(this::cargarReservasPasajeros, 500);
-        });
-    }
+    private void abrirOCrearChat(){if(!esConductor&&idConductorViaje<=0){Toast.makeText(this,"Cargando datos del conductor...",Toast.LENGTH_SHORT).show();cargarConductorDelViaje();new Handler(Looper.getMainLooper()).postDelayed(()->{if(idConductorViaje>0)iniciarConversacion();else Toast.makeText(this,"No se pudo identificar al conductor.",Toast.LENGTH_LONG).show();},1500);return;}iniciarConversacion();}
+    private void iniciarConversacion(){if(!esConductor&&idConductorViaje<=0){Toast.makeText(this,"No se pudo identificar al conductor.",Toast.LENGTH_LONG).show();return;}int miId=session.getIdUsuario();int idP,idC;String nom;if(esConductor){idP=idPasajeroViaje>0?idPasajeroViaje:miId;idC=miId;nom=nombrePasajeroViaje.isEmpty()?"Pasajero":nombrePasajeroViaje;}else{idP=miId;idC=idConductorViaje;nom=nombreConductorViaje.isEmpty()?"Conductor":nombreConductorViaje;}JSONObject body=new JSONObject();try{body.put("idViaje",viajeId);body.put("idPasajero",idP);body.put("idConductor",idC);}catch(JSONException e){return;}final String nf=nom;final int pf=idP;final int cf=idC;loaderDetalle.setVisibility(View.VISIBLE);ConexionApi.getInstance(this).post(Constantes.CHAT_CONVERSACIONES,body,response->{loaderDetalle.setVisibility(View.GONE);long ic=extraerIdConversacion(response);if(ic>0)navegarAlChat(ic,nf);else buscarConversacion(pf,cf,nf);},error->{loaderDetalle.setVisibility(View.GONE);buscarConversacion(pf,cf,nf);});}
+    private void buscarConversacion(int idP,int idC,String nom){String url=Constantes.CHAT_CONVERSACIONES+"?idViaje="+viajeId+"&idPasajero="+idP+"&idConductor="+idC;ConexionApi.getInstance(this).getObject(url,response->{long ic=extraerIdConversacion(response);if(ic<=0){for(String k:new String[]{"content","conversaciones","data"}){JSONArray a=response.optJSONArray(k);if(a!=null&&a.length()>0){ic=extraerIdConversacion(a.optJSONObject(0));if(ic>0)break;}}}if(ic>0)navegarAlChat(ic,nom);else Toast.makeText(this,"No se pudo abrir el chat",Toast.LENGTH_LONG).show();},error->Toast.makeText(this,"Error al abrir chat",Toast.LENGTH_SHORT).show());}
+    private long extraerIdConversacion(JSONObject r){if(r==null)return -1;long id=r.optLong("id",-1);if(id>0)return id;id=r.optLong("idConversacion",-1);if(id>0)return id;JSONObject d=r.optJSONObject("data");if(d!=null){id=d.optLong("id",-1);if(id>0)return id;}return -1;}
+    private void navegarAlChat(long idC,String nom){Intent i=new Intent(this,Chat.class);i.putExtra("idConversacion",idC);i.putExtra("nombre",nom);startActivity(i);}
+    private void cargarConductorDelViaje(){if(idConductorViaje>0)return;ConexionApi.getInstance(this).getObject(Constantes.viajePorId((long)viajeId),response->{try{extraerConductor(response);if(idConductorViaje<=0){JSONObject v=response.optJSONObject("vehiculo");if(v!=null){int iv=v.optInt("idUsuario",-1);if(iv>0){idConductorViaje=iv;nombreConductorViaje="Conductor #"+iv;}}}runOnUiThread(()->{actualizarNombreConductorUI();actualizarBotonChat();});}catch(Exception e){Log.e(TAG,"Error extrayendo conductor",e);}},error->Log.e(TAG,"Error recargando viaje"));}
 
     // =========================================================================
     //  HELPERS
     // =========================================================================
-    private String obtenerEtiquetaEstado(String e) {
-        switch (e) {
-            case "CREADO":     return "📋 Estado: Disponible";
-            case "PROGRAMADO": return "📅 Estado: Programado";
-            case "DISPONIBLE": return "✅ Estado: Disponible";
-            case "INICIADO":   return "🚗 Estado: En curso";
-            case "FINALIZADO": return "🏁 Estado: Finalizado";
-            case "CANCELADO":  return "❌ Estado: Cancelado";
-            default:           return "📌 Estado: " + e;
-        }
-    }
-
-    private GeoPoint geocodificar(String dir) throws Exception {
-        String url = "https://nominatim.openstreetmap.org/search?q="
-                + java.net.URLEncoder.encode(dir + ", Popayan, Colombia", "UTF-8")
-                + "&format=json&limit=1";
-        JSONArray arr = new JSONArray(peticionHttp(url));
-        if (arr.length() == 0) {
-            url = "https://nominatim.openstreetmap.org/search?q="
-                    + java.net.URLEncoder.encode(dir + ", Colombia", "UTF-8") + "&format=json&limit=1";
-            arr = new JSONArray(peticionHttp(url));
-        }
-        if (arr.length() == 0) throw new Exception("Dirección no encontrada: " + dir);
-        JSONObject o = arr.getJSONObject(0);
-        return new GeoPoint(o.getDouble("lat"), o.getDouble("lon"));
-    }
-
-    private String peticionHttp(String urlString) throws Exception {
-        HttpURLConnection conn = null;
-        try {
-            URL url = new URL(urlString);
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("User-Agent", "Moviflexx-App/1.0");
-            conn.setConnectTimeout(15_000); conn.setReadTimeout(15_000);
-            BufferedReader r = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = r.readLine()) != null) sb.append(line);
-            r.close();
-            return sb.toString();
-        } finally { if (conn != null) conn.disconnect(); }
-    }
+    private void extraerConductor(JSONObject r){JSONObject co=r.optJSONObject("conductor");if(co!=null){idConductorViaje=extractId(co);nombreConductorViaje=extractNombre(co);if(idConductorViaje<=0||nombreConductorViaje.isEmpty()){JSONObject u=co.optJSONObject("usuario");if(u!=null){if(idConductorViaje<=0)idConductorViaje=extractId(u);if(nombreConductorViaje.isEmpty())nombreConductorViaje=extractNombre(u);}}}if(idConductorViaje<=0)for(String c:new String[]{"idConductor","conductorId","idUsuarioConductor"}){int v=r.optInt(c,-1);if(v>0){idConductorViaje=v;break;}}if(nombreConductorViaje.isEmpty())for(String c:new String[]{"nombreConductor","conductorNombre"}){String v=r.optString(c,"");if(!v.isEmpty()&&!v.equals("null")){nombreConductorViaje=v;break;}}if(idConductorViaje>0&&nombreConductorViaje.isEmpty())nombreConductorViaje="Conductor #"+idConductorViaje;}
+    private void actualizarNombreConductorUI(){if(txtConductor==null)return;String n=nombreConductorViaje.isEmpty()?"Sin asignar":nombreConductorViaje;txtConductor.setText(esConductor&&idConductorViaje==session.getIdUsuario()?"🚗 Tú ("+n+")":"🚗 "+n);}
+    private void mostrarFechaHora(String fh){if(txtFechaHora==null)return;if(!fh.isEmpty()&&!fh.equals("null")){try{String fl=fh.replace("T"," ").replaceAll("\\.\\d{3}Z$","");SimpleDateFormat in=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss",Locale.getDefault());SimpleDateFormat out=new SimpleDateFormat("EEE dd/MM/yyyy  🕐 HH:mm",new Locale("es","CO"));Date date=in.parse(fl);txtFechaHora.setText("📅 "+out.format(date));}catch(Exception ex){txtFechaHora.setText("📅 "+fh.replace("T"," ").replaceAll("\\.\\d{3}Z$",""));}txtFechaHora.setVisibility(View.VISIBLE);}else txtFechaHora.setVisibility(View.GONE);}
+    private String etiquetaEstado(String e){switch(e){case"CREADO":return"📋 Estado: Disponible";case"PROGRAMADO":return"📅 Estado: Programado";case"DISPONIBLE":return"✅ Estado: Disponible";case"EN_CURSO":case"INICIADO":return"🚗 Estado: En curso";case"FINALIZADO":return"🏁 Estado: Finalizado";case"CANCELADO":return"❌ Estado: Cancelado";default:return"📌 Estado: "+e;}}
+    private int extractId(JSONObject obj){if(obj==null)return -1;for(String k:new String[]{"id","idUsuarios","idUsuario","userId","conductorId","idConductor","pasajeroId","idPasajero"}){int v=obj.optInt(k,-1);if(v>0)return v;}return -1;}
+    private String extractNombre(JSONObject obj){if(obj==null)return"";for(String k:new String[]{"nombre","nombreCompleto","name","fullName","nombreUsuario","displayName"}){String v=obj.optString(k,"");if(!v.isEmpty()&&!v.equals("null"))return v;}String n=obj.optString("nombres",""),a=obj.optString("apellidos","");if(!n.isEmpty()||!a.isEmpty())return(n+" "+a).trim();return"";}
+    private double primeraCoord(JSONObject o,String[]cs,double def){for(String c:cs){double v=o.optDouble(c,Double.NaN);if(!Double.isNaN(v)&&v!=0)return v;}return def;}
+    private double primeraCoordDistinta(JSONObject o,String[]cs,double ref,double def){for(String c:cs){double v=o.optDouble(c,Double.NaN);if(!Double.isNaN(v)&&v!=0&&Math.abs(v-ref)>0.0001)return v;}return def;}
+    private String primeraStr(JSONObject o,String[]cs){for(String c:cs){String v=o.optString(c,"").trim();if(!v.isEmpty()&&!v.equals("null"))return v;}return"";}
+    private boolean sonIguales(double la,double ln,double lb,double lm){return Math.abs(la-lb)<0.0001&&Math.abs(ln-lm)<0.0001;}
+    private double[] geocodificarTexto(String dir){try{String q=dir.toLowerCase().contains("popay")?dir:dir+", Popayan, Colombia";String url="https://nominatim.openstreetmap.org/search?q="+java.net.URLEncoder.encode(q,"UTF-8")+"&format=json&limit=1&countrycodes=co";String resp=peticionHttp(url);if(resp==null||resp.isEmpty()||resp.equals("[]"))return null;JSONArray arr=new JSONArray(resp);if(arr.length()==0)return null;JSONObject obj=arr.getJSONObject(0);return new double[]{obj.getDouble("lat"),obj.getDouble("lon")};}catch(Exception e){return null;}}
+    private String peticionHttp(String urlStr)throws Exception{HttpURLConnection c=null;try{c=(HttpURLConnection)new URL(urlStr).openConnection();c.setRequestProperty("User-Agent","Moviflexx-App/1.0");c.setConnectTimeout(15000);c.setReadTimeout(15000);BufferedReader r=new BufferedReader(new InputStreamReader(c.getInputStream()));StringBuilder sb=new StringBuilder();String l;while((l=r.readLine())!=null)sb.append(l);r.close();return sb.toString();}finally{if(c!=null)c.disconnect();}}
+    @SuppressWarnings("unchecked")
+    private ArrayList<GeoPoint> parsearGeoJson(java.util.Map<String,Object>geojson){if(geojson==null)return null;try{java.util.Map<String,Object>geometry=null;String tipo=String.valueOf(geojson.get("type"));if("Feature".equals(tipo))geometry=(java.util.Map<String,Object>)geojson.get("geometry");else if("LineString".equals(tipo))geometry=geojson;else if("FeatureCollection".equals(tipo)){List<Object>f=(List<Object>)geojson.get("features");if(f!=null&&!f.isEmpty())geometry=(java.util.Map<String,Object>)((java.util.Map<String,Object>)f.get(0)).get("geometry");}else{Object g=geojson.get("geometry");if(g instanceof java.util.Map)geometry=(java.util.Map<String,Object>)g;}if(geometry==null)return null;List<Object>coords=(List<Object>)geometry.get("coordinates");if(coords==null||coords.isEmpty())return null;ArrayList<GeoPoint>pts=new ArrayList<>();for(Object coord:coords){List<Object>pair=(List<Object>)coord;if(pair.size()>=2){double lng=((Number)pair.get(0)).doubleValue();double lat=((Number)pair.get(1)).doubleValue();pts.add(new GeoPoint(lat,lng));}}return pts.size()>=2?pts:null;}catch(Exception e){return null;}}
+    private Bitmap crearBitmapMarcador(int colorInt,String letra){int size=96;Bitmap bmp=Bitmap.createBitmap(size,size,Bitmap.Config.ARGB_8888);Canvas c=new Canvas(bmp);Paint pS=new Paint(Paint.ANTI_ALIAS_FLAG);pS.setColor(Color.argb(80,0,0,0));c.drawCircle(size/2f+3,size/2f+5,size/2f-6,pS);Paint pC=new Paint(Paint.ANTI_ALIAS_FLAG);pC.setColor(colorInt);c.drawCircle(size/2f,size/2f-4,size/2f-8,pC);Paint pB=new Paint(Paint.ANTI_ALIAS_FLAG);pB.setColor(Color.WHITE);pB.setStyle(Paint.Style.STROKE);pB.setStrokeWidth(5f);c.drawCircle(size/2f,size/2f-4,size/2f-8,pB);Paint pT=new Paint(Paint.ANTI_ALIAS_FLAG);pT.setColor(Color.WHITE);pT.setTextSize(letra.length()>1?26f:36f);pT.setTypeface(Typeface.DEFAULT_BOLD);pT.setTextAlign(Paint.Align.CENTER);c.drawText(letra,size/2f,size/2f+9,pT);return bmp;}
 
     // =========================================================================
-    //  ADAPTERS
+    //  MODELO
     // =========================================================================
-    static class ParadaAdapter extends RecyclerView.Adapter<ParadaAdapter.VH> {
-        private final ArrayList<String> items = new ArrayList<>();
-        ParadaAdapter(ArrayList<String> paradas, String origen, String destino) {
-            items.add("🟢 " + origen  + "  (Inicio)");
-            for (String p : paradas) items.add("🔵 " + p);
-            items.add("🔴 " + destino + "  (Destino)");
-        }
-        @NonNull @Override
-        public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            TextView tv = new TextView(parent.getContext());
-            tv.setPadding(32, 20, 32, 20); tv.setTextSize(14f); tv.setTextColor(Color.parseColor("#004D40"));
-            return new VH(tv);
-        }
-        @Override public void onBindViewHolder(@NonNull VH holder, int position) {
-            ((TextView) holder.itemView).setText(items.get(position));
-        }
-        @Override public int getItemCount() { return items.size(); }
-        static class VH extends RecyclerView.ViewHolder { VH(@NonNull View v) { super(v); } }
-    }
+    private static class ParadaDinamica{String nombre;double lat,lng;int idxEnRuta;int idParadaBD=0;ParadaDinamica(String nombre,double lat,double lng,int idx){this.nombre=nombre;this.lat=lat;this.lng=lng;this.idxEnRuta=idx;}GeoPoint toGeoPoint(){return new GeoPoint(lat,lng);}}
 
-    static class ParadaSeleccionAdapter extends RecyclerView.Adapter<ParadaSeleccionAdapter.VH> {
-        interface OnSelect { void onSelect(int index); }
-        private final ArrayList<String> items;
-        private final OnSelect          callback;
-        private       int               seleccionado = -1;
-        ParadaSeleccionAdapter(ArrayList<String> items, OnSelect cb) { this.items = items; this.callback = cb; }
-        @NonNull @Override
-        public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            MaterialCardView card = new MaterialCardView(parent.getContext());
-            card.setLayoutParams(new RecyclerView.LayoutParams(
-                    RecyclerView.LayoutParams.MATCH_PARENT, RecyclerView.LayoutParams.WRAP_CONTENT));
-            card.setCardElevation(4f); card.setRadius(16f);
-            card.setUseCompatPadding(true); card.setClickable(true); card.setFocusable(true);
-            TextView tv = new TextView(parent.getContext());
-            tv.setPadding(40, 32, 40, 32); tv.setTextSize(15f); tv.setTextColor(Color.parseColor("#004D40"));
-            card.addView(tv);
-            return new VH(card);
-        }
-        @Override
-        public void onBindViewHolder(@NonNull VH holder, int position) {
-            MaterialCardView card = (MaterialCardView) holder.itemView;
-            ((TextView) card.getChildAt(0)).setText(items.get(position));
-            boolean sel = position == seleccionado;
-            card.setCardBackgroundColor(sel ? Color.parseColor("#E0F2F1") : Color.WHITE);
-            card.setStrokeColor(sel ? Color.parseColor("#00897B") : Color.parseColor("#E0E0E0"));
-            card.setStrokeWidth(sel ? 4 : 1);
-            final int pos = position;
-            card.setOnClickListener(v -> { seleccionado = pos; notifyDataSetChanged(); callback.onSelect(pos); });
-        }
-        @Override public int getItemCount() { return items.size(); }
-        static class VH extends RecyclerView.ViewHolder { VH(@NonNull View v) { super(v); } }
-    }
+    // =========================================================================
+    //  ADAPTER
+    // =========================================================================
+    static class ParadaAdapter extends RecyclerView.Adapter<ParadaAdapter.VH>{private final ArrayList<String>items=new ArrayList<>();ParadaAdapter(ArrayList<String>paradas,String origen,String destino){items.add("🟢 "+origen+"  (Inicio)");for(String p:paradas)items.add("🔵 "+p);items.add("🔴 "+destino+"  (Destino)");}@NonNull @Override public VH onCreateViewHolder(@NonNull ViewGroup parent,int vt){TextView tv=new TextView(parent.getContext());tv.setPadding(32,20,32,20);tv.setTextSize(14f);tv.setTextColor(Color.parseColor("#004D40"));return new VH(tv);}@Override public void onBindViewHolder(@NonNull VH h,int pos){((TextView)h.itemView).setText(items.get(pos));}@Override public int getItemCount(){return items.size();}static class VH extends RecyclerView.ViewHolder{VH(@NonNull View v){super(v);}}}
 }

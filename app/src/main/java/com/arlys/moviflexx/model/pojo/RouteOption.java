@@ -5,16 +5,16 @@ import com.google.gson.annotations.SerializedName;
 /**
  * Mapea un objeto "route" de la respuesta del endpoint POST /route-options
  * del backend FastAPI.
- *
+ * <p>
  * JSON que devuelve el backend:
  * {
- *   "id": "r1",
- *   "distance_km": 1.4,
- *   "duration_min": 3.0,
- *   "fuel_liters": 0.105,
- *   "fuel_cost_cop": 1592.0,   ← ESTE es el precio que debe llegar a PublicarViaje
- *   "score": 3.0,
- *   "geojson": { ... }
+ * "id": "r1",
+ * "distance_km": 1.4,
+ * "duration_min": 3.0,
+ * "fuel_liters": 0.105,
+ * "fuel_cost_cop": 1592.0,   ← ESTE es el precio que debe llegar a PublicarViaje
+ * "score": 3.0,
+ * "geojson": { ... }
  * }
  */
 public class RouteOption {

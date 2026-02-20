@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/drawable/circle_send_button.xml -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Estado presionado -->
+    <item android:state_pressed="true">
+        <shape android:shape="oval">
+            <solid android:color="#00695C" />
+            <size android:width="48dp" android:height="48dp" />
+        </shape>
+    </item>
+
+    <!-- Estado deshabilitado -->
+    <item android:state_enabled="false">
+        <shape android:shape="oval">
+            <solid android:color="#B2DFDB" />
+            <size android:width="48dp" android:height="48dp" />
+        </shape>
+    </item>
+
+    <!-- Estado normal -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#00897B" />
+            <size android:width="48dp" android:height="48dp" />
+        </shape>
+    </item>
+
+</selector>

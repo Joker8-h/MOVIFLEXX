@@ -43,9 +43,7 @@ public class Conversaciones extends AppCompatActivity {
 
     // ── Datos ────────────────────────────────────────────────────────────────
     private SessionManager session;
-    private String token;
-    private int    idUsuario;
-
+    private int            idUsuario;
     private final List<Conversacion> lista = new ArrayList<>();
 
     // ── Polling ──────────────────────────────────────────────────────────────
@@ -53,17 +51,18 @@ public class Conversaciones extends AppCompatActivity {
     private       Runnable pollRunnable;
     private       boolean  pollingActivo = false;
 
-    // ─── Lifecycle ────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    //  LIFECYCLE
+    // ─────────────────────────────────────────────────────────────────────────
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conversaciones);
 
-        Log.d(TAG, "═══════════════════════════════════════");
-        Log.d(TAG, "📋 INICIANDO CONVERSACIONES");
-        Log.d(TAG, "═══════════════════════════════════════");
+        session   = new SessionManager(this);
+        idUsuario = session.getIdUsuario();
+        Log.d(TAG, "ID Usuario: " + idUsuario);
 
-        leerSesion();
         bindViews();
         configurarHeader();
         configurarRecycler();
@@ -75,35 +74,16 @@ public class Conversaciones extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "→ onResume: Actualizando");
         cargarConversaciones();
         if (!pollingActivo) arrancarPolling();
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        Log.d(TAG, "→ onPause");
-        detenerPolling();
-    }
+    @Override protected void onPause()   { super.onPause();   detenerPolling(); }
+    @Override protected void onDestroy() { super.onDestroy(); detenerPolling(); }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        detenerPolling();
-    }
-
-    // ─── Sesión ───────────────────────────────────────────────────────────────
-    private void leerSesion() {
-        session   = new SessionManager(this);
-        token     = session.getToken();
-        idUsuario = session.getIdUsuario();
-
-        Log.d(TAG, "Token: " + (token != null && !token.isEmpty() ? "✅" : "❌"));
-        Log.d(TAG, "ID Usuario: " + idUsuario);
-    }
-
-    // ─── Bind ─────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    //  BIND
+    // ─────────────────────────────────────────────────────────────────────────
     private void bindViews() {
         rvConversaciones = findViewById(R.id.rvConversaciones);
         swipeRefresh     = findViewById(R.id.swipeRefresh);
@@ -112,22 +92,14 @@ public class Conversaciones extends AppCompatActivity {
         btnBack          = findViewById(R.id.btnBack);
     }
 
-    // ─── Header ───────────────────────────────────────────────────────────────
     private void configurarHeader() {
         if (tvTitulo != null) tvTitulo.setText("Mensajes");
-        if (btnBack != null) btnBack.setOnClickListener(v -> finish());
+        if (btnBack  != null) btnBack.setOnClickListener(v -> finish());
     }
 
-    // ─── RecyclerView ─────────────────────────────────────────────────────────
     private void configurarRecycler() {
         rvConversaciones.setLayoutManager(new LinearLayoutManager(this));
         adapter = new ConversacionAdapter(lista, conv -> {
-            Log.d(TAG, "═══════════════════════════════════════");
-            Log.d(TAG, "🚀 ABRIENDO CHAT");
-            Log.d(TAG, "ID: " + conv.getId());
-            Log.d(TAG, "Contacto: " + conv.getNombreContacto());
-            Log.d(TAG, "═══════════════════════════════════════");
-
             Intent intent = new Intent(this, Chat.class);
             intent.putExtra("idConversacion", conv.getId());
             intent.putExtra("nombre", conv.getNombreContacto());
@@ -136,7 +108,6 @@ public class Conversaciones extends AppCompatActivity {
         rvConversaciones.setAdapter(adapter);
     }
 
-    // ─── SwipeRefresh ─────────────────────────────────────────────────────────
     private void configurarSwipe() {
         if (swipeRefresh != null) {
             swipeRefresh.setColorSchemeResources(R.color.turquoise, R.color.royal_blue);
@@ -144,57 +115,64 @@ public class Conversaciones extends AppCompatActivity {
         }
     }
 
-    // ─── Cargar conversaciones ────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    //  CARGAR — intenta getArray primero, luego getObject como fallback
+    // ─────────────────────────────────────────────────────────────────────────
     private void cargarConversaciones() {
-        Log.d(TAG, "═══════════════════════════════════════");
-        Log.d(TAG, "📥 CARGANDO CONVERSACIONES");
-        Log.d(TAG, "URL: " + Constantes.CHAT_CONVERSACIONES);
-        Log.d(TAG, "═══════════════════════════════════════");
+        Log.d(TAG, "📥 GET: " + Constantes.CHAT_CONVERSACIONES);
 
-        ConexionApi.getInstance(this).getObject(
+        ConexionApi.getInstance(this).getArray(
                 Constantes.CHAT_CONVERSACIONES,
-                this::procesarConversaciones,
-                error -> {
-                    Log.e(TAG, "❌ Error cargando", error);
-                    runOnUiThread(() -> {
-                        if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-                        mostrarEmpty("Sin conexión. Desliza para reintentar.");
-                    });
-                }
+                this::onArrayRecibido,
+                this::onErrorArray
         );
     }
 
-    // ─── Procesar JSON ────────────────────────────────────────────────────────
-    @SuppressLint("NotifyDataSetChanged")
-    private void procesarConversaciones(JSONObject response) {
-        Log.d(TAG, "✅ Respuesta recibida");
-        Log.d(TAG, "JSON: " + response.toString());
+    // ── Callback éxito con array directo ─────────────────────────────────────
+    private void onArrayRecibido(JSONArray arr) {
+        Log.d(TAG, "✅ Array directo recibido: " + arr.length() + " items");
+        procesarArray(arr);
+    }
 
-        try {
-            JSONArray arr = extraerArrayConversaciones(response);
-
-            if (arr == null) {
-                Log.w(TAG, "⚠️ No se encontró array");
-                runOnUiThread(() -> {
+    // ── Fallback: el backend envolvió en objeto ───────────────────────────────
+    private void onErrorArray(com.android.volley.VolleyError error) {
+        Log.w(TAG, "⚠️ getArray falló, intentando getObject: " + error);
+        ConexionApi.getInstance(this).getObject(
+                Constantes.CHAT_CONVERSACIONES,
+                response -> {
+                    Log.d(TAG, "✅ getObject exitoso");
+                    JSONArray arr = extraerArrayDeObjeto(response);
+                    procesarArray(arr);
+                },
+                err2 -> runOnUiThread(() -> {
+                    Log.e(TAG, "❌ Ambos métodos fallaron: " + err2);
                     if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-                    mostrarEmpty("No se pudieron cargar las conversaciones");
-                });
-                return;
-            }
+                    // Solo mostrar error si la lista está vacía
+                    if (lista.isEmpty()) {
+                        mostrarEmpty("Sin conexión. Desliza hacia abajo para reintentar.");
+                    }
+                })
+        );
+    }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    //  PROCESAR ARRAY
+    // ─────────────────────────────────────────────────────────────────────────
+    @SuppressLint("NotifyDataSetChanged")
+    private void procesarArray(JSONArray arr) {
+        try {
             lista.clear();
-            Log.d(TAG, "Procesando " + arr.length() + " conversaciones");
 
-            for (int i = 0; i < arr.length(); i++) {
-                JSONObject obj = arr.optJSONObject(i);
-                if (obj == null) continue;
-
-                Conversacion c = Conversacion.fromJson(obj, idUsuario);
-
-                if (c.getId() > 0) {
-                    lista.add(c);
-                    Log.d(TAG, "Conv " + i + ": id=" + c.getId() +
-                            ", contacto=" + c.getNombreContacto());
+            if (arr != null) {
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONObject obj = arr.optJSONObject(i);
+                    if (obj == null) continue;
+                    Conversacion c = Conversacion.fromJson(obj, idUsuario);
+                    if (c.getId() > 0) {
+                        lista.add(c);
+                        Log.d(TAG, "Conv[" + i + "]: id=" + c.getId()
+                                + " contacto=" + c.getNombreContacto());
+                    }
                 }
             }
 
@@ -203,7 +181,7 @@ public class Conversaciones extends AppCompatActivity {
                 adapter.notifyDataSetChanged();
 
                 if (lista.isEmpty()) {
-                    mostrarEmpty("Aún no tienes conversaciones.\nLos chats con conductores aparecerán aquí.");
+                    mostrarEmpty("Aún no tienes conversaciones.\nLos chats aparecerán aquí.");
                 } else {
                     if (tvEmpty != null) tvEmpty.setVisibility(View.GONE);
                     rvConversaciones.setVisibility(View.VISIBLE);
@@ -213,55 +191,53 @@ public class Conversaciones extends AppCompatActivity {
             Log.d(TAG, "✅ " + lista.size() + " conversaciones cargadas");
 
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error procesando", e);
+            Log.e(TAG, "❌ procesarArray", e);
             runOnUiThread(() -> {
                 if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-                mostrarEmpty("Error procesando datos");
+                if (lista.isEmpty()) mostrarEmpty("Error al procesar datos.");
             });
         }
     }
 
-    private JSONArray extraerArrayConversaciones(JSONObject response) {
-        if (response.has("content")) {
-            return response.optJSONArray("content");
-        }
-        if (response.has("conversaciones")) {
-            return response.optJSONArray("conversaciones");
-        }
-        if (response.has("data")) {
-            return response.optJSONArray("data");
-        }
-
+    // ─────────────────────────────────────────────────────────────────────────
+    //  HELPERS
+    // ─────────────────────────────────────────────────────────────────────────
+    private JSONArray extraerArrayDeObjeto(JSONObject response) {
+        if (response == null) return null;
+        if (response.has("content"))        return response.optJSONArray("content");
+        if (response.has("conversaciones")) return response.optJSONArray("conversaciones");
+        if (response.has("data"))           return response.optJSONArray("data");
         try {
             String raw = response.toString();
-            if (raw.startsWith("[")) {
-                return new JSONArray(raw);
-            }
+            if (raw.startsWith("[")) return new JSONArray(raw);
         } catch (Exception e) {
             Log.w(TAG, "No se pudo parsear como array");
         }
-
         return null;
     }
 
     private void mostrarEmpty(String msg) {
-        if (tvEmpty != null) {
-            tvEmpty.setText(msg);
-            tvEmpty.setVisibility(View.VISIBLE);
-        }
-        rvConversaciones.setVisibility(View.GONE);
+        runOnUiThread(() -> {
+            if (tvEmpty != null) {
+                tvEmpty.setText(msg);
+                tvEmpty.setVisibility(View.VISIBLE);
+            }
+            if (rvConversaciones != null)
+                rvConversaciones.setVisibility(View.GONE);
+        });
     }
 
-    // ─── Polling ─────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    //  POLLING
+    // ─────────────────────────────────────────────────────────────────────────
     private void arrancarPolling() {
         if (pollingActivo) return;
-
         pollingActivo = true;
-        pollRunnable = () -> {
-            if (pollingActivo) {
-                Log.d(TAG, "🔄 Polling: Actualizando...");
+        pollRunnable  = new Runnable() {
+            @Override public void run() {
+                if (!pollingActivo) return;
                 cargarConversaciones();
-                handler.postDelayed(pollRunnable, POLL_INTERVAL);
+                handler.postDelayed(this, POLL_INTERVAL);
             }
         };
         handler.postDelayed(pollRunnable, POLL_INTERVAL);
@@ -270,9 +246,7 @@ public class Conversaciones extends AppCompatActivity {
 
     private void detenerPolling() {
         pollingActivo = false;
-        if (pollRunnable != null) {
-            handler.removeCallbacks(pollRunnable);
-        }
+        if (pollRunnable != null) handler.removeCallbacks(pollRunnable);
         Log.d(TAG, "⏹ Polling detenido");
     }
 }

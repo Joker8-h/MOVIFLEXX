@@ -163,10 +163,7 @@ public class BuscarViajesPasajeros extends AppCompatActivity {
     private void buscarViajesCercanos() {
         if (puntoOrigen == null) return;
 
-        // Construir URL con parámetros de búsqueda por proximidad
-        // El backend debe soportar: /api/viajes/buscar?lat=X&lng=Y&radio=Z
-        // Si no existe ese endpoint, se traen todos los viajes y se filtra localmente
-        String url = Constantes.BUSCAR_VIAJES
+        String url = Constantes.buscarViajes()
                 + "?lat="   + puntoOrigen.getLatitude()
                 + "&lng="   + puntoOrigen.getLongitude()
                 + "&radio=" + RADIO_KM

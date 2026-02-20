@@ -2,41 +2,59 @@ package com.arlys.moviflexx.model;
 
 import org.json.JSONObject;
 
+/**
+ * Modelo de mensaje de chat.
+ * Columnas reales BD: idMensaje | idConversacion | idRemitente | mensaje | tipo | fechaEnvio | leido
+ */
 public class Mensaje {
 
-    private long    id;
-    private String  contenido    = "";
-    private int     idEmisor     = -1;
-    private String  nombreEmisor = "";
-    private String  fechaEnvio   = "";
+    private long    id            = -1;
+    private String  contenido     = "";
+    private int     idEmisor      = -1;
+    private String  nombreEmisor  = "";
+    private String  fechaEnvio    = "";
+    private boolean leido         = false;  // columna real BD
 
-    // Flags de UI — no vienen del servidor
-    private boolean esPropio;
-    private boolean enviando;
-    private boolean fallido;
+    // Flags locales de UI — nunca vienen del servidor
+    private boolean esPropio  = false;
+    private boolean enviando  = false;
+    private boolean fallido   = false;
 
     public Mensaje() {}
 
-    // ─── fromJson con idUsuarioActual ─────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    //  fromJson — mapea columnas reales de la BD
+    // ─────────────────────────────────────────────────────────────────────────
     public static Mensaje fromJson(JSONObject obj, int idUsuarioActual) {
         Mensaje m = new Mensaje();
         if (obj == null) return m;
 
-        m.id = obj.optLong("id",
-                obj.optLong("idMensaje",
+        // ID — columna: idMensaje
+        m.id = obj.optLong("idMensaje",
+                obj.optLong("id",
                         obj.optLong("mensajeId", -1)));
 
+        // Contenido — columna: mensaje
         m.contenido = obj.optString("mensaje",
                 obj.optString("contenido",
-                        obj.optString("text",
-                                obj.optString("message", ""))));
+                        obj.optString("message", "")));
 
-        m.fechaEnvio = obj.optString("creadoEn",
-                obj.optString("createdAt",
-                        obj.optString("fechaEnvio",
+        // Fecha — columna: fechaEnvio
+        m.fechaEnvio = obj.optString("fechaEnvio",
+                obj.optString("creadoEn",
+                        obj.optString("createdAt",
                                 obj.optString("timestamp", ""))));
 
-        // Emisor como objeto anidado
+        // Leído — columna: leido (puede llegar como int 0/1 o boolean)
+        if (obj.has("leido")) {
+            try {
+                m.leido = obj.getBoolean("leido");
+            } catch (Exception e) {
+                m.leido = obj.optInt("leido", 0) == 1;
+            }
+        }
+
+        // Remitente — columna: idRemitente
         JSONObject emisorObj = obj.optJSONObject("emisor");
         if (emisorObj != null) {
             m.idEmisor    = emisorObj.optInt("id",
@@ -44,26 +62,23 @@ public class Mensaje {
                             emisorObj.optInt("idUsuario", -1)));
             m.nombreEmisor = emisorObj.optString("nombre", "");
         }
-
-        // Emisor como campo plano
         if (m.idEmisor == -1) {
-            m.idEmisor = obj.optInt("emisorId",
-                    obj.optInt("idEmisor",
-                            obj.optInt("remitenteId",
-                                    obj.optInt("userId", -1))));
+            m.idEmisor = obj.optInt("idRemitente",
+                    obj.optInt("emisorId",
+                            obj.optInt("idEmisor",
+                                    obj.optInt("remitenteId", -1))));
         }
         if (m.nombreEmisor.isEmpty()) {
             m.nombreEmisor = obj.optString("nombreEmisor",
                     obj.optString("nombreRemitente", ""));
         }
 
-        m.esPropio = (m.idEmisor == idUsuarioActual);
-        return m;
-    }
+        m.esPropio = (m.idEmisor == idUsuarioActual && idUsuarioActual != -1);
 
-    // ─── fromJson sin idUsuarioActual (compatibilidad) ────────────────────────
-    public static Mensaje fromJson(JSONObject obj) {
-        return fromJson(obj, -1);
+        // Los mensajes propios siempre los consideramos "leídos" por el emisor
+        if (m.esPropio) m.leido = true;
+
+        return m;
     }
 
     // ─── Getters ─────────────────────────────────────────────────────────────
@@ -72,17 +87,19 @@ public class Mensaje {
     public int     getIdEmisor()     { return idEmisor; }
     public String  getNombreEmisor() { return nombreEmisor; }
     public String  getFechaEnvio()   { return fechaEnvio; }
+    public boolean isLeido()         { return leido; }
     public boolean isEsPropio()      { return esPropio; }
     public boolean isEnviando()      { return enviando; }
     public boolean isFallido()       { return fallido; }
 
     // ─── Setters ─────────────────────────────────────────────────────────────
-    public void setId(long id)                { this.id = id; }
-    public void setContenido(String c)        { this.contenido = c; }
-    public void setIdEmisor(int id)           { this.idEmisor = id; }
-    public void setNombreEmisor(String n)     { this.nombreEmisor = n; }
-    public void setFechaEnvio(String f)       { this.fechaEnvio = f; }
-    public void setEsPropio(boolean esPropio) { this.esPropio = esPropio; }
-    public void setEnviando(boolean enviando) { this.enviando = enviando; }
-    public void setFallido(boolean fallido)   { this.fallido = fallido; }
+    public void setId(long v)            { this.id = v; }
+    public void setContenido(String v)   { this.contenido = v; }
+    public void setIdEmisor(int v)       { this.idEmisor = v; }
+    public void setNombreEmisor(String v){ this.nombreEmisor = v; }
+    public void setFechaEnvio(String v)  { this.fechaEnvio = v; }
+    public void setLeido(boolean v)      { this.leido = v; }
+    public void setEsPropio(boolean v)   { this.esPropio = v; }
+    public void setEnviando(boolean v)   { this.enviando = v; }
+    public void setFallido(boolean v)    { this.fallido = v; }
 }

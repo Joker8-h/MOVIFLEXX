@@ -282,7 +282,7 @@
                         android:layout_marginTop="14dp"
                         android:layout_marginBottom="10dp"/>
 
-                    <!-- Desglose de precio (igual al badge de PublicarViaje) -->
+                    <!-- Desglose de precio -->
                     <TextView
                         android:id="@+id/txt_desglose_precio"
                         android:layout_width="match_parent"
@@ -423,7 +423,16 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- CARD ACCIONES -->
+            <!-- ══════════════════════════════════════════════════════════════
+                 CARD ACCIONES
+                 El btn_reservar sirve como ancla para TRES estados posibles
+                 que el Java gestiona dinámicamente:
+                   1. "🚏 ELEGIR PARADA"        → viaje EN_CURSO, cupos libres
+                   2. "🔄 CAMBIAR PARADA"        → ya tiene reserva en este viaje
+                   3. "⏳ El conductor aún no inició el viaje" → viaje CREADO
+                   4. "🔒 Ya tienes un viaje activo"           → otro viaje activo
+                 Estados 3 y 4 → deshabilitado + color gris/rojo.
+                 ══════════════════════════════════════════════════════════════ -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_acciones"
                 android:layout_width="match_parent"
@@ -439,10 +448,15 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content">
 
-                    <!-- PASAJERO: Reservar cupo -->
+                    <!--
+                        PASAJERO — Botón principal de acción.
+                        El Java lo transforma según el estado del viaje y la reserva.
+                        Visibilidad y texto controlados 100% desde configurarBotones()
+                        y actualizarBotonPasajero().
+                    -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_reservar"
-                        android:text="🎫  RESERVAR CUPO"
+                        android:text="🚏  ELEGIR PARADA"
                         android:visibility="gone"
                         app:cornerRadius="14dp"
                         app:backgroundTint="#00897B"
@@ -453,7 +467,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="56dp"/>
 
-                    <!-- PASAJERO: Chat con el conductor -->
+                    <!-- PASAJERO — Chat con el conductor -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_mensaje_conductor"
                         android:text="💬  CHATEAR CON EL CONDUCTOR"
@@ -472,7 +486,7 @@
                         app:iconTint="#FFFFFF"
                         app:iconPadding="8dp"/>
 
-                    <!-- CONDUCTOR: Iniciar -->
+                    <!-- CONDUCTOR — Iniciar viaje (solo CREADO) -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_iniciar"
                         android:text="▶  INICIAR VIAJE"
@@ -486,7 +500,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="56dp"/>
 
-                    <!-- CONDUCTOR: Finalizar -->
+                    <!-- CONDUCTOR — Finalizar viaje (solo EN_CURSO / INICIADO) -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_finalizar"
                         android:text="⏹  FINALIZAR VIAJE"
@@ -500,7 +514,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="56dp"/>
 
-                    <!-- CONDUCTOR: Agregar parada -->
+                    <!-- CONDUCTOR — Agregar parada (reservado para uso futuro) -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_parada"
                         android:text="➕  AGREGAR PARADA"

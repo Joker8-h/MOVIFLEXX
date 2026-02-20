@@ -26,6 +26,10 @@ public class BuscarViajesActivity extends AppCompatActivity {
     private ViajesAdapter adapter;
     private final List<JSONObject> viajes = new ArrayList<>();
 
+    private String origen;
+    private String destino;
+    private String fecha;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,6 +42,15 @@ public class BuscarViajesActivity extends AppCompatActivity {
         adapter = new ViajesAdapter(this, viajes);
         recycler.setAdapter(adapter);
 
+        // 🔥 Recibir datos del intent
+        origen = getIntent().getStringExtra("origen");
+        destino = getIntent().getStringExtra("destino");
+        fecha = getIntent().getStringExtra("fecha");
+
+        if (origen == null) origen = "";
+        if (destino == null) destino = "";
+        if (fecha == null) fecha = "";
+
         cargarViajes();
     }
 
@@ -45,8 +58,10 @@ public class BuscarViajesActivity extends AppCompatActivity {
 
         progress.setVisibility(View.VISIBLE);
 
+        String url = Constantes.buscarViajes(origen, destino, fecha);
+
         ConexionApi.getInstance(this).getArray(
-                Constantes.BUSCAR_VIAJES,
+                url,
                 response -> {
 
                     progress.setVisibility(View.GONE);

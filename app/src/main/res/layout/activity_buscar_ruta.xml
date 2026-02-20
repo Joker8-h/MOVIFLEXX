@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F0FFFE">
+
+    <!-- ══════════════════════════════════════
+         HEADER
+    ══════════════════════════════════════ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:background="#FFFFFF"
+        android:elevation="4dp">
+
+        <ImageButton
+            android:id="@+id/btn_back_buscar"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_arrow_back"
+            android:contentDescription="Atrás"/>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Buscar Viaje"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#1A2422"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tu ubicación se detecta automáticamente"
+                android:textSize="12sp"
+                android:textColor="#64748B"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/txt_estado_gps_pasajero"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⏳ GPS"
+            android:textSize="12sp"
+            android:textColor="#F59E0B"
+            android:textStyle="bold"/>
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════
+         CONTENIDO CON SCROLL
+    ══════════════════════════════════════ -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- CARD: TU UBICACIÓN (solo lectura) -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                app:strokeColor="#B2DFDB"
+                app:strokeWidth="1dp"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="TU UBICACIÓN ACTUAL"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:textColor="#009B8D"
+                        android:letterSpacing="0.1"
+                        android:layout_marginBottom="8dp"/>
+
+                    <!-- Dirección detectada por GPS (no editable) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:background="#F0FFFE"
+                        android:padding="12dp"
+                        android:layout_marginBottom="10dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:id="@+id/txt_mi_ubicacion"
+                            android:text="⏳ Detectando tu ubicación..."
+                            android:textSize="13sp"
+                            android:textColor="#374151"
+                            android:maxLines="2"
+                            android:ellipsize="end"/>
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_location_destination"
+                            android:layout_marginStart="8dp"/>
+                    </LinearLayout>
+
+                    <!-- Mini mapa con ubicación del pasajero -->
+                    <org.osmdroid.views.MapView
+                        android:id="@+id/mini_map_pasajero"
+                        android:layout_width="match_parent"
+                        android:layout_height="130dp"
+                        android:clipToOutline="true"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- CARD: PARADA DEL PASAJERO (editable) -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                app:strokeColor="#DDD6FE"
+                app:strokeWidth="1dp"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="¿DÓNDE QUIERES SUBIR O BAJAR?"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:textColor="#6366F1"
+                        android:letterSpacing="0.1"
+                        android:layout_marginBottom="10dp"/>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxStrokeColor="#6366F1"
+                        app:hintTextColor="#6366F1"
+                        android:hint="Ej: Parque Caldas, SENA, Universidad del Cauca"
+                        app:startIconDrawable="@drawable/ic_location_destination"
+                        app:startIconTint="#8B5CF6">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/edit_parada"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textCapSentences"
+                            android:imeOptions="actionSearch"
+                            android:textSize="15sp"
+                            android:textColor="#1F2937"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💡 Escribe un lugar donde quieras que te recojan o bajarte"
+                        android:textSize="11sp"
+                        android:textColor="#94A3B8"
+                        android:layout_marginTop="6dp"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- BOTÓN BUSCAR -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_buscar_rutas"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="BUSCAR RUTAS DISPONIBLES"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                app:backgroundTint="#009B8D"
+                app:cornerRadius="16dp"
+                app:icon="@drawable/ic_search"
+                app:iconGravity="textStart"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- LOADER -->
+            <ProgressBar
+                android:id="@+id/progress_buscar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:visibility="gone"
+                android:layout_marginBottom="12dp"
+                android:indeterminateTint="#009B8D"/>
+
+            <!-- TÍTULO RESULTADOS -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Viajes disponibles"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#1A2422"
+                android:layout_marginBottom="8dp"/>
+
+            <!-- LISTA DE RESULTADOS -->
+            <LinearLayout
+                android:id="@+id/container_resultados"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"/>
+
+            <!-- SIN RESULTADOS -->
+            <LinearLayout
+                android:id="@+id/txt_sin_resultados_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/txt_sin_resultados"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="😔 No hay viajes disponibles."
+                    android:textSize="15sp"
+                    android:textColor="#94A3B8"
+                    android:gravity="center"
+                    android:lineSpacingExtra="4dp"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

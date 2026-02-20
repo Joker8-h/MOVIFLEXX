@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/color/chip_background.xml  (selector para el color de fondo del chip) -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="#B2DFDB" android:state_pressed="true" />
+    <item android:color="#E0F2F1" />
+</selector>

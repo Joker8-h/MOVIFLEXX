@@ -62,10 +62,12 @@
 
             <!-- NOMBRE -->
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_nombre"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/hint_nombre"
+                app:errorEnabled="true"
                 app:boxBackgroundColor="#FAFAFC"
                 app:boxStrokeColor="#2EC4B6"
                 app:boxStrokeWidth="1.5dp"
@@ -88,11 +90,13 @@
 
             <!-- EMAIL -->
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_email"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:hint="@string/hint_email"
+                app:errorEnabled="true"
                 app:boxBackgroundColor="#FAFAFC"
                 app:boxStrokeColor="#2EC4B6"
                 app:boxStrokeWidth="1.5dp"
@@ -115,11 +119,13 @@
 
             <!-- TELÉFONO -->
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_telefono"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:hint="Teléfono"
+                app:errorEnabled="true"
                 app:boxBackgroundColor="#FAFAFC"
                 app:boxStrokeColor="#2EC4B6"
                 app:boxStrokeWidth="1.5dp"
@@ -142,12 +148,14 @@
 
             <!-- PASSWORD -->
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_password"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:hint="@string/hint_password"
                 app:endIconMode="password_toggle"
+                app:errorEnabled="true"
                 app:boxBackgroundColor="#FAFAFC"
                 app:boxStrokeColor="#2EC4B6"
                 app:boxStrokeWidth="1.5dp"
@@ -193,14 +201,7 @@
                     android:textColor="#2B2B2B"
                     android:buttonTint="#2EC4B6"/>
 
-                <RadioButton
-                    android:id="@+id/rbConductor"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Conductor"
-                    android:textColor="#2B2B2B"
-                    android:buttonTint="#2EC4B6"/>
+
             </RadioGroup>
 
             <!-- NOTA RECONOCIMIENTO FACIAL -->
@@ -284,7 +285,6 @@
         android:background="#000000"
         android:visibility="gone">
 
-        <!-- Vista de la cámara -->
         <androidx.camera.view.PreviewView
             android:id="@+id/previewView"
             android:layout_width="0dp"
@@ -295,7 +295,6 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:scaleType="fillCenter" />
 
-        <!-- Overlay con guía facial -->
         <View
             android:layout_width="250dp"
             android:layout_height="300dp"
@@ -305,7 +304,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Título -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -320,7 +318,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Estado del registro -->
         <TextView
             android:id="@+id/txtEstado"
             android:layout_width="0dp"

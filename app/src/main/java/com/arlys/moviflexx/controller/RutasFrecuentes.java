@@ -39,7 +39,7 @@ public class RutasFrecuentes extends AppCompatActivity {
 
     private void cargarViajes() {
         ConexionApi.getInstance(this).getArray(
-                Constantes.BUSCAR_VIAJES,
+                Constantes.buscarViajes(),
                 response -> {
                     viajes.clear();
 

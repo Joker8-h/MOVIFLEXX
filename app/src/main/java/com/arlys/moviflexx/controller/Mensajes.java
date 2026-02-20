@@ -1,5 +1,6 @@
 package com.arlys.moviflexx.controller;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -30,19 +31,11 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Mensajes.java — Moviflexx
- *
- * Lista de conversaciones del usuario con:
- *  • Pull-to-refresh
- *  • Buscador por nombre de contacto
- *  • Polling cada 5 s para detectar nuevas conversaciones o mensajes
- *  • Badge de no leídos
- */
 public class Mensajes extends AppCompatActivity {
 
     private static final String TAG              = "MENSAJES";
     private static final long   POLLING_INTERVAL = 5000L;
+    private static final int    MAX_REINTENTOS   = 3;
 
     // ── UI ────────────────────────────────────────────────────────────────────
     private RecyclerView        rvConversaciones;
@@ -51,10 +44,13 @@ public class Mensajes extends AppCompatActivity {
     private TextView            tvSinResultados;
     private SwipeRefreshLayout  swipeRefresh;
 
+
     // ── Datos ─────────────────────────────────────────────────────────────────
     private final List<Conversacion> lista    = new ArrayList<>();
     private final List<Conversacion> filtrada = new ArrayList<>();
     private int idUsuarioActual;
+    private int intentosFallidos = 0;
+    private boolean cargaInicial = true;
 
     // ── Polling ───────────────────────────────────────────────────────────────
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -111,7 +107,10 @@ public class Mensajes extends AppCompatActivity {
     private void configurarSwipeRefresh() {
         if (swipeRefresh == null) return;
         swipeRefresh.setColorSchemeResources(R.color.turquoise, R.color.royal_blue);
-        swipeRefresh.setOnRefreshListener(this::cargarConversaciones);
+        swipeRefresh.setOnRefreshListener(() -> {
+            intentosFallidos = 0;    // resetear contador al refrescar manualmente
+            cargarConversaciones();
+        });
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -120,21 +119,79 @@ public class Mensajes extends AppCompatActivity {
     private void cargarConversaciones() {
         Log.d(TAG, "📥 Cargando: " + Constantes.CHAT_CONVERSACIONES);
 
-        ConexionApi.getInstance(this).getObject(
+        ConexionApi.getInstance(this).getArray(
                 Constantes.CHAT_CONVERSACIONES,
-                this::procesarRespuesta,
-                error -> runOnUiThread(() -> {
-                    Log.e(TAG, "❌ Error: " + error);
-                    if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-                    mostrarVacio("Sin conexión. Desliza para reintentar.");
-                })
+                arr -> {
+                    intentosFallidos = 0;
+                    cargaInicial = false;
+                    procesarRespuestaDesdeArray(arr);
+                },
+                error -> {
+                    Log.w(TAG, "⚠️ getArray falló, intentando getObject");
+                    ConexionApi.getInstance(this).getObject(
+                            Constantes.CHAT_CONVERSACIONES,
+                            response -> {
+                                intentosFallidos = 0;
+                                cargaInicial = false;
+                                procesarRespuesta(response);
+                            },
+                            err2 -> runOnUiThread(() -> {
+                                intentosFallidos++;
+                                if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+                                Log.e(TAG, "❌ Error #" + intentosFallidos + ": " + err2);
+                                if (lista.isEmpty()) {
+                                    if (intentosFallidos >= MAX_REINTENTOS) {
+                                        mostrarVacio("Sin conexión. Desliza hacia abajo para reintentar.");
+                                    } else {
+                                        mostrarVacio("Cargando conversaciones...");
+                                    }
+                                }
+                            })
+                    );
+                }
         );
     }
 
     @SuppressLint("NotifyDataSetChanged")
+    private void procesarRespuestaDesdeArray(JSONArray arr) {
+        try {
+            lista.clear();
+            if (arr != null) {
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONObject obj = arr.optJSONObject(i);
+                    if (obj == null) continue;
+                    Conversacion c = Conversacion.fromJson(obj, idUsuarioActual);
+                    if (c.getId() > 0) lista.add(c);
+                }
+            }
+            String filtroActual = etBuscar != null
+                    ? etBuscar.getText().toString().toLowerCase().trim() : "";
+            filtrada.clear();
+            for (Conversacion c : lista) {
+                if (filtroActual.isEmpty() ||
+                        c.getNombreContacto().toLowerCase().contains(filtroActual))
+                    filtrada.add(c);
+            }
+            runOnUiThread(() -> {
+                if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+                adapter.notifyDataSetChanged();
+                if (lista.isEmpty())
+                    mostrarVacio("Aún no tienes conversaciones.\nLos chats con conductores aparecerán aquí.");
+                else {
+                    if (tvSinResultados != null) tvSinResultados.setVisibility(View.GONE);
+                    rvConversaciones.setVisibility(View.VISIBLE);
+                }
+            });
+            Log.d(TAG, "✅ " + lista.size() + " conversaciones (desde array)");
+        } catch (Exception e) {
+            Log.e(TAG, "❌ procesarRespuestaDesdeArray", e);
+            runOnUiThread(() -> { if (swipeRefresh != null) swipeRefresh.setRefreshing(false); });
+        }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
     private void procesarRespuesta(JSONObject response) {
-        Log.d(TAG, "✅ Respuesta: " + response.toString().substring(0,
-                Math.min(response.toString().length(), 200)));
+        Log.d(TAG, "✅ Respuesta recibida");
         try {
             JSONArray arr = extraerArray(response);
 
@@ -148,7 +205,7 @@ public class Mensajes extends AppCompatActivity {
                 }
             }
 
-            // Aplicar filtro de búsqueda si hay texto activo
+            // Aplicar filtro activo
             String filtroActual = etBuscar != null
                     ? etBuscar.getText().toString().toLowerCase().trim() : "";
             filtrada.clear();
@@ -162,20 +219,21 @@ public class Mensajes extends AppCompatActivity {
             runOnUiThread(() -> {
                 if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
                 adapter.notifyDataSetChanged();
+
                 if (lista.isEmpty()) {
-                    mostrarVacio("Aún no tienes conversaciones.\n" +
-                            "Los chats con conductores aparecerán aquí.");
+                    mostrarVacio("Aún no tienes conversaciones.\nLos chats con conductores aparecerán aquí.");
                 } else {
-                    if (tvSinResultados != null) tvSinResultados.setVisibility(View.GONE);
+                    if (tvSinResultados  != null) tvSinResultados.setVisibility(View.GONE);
                     rvConversaciones.setVisibility(View.VISIBLE);
                 }
             });
 
-            Log.d(TAG, "✅ " + lista.size() + " conversaciones cargadas");
+            Log.d(TAG, "✅ " + lista.size() + " conversaciones");
         } catch (Exception e) {
             Log.e(TAG, "❌ procesarRespuesta", e);
             runOnUiThread(() -> {
                 if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+                if (lista.isEmpty()) mostrarVacio("Error al cargar. Desliza para reintentar.");
             });
         }
     }
@@ -194,13 +252,11 @@ public class Mensajes extends AppCompatActivity {
             }
         };
         handler.postDelayed(pollingRunnable, POLLING_INTERVAL);
-        Log.d(TAG, "✅ Polling activo (c/" + (POLLING_INTERVAL/1000) + "s)");
     }
 
     private void detenerPolling() {
         pollingActivo = false;
         if (pollingRunnable != null) handler.removeCallbacks(pollingRunnable);
-        Log.d(TAG, "⏹ Polling detenido");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -221,16 +277,15 @@ public class Mensajes extends AppCompatActivity {
     private void aplicarFiltro(String texto) {
         filtrada.clear();
         for (Conversacion conv : lista) {
-            if (texto.isEmpty() ||
-                    conv.getNombreContacto().toLowerCase().contains(texto)) {
+            if (texto.isEmpty() || conv.getNombreContacto().toLowerCase().contains(texto)) {
                 filtrada.add(conv);
             }
         }
         adapter.notifyDataSetChanged();
         if (filtrada.isEmpty() && !lista.isEmpty()) {
-            mostrarVacio("No se encontraron conversaciones");
+            mostrarVacio("No se encontraron conversaciones con \"" + texto + "\"");
         } else if (!filtrada.isEmpty()) {
-            if (tvSinResultados != null) tvSinResultados.setVisibility(View.GONE);
+            if (tvSinResultados  != null) tvSinResultados.setVisibility(View.GONE);
             rvConversaciones.setVisibility(View.VISIBLE);
         }
     }
@@ -271,9 +326,9 @@ public class Mensajes extends AppCompatActivity {
     // ─────────────────────────────────────────────────────────────────────────
     private JSONArray extraerArray(JSONObject response) {
         if (response == null) return null;
-        if (response.has("content"))       return response.optJSONArray("content");
-        if (response.has("conversaciones"))return response.optJSONArray("conversaciones");
-        if (response.has("data"))          return response.optJSONArray("data");
+        if (response.has("content"))        return response.optJSONArray("content");
+        if (response.has("conversaciones")) return response.optJSONArray("conversaciones");
+        if (response.has("data"))           return response.optJSONArray("data");
         try {
             String raw = response.toString();
             if (raw.startsWith("[")) return new JSONArray(raw);
@@ -290,10 +345,4 @@ public class Mensajes extends AppCompatActivity {
             rvConversaciones.setVisibility(View.GONE);
         });
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  SUPPRESS — usado en procesarRespuesta
-    // ─────────────────────────────────────────────────────────────────────────
-    @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE)
-    @interface SuppressLint { String[] value(); }
 }

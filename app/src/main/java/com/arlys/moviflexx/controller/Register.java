@@ -17,6 +17,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
@@ -29,6 +30,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputLayout;
 import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.model.Constantes;
 import com.google.android.material.textfield.TextInputEditText;
@@ -59,35 +61,26 @@ public class Register extends AppCompatActivity {
     private static final String TAG = "REGISTER_DEBUG";
     private static final int REQUEST_CAMERA_PERM = 200;
 
-    // ── Cloudinary ─────────────────────────────────────────────────────────────
     private static final String CLOUDINARY_CLOUD_NAME = "davda0bon";
     private static final String CLOUDINARY_UPLOAD_PRESET = "ml_default";
     private static final String CLOUDINARY_UPLOAD_URL =
             "https://api.cloudinary.com/v1_1/" + CLOUDINARY_CLOUD_NAME + "/image/upload";
 
-    // ── Último frame capturado ────────────────────────────────────────────────
     private volatile Bitmap ultimoFrameBitmap = null;
 
-    // ── Step 1 — Formulario ────────────────────────────────────────────────────
     private TextInputEditText edtNombre, edtEmail, edtTelefono, edtPassword;
+    private TextInputLayout   tilNombre, tilEmail, tilTelefono, tilPassword;
     private RadioGroup rgRol;
     private MaterialButton btnRegistrar;
     private View layoutFormulario;
 
-    // ── Step 2 — Escaneo facial (SOLO 1 FOTO) ─────────────────────────────────
     private ConstraintLayout layoutFace;
     private PreviewView previewView;
     private TextView txtEstado;
     private ExecutorService cameraExecutor;
 
-    // ── Datos del formulario guardados en memoria ─────────────────────────────
-    private String datosNombre;
-    private String datosEmail;
-    private String datosTelefono;
-    private String datosPassword;
-    private String datosRol;
+    private String datosNombre, datosEmail, datosTelefono, datosPassword, datosRol;
 
-    // ── Control: UNA SOLA FOTO ────────────────────────────────────────────────
     private final AtomicBoolean yaCapturado = new AtomicBoolean(false);
     private final AtomicBoolean cuentaRegresivaIniciada = new AtomicBoolean(false);
 
@@ -106,21 +99,28 @@ public class Register extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
-        // Step 1 — vistas del formulario
         layoutFormulario = findViewById(R.id.layoutFormulario);
-        edtNombre = findViewById(R.id.edt_nombre);
-        edtEmail = findViewById(R.id.edt_email);
+
+        tilNombre   = findViewById(R.id.til_nombre);
+        tilEmail    = findViewById(R.id.til_email);
+        tilTelefono = findViewById(R.id.til_telefono);
+        tilPassword = findViewById(R.id.til_password);
+
+        edtNombre   = findViewById(R.id.edt_nombre);
+        edtEmail    = findViewById(R.id.edt_email);
         edtTelefono = findViewById(R.id.edt_telefono);
         edtPassword = findViewById(R.id.edt_password);
-        rgRol = findViewById(R.id.rgRol);
+
+        rgRol        = findViewById(R.id.rgRol);
         btnRegistrar = findViewById(R.id.btn_register);
 
-        // Step 2 — vistas de la cámara
-        layoutFace = findViewById(R.id.layoutFace);
+        layoutFace  = findViewById(R.id.layoutFace);
         previewView = findViewById(R.id.previewView);
-        txtEstado = findViewById(R.id.txtEstado);
+        txtEstado   = findViewById(R.id.txtEstado);
 
         layoutFace.setVisibility(View.GONE);
+
+        configurarValidacionesEnTiempoReal();
 
         btnRegistrar.setOnClickListener(v -> validarFormularioYEscanear());
 
@@ -143,38 +143,179 @@ public class Register extends AppCompatActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  STEP 1 — Validar campos
+    //  VALIDACIONES EN TIEMPO REAL
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private void configurarValidacionesEnTiempoReal() {
+
+        // Nombre — valida al salir del campo
+        edtNombre.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) validarNombre(edtNombre.getText().toString());
+        });
+
+        // Email — valida al salir del campo
+        edtEmail.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) validarEmail(edtEmail.getText().toString());
+        });
+
+        // Teléfono — valida al salir del campo
+        edtTelefono.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) validarTelefono(edtTelefono.getText().toString());
+        });
+
+        // Contraseña — valida mientras escribe mostrando TODOS los requisitos pendientes
+        edtPassword.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                if (s.length() > 0) {
+                    validarPassword(s.toString());
+                } else {
+                    tilPassword.setError(null);
+                    tilPassword.setErrorEnabled(false);
+                }
+            }
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  VALIDADORES — muestran TODOS los requisitos que faltan a la vez
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private boolean validarNombre(String valor) {
+        valor = valor.trim();
+
+        if (valor.isEmpty()) {
+            tilNombre.setError("El nombre es obligatorio");
+            return false;
+        }
+
+        StringBuilder faltantes = new StringBuilder();
+        if (valor.length() < 3)
+            faltantes.append("• Mínimo 3 caracteres\n");
+        if (!Character.isUpperCase(valor.charAt(0)))
+            faltantes.append("• Debe comenzar con mayúscula\n");
+        if (!valor.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"))
+            faltantes.append("• Solo se permiten letras, sin números ni símbolos\n");
+
+        if (faltantes.length() > 0) {
+            tilNombre.setError(faltantes.toString().trim());
+            return false;
+        }
+        tilNombre.setError(null);
+        tilNombre.setErrorEnabled(false);
+        return true;
+    }
+
+    private boolean validarEmail(String valor) {
+        valor = valor.trim();
+
+        if (valor.isEmpty()) {
+            tilEmail.setError("El correo es obligatorio");
+            return false;
+        }
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(valor).matches()) {
+            tilEmail.setError("Formato inválido — debe ser: usuario@correo.com");
+            return false;
+        }
+        tilEmail.setError(null);
+        tilEmail.setErrorEnabled(false);
+        return true;
+    }
+
+    private boolean validarTelefono(String valor) {
+        valor = valor.trim();
+
+        if (valor.isEmpty()) {
+            tilTelefono.setError("El teléfono es obligatorio");
+            return false;
+        }
+
+        StringBuilder faltantes = new StringBuilder();
+        if (!valor.matches("[0-9]+"))
+            faltantes.append("• Solo se permiten números, sin espacios ni guiones\n");
+        else if (valor.length() < 7)
+            faltantes.append("• Mínimo 7 dígitos\n");
+        else if (valor.length() > 15)
+            faltantes.append("• Máximo 15 dígitos\n");
+
+        if (faltantes.length() > 0) {
+            tilTelefono.setError(faltantes.toString().trim());
+            return false;
+        }
+        tilTelefono.setError(null);
+        tilTelefono.setErrorEnabled(false);
+        return true;
+    }
+
+    private boolean validarPassword(String valor) {
+        if (valor.isEmpty()) {
+            tilPassword.setError("La contraseña es obligatoria");
+            return false;
+        }
+
+        // Acumula TODOS los requisitos faltantes al mismo tiempo
+        StringBuilder faltantes = new StringBuilder();
+
+        if (valor.length() < 8)
+            faltantes.append("• Mínimo 8 caracteres\n");
+        if (!valor.matches(".*[A-Z].*"))
+            faltantes.append("• Al menos una letra mayúscula (A-Z)\n");
+        if (!valor.matches(".*[a-z].*"))
+            faltantes.append("• Al menos una letra minúscula (a-z)\n");
+        if (!valor.matches(".*[0-9].*"))
+            faltantes.append("• Al menos un número (0-9)\n");
+        if (!valor.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*"))
+            faltantes.append("• Al menos un carácter especial (!@#$%...)\n");
+
+        if (faltantes.length() > 0) {
+            tilPassword.setError("Faltan requisitos:\n" + faltantes.toString().trim());
+            return false;
+        }
+        tilPassword.setError(null);
+        tilPassword.setErrorEnabled(false);
+        return true;
+    }
+
+    // Valida todos los campos de una sola vez al presionar el botón
+    private boolean validarTodosLosCampos(String nombre, String email,
+                                          String telefono, String password) {
+        boolean ok = true;
+        if (!validarNombre(nombre))     ok = false;
+        if (!validarEmail(email))       ok = false;
+        if (!validarTelefono(telefono)) ok = false;
+        if (!validarPassword(password)) ok = false;
+        return ok;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  STEP 1 — Validar y pasar al escaneo
     // ══════════════════════════════════════════════════════════════════════════
 
     private void validarFormularioYEscanear() {
-        String nombre = edtNombre.getText().toString().trim();
-        String email = edtEmail.getText().toString().trim();
+        String nombre   = edtNombre.getText().toString().trim();
+        String email    = edtEmail.getText().toString().trim();
         String telefono = edtTelefono.getText().toString().trim();
         String password = edtPassword.getText().toString().trim();
 
-        if (nombre.isEmpty() || email.isEmpty()
-                || telefono.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Completa todos los campos", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (!validarTodosLosCampos(nombre, email, telefono, password)) return;
 
         int checkedId = rgRol.getCheckedRadioButtonId();
         if (checkedId == -1) {
-            Toast.makeText(this, "Selecciona un rol", Toast.LENGTH_SHORT).show();
+            mostrarAlerta("Rol no seleccionado", "Por favor selecciona un rol (Pasajero o Conductor)");
             return;
         }
 
         RadioButton rb = findViewById(checkedId);
 
-        // Guardar en memoria
-        datosNombre = nombre;
-        datosEmail = email;
+        datosNombre   = nombre;
+        datosEmail    = email;
         datosTelefono = telefono;
         datosPassword = password;
-        datosRol = rb.getText().toString().toUpperCase();
+        datosRol      = rb.getText().toString().toUpperCase();
 
         Log.d(TAG, "Formulario válido → escaneo facial");
-
         mostrarEscaneoFacial();
     }
 
@@ -224,19 +365,17 @@ public class Register extends AppCompatActivity {
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CAMERA_PERM) {
-            if (grantResults.length > 0
-                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 iniciarCamara();
             } else {
-                Toast.makeText(this,
-                        "Permiso de cámara requerido", Toast.LENGTH_LONG).show();
+                mostrarAlerta("Permiso requerido", "Se necesita acceso a la cámara");
                 mostrarFormulario();
             }
         }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  STEP 2 — CÁMARA
+    //  CÁMARA
     // ══════════════════════════════════════════════════════════════════════════
 
     private void iniciarCamara() {
@@ -248,7 +387,7 @@ public class Register extends AppCompatActivity {
                 bindPreview(future.get());
             } catch (Exception e) {
                 Log.e(TAG, "Error iniciando cámara: " + e.getMessage());
-                Toast.makeText(this, "Error iniciando cámara", Toast.LENGTH_SHORT).show();
+                mostrarAlerta("Error", "Error al iniciar la cámara");
             }
         }, ContextCompat.getMainExecutor(this));
     }
@@ -267,74 +406,54 @@ public class Register extends AppCompatActivity {
             cameraProvider.unbindAll();
             cameraProvider.bindToLifecycle(
                     this, CameraSelector.DEFAULT_FRONT_CAMERA, preview, imageAnalysis);
-
-            runOnUiThread(() ->
-                    txtEstado.setText("📷 Coloca tu rostro dentro del óvalo..."));
-
+            runOnUiThread(() -> txtEstado.setText("📷 Coloca tu rostro dentro del óvalo..."));
         } catch (Exception e) {
             Log.e(TAG, "Error vinculando cámara: " + e.getMessage());
         }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  CAPTURA 1 SOLA FOTO CON DELAY DE 3 SEGUNDOS (IGUAL QUE LOGIN)
+    //  CAPTURA
     // ══════════════════════════════════════════════════════════════════════════
 
     private void capturarUnicaFoto(@NonNull ImageProxy image) {
-        // Si ya capturamos, cerrar y retornar
-        if (yaCapturado.get()) {
-            image.close();
-            return;
-        }
+        if (yaCapturado.get()) { image.close(); return; }
 
-        // Convertir frame actual a bitmap
         Bitmap bitmap = imageProxyToBitmap(image);
         image.close();
 
-        // Guardar último frame
-        if (bitmap != null) {
-            ultimoFrameBitmap = bitmap;
-        }
+        if (bitmap != null) ultimoFrameBitmap = bitmap;
 
-        // Iniciar countdown solo una vez
         if (!cuentaRegresivaIniciada.get()) {
             if (cuentaRegresivaIniciada.compareAndSet(false, true)) {
-                runOnUiThread(() -> {
-                    iniciarCuentaRegresiva(() -> {
-                        yaCapturado.set(true);
-
-                        if (ultimoFrameBitmap != null) {
-                            txtEstado.setText("☁️ Subiendo imagen...");
-                            subirACloudinary(ultimoFrameBitmap);
-                        } else {
-                            txtEstado.setText("❌ Error capturando imagen");
-                            yaCapturado.set(false);
-                            cuentaRegresivaIniciada.set(false);
-                        }
-                    });
-                });
+                runOnUiThread(() -> iniciarCuentaRegresiva(() -> {
+                    yaCapturado.set(true);
+                    if (ultimoFrameBitmap != null) {
+                        txtEstado.setText("☁️ Subiendo imagen...");
+                        subirACloudinary(ultimoFrameBitmap);
+                    } else {
+                        txtEstado.setText("❌ Error capturando imagen");
+                        yaCapturado.set(false);
+                        cuentaRegresivaIniciada.set(false);
+                    }
+                }));
             }
         }
     }
 
     private void iniciarCuentaRegresiva(Runnable onComplete) {
-        final int[] countdown = {3}; // 3 segundos
-
+        final int[] countdown = {3};
         final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
-        final Runnable countdownRunnable = new Runnable() {
-            @Override
-            public void run() {
+        final Runnable r = new Runnable() {
+            @Override public void run() {
                 if (countdown[0] > 0) {
                     txtEstado.setText("📸 Preparando... " + countdown[0]);
                     countdown[0]--;
-                    handler.postDelayed(this, 1000); // 1 segundo
-                } else {
-                    onComplete.run();
-                }
+                    handler.postDelayed(this, 1000);
+                } else { onComplete.run(); }
             }
         };
-
-        handler.post(countdownRunnable);
+        handler.post(r);
     }
 
     private Bitmap imageProxyToBitmap(ImageProxy image) {
@@ -344,10 +463,7 @@ public class Register extends AppCompatActivity {
             ByteBuffer uBuffer = planes[1].getBuffer();
             ByteBuffer vBuffer = planes[2].getBuffer();
 
-            int ySize = yBuffer.remaining();
-            int uSize = uBuffer.remaining();
-            int vSize = vBuffer.remaining();
-
+            int ySize = yBuffer.remaining(), uSize = uBuffer.remaining(), vSize = vBuffer.remaining();
             byte[] nv21 = new byte[ySize + uSize + vSize];
             yBuffer.get(nv21, 0, ySize);
             vBuffer.get(nv21, ySize, vSize);
@@ -355,28 +471,15 @@ public class Register extends AppCompatActivity {
 
             YuvImage yuvImage = new YuvImage(nv21, ImageFormat.NV21,
                     image.getWidth(), image.getHeight(), null);
-
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            yuvImage.compressToJpeg(
-                    new Rect(0, 0, image.getWidth(), image.getHeight()), 90, out);
+            yuvImage.compressToJpeg(new Rect(0, 0, image.getWidth(), image.getHeight()), 90, out);
 
             byte[] imageBytes = out.toByteArray();
             Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
 
-            // 🔥 ROTAR CORRECTAMENTE (igual que Login)
-            int rotationDegrees = image.getImageInfo().getRotationDegrees();
-
             android.graphics.Matrix matrix = new android.graphics.Matrix();
-            matrix.postRotate(rotationDegrees);
-
-            return Bitmap.createBitmap(
-                    bitmap, 0, 0,
-                    bitmap.getWidth(),
-                    bitmap.getHeight(),
-                    matrix,
-                    true
-            );
-
+            matrix.postRotate(image.getImageInfo().getRotationDegrees());
+            return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
         } catch (Exception e) {
             Log.e(TAG, "Error convirtiendo imagen: " + e.getMessage());
             return null;
@@ -384,18 +487,15 @@ public class Register extends AppCompatActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  PASO A — Subir a Cloudinary
+    //  CLOUDINARY
     // ══════════════════════════════════════════════════════════════════════════
 
     private void subirACloudinary(Bitmap bitmap) {
         runOnUiThread(() -> txtEstado.setText("☁️ Subiendo imagen..."));
-
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             bitmap.compress(Bitmap.CompressFormat.JPEG, 95, baos);
             byte[] imageBytes = baos.toByteArray();
-
-            Log.d(TAG, "☁️ Subiendo: " + imageBytes.length + " bytes");
 
             RequestBody requestBody = new MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
@@ -404,155 +504,102 @@ public class Register extends AppCompatActivity {
                             RequestBody.create(imageBytes, MediaType.parse("image/jpeg")))
                     .build();
 
-            Request request = new Request.Builder()
-                    .url(CLOUDINARY_UPLOAD_URL)
-                    .post(requestBody)
-                    .build();
-
-            client.newCall(request).enqueue(new Callback() {
-
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    Log.e(TAG, "❌ Cloudinary: " + e.getMessage());
-                    runOnUiThread(() -> {
-                        txtEstado.setText("❌ Sin internet");
-                        Toast.makeText(Register.this,
-                                "Error de conexión", Toast.LENGTH_SHORT).show();
-                        mostrarBotonReintentar();
-                    });
-                }
-
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    String body = response.body() != null ? response.body().string() : "";
-
-                    if (response.isSuccessful()) {
-                        try {
-                            String imageUrl = new JSONObject(body).getString("secure_url");
-                            Log.d(TAG, "✅ Cloudinary: " + imageUrl);
-                            registrarEnBackend(imageUrl);
-                        } catch (JSONException e) {
-                            Log.e(TAG, "❌ JSON error: " + e.getMessage());
+            client.newCall(new Request.Builder().url(CLOUDINARY_UPLOAD_URL).post(requestBody).build())
+                    .enqueue(new Callback() {
+                        @Override public void onFailure(Call call, IOException e) {
                             runOnUiThread(() -> {
-                                txtEstado.setText("❌ Error procesando");
+                                txtEstado.setText("❌ Sin internet");
+                                mostrarAlerta("Error de conexión", "No se pudo subir la imagen");
                                 mostrarBotonReintentar();
                             });
                         }
-                    } else {
-                        Log.e(TAG, "❌ Cloudinary HTTP " + response.code());
-                        runOnUiThread(() -> {
-                            txtEstado.setText("❌ Error subiendo imagen");
-                            mostrarBotonReintentar();
-                        });
-                    }
-                }
-            });
-
+                        @Override public void onResponse(Call call, Response response) throws IOException {
+                            String body = response.body() != null ? response.body().string() : "";
+                            if (response.isSuccessful()) {
+                                try {
+                                    registrarEnBackend(new JSONObject(body).getString("secure_url"));
+                                } catch (JSONException e) {
+                                    runOnUiThread(() -> {
+                                        txtEstado.setText("❌ Error procesando");
+                                        mostrarAlerta("Error", "Error procesando imagen");
+                                        mostrarBotonReintentar();
+                                    });
+                                }
+                            } else {
+                                runOnUiThread(() -> {
+                                    txtEstado.setText("❌ Error subiendo imagen");
+                                    mostrarAlerta("Error", "Error al subir imagen");
+                                    mostrarBotonReintentar();
+                                });
+                            }
+                        }
+                    });
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error: " + e.getMessage());
             runOnUiThread(() -> {
                 txtEstado.setText("❌ Error");
+                mostrarAlerta("Error", "Error: " + e.getMessage());
                 mostrarBotonReintentar();
             });
         }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  PASO B — Registrar en backend
+    //  BACKEND
     // ══════════════════════════════════════════════════════════════════════════
 
     private void registrarEnBackend(String faceImageUrl) {
         runOnUiThread(() -> txtEstado.setText("💾 Creando cuenta..."));
-
         try {
             JSONObject json = new JSONObject();
-            json.put("nombre", datosNombre);
-            json.put("email", datosEmail);
-            json.put("telefono", datosTelefono);
-            json.put("password", datosPassword);
-            json.put("rol", datosRol);
+            json.put("nombre",       datosNombre);
+            json.put("email",        datosEmail);
+            json.put("telefono",     datosTelefono);
+            json.put("password",     datosPassword);
+            json.put("rol",          datosRol);
             json.put("faceImageUrl", faceImageUrl);
 
-            Log.d(TAG, "💾 Registrando en: " + Constantes.REGISTER);
-            Log.d(TAG, "Usuario: " + datosNombre + " | " + datosEmail);
-
-            RequestBody body = RequestBody.create(
-                    json.toString(),
-                    MediaType.parse("application/json; charset=utf-8"));
-
-            Request request = new Request.Builder()
+            client.newCall(new Request.Builder()
                     .url(Constantes.REGISTER)
-                    .post(body)
-                    .build();
-
-            client.newCall(request).enqueue(new Callback() {
-
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    Log.e(TAG, "❌ Backend: " + e.getMessage());
+                    .post(RequestBody.create(json.toString(),
+                            MediaType.parse("application/json; charset=utf-8")))
+                    .build()
+            ).enqueue(new Callback() {
+                @Override public void onFailure(Call call, IOException e) {
                     runOnUiThread(() -> {
                         txtEstado.setText("❌ Sin conexión");
-                        Toast.makeText(Register.this,
-                                "Error de conexión", Toast.LENGTH_SHORT).show();
+                        mostrarAlerta("Error de conexión", "No se puede conectar al servidor");
                         mostrarBotonReintentar();
                     });
                 }
-
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    String responseBody =
-                            response.body() != null ? response.body().string() : "";
-
-                    Log.d(TAG, "Backend → " + response.code() + " | " + responseBody);
-
+                @Override public void onResponse(Call call, Response response) throws IOException {
+                    String responseBody = response.body() != null ? response.body().string() : "";
                     runOnUiThread(() -> {
                         if (response.isSuccessful()) {
-                            Log.d(TAG, "✅ Registro exitoso");
                             txtEstado.setText("✅ ¡Cuenta creada!");
-                            Toast.makeText(Register.this,
-                                    "¡Registro exitoso! Ahora inicia sesión.",
-                                    Toast.LENGTH_LONG).show();
-
-                            startActivity(new Intent(Register.this, Login.class));
-                            finish();
-
+                            mostrarAlerta("✅ ¡Éxito!", "Registro exitoso. Ahora inicia sesión.", () -> {
+                                startActivity(new Intent(Register.this, Login.class));
+                                finish();
+                            });
                         } else {
                             String errorMsg = "Error en el registro";
-
                             switch (response.code()) {
-                                case 400:
-                                    errorMsg = "Datos inválidos";
-                                    break;
-                                case 409:
-                                    errorMsg = "El email ya está registrado";
-                                    break;
-                                case 429:
-                                    errorMsg = "Demasiados intentos. Espera 5 minutos.";
-                                    break;
-                                case 500:
-                                    errorMsg = "Error del servidor";
-                                    break;
+                                case 400: errorMsg = "Datos inválidos";                          break;
+                                case 409: errorMsg = "El email ya está registrado";              break;
+                                case 429: errorMsg = "Demasiados intentos. Espera 5 minutos.";  break;
+                                case 500: errorMsg = "Error del servidor";                       break;
                             }
-
                             try {
                                 JSONObject err = new JSONObject(responseBody);
-                                if (err.has("message")) {
-                                    errorMsg = err.getString("message");
-                                } else if (err.has("error")) {
-                                    errorMsg = err.getString("error");
-                                }
-                            } catch (Exception ignored) {
-                            }
+                                if (err.has("message"))    errorMsg = err.getString("message");
+                                else if (err.has("error")) errorMsg = err.getString("error");
+                            } catch (Exception ignored) {}
 
-                            Log.e(TAG, "❌ " + errorMsg);
                             txtEstado.setText("❌ " + errorMsg);
-                            Toast.makeText(Register.this, errorMsg, Toast.LENGTH_LONG).show();
+                            mostrarAlerta("Error", errorMsg);
 
-                            // Solo mostrar reintentar si NO es error 429
                             if (response.code() != 429) {
                                 mostrarBotonReintentar();
                             } else {
-                                // Volver al formulario después de 3 segundos
                                 new android.os.Handler(android.os.Looper.getMainLooper())
                                         .postDelayed(() -> mostrarFormulario(), 3000);
                             }
@@ -560,14 +607,31 @@ public class Register extends AppCompatActivity {
                     });
                 }
             });
-
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error: " + e.getMessage());
             runOnUiThread(() -> {
                 txtEstado.setText("❌ Error interno");
+                mostrarAlerta("Error", "Error interno: " + e.getMessage());
                 mostrarBotonReintentar();
             });
         }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  ALERTAS
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private void mostrarAlerta(String titulo, String mensaje) {
+        new AlertDialog.Builder(this)
+                .setTitle(titulo).setMessage(mensaje)
+                .setPositiveButton("OK", (d, w) -> d.dismiss())
+                .setCancelable(false).show();
+    }
+
+    private void mostrarAlerta(String titulo, String mensaje, Runnable onOk) {
+        new AlertDialog.Builder(this)
+                .setTitle(titulo).setMessage(mensaje)
+                .setPositiveButton("OK", (d, w) -> { d.dismiss(); onOk.run(); })
+                .setCancelable(false).show();
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -588,14 +652,13 @@ public class Register extends AppCompatActivity {
                     new androidx.constraintlayout.widget.ConstraintLayout.LayoutParams(
                             androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.WRAP_CONTENT,
                             androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.WRAP_CONTENT);
-            params.bottomToTop = txtEstado.getId();
+            params.bottomToTop  = txtEstado.getId();
             params.startToStart = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
-            params.endToEnd = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
+            params.endToEnd     = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
             params.bottomMargin = 24;
             btnReintentar.setLayoutParams(params);
             layoutFace.addView(btnReintentar);
         }
-
         final android.widget.Button boton = btnReintentar;
         boton.setVisibility(View.VISIBLE);
         boton.setOnClickListener(v -> {

@@ -7,7 +7,6 @@ public class Constantes {
             "https://backendmovi-production-c657.up.railway.app";
 
 
-
     // ================= AUTH =================
     public static final String LOGIN =
             BASE_URL + "/api/auth/login";
@@ -18,18 +17,23 @@ public class Constantes {
     public static final String LOGIN_GOOGLE =
             BASE_URL + "/api/auth/google";
 
-
-    public static String usuarioPorId(Long idUsuario) {
+    public static String authPorId(Long idUsuario) {
         return BASE_URL + "/api/auth/" + idUsuario;
     }
+
 
     // ================= USUARIOS =================
     public static final String USUARIOS =
             BASE_URL + "/api/usuarios";
 
+    public static String vehiculoPorId(Long idVehiculo) {
+        return BASE_URL + "/api/vehiculos/" + idVehiculo;
+    }
+
     public static String usuarioDetalle(Long idUsuario) {
         return BASE_URL + "/api/usuarios/" + idUsuario;
     }
+
 
     // ================= ROLES =================
     public static final String ROLES =
@@ -38,6 +42,7 @@ public class Constantes {
     public static String rolPorId(Long idRol) {
         return BASE_URL + "/api/roles/" + idRol;
     }
+
 
     // ================= VEHICULOS =================
     public static final String VEHICULOS =
@@ -49,6 +54,7 @@ public class Constantes {
     public static String vehiculoEliminar(Long idVehiculo) {
         return BASE_URL + "/api/vehiculos/" + idVehiculo;
     }
+
 
     // ================= RUTAS =================
     public static final String RUTAS =
@@ -65,15 +71,23 @@ public class Constantes {
         return BASE_URL + "/api/rutas/" + idRuta + "/paradas";
     }
 
+
     // ================= VIAJES =================
     public static final String VIAJES =
             BASE_URL + "/api/viajes";
 
-    public static final String BUSCAR_VIAJES =
-            BASE_URL + "/api/viajes/buscar";
+    public static String buscarViajes(String origen, String destino, String fecha) {
+        return BASE_URL + "/api/viajes/buscar?origen=" + origen +
+                "&destino=" + destino +
+                "&fecha=" + fecha;
+    }
 
     public static final String MIS_VIAJES =
             BASE_URL + "/api/viajes/mis-viajes";
+
+    public static String buscarViajes() {
+        return BASE_URL + "/api/viajes/buscar";
+    }
 
     public static String viajePorId(Long idViaje) {
         return BASE_URL + "/api/viajes/" + idViaje;
@@ -95,6 +109,7 @@ public class Constantes {
         return BASE_URL + "/api/viajes/" + idViaje + "/reservas-detalle";
     }
 
+
     // ================= RESERVAS =================
     public static final String RESERVAS =
             BASE_URL + "/api/reservas";
@@ -106,9 +121,11 @@ public class Constantes {
         return BASE_URL + "/api/reservas/" + idReserva + "/cancelar";
     }
 
+
     // ================= PAGOS =================
     public static final String PAGOS =
             BASE_URL + "/api/pagos";
+
 
     // ================= CHAT =================
     public static final String CHAT_CONVERSACIONES =
@@ -121,6 +138,23 @@ public class Constantes {
         return BASE_URL + "/api/chat/conversaciones/" + idConversacion + "/mensajes";
     }
 
+    /**
+     * Marca todos los mensajes de una conversación como leídos para el usuario actual.
+     * PUT /api/chat/conversaciones/{idConversacion}/leer
+     */
+    public static String chatMarcarLeido(Long idConversacion) {
+        return BASE_URL + "/api/chat/conversaciones/" + idConversacion + "/leer";
+    }
+
+    /**
+     * Alternativa: marcar un mensaje individual como leído.
+     * PUT /api/chat/mensajes/{idMensaje}/leer
+     */
+    public static String chatMensajeMarcarLeido(Long idMensaje) {
+        return BASE_URL + "/api/chat/mensajes/" + idMensaje + "/leer";
+    }
+
+
     // ================= CALIFICACIONES =================
     public static final String CALIFICACIONES =
             BASE_URL + "/api/calificaciones";
@@ -128,6 +162,7 @@ public class Constantes {
     public static String calificacionPromedio(Long idUsuario) {
         return BASE_URL + "/api/calificaciones/" + idUsuario + "/promedio";
     }
+
 
     // ================= SUSCRIPCIONES =================
     public static final String PLANES_SUSCRIPCION =
@@ -138,6 +173,7 @@ public class Constantes {
 
     public static final String MI_SUSCRIPCION =
             BASE_URL + "/api/suscripciones/mi-suscripcion";
+
 
     // ================= PARADAS =================
     public static final String PARADAS =
@@ -150,6 +186,7 @@ public class Constantes {
     public static String paradaPorId(Long idParada) {
         return BASE_URL + "/api/paradas/" + idParada;
     }
+
 
     // ================= VIAJE TRAMOS =================
     public static final String VIAJE_TRAMOS =
@@ -171,6 +208,7 @@ public class Constantes {
     public static String viajeTramoEspecifico(Long idViaje, Long idInicio, Long idFin) {
         return BASE_URL + "/api/viaje-tramos/" + idViaje + "/" + idInicio + "/" + idFin;
     }
+
 
     // ================= DOCUMENTACION =================
     public static final String DOCUMENTOS_SUBIR =
