@@ -22,8 +22,7 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.*;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
+import androidx.core.app.ActivityCompat;                    // ← quitado AppCompatActivity import
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -58,7 +57,10 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class PublicarRuta extends AppCompatActivity {
+// ════════════════════════════════════════════════════════
+// CAMBIO 1/3: extends BaseActivity (antes AppCompatActivity)
+// ════════════════════════════════════════════════════════
+public class PublicarRuta extends BaseActivity {
 
     private static final String TAG          = "PublicarRuta";
     private static final int    REQ_LOCATION = 1001;
@@ -95,11 +97,9 @@ public class PublicarRuta extends AppCompatActivity {
     private String               tipoTransporte = "driving";
     private SessionManager       session;
 
-    // ── RouteManager ────────────────────────────────────────────────────────
     private RouteManager         routeManager;
     private final List<Polyline> rutasBackend = new ArrayList<>();
 
-    // ── Threading ───────────────────────────────────────────────────────────
     private final ExecutorService executor    = Executors.newSingleThreadExecutor();
     private final Handler         mainHandler = new Handler(Looper.getMainLooper());
 
@@ -136,19 +136,23 @@ public class PublicarRuta extends AppCompatActivity {
 
         routeManager = new RouteManager();
 
-        btnCalcular.setOnClickListener(v -> {
-            animarBoton(btnCalcular);
-            buscarRutasMultiples();
-        });
-        btnPublicar.setOnClickListener(v -> {
-            animarBoton(btnPublicar);
-            crearRuta();
-        });
+        // ════════════════════════════════════════════════════════
+        // CAMBIO 2/3: animateButton reemplaza setOnClickListener
+        //   - da escala 0.95 al presionar (microinteracción)
+        //   - lanza la acción al soltar con rebote suave
+        // ════════════════════════════════════════════════════════
+        animateButton(btnCalcular, this::buscarRutasMultiples);
+        animateButton(btnPublicar, this::crearRuta);
     }
 
     @Override protected void onResume()  { super.onResume();  if (map != null) map.onResume(); }
     @Override protected void onPause()   { super.onPause();   if (map != null) map.onPause();  }
     @Override protected void onDestroy() { super.onDestroy(); executor.shutdown();              }
+
+    // ════════════════════════════════════════════════════════
+    // CAMBIO 3/3: onBackPressed usa la animación slide de BaseActivity
+    //   (no hace falta override — BaseActivity ya lo maneja)
+    // ════════════════════════════════════════════════════════
 
     /* ═══════════ INIT ═══════════ */
 
@@ -354,32 +358,26 @@ public class PublicarRuta extends AppCompatActivity {
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
         m.setTitle(titulo);
         m.setSnippet(snippet);
-
         int size = 96;
         Bitmap bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(bmp);
-
         Paint sombra = new Paint(Paint.ANTI_ALIAS_FLAG);
         sombra.setColor(Color.argb(80, 0, 0, 0));
         c.drawCircle(size / 2f + 3, size / 2f + 5, size / 2f - 6, sombra);
-
         Paint circulo = new Paint(Paint.ANTI_ALIAS_FLAG);
         circulo.setColor(colorInt);
         c.drawCircle(size / 2f, size / 2f - 4, size / 2f - 8, circulo);
-
         Paint borde = new Paint(Paint.ANTI_ALIAS_FLAG);
         borde.setColor(Color.WHITE);
         borde.setStyle(Paint.Style.STROKE);
         borde.setStrokeWidth(4f);
         c.drawCircle(size / 2f, size / 2f - 4, size / 2f - 8, borde);
-
         Paint texto = new Paint(Paint.ANTI_ALIAS_FLAG);
         texto.setColor(Color.WHITE);
         texto.setTextSize(36f);
         texto.setTypeface(Typeface.DEFAULT_BOLD);
         texto.setTextAlign(Paint.Align.CENTER);
         c.drawText(letra, size / 2f, size / 2f + 9, texto);
-
         m.setIcon(new BitmapDrawable(getResources(), bmp));
         return m;
     }
@@ -397,124 +395,74 @@ public class PublicarRuta extends AppCompatActivity {
             mostrarSnackbar("📌 Ingresa un destino primero", true);
             return;
         }
-
         setLoadingState(true);
-
         executor.execute(() -> {
             try {
                 String geoUrl = "https://nominatim.openstreetmap.org/search?q="
                         + java.net.URLEncoder.encode(destinoTxt + " Popayan Colombia", "UTF-8")
                         + "&format=json&limit=1";
                 JSONArray geoArr = new JSONArray(peticionHttp(geoUrl));
-
                 if (geoArr.length() == 0) {
-                    mainHandler.post(() -> {
-                        setLoadingState(false);
-                        mostrarSnackbar("❌ Destino no encontrado. Intenta ser más específico", true);
-                    });
+                    mainHandler.post(() -> { setLoadingState(false); mostrarSnackbar("❌ Destino no encontrado. Intenta ser más específico", true); });
                     return;
                 }
-
                 JSONObject geoObj = geoArr.getJSONObject(0);
                 destinoPoint = new GeoPoint(geoObj.getDouble("lat"), geoObj.getDouble("lon"));
-
                 if (distanciaEnMetros(origenPoint, destinoPoint) < 100) {
-                    mainHandler.post(() -> {
-                        setLoadingState(false);
-                        mostrarSnackbar("⚠️ El origen y el destino son demasiado cercanos", true);
-                    });
+                    mainHandler.post(() -> { setLoadingState(false); mostrarSnackbar("⚠️ El origen y el destino son demasiado cercanos", true); });
                     return;
                 }
-
                 if (!coordenadasValidas(destinoPoint)) {
-                    mainHandler.post(() -> {
-                        setLoadingState(false);
-                        mostrarSnackbar("⚠️ Coordenadas del destino inválidas", true);
-                    });
+                    mainHandler.post(() -> { setLoadingState(false); mostrarSnackbar("⚠️ Coordenadas del destino inválidas", true); });
                     return;
                 }
-
                 String coordsOSRM = origenPoint.getLongitude() + "," + origenPoint.getLatitude()
                         + ";" + destinoPoint.getLongitude() + "," + destinoPoint.getLatitude();
-
                 listaRutas.clear();
-
                 mainHandler.post(() -> actualizarMensajeLoader("🔍 Consultando OSRM Popayán..."));
                 try {
-                    agregarRutasDeOSRM(
-                            "https://osrm-popayan-production.up.railway.app/route/v1/driving/"
-                                    + coordsOSRM + "?overview=full&geometries=geojson&alternatives=true",
-                            "OSRM-Popayan");
-                } catch (Exception e) {
-                    Log.w(TAG, "OSRM propio no disponible: " + e.getMessage());
-                }
-
+                    agregarRutasDeOSRM("https://osrm-popayan-production.up.railway.app/route/v1/driving/"
+                            + coordsOSRM + "?overview=full&geometries=geojson&alternatives=true", "OSRM-Popayan");
+                } catch (Exception e) { Log.w(TAG, "OSRM propio no disponible: " + e.getMessage()); }
                 mainHandler.post(() -> actualizarMensajeLoader("🌐 Consultando OSRM público..."));
                 try {
                     String modoOsrm = tipoTransporte.equals("motorcycle") ? "driving" : tipoTransporte;
-                    agregarRutasDeOSRM(
-                            "https://router.project-osrm.org/route/v1/" + modoOsrm + "/"
-                                    + coordsOSRM + "?overview=full&geometries=geojson&alternatives=true",
-                            "OSRM-Public");
-                } catch (Exception e) {
-                    Log.w(TAG, "OSRM público no disponible: " + e.getMessage());
-                }
-
+                    agregarRutasDeOSRM("https://router.project-osrm.org/route/v1/" + modoOsrm + "/"
+                            + coordsOSRM + "?overview=full&geometries=geojson&alternatives=true", "OSRM-Public");
+                } catch (Exception e) { Log.w(TAG, "OSRM público no disponible: " + e.getMessage()); }
                 mainHandler.post(() -> actualizarMensajeLoader("🗺️ Consultando GraphHopper..."));
                 try {
                     String perfilGH = tipoTransporte.equals("motorcycle") ? "motorcycle" : "car";
-                    agregarRutasDeGraphHopper(
-                            "https://graphhopper.com/api/1/route"
-                                    + "?point=" + origenPoint.getLatitude() + "," + origenPoint.getLongitude()
-                                    + "&point=" + destinoPoint.getLatitude() + "," + destinoPoint.getLongitude()
-                                    + "&profile=" + perfilGH
-                                    + "&alternative_route.max_paths=3"
-                                    + "&alternative_route.max_weight_factor=1.8"
-                                    + "&alternative_route.max_share_factor=0.6"
-                                    + "&points_encoded=false"
-                                    + "&key=");
-                } catch (Exception e) {
-                    Log.w(TAG, "GraphHopper no disponible: " + e.getMessage());
-                }
-
+                    agregarRutasDeGraphHopper("https://graphhopper.com/api/1/route"
+                            + "?point=" + origenPoint.getLatitude() + "," + origenPoint.getLongitude()
+                            + "&point=" + destinoPoint.getLatitude() + "," + destinoPoint.getLongitude()
+                            + "&profile=" + perfilGH
+                            + "&alternative_route.max_paths=3&alternative_route.max_weight_factor=1.8"
+                            + "&alternative_route.max_share_factor=0.6&points_encoded=false&key=");
+                } catch (Exception e) { Log.w(TAG, "GraphHopper no disponible: " + e.getMessage()); }
                 if (listaRutas.isEmpty()) {
-                    mainHandler.post(() -> {
-                        setLoadingState(false);
-                        mostrarSnackbar("⚠️ No se encontraron rutas. Verifica conectividad.", true);
-                    });
+                    mainHandler.post(() -> { setLoadingState(false); mostrarSnackbar("⚠️ No se encontraron rutas. Verifica conectividad.", true); });
                     return;
                 }
-
                 listaRutas.removeIf(r -> r.distancia < MIN_DISTANCIA_KM || r.distancia > MAX_DISTANCIA_KM);
-
-                String[] nombresTipo = {"⚡ Ruta Rápida", "🔵 Alternativa 1",
-                        "🔴 Alternativa 2", "🟡 Alternativa 3", "🟢 Alternativa 4"};
+                String[] nombresTipo = {"⚡ Ruta Rápida","🔵 Alternativa 1","🔴 Alternativa 2","🟡 Alternativa 3","🟢 Alternativa 4"};
                 for (int i = 0; i < listaRutas.size(); i++) {
                     RutaInfo r = listaRutas.get(i);
                     r.indice      = i;
                     r.colorHex    = COLORES_RUTAS[Math.min(i, COLORES_RUTAS.length - 1)];
                     r.colorInt    = COLORES_INT[Math.min(i, COLORES_INT.length - 1)];
                     r.tipo        = nombresTipo[Math.min(i, nombresTipo.length - 1)];
-                    r.descripcion = String.format("%.1f km · %.0f min · desde %s",
-                            r.distancia, r.duracion, r.fuente);
+                    r.descripcion = String.format("%.1f km · %.0f min · desde %s", r.distancia, r.duracion, r.fuente);
                 }
-
-                mainHandler.post(() -> {
-                    mostrarRutas();
-                    consultarBackendFastAPI();
-                });
-
+                mainHandler.post(() -> { mostrarRutas(); consultarBackendFastAPI(); });
             } catch (Exception e) {
                 Log.e(TAG, "Error buscando rutas", e);
-                mainHandler.post(() -> {
-                    setLoadingState(false);
-                    mostrarSnackbar("❌ Error de red calculando rutas", true);
-                });
+                mainHandler.post(() -> { setLoadingState(false); mostrarSnackbar("❌ Error de red calculando rutas", true); });
             }
         });
     }
 
-    /* ═══════════ PARSEO DE RUTAS ═══════════ */
+    /* ═══════════ PARSEO RUTAS ═══════════ */
 
     private void agregarRutasDeOSRM(String url, String fuente) throws Exception {
         String json = peticionHttp(url);
@@ -531,7 +479,7 @@ public class PublicarRuta extends AppCompatActivity {
             if (coordinates == null || coordinates.length() < 2) continue;
             ArrayList<GeoPoint> puntos = coordsOSRMaGeoPoints(coordinates);
             if (puntos.size() < 2 || esRutaDuplicada(puntos)) continue;
-            RutaInfo info  = new RutaInfo();
+            RutaInfo info = new RutaInfo();
             info.puntos    = puntos;
             info.distancia = route.getDouble("distance") / 1000.0;
             info.duracion  = route.getDouble("duration") / 60.0;
@@ -554,11 +502,11 @@ public class PublicarRuta extends AppCompatActivity {
             if (coords == null || coords.length() < 2) continue;
             ArrayList<GeoPoint> puntos = new ArrayList<>();
             for (int j = 0; j < coords.length(); j++) {
-                JSONArray c = coords.getJSONArray(j);
-                puntos.add(new GeoPoint(c.getDouble(1), c.getDouble(0)));
+                JSONArray cc = coords.getJSONArray(j);
+                puntos.add(new GeoPoint(cc.getDouble(1), cc.getDouble(0)));
             }
             if (puntos.size() < 2 || esRutaDuplicada(puntos)) continue;
-            RutaInfo info  = new RutaInfo();
+            RutaInfo info = new RutaInfo();
             info.puntos    = puntos;
             info.distancia = path.getDouble("distance") / 1000.0;
             info.duracion  = path.getDouble("time") / 60000.0;
@@ -592,16 +540,14 @@ public class PublicarRuta extends AppCompatActivity {
     private void consultarBackendFastAPI() {
         if (origenPoint == null || destinoPoint == null) return;
         routeManager.fetchRoutes(
-                origenPoint.getLatitude(),  origenPoint.getLongitude(),
+                origenPoint.getLatitude(), origenPoint.getLongitude(),
                 destinoPoint.getLatitude(), destinoPoint.getLongitude(),
                 "FASTEST",
                 new RouteManager.RouteCallback() {
-                    @Override
-                    public void onSuccess(RouteOptionsResponse response) {
+                    @Override public void onSuccess(RouteOptionsResponse response) {
                         mainHandler.post(() -> actualizarCardsConDatosBackend(response));
                     }
-                    @Override
-                    public void onError(String errorMessage) {
+                    @Override public void onError(String errorMessage) {
                         Log.w(TAG, "Backend sin datos de combustible: " + errorMessage);
                         mainHandler.post(() -> {
                             for (int i = 0; i < containerRutas.getChildCount(); i++) {
@@ -619,40 +565,30 @@ public class PublicarRuta extends AppCompatActivity {
         if (response == null || response.routes == null || response.routes.isEmpty()) return;
         for (Polyline p : rutasBackend) map.getOverlays().remove(p);
         rutasBackend.clear();
-
         for (int i = 0; i < response.routes.size() && i < listaRutas.size(); i++) {
             RouteOption br = response.routes.get(i);
             RutaInfo    lr = listaRutas.get(i);
-            lr.distancia   = br.distanceKm;
-            lr.duracion    = br.durationMin;
-            lr.fuelLiters  = br.fuelLiters;
-            lr.fuelCostCop = br.fuelCostCop;
-
+            lr.distancia = br.distanceKm; lr.duracion = br.durationMin;
+            lr.fuelLiters = br.fuelLiters; lr.fuelCostCop = br.fuelCostCop;
             if (i < containerRutas.getChildCount()) {
                 View cv = containerRutas.getChildAt(i);
                 setTextoSeguro(cv, R.id.txt_distancia,   String.format("%.1f km", br.distanceKm));
                 setTextoSeguro(cv, R.id.txt_duracion,    String.format("%.0f min", br.durationMin));
                 setTextoSeguro(cv, R.id.txt_combustible, String.format("%.2f L", br.fuelLiters));
                 setTextoSeguro(cv, R.id.txt_costo,       String.format("$%,.0f COP", br.fuelCostCop));
-                setTextoSeguro(cv, R.id.txt_descripcion, lr.descripcion
-                        + "  ·  Score " + String.format("%.1f", br.score));
+                setTextoSeguro(cv, R.id.txt_descripcion, lr.descripcion + "  ·  Score " + String.format("%.1f", br.score));
                 animarEntradaCard(cv, i * 80L);
             }
-
             if (br.geojson != null) {
-                Polyline line = geojsonAPolyline(br.geojson,
-                        COLORES_RUTAS[Math.min(i, COLORES_RUTAS.length - 1)], 6f, 160);
+                Polyline line = geojsonAPolyline(br.geojson, COLORES_RUTAS[Math.min(i, COLORES_RUTAS.length - 1)], 6f, 160);
                 if (line != null) { map.getOverlays().add(line); rutasBackend.add(line); }
             }
         }
-
         rePinMarkers();
         map.invalidate();
-
         RouteOption mejor = response.routes.get(0);
         mostrarSnackbar(String.format("✅ %.1f km · %d min · %.2f L · $%,.0f COP",
-                mejor.distanceKm, (int) mejor.durationMin,
-                mejor.fuelLiters, mejor.fuelCostCop), false);
+                mejor.distanceKm, (int) mejor.durationMin, mejor.fuelLiters, mejor.fuelCostCop), false);
     }
 
     /* ═══════════ MOSTRAR RUTAS ═══════════ */
@@ -660,34 +596,27 @@ public class PublicarRuta extends AppCompatActivity {
     private void mostrarRutas() {
         setLoadingState(false);
         if (listaRutas.isEmpty()) { mostrarSnackbar("⚠️ Sin rutas disponibles", true); return; }
-
         limpiarRutasDelMapa();
         for (int i = listaRutas.size() - 1; i >= 0; i--) dibujarRutaEnMapa(listaRutas.get(i), i == 0);
         agregarMarcadorDestino();
         agregarMarcadorOrigen();
         ajustarVistaTodasLasRutas();
-
         containerRutas.removeAllViews();
         for (int i = 0; i < listaRutas.size(); i++) {
             View card = crearCardRuta(listaRutas.get(i));
             containerRutas.addView(card);
             animarEntradaCard(card, i * 100L);
         }
-
         cardRutasOpciones.setVisibility(View.VISIBLE);
         animarEntradaCard(cardRutasOpciones, 0);
         rutaSeleccionada = null;
-
-        String msg = listaRutas.size() == 1
-                ? "1 ruta encontrada"
+        String msg = listaRutas.size() == 1 ? "1 ruta encontrada"
                 : listaRutas.size() + " rutas encontradas — toca para ver detalles";
         txtInfoRuta.setText(msg);
-
         String textoContador = listaRutas.size() + " rutas";
         if (txtContadorRutas  != null) txtContadorRutas.setText(textoContador);
         if (txtContadorHeader != null) txtContadorHeader.setText(textoContador);
         if (cardContadorHeader != null) cardContadorHeader.setVisibility(View.VISIBLE);
-
         mainHandler.postDelayed(() -> { if (!listaRutas.isEmpty()) seleccionarRuta(listaRutas.get(0)); }, 800);
     }
 
@@ -706,26 +635,20 @@ public class PublicarRuta extends AppCompatActivity {
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.setMargins(0, 0, 0, 12);
         view.setLayoutParams(lp);
-
         MaterialCardView card   = view.findViewById(R.id.card_ruta);
         View indicadorColor     = view.findViewById(R.id.indicador_color);
         android.widget.ImageView iconTransport = view.findViewById(R.id.icon_transporte);
-
         if (indicadorColor != null) indicadorColor.setBackgroundColor(ruta.colorInt);
         if (iconTransport  != null)
-            iconTransport.setImageResource(
-                    tipoTransporte.equals("motorcycle") ? R.drawable.ic_moto : R.drawable.ic_car);
-
+            iconTransport.setImageResource(tipoTransporte.equals("motorcycle") ? R.drawable.ic_moto : R.drawable.ic_car);
         setTextoSeguro(view, R.id.txt_tipo_ruta,   ruta.tipo);
         setTextoSeguro(view, R.id.txt_distancia,   String.format("%.1f km", ruta.distancia));
         setTextoSeguro(view, R.id.txt_duracion,    String.format("%.0f min", ruta.duracion));
         setTextoSeguro(view, R.id.txt_combustible, "⏳ calculando...");
         setTextoSeguro(view, R.id.txt_costo,       "⏳");
         setTextoSeguro(view, R.id.txt_descripcion, "📡 " + ruta.fuente + " · " + ruta.puntos.size() + " puntos");
-
         if (card != null) card.setOnClickListener(v -> seleccionarRuta(ruta));
         view.setOnClickListener(v -> seleccionarRuta(ruta));
-
         if (ruta.indice == 0) {
             TextView badgeMejor = view.findViewById(R.id.badge_mejor);
             if (badgeMejor != null) badgeMejor.setVisibility(View.VISIBLE);
@@ -736,7 +659,6 @@ public class PublicarRuta extends AppCompatActivity {
     private void seleccionarRuta(RutaInfo ruta) {
         if (ruta == null) return;
         rutaSeleccionada = ruta;
-
         for (int i = 0; i < containerRutas.getChildCount(); i++) {
             View v = containerRutas.getChildAt(i);
             MaterialCardView card = v.findViewById(R.id.card_ruta);
@@ -757,13 +679,11 @@ public class PublicarRuta extends AppCompatActivity {
                 card.setStrokeColor(0xFFE0E0E0);
             }
         }
-
         limpiarRutasDelMapa();
         for (RutaInfo r : listaRutas) if (r.indice != ruta.indice) dibujarRutaAtenuada(r);
         dibujarRutaEnMapa(ruta, true);
         rePinMarkers();
         map.invalidate();
-
         String vehiculo = tipoTransporte.equals("motorcycle") ? "🏍 Moto" : "🚗 Carro";
         StringBuilder info = new StringBuilder();
         info.append(ruta.tipo).append("  ·  ").append(vehiculo).append("\n");
@@ -781,15 +701,12 @@ public class PublicarRuta extends AppCompatActivity {
         float anchoSombra = esSeleccionada ? 24f : 16f;
         float anchoBorde  = esSeleccionada ? 20f : 13f;
         float anchoLinea  = esSeleccionada ? 13f : 8f;
-
         Polyline sombra = new Polyline(map);
-        sombra.setPoints(ruta.puntos); sombra.setColor(Color.argb(60, 0, 0, 0)); sombra.setWidth(anchoSombra);
+        sombra.setPoints(ruta.puntos); sombra.setColor(Color.argb(60,0,0,0)); sombra.setWidth(anchoSombra);
         map.getOverlays().add(sombra);
-
         Polyline borde = new Polyline(map);
         borde.setPoints(ruta.puntos); borde.setColor(Color.WHITE); borde.setWidth(anchoBorde);
         map.getOverlays().add(borde);
-
         Polyline linea = new Polyline(map);
         linea.setPoints(ruta.puntos); linea.setColor(ruta.colorInt); linea.setWidth(anchoLinea);
         linea.setOnClickListener((poly, mapView, point) -> { seleccionarRuta(ruta); return true; });
@@ -833,79 +750,55 @@ public class PublicarRuta extends AppCompatActivity {
         if (marcadorDestino != null) { map.getOverlays().remove(marcadorDestino); map.getOverlays().add(marcadorDestino); }
     }
 
-    /* ═══════════ AJUSTE DE VISTA ═══════════ */
+    /* ═══════════ AJUSTE VISTA ═══════════ */
 
     private void ajustarVistaTodasLasRutas() {
         if (listaRutas.isEmpty()) return;
-        double minLat = Double.MAX_VALUE, maxLat = -Double.MAX_VALUE;
-        double minLon = Double.MAX_VALUE, maxLon = -Double.MAX_VALUE;
+        double minLat=Double.MAX_VALUE, maxLat=-Double.MAX_VALUE, minLon=Double.MAX_VALUE, maxLon=-Double.MAX_VALUE;
         for (RutaInfo r : listaRutas) {
             if (r.puntos == null) continue;
             for (GeoPoint p : r.puntos) {
-                minLat = Math.min(minLat, p.getLatitude());  maxLat = Math.max(maxLat, p.getLatitude());
-                minLon = Math.min(minLon, p.getLongitude()); maxLon = Math.max(maxLon, p.getLongitude());
+                minLat=Math.min(minLat,p.getLatitude()); maxLat=Math.max(maxLat,p.getLatitude());
+                minLon=Math.min(minLon,p.getLongitude()); maxLon=Math.max(maxLon,p.getLongitude());
             }
         }
-        double padLat = Math.max((maxLat - minLat) * 0.2, 0.008);
-        double padLon = Math.max((maxLon - minLon) * 0.2, 0.008);
-        BoundingBox bbox = new BoundingBox(maxLat + padLat, maxLon + padLon, minLat - padLat, minLon - padLon);
+        double padLat=Math.max((maxLat-minLat)*0.2,0.008), padLon=Math.max((maxLon-minLon)*0.2,0.008);
+        BoundingBox bbox = new BoundingBox(maxLat+padLat, maxLon+padLon, minLat-padLat, minLon-padLon);
         map.post(() -> { try { map.zoomToBoundingBox(bbox, true, 80); } catch (Exception ignored) {} });
     }
 
     private void ajustarVistaRuta(RutaInfo ruta) {
         if (ruta.puntos == null || ruta.puntos.isEmpty()) return;
-        double minLat = Double.MAX_VALUE, maxLat = -Double.MAX_VALUE;
-        double minLon = Double.MAX_VALUE, maxLon = -Double.MAX_VALUE;
+        double minLat=Double.MAX_VALUE, maxLat=-Double.MAX_VALUE, minLon=Double.MAX_VALUE, maxLon=-Double.MAX_VALUE;
         for (GeoPoint p : ruta.puntos) {
-            minLat = Math.min(minLat, p.getLatitude());  maxLat = Math.max(maxLat, p.getLatitude());
-            minLon = Math.min(minLon, p.getLongitude()); maxLon = Math.max(maxLon, p.getLongitude());
+            minLat=Math.min(minLat,p.getLatitude()); maxLat=Math.max(maxLat,p.getLatitude());
+            minLon=Math.min(minLon,p.getLongitude()); maxLon=Math.max(maxLon,p.getLongitude());
         }
-        double padLat = Math.max((maxLat - minLat) * 0.25, 0.006);
-        double padLon = Math.max((maxLon - minLon) * 0.25, 0.006);
-        BoundingBox bbox = new BoundingBox(maxLat + padLat, maxLon + padLon, minLat - padLat, minLon - padLon);
+        double padLat=Math.max((maxLat-minLat)*0.25,0.006), padLon=Math.max((maxLon-minLon)*0.25,0.006);
+        BoundingBox bbox = new BoundingBox(maxLat+padLat, maxLon+padLon, minLat-padLat, minLon-padLon);
         map.post(() -> { try { map.zoomToBoundingBox(bbox, true, 60); } catch (Exception ignored) {} });
     }
 
-    /* ═══════════════════════════════════════════════════════════════════
-       PUBLICAR RUTA
-    ═══════════════════════════════════════════════════════════════════ */
-
-    // ═══════════════════════════════════════════════════════════════
-// REEMPLAZA solo el método crearRuta() y guardarParadasDeRuta()
-// en PublicarRuta.java
-// ═══════════════════════════════════════════════════════════════
+    /* ═══════════ PUBLICAR ═══════════ */
 
     private void crearRuta() {
         if (rutaSeleccionada == null || destinoPoint == null) {
-            mostrarSnackbar("⚠️ Primero selecciona una ruta del mapa", true);
-            return;
+            mostrarSnackbar("⚠️ Primero selecciona una ruta del mapa", true); return;
         }
-        if (origenPoint == null) {
-            mostrarSnackbar("⚠️ GPS no disponible", true);
-            return;
-        }
-
+        if (origenPoint == null) { mostrarSnackbar("⚠️ GPS no disponible", true); return; }
         String origenTxt  = editOrigen.getText()  != null ? editOrigen.getText().toString().trim()  : "";
         String destinoTxt = editDestino.getText() != null ? editDestino.getText().toString().trim() : "";
-
         if (origenTxt.isEmpty() || destinoTxt.isEmpty()) {
-            mostrarSnackbar("⚠️ Revisa que el origen y destino estén definidos", true);
-            return;
+            mostrarSnackbar("⚠️ Revisa que el origen y destino estén definidos", true); return;
         }
-
         if (!coordenadasValidas(origenPoint) || !coordenadasValidas(destinoPoint)) {
-            mostrarSnackbar("⚠️ Coordenadas inválidas, intenta de nuevo", true);
-            return;
+            mostrarSnackbar("⚠️ Coordenadas inválidas, intenta de nuevo", true); return;
         }
-
         if (rutaSeleccionada.distancia < MIN_DISTANCIA_KM) {
-            mostrarSnackbar("⚠️ La ruta es demasiado corta", true);
-            return;
+            mostrarSnackbar("⚠️ La ruta es demasiado corta", true); return;
         }
-
         btnPublicar.setEnabled(false);
         btnPublicar.setText("Publicando...");
-
         final double  _distanciaKm      = rutaSeleccionada.distancia;
         final double  _duracionMin      = rutaSeleccionada.duracion;
         final double  _fuelLitros       = rutaSeleccionada.fuelLiters;
@@ -913,14 +806,11 @@ public class PublicarRuta extends AppCompatActivity {
         final String  _origen           = origenTxt;
         final String  _destino          = destinoTxt;
         final String  _fuente           = rutaSeleccionada.fuente;
-
+        final int     _indiceRuta       = rutaSeleccionada.indice;
         try {
             JSONObject body = new JSONObject();
             body.put("nombre",         _origen + " → " + _destino);
-            body.put("descripcion",    String.format("Ruta de %.1f km en %s (%.0f min)",
-                    _distanciaKm,
-                    tipoTransporte.equals("motorcycle") ? "Moto" : "Carro",
-                    _duracionMin));
+            body.put("descripcion",    String.format("Ruta de %.1f km en %s (%.0f min)", _distanciaKm, tipoTransporte.equals("motorcycle") ? "Moto" : "Carro", _duracionMin));
             body.put("origen",         _origen);
             body.put("destino",        _destino);
             body.put("latOrigen",      origenPoint.getLatitude());
@@ -932,47 +822,30 @@ public class PublicarRuta extends AppCompatActivity {
             body.put("tipoTransporte", tipoTransporte);
             body.put("estado",         "DISPONIBLE");
             body.put("fuente",         _fuente);
+            body.put("indiceRuta",     _indiceRuta);
             if (_costoCombustible > 0) {
                 body.put("combustibleLitros", _fuelLitros);
                 body.put("costoCombustible",  _costoCombustible);
             }
-
-            ConexionApi.getInstance(this).post(
-                    Constantes.RUTAS, body,
+            ConexionApi.getInstance(this).post(Constantes.RUTAS, body,
                     response -> {
-                        // ✅ FIX: intentar todos los campos posibles que puede devolver el backend
                         int idRuta = 0;
                         if (response.has("idRuta"))        idRuta = response.optInt("idRuta");
                         else if (response.has("id"))       idRuta = response.optInt("id");
                         else if (response.has("idrutas"))  idRuta = response.optInt("idrutas");
-
-                        // ✅ FIX: si el backend devuelve la ruta dentro de un objeto "ruta"
                         if (idRuta == 0) {
                             JSONObject rutaObj = response.optJSONObject("ruta");
-                            if (rutaObj != null) {
-                                idRuta = rutaObj.optInt("idRuta", rutaObj.optInt("id", 0));
-                            }
+                            if (rutaObj != null) idRuta = rutaObj.optInt("idRuta", rutaObj.optInt("id", 0));
                         }
-
-                        Log.d(TAG, "✅ Ruta creada. Respuesta completa: " + response.toString());
-                        Log.d(TAG, "✅ idRuta extraído: " + idRuta);
-
                         if (idRuta == 0) {
-                            btnPublicar.setEnabled(true);
-                            btnPublicar.setText("PUBLICAR VIAJE");
+                            btnPublicar.setEnabled(true); btnPublicar.setText("Publicar viaje");
                             mostrarSnackbar("❌ No se pudo obtener ID de ruta del servidor", true);
                             return;
                         }
-
                         final int idRutaFinal = idRuta;
-
-                        // ✅ Primero guardar origen y destino como paradas, luego intermedias
                         guardarParadasDeRuta(idRutaFinal, _origen, _destino, () -> {
-                            btnPublicar.setEnabled(true);
-                            btnPublicar.setText("PUBLICAR VIAJE");
+                            btnPublicar.setEnabled(true); btnPublicar.setText("Publicar viaje");
                             mostrarSnackbar("✅ ¡Ruta publicada con paradas!", false);
-                            Log.d(TAG, "Ruta ID=" + idRutaFinal + " | paradas guardadas");
-
                             Intent intent = new Intent(PublicarRuta.this, PublicarViaje.class);
                             intent.putExtra("ID_RUTA_CREADA",    idRutaFinal);
                             intent.putExtra("ORIGEN_RUTA",       _origen);
@@ -982,17 +855,18 @@ public class PublicarRuta extends AppCompatActivity {
                             intent.putExtra("FUEL_LITROS",       _fuelLitros);
                             intent.putExtra("DISTANCIA_KM",      _distanciaKm);
                             intent.putExtra("DURACION_MIN",      _duracionMin);
+                            intent.putExtra("INDICE_RUTA",       _indiceRuta);
+                            // ── usa animación slide de BaseActivity ──
                             startActivity(intent);
+                            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
                             finish();
                         });
                     },
                     error -> {
-                        btnPublicar.setEnabled(true);
-                        btnPublicar.setText("PUBLICAR VIAJE");
+                        btnPublicar.setEnabled(true); btnPublicar.setText("Publicar viaje");
                         String msg = "❌ Error al publicar ruta";
                         if (error != null && error.networkResponse != null) {
-                            int code = error.networkResponse.statusCode;
-                            switch (code) {
+                            switch (error.networkResponse.statusCode) {
                                 case 400: msg = "❌ Datos inválidos (400)"; break;
                                 case 401: msg = "❌ Sesión expirada (401)"; break;
                                 case 403: msg = "❌ Sin permisos (403)"; break;
@@ -1001,44 +875,25 @@ public class PublicarRuta extends AppCompatActivity {
                             }
                         }
                         mostrarSnackbar(msg, true);
-                        Log.e(TAG, "Error crearRuta: " + error.toString());
                     }
             );
         } catch (Exception e) {
-            btnPublicar.setEnabled(true);
-            btnPublicar.setText("PUBLICAR VIAJE");
-            Log.e(TAG, "Error construyendo JSON de ruta", e);
+            btnPublicar.setEnabled(true); btnPublicar.setText("Publicar viaje");
             mostrarSnackbar("❌ Error inesperado al publicar", true);
         }
     }
 
-    // ✅ NUEVO: guarda ORIGEN (orden=0), paradas intermedias, y DESTINO (orden=N+1)
-    private void guardarParadasDeRuta(int idRuta, String nombreOrigen, String nombreDestino,
-                                      Runnable callback) {
-        if (idRuta <= 0) {
-            Log.e(TAG, "❌ guardarParadasDeRuta: idRuta inválido = " + idRuta);
-            mainHandler.post(callback);
-            return;
+    private void guardarParadasDeRuta(int idRuta, String nombreOrigen, String nombreDestino, Runnable callback) {
+        if (idRuta <= 0) { mainHandler.post(callback); return; }
+        if (rutaSeleccionada == null || rutaSeleccionada.puntos == null || rutaSeleccionada.puntos.size() < 2) {
+            guardarParadaOrigen(idRuta, nombreOrigen, callback); return;
         }
-        if (rutaSeleccionada == null || rutaSeleccionada.puntos == null
-                || rutaSeleccionada.puntos.size() < 2) {
-            Log.w(TAG, "Sin puntos para guardar paradas — solo origen y destino");
-            // Al menos guardar origen y destino
-            guardarParadaOrigen(idRuta, nombreOrigen, callback);
-            return;
-        }
-
         ArrayList<GeoPoint> todos = rutaSeleccionada.puntos;
         int total = todos.size();
-        GeoPoint pOrigen  = todos.get(0);
-        GeoPoint pDestino = todos.get(total - 1);
-
-        // Calcular paradas intermedias (máximo 6)
+        GeoPoint pOrigen = todos.get(0), pDestino = todos.get(total - 1);
         int maxIntermedias = 6;
         List<GeoPoint> intermedios = new ArrayList<>();
-
         if (total > 2) {
-            // Distribuir uniformemente excluyendo inicio y fin
             int numIntermedios = Math.min(maxIntermedias, total - 2);
             double paso = (double)(total - 2) / (numIntermedios + 1);
             for (int i = 1; i <= numIntermedios; i++) {
@@ -1046,136 +901,73 @@ public class PublicarRuta extends AppCompatActivity {
                 if (idx < total - 1) intermedios.add(todos.get(idx));
             }
         }
-
-        // Lista completa: origen + intermedias + destino
         List<JSONObject> todasLasParadas = new ArrayList<>();
-
-        // ORDEN 0 — Origen
         try {
             JSONObject pOrig = new JSONObject();
-            pOrig.put("idRuta",      idRuta);
-            pOrig.put("nombre",      nombreOrigen);
-            pOrig.put("lat",         pOrigen.getLatitude());
-            pOrig.put("lng",         pOrigen.getLongitude());
-            pOrig.put("orden",       0);
-            pOrig.put("kmAcumulado", 0.0);
-            pOrig.put("tipo",        "SUBIDA");
+            pOrig.put("idRuta",0); pOrig.put("nombre",nombreOrigen);
+            pOrig.put("lat",pOrigen.getLatitude()); pOrig.put("lng",pOrigen.getLongitude());
+            pOrig.put("orden",0); pOrig.put("kmAcumulado",0.0); pOrig.put("tipo","SUBIDA");
+            pOrig.put("idRuta", idRuta);
             todasLasParadas.add(pOrig);
         } catch (Exception e) { Log.e(TAG, "Error creando parada origen", e); }
-
-        // ORDEN 1..N — Intermedias (geocodificadas en background)
         for (int i = 0; i < intermedios.size(); i++) {
             try {
                 GeoPoint p = intermedios.get(i);
                 double kmAcum = 0;
-                for (int j = 0; j < i && j < intermedios.size() - 1; j++) {
+                for (int j = 0; j < i && j < intermedios.size()-1; j++)
                     kmAcum += distanciaEnMetros(intermedios.get(j), intermedios.get(j+1)) / 1000.0;
-                }
                 JSONObject pInt = new JSONObject();
-                pInt.put("idRuta",      idRuta);
-                pInt.put("nombre",      "Parada " + (i + 1));
-                pInt.put("lat",         p.getLatitude());
-                pInt.put("lng",         p.getLongitude());
-                pInt.put("orden",       i + 1);
-                pInt.put("kmAcumulado", Math.round(kmAcum * 100.0) / 100.0);
-                pInt.put("tipo",        "AMBAS");
+                pInt.put("idRuta",idRuta); pInt.put("nombre","Parada "+(i+1));
+                pInt.put("lat",p.getLatitude()); pInt.put("lng",p.getLongitude());
+                pInt.put("orden",i+1); pInt.put("kmAcumulado",Math.round(kmAcum*100.0)/100.0); pInt.put("tipo","AMBAS");
                 todasLasParadas.add(pInt);
-            } catch (Exception e) { Log.e(TAG, "Error creando parada intermedia " + i, e); }
+            } catch (Exception e) { Log.e(TAG, "Error parada intermedia", e); }
         }
-
-        // ORDEN N+1 — Destino
         try {
             double distTotal = distanciaEnMetros(pOrigen, pDestino) / 1000.0;
             JSONObject pDest = new JSONObject();
-            pDest.put("idRuta",      idRuta);
-            pDest.put("nombre",      nombreDestino);
-            pDest.put("lat",         pDestino.getLatitude());
-            pDest.put("lng",         pDestino.getLongitude());
-            pDest.put("orden",       intermedios.size() + 1);
-            pDest.put("kmAcumulado", Math.round(distTotal * 100.0) / 100.0);
-            pDest.put("tipo",        "BAJADA");
+            pDest.put("idRuta",idRuta); pDest.put("nombre",nombreDestino);
+            pDest.put("lat",pDestino.getLatitude()); pDest.put("lng",pDestino.getLongitude());
+            pDest.put("orden",intermedios.size()+1); pDest.put("kmAcumulado",Math.round(distTotal*100.0)/100.0); pDest.put("tipo","BAJADA");
             todasLasParadas.add(pDest);
-        } catch (Exception e) { Log.e(TAG, "Error creando parada destino", e); }
-
-        Log.d(TAG, "✅ Enviando " + todasLasParadas.size() + " paradas para rutaId=" + idRuta);
-
+        } catch (Exception e) { Log.e(TAG, "Error parada destino", e); }
         final int[] pendientes = {todasLasParadas.size()};
-
         for (int i = 0; i < todasLasParadas.size(); i++) {
             final int orden = i;
-            JSONObject paradaBody = todasLasParadas.get(i);
-
-            Log.d(TAG, "POST parada orden=" + orden + " → " + paradaBody.toString());
-
-            ConexionApi.getInstance(this).post(
-                    Constantes.PARADAS, paradaBody,
-                    respuesta -> {
-                        int idParadaCreada = respuesta.optInt("idParada",
-                                respuesta.optInt("id", 0));
-                        Log.d(TAG, "✅ Parada orden=" + orden + " creada con idParada=" + idParadaCreada);
-                        synchronized (pendientes) {
-                            pendientes[0]--;
-                            if (pendientes[0] <= 0) mainHandler.post(callback);
-                        }
-                    },
-                    error -> {
-                        String detalle = "sin detalle";
-                        if (error != null && error.networkResponse != null) {
-                            int httpCode = error.networkResponse.statusCode;
-                            String cuerpo = "";
-                            try { cuerpo = new String(error.networkResponse.data); } catch (Exception ignored) {}
-                            detalle = "HTTP " + httpCode + " → " + cuerpo;
-                        } else if (error != null) {
-                            detalle = error.toString();
-                        }
-                        Log.e(TAG, "❌ Parada orden=" + orden + " falló: " + detalle);
-                        synchronized (pendientes) {
-                            pendientes[0]--;
-                            if (pendientes[0] <= 0) mainHandler.post(callback);
-                        }
-                    }
+            ConexionApi.getInstance(this).post(Constantes.PARADAS, todasLasParadas.get(i),
+                    r -> { synchronized(pendientes) { if (--pendientes[0] <= 0) mainHandler.post(callback); } },
+                    e -> { synchronized(pendientes) { if (--pendientes[0] <= 0) mainHandler.post(callback); } }
             );
         }
     }
 
-    // Fallback: si no hay puntos, al menos guarda origen y destino
     private void guardarParadaOrigen(int idRuta, String nombreOrigen, Runnable callback) {
         try {
             JSONObject body = new JSONObject();
-            body.put("idRuta",      idRuta);
-            body.put("nombre",      nombreOrigen);
-            body.put("lat",         origenPoint.getLatitude());
-            body.put("lng",         origenPoint.getLongitude());
-            body.put("orden",       0);
-            body.put("kmAcumulado", 0.0);
-            body.put("tipo",        "SUBIDA");
+            body.put("idRuta",idRuta); body.put("nombre",nombreOrigen);
+            body.put("lat",origenPoint.getLatitude()); body.put("lng",origenPoint.getLongitude());
+            body.put("orden",0); body.put("kmAcumulado",0.0); body.put("tipo","SUBIDA");
             ConexionApi.getInstance(this).post(Constantes.PARADAS, body,
                     r -> {
-                        // Guardar destino también
                         try {
                             JSONObject bodyD = new JSONObject();
-                            bodyD.put("idRuta",      idRuta);
-                            bodyD.put("nombre",      editDestino.getText().toString().trim());
-                            bodyD.put("lat",         destinoPoint.getLatitude());
-                            bodyD.put("lng",         destinoPoint.getLongitude());
-                            bodyD.put("orden",       1);
-                            bodyD.put("kmAcumulado", rutaSeleccionada != null ? rutaSeleccionada.distancia : 0);
-                            bodyD.put("tipo",        "BAJADA");
+                            bodyD.put("idRuta",idRuta); bodyD.put("nombre",editDestino.getText().toString().trim());
+                            bodyD.put("lat",destinoPoint.getLatitude()); bodyD.put("lng",destinoPoint.getLongitude());
+                            bodyD.put("orden",1); bodyD.put("kmAcumulado",rutaSeleccionada!=null?rutaSeleccionada.distancia:0); bodyD.put("tipo","BAJADA");
                             ConexionApi.getInstance(this).post(Constantes.PARADAS, bodyD,
-                                    r2 -> mainHandler.post(callback),
-                                    e2 -> mainHandler.post(callback));
+                                    r2 -> mainHandler.post(callback), e2 -> mainHandler.post(callback));
                         } catch (Exception e) { mainHandler.post(callback); }
                     },
                     e -> mainHandler.post(callback));
         } catch (Exception e) { mainHandler.post(callback); }
     }
+
     /* ═══════════ UTILIDADES UI ═══════════ */
 
     private void setLoadingState(boolean loading) {
-        if (loaderContainer != null)
-            loaderContainer.setVisibility(loading ? View.VISIBLE : View.GONE);
+        if (loaderContainer != null) loaderContainer.setVisibility(loading ? View.VISIBLE : View.GONE);
         btnCalcular.setEnabled(!loading);
-        btnCalcular.setText(loading ? "Buscando rutas..." : "CALCULAR RUTAS");
+        btnCalcular.setText(loading ? "Buscando rutas..." : "Calcular rutas");
         btnCalcular.setAlpha(loading ? 0.7f : 1.0f);
         if (loading) {
             cardRutasOpciones.setVisibility(View.GONE);
@@ -1191,8 +983,7 @@ public class PublicarRuta extends AppCompatActivity {
     }
 
     private void mostrarSnackbar(String mensaje, boolean esError) {
-        Snackbar sb = Snackbar.make(rootView, mensaje,
-                esError ? Snackbar.LENGTH_LONG : Snackbar.LENGTH_SHORT);
+        Snackbar sb = Snackbar.make(rootView, mensaje, esError ? Snackbar.LENGTH_LONG : Snackbar.LENGTH_SHORT);
         View sbView = sb.getView();
         sbView.setBackgroundColor(esError ? 0xFFB00020 : 0xFF1A2422);
         TextView tv = sbView.findViewById(com.google.android.material.R.id.snackbar_text);
@@ -1200,27 +991,14 @@ public class PublicarRuta extends AppCompatActivity {
         sb.show();
     }
 
-    private void animarBoton(View btn) {
-        ObjectAnimator scaleX = ObjectAnimator.ofFloat(btn, "scaleX", 1f, 0.95f, 1f);
-        ObjectAnimator scaleY = ObjectAnimator.ofFloat(btn, "scaleY", 1f, 0.95f, 1f);
-        AnimatorSet set = new AnimatorSet();
-        set.playTogether(scaleX, scaleY);
-        set.setDuration(200);
-        set.setInterpolator(new DecelerateInterpolator());
-        set.start();
-    }
-
     private void animarFab(View fab) {
         ObjectAnimator rot = ObjectAnimator.ofFloat(fab, "rotation", 0f, 15f, -15f, 0f);
-        rot.setDuration(300);
-        rot.start();
+        rot.setDuration(300); rot.start();
     }
 
     private void animarEntradaCard(View card, long delay) {
-        card.setAlpha(0f);
-        card.setTranslationY(40f);
-        card.animate().alpha(1f).translationY(0f)
-                .setStartDelay(delay).setDuration(350)
+        card.setAlpha(0f); card.setTranslationY(40f);
+        card.animate().alpha(1f).translationY(0f).setStartDelay(delay).setDuration(350)
                 .setInterpolator(new DecelerateInterpolator()).start();
     }
 
@@ -1231,18 +1009,14 @@ public class PublicarRuta extends AppCompatActivity {
     }
 
     private int dp(float dp) {
-        return (int) (dp * getResources().getDisplayMetrics().density);
+        return (int)(dp * getResources().getDisplayMetrics().density);
     }
-
-    /* ═══════════ VALIDACIONES ═══════════ */
 
     private boolean coordenadasValidas(GeoPoint punto) {
         if (punto == null) return false;
-        double lat = punto.getLatitude(), lng = punto.getLongitude();
-        return lat >= MIN_LAT && lat <= MAX_LAT && lng >= MIN_LNG && lng <= MAX_LNG;
+        return punto.getLatitude() >= MIN_LAT && punto.getLatitude() <= MAX_LAT
+                && punto.getLongitude() >= MIN_LNG && punto.getLongitude() <= MAX_LNG;
     }
-
-    /* ═══════════ HTTP ═══════════ */
 
     private String peticionHttp(String urlStr) throws Exception {
         HttpURLConnection c = null;
@@ -1250,11 +1024,8 @@ public class PublicarRuta extends AppCompatActivity {
             c = (HttpURLConnection) new URL(urlStr).openConnection();
             c.setRequestProperty("User-Agent", "Moviflexx/2.0 (Android)");
             c.setRequestProperty("Accept", "application/json");
-            c.setConnectTimeout(15000);
-            c.setReadTimeout(20000);
-            c.setInstanceFollowRedirects(true);
-            int code = c.getResponseCode();
-            if (code != 200) { Log.w(TAG, "HTTP " + code + " para: " + urlStr); return ""; }
+            c.setConnectTimeout(15000); c.setReadTimeout(20000); c.setInstanceFollowRedirects(true);
+            if (c.getResponseCode() != 200) return "";
             BufferedReader r = new BufferedReader(new InputStreamReader(c.getInputStream(), "UTF-8"));
             StringBuilder b = new StringBuilder(); String line;
             while ((line = r.readLine()) != null) b.append(line);
@@ -1267,39 +1038,28 @@ public class PublicarRuta extends AppCompatActivity {
             Geocoder g = new Geocoder(this, Locale.getDefault());
             List<Address> list = g.getFromLocation(punto.getLatitude(), punto.getLongitude(), 1);
             if (list != null && !list.isEmpty()) {
-                Address addr = list.get(0);
-                String linea = addr.getAddressLine(0);
+                String linea = list.get(0).getAddressLine(0);
                 return linea != null ? linea : "Ubicación actual";
             }
         } catch (Exception ignored) {}
         return "Ubicación actual";
     }
 
-    /* ═══════════ CÁLCULOS ═══════════ */
-
     private double distanciaEnMetros(GeoPoint a, GeoPoint b) {
-        double lat1 = Math.toRadians(a.getLatitude()), lat2 = Math.toRadians(b.getLatitude());
-        double dLat = Math.toRadians(b.getLatitude() - a.getLatitude());
-        double dLon = Math.toRadians(b.getLongitude() - a.getLongitude());
-        double h = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        return 6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+        double lat1=Math.toRadians(a.getLatitude()), lat2=Math.toRadians(b.getLatitude());
+        double dLat=Math.toRadians(b.getLatitude()-a.getLatitude());
+        double dLon=Math.toRadians(b.getLongitude()-a.getLongitude());
+        double h=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)*Math.sin(dLon/2);
+        return 6371000*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
     }
 
     /* ═══════════ CLASE INTERNA ═══════════ */
 
     private static class RutaInfo {
         ArrayList<GeoPoint> puntos;
-        double   distancia   = 0;
-        double   duracion    = 0;
-        double   fuelLiters  = 0;
-        double   fuelCostCop = 0;
-        String   tipo        = "";
-        String   colorHex    = "#26C6B0";
-        int      colorInt    = 0xFF009B8D;
-        String   descripcion = "";
-        String   fuente      = "";
-        int      indice      = 0;
+        double distancia=0, duracion=0, fuelLiters=0, fuelCostCop=0;
+        String tipo="", colorHex="#26C6B0", descripcion="", fuente="";
+        int colorInt=0xFF009B8D, indice=0;
         Polyline polyline;
     }
 }

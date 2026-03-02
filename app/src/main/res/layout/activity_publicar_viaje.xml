@@ -1,202 +1,272 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/gradient_background">
+    android:background="@color/bg_screen">
 
     <!-- ══════════════════════════════════════════
-         HEADER CARD
+         HEADER TEAL
          ══════════════════════════════════════════ -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/header_card"
-        android:layout_width="0dp"
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="0dp"
-        app:cardElevation="8dp"
-        app:cardBackgroundColor="#00897B"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:background="@android:color/transparent"
+        app:elevation="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp"
-            android:background="#00897B">
+            android:background="@drawable/bg_header_teal"
+            android:paddingStart="22dp"
+            android:paddingEnd="22dp"
+            android:paddingTop="52dp"
+            android:paddingBottom="28dp">
 
             <TextView
-                android:id="@+id/titulo_header"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="PUBLICAR VIAJE"
-                android:textColor="#FFFFFF"
-                android:textSize="26sp"
+                android:text="MOVIFLEXX · CONDUCTOR"
+                android:textSize="10sp"
+                android:textColor="#B2EDE8"
+                android:letterSpacing="0.14"
+                android:layout_marginBottom="4dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Publicar viaje"
+                android:textSize="28sp"
                 android:textStyle="bold"
-                android:letterSpacing="0.08"
-                android:fontFamily="sans-serif-medium"/>
+                android:textColor="#FFFFFF"
+                android:letterSpacing="-0.01"
+                android:layout_marginBottom="18dp"/>
 
-            <View
-                android:layout_width="50dp"
-                android:layout_height="4dp"
-                android:background="#4DD0E1"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="8dp"/>
-
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Chips estado -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Configure los detalles del servicio de transporte"
-                android:textColor="#B2DFDB"
-                android:textSize="14sp"
-                android:letterSpacing="0.01"
-                android:fontFamily="sans-serif"/>
+                android:orientation="horizontal">
 
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="28dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_icon_circle_white_alpha"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:layout_marginEnd="8dp">
+                    <View
+                        android:layout_width="6dp"
+                        android:layout_height="6dp"
+                        android:background="@drawable/bg_circle_white"
+                        android:layout_marginEnd="5dp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Programado"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="28dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_icon_circle_white_alpha"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:layout_marginEnd="8dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="📍 Popayán"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="28dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_icon_circle_white_alpha"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🤝 Compartido"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF"/>
+                </LinearLayout>
+
+            </LinearLayout>
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.appbar.AppBarLayout>
 
     <!-- ══════════════════════════════════════════
-         SCROLL VIEW PRINCIPAL
+         SCROLL CONTENT
          ══════════════════════════════════════════ -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scroll_principal"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:fillViewport="true"
-        android:clipToPadding="false"
-        android:paddingBottom="80dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:scrollbars="none"
-        app:layout_constraintTop_toBottomOf="@id/header_card"
-        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:clipToPadding="false"
+        android:paddingBottom="90dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="16dp">
 
             <!-- ══════════════════════════════════════════
-                 CARD PRINCIPAL  (alpha=0 → animada desde Java)
+                 MAIN CARD (alpha=0, animada desde Java)
                  ══════════════════════════════════════════ -->
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:id="@+id/main_card"
+                style="@style/Card.Moviflexx"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:alpha="0"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="12dp"
-                app:cardBackgroundColor="#FFFFFF">
+                android:layout_marginBottom="14dp"
+                android:alpha="0">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="24dp">
+                    android:padding="20dp">
 
-                    <!-- ─── SECCIÓN: VEHÍCULO REGISTRADO ─── -->
+                    <!-- ── VEHÍCULO ── -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Vehículo Registrado"
-                        android:textSize="12sp"
-                        android:textColor="#00796B"
-                        android:letterSpacing="0.1"
+                        android:text="VEHÍCULO REGISTRADO"
+                        android:textSize="9sp"
                         android:textStyle="bold"
-                        android:fontFamily="sans-serif-medium"
+                        android:textColor="@color/teal_600"
+                        android:letterSpacing="0.14"
                         android:layout_marginBottom="10dp"/>
 
-                    <!-- Card nombre/placa del vehículo -->
-                    <androidx.cardview.widget.CardView
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/Card.Moviflexx.Flat"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="10dp"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="2dp"
-                        app:cardBackgroundColor="#E0F2F1">
-
+                        android:layout_marginBottom="8dp">
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp"
                             android:paddingTop="14dp"
                             android:paddingBottom="14dp">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@android:drawable/ic_menu_directions"
+                            <com.google.android.material.card.MaterialCardView
+                                android:layout_width="34dp"
+                                android:layout_height="34dp"
                                 android:layout_marginEnd="12dp"
-                                android:contentDescription="Icono vehículo"/>
-
+                                app:cardCornerRadius="10dp"
+                                app:cardElevation="0dp"
+                                app:cardBackgroundColor="@color/teal_100"
+                                app:strokeWidth="0dp">
+                                <ImageView
+                                    android:layout_width="18dp"
+                                    android:layout_height="18dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_car"
+                                    android:contentDescription="Vehículo"/>
+                            </com.google.android.material.card.MaterialCardView>
                             <TextView
                                 android:id="@+id/txt_vehiculo_info"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="Cargando vehículo..."
-                                android:textColor="#004D40"
-                                android:textSize="15sp"
-                                android:fontFamily="sans-serif-medium"
+                                android:textColor="@color/teal_800"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
                                 android:ellipsize="end"
                                 android:maxLines="1"/>
-
                         </LinearLayout>
-                    </androidx.cardview.widget.CardView>
+                    </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Card nombre del conductor -->
-                    <androidx.cardview.widget.CardView
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/Card.Moviflexx.Flat"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="20dp"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="2dp"
-                        app:cardBackgroundColor="#E0F2F1">
-
-                        <TextView
-                            android:id="@+id/txt_conductor_info"
+                        android:layout_marginBottom="20dp">
+                        <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="🚗 Conductor: Cargando..."
-                            android:textSize="15sp"
-                            android:textColor="#004D40"
-                            android:fontFamily="sans-serif-medium"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp"
                             android:paddingTop="14dp"
-                            android:paddingBottom="14dp"
-                            android:ellipsize="end"
-                            android:maxLines="1"/>
+                            android:paddingBottom="14dp">
+                            <com.google.android.material.card.MaterialCardView
+                                android:layout_width="34dp"
+                                android:layout_height="34dp"
+                                android:layout_marginEnd="12dp"
+                                app:cardCornerRadius="17dp"
+                                app:cardElevation="0dp"
+                                app:cardBackgroundColor="@color/teal_500"
+                                app:strokeWidth="0dp">
+                                <ImageView
+                                    android:layout_width="18dp"
+                                    android:layout_height="18dp"
+                                    android:layout_gravity="center"
+                                    android:src="@android:drawable/ic_menu_directions"
+                                    android:contentDescription="Conductor"/>
+                            </com.google.android.material.card.MaterialCardView>
+                            <TextView
+                                android:id="@+id/txt_conductor_info"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Conductor: Cargando..."
+                                android:textColor="@color/teal_800"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:ellipsize="end"
+                                android:maxLines="1"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
 
-                    </androidx.cardview.widget.CardView>
+                    <!-- Divisor -->
+                    <View android:layout_width="match_parent" android:layout_height="1dp"
+                        android:background="@color/gray_100" android:layout_marginBottom="20dp"/>
 
-                    <!-- ─── SECCIÓN: RUTA DEL VIAJE ─── -->
+                    <!-- ── RUTA ── -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Ruta del Viaje"
-                        android:textSize="12sp"
-                        android:textColor="#00796B"
-                        android:letterSpacing="0.1"
+                        android:text="RUTA DEL VIAJE"
+                        android:textSize="9sp"
                         android:textStyle="bold"
-                        android:fontFamily="sans-serif-medium"
+                        android:textColor="@color/teal_600"
+                        android:letterSpacing="0.14"
                         android:layout_marginBottom="10dp"/>
 
-                    <androidx.cardview.widget.CardView
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/Card.Moviflexx.Flat"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="6dp"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="2dp"
-                        app:cardBackgroundColor="#E0F2F1">
-
+                        android:layout_marginBottom="20dp">
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -204,110 +274,83 @@
                             android:gravity="center_vertical"
                             android:padding="14dp">
 
-                            <!-- Indicador visual origen → destino -->
                             <LinearLayout
-                                android:layout_width="24dp"
+                                android:layout_width="22dp"
                                 android:layout_height="wrap_content"
                                 android:orientation="vertical"
                                 android:gravity="center_horizontal"
                                 android:layout_marginEnd="12dp">
-
                                 <View
-                                    android:layout_width="12dp"
-                                    android:layout_height="12dp"
-                                    android:background="@drawable/circle_teal"
+                                    android:layout_width="10dp"
+                                    android:layout_height="10dp"
+                                    android:background="@drawable/bg_circle_teal"
                                     android:layout_gravity="center_horizontal"/>
-
                                 <View
                                     android:layout_width="2dp"
-                                    android:layout_height="24dp"
-                                    android:background="#80B2DFDB"
+                                    android:layout_height="22dp"
+                                    android:background="@color/teal_200"
                                     android:layout_gravity="center_horizontal"
                                     android:layout_marginTop="2dp"
                                     android:layout_marginBottom="2dp"/>
-
-                                <ImageView
-                                    android:layout_width="14dp"
-                                    android:layout_height="14dp"
-                                    android:src="@android:drawable/ic_dialog_map"
-                                    android:layout_gravity="center_horizontal"
-                                    android:contentDescription="Destino"/>
-
+                                <View
+                                    android:layout_width="10dp"
+                                    android:layout_height="10dp"
+                                    android:background="@drawable/circle_red_dot"
+                                    android:layout_gravity="center_horizontal"/>
                             </LinearLayout>
 
-                            <!-- Textos origen y destino -->
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_weight="1"
                                 android:layout_height="wrap_content"
                                 android:orientation="vertical">
-
                                 <TextView
                                     android:id="@+id/txt_origen_info"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:text="Cargando origen..."
-                                    android:textColor="#00695C"
+                                    android:textColor="@color/teal_600"
                                     android:textSize="13sp"
-                                    android:fontFamily="sans-serif"
                                     android:ellipsize="end"
                                     android:maxLines="1"
                                     android:layout_marginBottom="10dp"/>
-
                                 <TextView
                                     android:id="@+id/txt_destino_info"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:text="Cargando destino..."
-                                    android:textColor="#004D40"
+                                    android:textColor="@color/gray_900"
                                     android:textSize="15sp"
                                     android:textStyle="bold"
-                                    android:fontFamily="sans-serif-medium"
                                     android:ellipsize="end"
                                     android:maxLines="1"/>
-
                             </LinearLayout>
                         </LinearLayout>
-                    </androidx.cardview.widget.CardView>
+                    </com.google.android.material.card.MaterialCardView>
 
-                    <!-- DIVISOR -->
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="#B2DFDB"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="24dp"/>
+                    <!-- Divisor -->
+                    <View android:layout_width="match_parent" android:layout_height="1dp"
+                        android:background="@color/gray_100" android:layout_marginBottom="20dp"/>
 
-                    <!-- ─── SECCIÓN: FECHA Y HORA DE SALIDA ─── -->
+                    <!-- ── FECHA Y HORA ── -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Fecha y Hora de Salida"
-                        android:textSize="12sp"
-                        android:textColor="#00796B"
-                        android:letterSpacing="0.1"
+                        android:text="FECHA Y HORA DE SALIDA"
+                        android:textSize="9sp"
                         android:textStyle="bold"
-                        android:fontFamily="sans-serif-medium"
+                        android:textColor="@color/teal_600"
+                        android:letterSpacing="0.14"
                         android:layout_marginBottom="12dp"/>
 
                     <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Input.Moviflexx"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="8dp"
                         android:hint="Toca para seleccionar fecha y hora"
-                        app:boxStrokeColor="#00BCD4"
-                        app:hintTextColor="#00ACC1"
-                        app:boxStrokeWidth="2dp"
-                        app:boxCornerRadiusTopStart="12dp"
-                        app:boxCornerRadiusTopEnd="12dp"
-                        app:boxCornerRadiusBottomStart="12dp"
-                        app:boxCornerRadiusBottomEnd="12dp"
-                        app:boxBackgroundColor="#E0F2F1"
                         app:startIconDrawable="@android:drawable/ic_menu_my_calendar"
-                        app:startIconTint="#00ACC1"
-                        app:endIconMode="clear_text"
-                        app:endIconTint="#00ACC1"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                        app:startIconTint="@color/teal_500">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/edit_fecha_hora"
@@ -315,34 +358,25 @@
                             android:layout_height="wrap_content"
                             android:inputType="none"
                             android:focusable="false"
-                            android:textColor="#004D40"
-                            android:textSize="15sp"
-                            android:fontFamily="sans-serif"
-                            android:paddingTop="16dp"
-                            android:paddingBottom="16dp"
+                            android:textColor="@color/gray_900"
+                            android:textSize="14sp"
                             android:cursorVisible="false"/>
-
                     </com.google.android.material.textfield.TextInputLayout>
 
-                    <!-- Instrucción bajo el campo de fecha -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="📅 Toca el campo para elegir fecha y hora de salida"
                         android:textSize="11sp"
-                        android:textColor="#80A0A0A0"
-                        android:fontFamily="sans-serif"
-                        android:layout_marginBottom="24dp"
+                        android:textColor="@color/gray_400"
+                        android:layout_marginBottom="20dp"
                         android:layout_marginStart="4dp"/>
 
-                    <!-- DIVISOR -->
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="#B2DFDB"
-                        android:layout_marginBottom="24dp"/>
+                    <!-- Divisor -->
+                    <View android:layout_width="match_parent" android:layout_height="1dp"
+                        android:background="@color/gray_100" android:layout_marginBottom="20dp"/>
 
-                    <!-- ─── SECCIÓN: CUPOS Y PRECIO (fila horizontal) ─── -->
+                    <!-- ── CUPOS + PRECIO ── -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -350,7 +384,7 @@
                         android:weightSum="2"
                         android:baselineAligned="false">
 
-                        <!-- CUPOS DISPONIBLES -->
+                        <!-- CUPOS -->
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -361,43 +395,35 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Cupos Disponibles"
-                                android:textSize="12sp"
-                                android:textColor="#00796B"
-                                android:letterSpacing="0.1"
+                                android:text="CUPOS"
+                                android:textSize="9sp"
                                 android:textStyle="bold"
-                                android:fontFamily="sans-serif-medium"
-                                android:layout_marginBottom="6dp"/>
-
-                            <!-- Texto aclaratorio de capacidad -->
+                                android:textColor="@color/teal_600"
+                                android:letterSpacing="0.14"
+                                android:layout_marginBottom="4dp"/>
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Según tu vehículo"
                                 android:textSize="10sp"
-                                android:textColor="#4D00897B"
-                                android:fontFamily="sans-serif"
+                                android:textColor="@color/gray_400"
                                 android:layout_marginBottom="8dp"/>
 
-                            <androidx.cardview.widget.CardView
+                            <com.google.android.material.card.MaterialCardView
+                                style="@style/Card.Moviflexx.Flat"
                                 android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                app:cardCornerRadius="12dp"
-                                app:cardElevation="2dp"
-                                app:cardBackgroundColor="#E0F2F1">
-
+                                android:layout_height="wrap_content">
                                 <Spinner
                                     android:id="@+id/spinnerCupo"
                                     android:layout_width="match_parent"
-                                    android:layout_height="56dp"
+                                    android:layout_height="54dp"
                                     android:paddingStart="12dp"
                                     android:paddingEnd="12dp"
                                     android:background="@android:color/transparent"/>
-
-                            </androidx.cardview.widget.CardView>
+                            </com.google.android.material.card.MaterialCardView>
                         </LinearLayout>
 
-                        <!-- PRECIO POR PASAJERO -->
+                        <!-- PRECIO -->
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -408,282 +434,163 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Precio por Pasajero"
-                                android:textSize="12sp"
-                                android:textColor="#00796B"
-                                android:letterSpacing="0.1"
+                                android:text="PRECIO / PASAJERO"
+                                android:textSize="9sp"
                                 android:textStyle="bold"
-                                android:fontFamily="sans-serif-medium"
-                                android:layout_marginBottom="6dp"/>
-
-                            <!-- Texto aclaratorio editable -->
+                                android:textColor="@color/teal_600"
+                                android:letterSpacing="0.14"
+                                android:layout_marginBottom="4dp"/>
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Puedes modificarlo"
                                 android:textSize="10sp"
-                                android:textColor="#4D00897B"
-                                android:fontFamily="sans-serif"
+                                android:textColor="@color/gray_400"
                                 android:layout_marginBottom="8dp"/>
 
                             <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Input.Moviflexx"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:hint="Monto"
-                                app:prefixText="$ "
-                                app:boxStrokeColor="#00BCD4"
-                                app:hintTextColor="#00ACC1"
-                                app:boxStrokeWidth="2dp"
-                                app:boxCornerRadiusTopStart="12dp"
-                                app:boxCornerRadiusTopEnd="12dp"
-                                app:boxCornerRadiusBottomStart="12dp"
-                                app:boxCornerRadiusBottomEnd="12dp"
-                                app:boxBackgroundColor="#E0F2F1"
-                                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
+                                app:prefixText="$ ">
                                 <com.google.android.material.textfield.TextInputEditText
                                     android:id="@+id/edit_precio"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:inputType="numberDecimal"
-                                    android:textColor="#004D40"
-                                    android:textSize="15sp"
-                                    android:fontFamily="sans-serif"/>
-
+                                    android:textColor="@color/gray_900"
+                                    android:textSize="14sp"/>
                             </com.google.android.material.textfield.TextInputLayout>
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- ─── BADGE DE PRECIO SUGERIDO ─── -->
-                    <!--
-                         Visible solo cuando llegan datos de la ruta (costoCombustible o distanciaKm).
-                         El Java lo pone VISIBLE y le asigna el texto del desglose.
-                         Por defecto está GONE para no ocupar espacio sin datos.
-                    -->
-                    <TextView
-                        android:id="@+id/txt_precio_sugerido"
+                    <!-- Precio sugerido -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/txt_precio_sugerido_card"
+                        style="@style/Card.Moviflexx.Flat"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:visibility="gone"
-                        android:text="💡 Precio sugerido · editable"
-                        android:textSize="12sp"
-                        android:textColor="#00695C"
-                        android:fontFamily="sans-serif"
-                        android:background="@drawable/bg_badge_info"
-                        android:paddingStart="14dp"
-                        android:paddingEnd="14dp"
-                        android:paddingTop="10dp"
-                        android:paddingBottom="10dp"
-                        android:lineSpacingExtra="3dp"/>
+                        android:layout_marginTop="12dp"
+                        android:visibility="gone">
+                        <TextView
+                            android:id="@+id/txt_precio_sugerido"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="💡 Precio sugerido · editable"
+                            android:textSize="12sp"
+                            android:textColor="@color/teal_700"
+                            android:padding="14dp"
+                            android:lineSpacingExtra="3dp"/>
+                    </com.google.android.material.card.MaterialCardView>
 
-                    <!-- ─── BOTÓN PUBLICAR ─── -->
+                    <!-- Botón publicar -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_publicar_viaje"
+                        style="@style/Button.Moviflexx.Primary"
                         android:layout_width="match_parent"
-                        android:layout_height="58dp"
+                        android:layout_height="56dp"
                         android:layout_marginTop="28dp"
                         android:text="PUBLICAR VIAJE EN POPAYÁN"
-                        android:textSize="15sp"
-                        android:textStyle="bold"
-                        android:letterSpacing="0.08"
-                        android:fontFamily="sans-serif-medium"
-                        android:textColor="#FFFFFF"
-                        android:background="@drawable/bg_btn_login"
-                        android:stateListAnimator="@null"
-                        app:cornerRadius="12dp"
-                        app:backgroundTint="@null"
-                        app:elevation="6dp"
-                        app:rippleColor="#FFFFFF"
-                        app:strokeWidth="0dp"/>
+                        android:letterSpacing="0.04"/>
 
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
-            <!-- ══════════════════════════════════════════
-                 CARD DE INFORMACIÓN
-                 ══════════════════════════════════════════ -->
-            <androidx.cardview.widget.CardView
+            <!-- ── CARD INFO ── -->
+            <com.google.android.material.card.MaterialCardView
                 android:id="@+id/metadata_card"
+                style="@style/Card.Moviflexx"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="8dp"
-                app:cardBackgroundColor="#FFFFFF">
-
+                android:layout_marginBottom="14dp">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="20dp">
-
+                    android:padding="18dp">
                     <View
-                        android:layout_width="5dp"
+                        android:layout_width="4dp"
                         android:layout_height="match_parent"
-                        android:background="#26C6DA"
-                        android:layout_marginEnd="16dp"/>
-
+                        android:background="@color/teal_300"
+                        android:layout_marginEnd="14dp"/>
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
-
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="ℹ️ Información del Servicio"
+                            android:text="ℹ️ Información del servicio"
                             android:textSize="13sp"
-                            android:textColor="#00897B"
-                            android:letterSpacing="0.05"
+                            android:textColor="@color/teal_600"
                             android:textStyle="bold"
-                            android:fontFamily="sans-serif-medium"
                             android:layout_marginBottom="8dp"/>
-
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="El viaje estará visible para todos los usuarios en la ciudad de Popayán. Los pasajeros podrán reservar en tiempo real."
                             android:textSize="13sp"
-                            android:textColor="#00695C"
-                            android:lineSpacingExtra="4dp"
-                            android:fontFamily="sans-serif"/>
-
+                            android:textColor="@color/gray_600"
+                            android:lineSpacingExtra="4dp"/>
                     </LinearLayout>
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
-            <!-- ══════════════════════════════════════════
-                 CARD DE ESTADÍSTICAS
-                 ══════════════════════════════════════════ -->
-            <androidx.cardview.widget.CardView
+            <!-- ── CARD ESTADÍSTICAS ── -->
+            <com.google.android.material.card.MaterialCardView
                 android:id="@+id/stats_card"
+                style="@style/Card.Moviflexx.Teal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="8dp"
-                app:cardBackgroundColor="#00897B">
-
+                android:layout_marginBottom="8dp">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="20dp"
-                    android:weightSum="3"
-                    android:background="#00897B">
+                    android:padding="18dp"
+                    android:weightSum="3">
 
-                    <!-- ESTADO -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="ESTADO"
-                            android:textSize="10sp"
-                            android:textColor="#B2DFDB"
-                            android:letterSpacing="0.15"
-                            android:textStyle="bold"
-                            android:fontFamily="sans-serif-medium"
-                            android:layout_marginBottom="6dp"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Programado"
-                            android:textSize="15sp"
-                            android:textColor="#FFFFFF"
-                            android:textStyle="bold"
-                            android:fontFamily="sans-serif-medium"/>
-
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1"
+                        android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="ESTADO" android:textSize="9sp" android:textColor="#B2EDE8"
+                            android:letterSpacing="0.14" android:textStyle="bold" android:layout_marginBottom="6dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Programado" android:textSize="14sp" android:textColor="#FFFFFF" android:textStyle="bold"/>
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="match_parent"
-                        android:background="#4DD0E1"
-                        android:alpha="0.5"/>
+                    <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#4DFFFFFF"/>
 
-                    <!-- CIUDAD -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="CIUDAD"
-                            android:textSize="10sp"
-                            android:textColor="#B2DFDB"
-                            android:letterSpacing="0.15"
-                            android:textStyle="bold"
-                            android:fontFamily="sans-serif-medium"
-                            android:layout_marginBottom="6dp"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Popayán"
-                            android:textSize="15sp"
-                            android:textColor="#FFFFFF"
-                            android:textStyle="bold"
-                            android:fontFamily="sans-serif-medium"/>
-
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1"
+                        android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="CIUDAD" android:textSize="9sp" android:textColor="#B2EDE8"
+                            android:letterSpacing="0.14" android:textStyle="bold" android:layout_marginBottom="6dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Popayán" android:textSize="14sp" android:textColor="#FFFFFF" android:textStyle="bold"/>
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="match_parent"
-                        android:background="#4DD0E1"
-                        android:alpha="0.5"/>
+                    <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#4DFFFFFF"/>
 
-                    <!-- TIPO -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="TIPO"
-                            android:textSize="10sp"
-                            android:textColor="#B2DFDB"
-                            android:letterSpacing="0.15"
-                            android:textStyle="bold"
-                            android:fontFamily="sans-serif-medium"
-                            android:layout_marginBottom="6dp"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Compartido"
-                            android:textSize="15sp"
-                            android:textColor="#FFFFFF"
-                            android:textStyle="bold"
-                            android:fontFamily="sans-serif-medium"/>
-
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1"
+                        android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="TIPO" android:textSize="9sp" android:textColor="#B2EDE8"
+                            android:letterSpacing="0.14" android:textStyle="bold" android:layout_marginBottom="6dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Compartido" android:textSize="14sp" android:textColor="#FFFFFF" android:textStyle="bold"/>
                     </LinearLayout>
+
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
     <!-- ══════════════════════════════════════════
-         OVERLAY LOADER (gone por defecto)
+         OVERLAY LOADER
          ══════════════════════════════════════════ -->
     <View
         android:id="@+id/overlay_background"
@@ -692,76 +599,58 @@
         android:background="#B3000000"
         android:visibility="gone"
         android:clickable="true"
-        android:focusable="true"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        android:focusable="true"/>
 
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/loader_container"
+        style="@style/Card.Moviflexx"
         android:layout_width="180dp"
         android:layout_height="180dp"
+        android:layout_gravity="center"
         android:visibility="gone"
-        app:cardCornerRadius="20dp"
         app:cardElevation="16dp"
-        app:cardBackgroundColor="#FFFFFF"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
+        app:cardCornerRadius="24dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:gravity="center"
             android:padding="28dp">
-
             <ProgressBar
                 android:id="@+id/loader_viaje"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:indeterminateTint="#00BCD4"/>
-
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:indeterminateTint="@color/teal_500"/>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Publicando viaje"
-                android:textColor="#00695C"
+                android:textColor="@color/teal_700"
                 android:textStyle="bold"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="18dp"
                 android:textSize="14sp"
-                android:fontFamily="sans-serif-medium"
-                android:letterSpacing="0.03"/>
-
+                android:gravity="center"/>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Por favor espere..."
-                android:textColor="#4DB6AC"
+                android:textColor="@color/gray_400"
                 android:layout_marginTop="6dp"
                 android:textSize="12sp"
-                android:fontFamily="sans-serif"/>
-
+                android:gravity="center"/>
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- ══════════════════════════════════════════
          BOTTOM NAVIGATION
          ══════════════════════════════════════════ -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
-        android:layout_width="0dp"
+        style="@style/BottomNav.Moviflexx"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#FFFFFF"
-        app:itemIconTint="@color/bottom_nav_color_selector"
-        app:itemTextColor="@color/bottom_nav_color_selector"
+        android:layout_gravity="bottom"
         app:menu="@menu/bottom_navigation_menu"
-        app:labelVisibilityMode="labeled"
-        app:elevation="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:elevation="12dp"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

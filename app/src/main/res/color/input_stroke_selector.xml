@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    UBICACIÓN: res/color/input_stroke_selector.xml
+    Crea la carpeta si no existe:
+    res → New → Android Resource Directory → Resource type: color
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="#2EC4B6" android:state_focused="true"/>
+    <item android:color="#E5E7EB"/>
+</selector>

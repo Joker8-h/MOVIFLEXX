@@ -8,14 +8,30 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" /> <!-- PERMISOS DE GRABACIÓN DE AUDIO -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
 
     <uses-feature
         android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.microphone"
         android:required="false" />
 
     <application
         android:name=".MyApplication"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:foregroundServiceType="location"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -26,19 +42,10 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
-            android:name=".VerRutaPasajero"
+            android:name=".controller.Notificaciones"
             android:exported="false" />
         <activity
             android:name=".controller.BuscarRuta"
-            android:exported="false" />
-        <activity
-            android:name=".BuscarViajesPasajeros"
-            android:exported="false" /> <!-- Resto de activities... -->
-        <activity
-            android:name=".Misreservasactivity"
-            android:exported="false" />
-        <activity
-            android:name=".controller.Mensaje"
             android:exported="false" />
         <activity
             android:name=".controller.Conversaciones"
@@ -52,12 +59,6 @@
             android:name="org.apache.http.legacy"
             android:required="false" />
 
-        <activity
-            android:name=".controller.FaceLogin"
-            android:exported="false" />
-        <activity
-            android:name=".controller.FaceRegister"
-            android:exported="false" />
         <activity
             android:name=".controller.MisVehiculosActivity"
             android:exported="false" />
@@ -77,13 +78,7 @@
             android:name=".controller.DetalleViajeActivity"
             android:exported="false" />
         <activity
-            android:name=".controller.DetalleViaje"
-            android:exported="false" />
-        <activity
             android:name=".controller.PublicarRuta"
-            android:exported="false" />
-        <activity
-            android:name=".controller.ViajesConductor"
             android:exported="false" />
         <activity
             android:name=".controller.Mensajes"
@@ -127,12 +122,6 @@
         <activity
             android:name=".controller.PublicarViaje"
             android:exported="false" />
-        <activity
-            android:name=".controller.ViajesPasados"
-            android:exported="false" />
-        <activity
-            android:name=".controller.DetalleViajePasado"
-            android:exported="false" /> <!-- LAUNCHER -->
         <activity
             android:name=".controller.MainActivity"
             android:exported="true">

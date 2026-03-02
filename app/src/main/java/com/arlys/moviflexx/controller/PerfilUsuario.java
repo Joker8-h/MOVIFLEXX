@@ -5,15 +5,19 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
-import androidx.appcompat.app.AppCompatActivity;
+
 import androidx.cardview.widget.CardView;
+
 import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.model.SessionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 
-public class PerfilUsuario extends AppCompatActivity {
+/**
+ * PerfilUsuario — extends BaseActivity.
+ * Navbar idéntico al de HomeConductor: goTo() + Transition.NONE.
+ */
+public class PerfilUsuario extends BaseActivity {
 
     private SessionManager session;
     private TextView tvNombre, tvEmail, tvTelefono, tvModelo, tvPlaca, tvAsientos;
@@ -28,50 +32,72 @@ public class PerfilUsuario extends AppCompatActivity {
 
         session = new SessionManager(this);
 
-        // 1. Inicializar Vistas
-        tvNombre = findViewById(R.id.tv_nombre);
-        tvEmail = findViewById(R.id.tv_email);
-        tvTelefono = findViewById(R.id.tv_telefono);
+        // Vistas
+        tvNombre           = findViewById(R.id.tv_nombre);
+        tvEmail            = findViewById(R.id.tv_email);
+        tvTelefono         = findViewById(R.id.tv_telefono);
         layoutVehiculoRoot = findViewById(R.id.layout_vehiculo_root);
-        btnRegistrarV = findViewById(R.id.btn_registrar_vehiculo);
-        cardVehiculo = findViewById(R.id.card_info_vehiculo);
-        tvModelo = findViewById(R.id.tv_modelo_vehiculo);
-        tvPlaca = findViewById(R.id.tv_placa_vehiculo);
-        tvAsientos = findViewById(R.id.tv_asientos);
+        btnRegistrarV      = findViewById(R.id.btn_registrar_vehiculo);
+        cardVehiculo       = findViewById(R.id.card_info_vehiculo);
+        tvModelo           = findViewById(R.id.tv_modelo_vehiculo);
+        tvPlaca            = findViewById(R.id.tv_placa_vehiculo);
+        tvAsientos         = findViewById(R.id.tv_asientos);
 
-        // 2. Cargar Datos Básicos
+        // Datos básicos
         tvNombre.setText(session.getNombre());
         tvEmail.setText(session.getEmail());
         tvTelefono.setText(session.getTelefono());
 
-        // 3. Configurar Eventos
-        btnRegistrarV.setOnClickListener(v -> startActivity(new Intent(this, RegistrarVehiculo.class)));
+        // Botones
+        if (btnRegistrarV != null)
+            animateButton(btnRegistrarV,
+                    () -> goTo(RegistrarVehiculo.class, Transition.SLIDE));
 
-        findViewById(R.id.btn_back).setOnClickListener(v -> finish());
+        View btnBack = findViewById(R.id.btn_back);
+        if (btnBack != null)
+            btnBack.setOnClickListener(v -> finish());
 
-        // 4. Llamar a la configuración del menú
         configurarBottomNav();
     }
 
-    // --- MÉTODOS DE SOPORTE ---
+    @Override
+    protected void onResume() {
+        super.onResume();
+        tvNombre.setText(session.getNombre());
+        tvEmail.setText(session.getEmail());
+        tvTelefono.setText(session.getTelefono());
+        actualizarInterfaz();
 
+        // Marcar item activo igual que HomeConductor hace en onResume
+        BottomNavigationView nav = findViewById(R.id.bottom_navigation);
+        if (nav != null) nav.setSelectedItemId(R.id.nav_perfil);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  NAVBAR — mismo patrón que HomeConductor
+    // ─────────────────────────────────────────────────────────────
     private void configurarBottomNav() {
         BottomNavigationView nav = findViewById(R.id.bottom_navigation);
-        nav.setSelectedItemId(R.id.nav_perfil); // Cambiado a nav_perfil porque estamos en Perfil
+        if (nav == null) return;
+
+        nav.setSelectedItemId(R.id.nav_perfil);
+        boolean esConductor = session.getIdRol() == 2;
 
         nav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
 
-            if (id == R.id.nav_inicio) {
-                startActivity(new Intent(this, HomeConductor.class));
-            } else if (id == R.id.nav_mis_viajes) {
-                startActivity(new Intent(this, PublicarRuta.class));
-            } else if (id == R.id.nav_mensajes) {
-                startActivity(new Intent(this, Mensajes.class));
-            } else if (id == R.id.nav_perfil) {
-                return true; // Ya estamos aquí
+            if (id == R.id.nav_perfil) return true;   // ya estamos aquí
+
+            if (esConductor) {
+                if      (id == R.id.nav_inicio)     goTo(HomeConductor.class,  Transition.NONE);
+                else if (id == R.id.nav_mis_viajes) goTo(PublicarRuta.class,   Transition.NONE);
+                else if (id == R.id.nav_mapa)       goTo(Mapa.class,           Transition.NONE);
+                else if (id == R.id.nav_mensajes)   goTo(Mensajes.class,       Transition.NONE);
             } else {
-                return false;
+                if      (id == R.id.nav_inicio)     goTo(HomePasajero.class,        Transition.NONE);
+                else if (id == R.id.nav_mis_viajes) goTo(MisReservasActivity.class, Transition.NONE);
+                else if (id == R.id.nav_mapa)       goTo(Mapa.class,               Transition.NONE);
+                else if (id == R.id.nav_mensajes)   goTo(Mensajes.class,           Transition.NONE);
             }
 
             finish();
@@ -79,42 +105,36 @@ public class PerfilUsuario extends AppCompatActivity {
         });
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        actualizarInterfaz();
-    }
-
+    // ─────────────────────────────────────────────────────────────
+    //  UI según rol
+    // ─────────────────────────────────────────────────────────────
     private void actualizarInterfaz() {
-        if (session.getIdRol() == 2) { // Conductor
-            layoutVehiculoRoot.setVisibility(View.VISIBLE);
-
+        if (session.getIdRol() == 2) {
+            if (layoutVehiculoRoot != null) layoutVehiculoRoot.setVisibility(View.VISIBLE);
             if (session.tieneVehiculo()) {
-                cardVehiculo.setVisibility(View.VISIBLE);
-                btnRegistrarV.setVisibility(View.GONE);
-                tvModelo.setText(session.getVModelo());
-                tvPlaca.setText("Placa: " + session.getVPlaca());
-                tvAsientos.setText("Capacidad: " + session.getVCapacidad() + " asientos");
+                if (cardVehiculo  != null) cardVehiculo.setVisibility(View.VISIBLE);
+                if (btnRegistrarV != null) btnRegistrarV.setVisibility(View.GONE);
+                if (tvModelo   != null) tvModelo.setText(session.getVModelo());
+                if (tvPlaca    != null) tvPlaca.setText("Placa: " + session.getVPlaca());
+                if (tvAsientos != null) tvAsientos.setText("Capacidad: " + session.getVCapacidad() + " asientos");
             } else {
-                cardVehiculo.setVisibility(View.GONE);
-                btnRegistrarV.setVisibility(View.VISIBLE);
+                if (cardVehiculo  != null) cardVehiculo.setVisibility(View.GONE);
+                if (btnRegistrarV != null) btnRegistrarV.setVisibility(View.VISIBLE);
             }
         } else {
-            layoutVehiculoRoot.setVisibility(View.GONE);
+            if (layoutVehiculoRoot != null) layoutVehiculoRoot.setVisibility(View.GONE);
         }
     }
 
-    // --- MÉTODOS PARA EL XML (onClick) ---
-
+    // ─────────────────────────────────────────────────────────────
+    //  onClick desde XML
+    // ─────────────────────────────────────────────────────────────
     public void irEditarPerfil(View v) {
-        Toast.makeText(this, "Función de editar perfil en desarrollo", Toast.LENGTH_SHORT).show();
+        goTo(EditarPerfil.class, Transition.SLIDE);
     }
 
     public void irCerrarSesion(View v) {
         session.logout();
-        Intent intent = new Intent(this, Login.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        finish();
+        goTo(Login.class, Transition.FADE, true);
     }
 }

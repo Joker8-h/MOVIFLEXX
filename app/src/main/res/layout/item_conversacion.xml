@@ -1,99 +1,156 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Ítem de conversación en la lista -->
-<androidx.cardview.widget.CardView
+<!--
+    item_conversacion.xml — Rediseño Moviflexx
+    ✓ Solo teal #1AB99F — CERO morados
+    ✓ Avatar: color único por inicial, paleta teal/verde/naranja
+    ✓ Nombre bold, preview gris, hora teal si no leídos
+    ✓ Badge teal vibrante
+    ✓ Divisor muy sutil
+-->
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="12dp"
-    android:layout_marginVertical="4dp"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="3dp"
-    app:cardBackgroundColor="#FFFFFF">
+    android:orientation="vertical"
+    android:background="#FFFFFF">
 
     <LinearLayout
+        android:id="@+id/rowContainer"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="74dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="14dp"
+        android:paddingStart="16dp"
         android:paddingEnd="14dp"
-        android:paddingTop="13dp"
-        android:paddingBottom="13dp"
-        android:foreground="?attr/selectableItemBackground">
+        android:background="?attr/selectableItemBackground">
 
-        <!-- Avatar circular con inicial -->
-        <TextView
-            android:id="@+id/tvAvatar"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:gravity="center"
-            android:textSize="18sp"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif-medium"
-            android:background="@drawable/bg_avatar_conv" />
+        <!-- Avatar 50dp — color por inicial, NO morado -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardAvatar"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="14dp"
+            app:cardCornerRadius="25dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="#1AB99F"
+            app:strokeWidth="0dp">
 
-        <!-- Info central -->
+            <TextView
+                android:id="@+id/txtInicialAvatar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="?"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:gravity="center"/>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Nombre + preview -->
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="13dp"
-            android:layout_marginEnd="6dp"
+            android:layout_height="wrap_content"
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/tvNombre"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="15sp"
-                android:textColor="#0D1F2D"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
-                android:maxLines="1"
-                android:ellipsize="end" />
-
-            <TextView
-                android:id="@+id/tvUltimoMensaje"
+                android:id="@+id/txtNombreContacto"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="13sp"
-                android:textColor="#8FA8C0"
-                android:maxLines="1"
+                android:text="Nombre"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#0D2E2A"
                 android:ellipsize="end"
-                android:layout_marginTop="3dp"
-                android:fontFamily="sans-serif" />
+                android:maxLines="1"
+                android:layout_marginBottom="4dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <!-- Ticks para mensajes propios -->
+                <TextView
+                    android:id="@+id/txtTicks"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="✓✓ "
+                    android:textSize="11sp"
+                    android:textColor="#1AB99F"
+                    android:visibility="gone"/>
+
+                <TextView
+                    android:id="@+id/txtUltimoMensaje"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="Sin mensajes aún"
+                    android:textSize="13sp"
+                    android:textColor="#88A8A3"
+                    android:ellipsize="end"
+                    android:maxLines="1"/>
+            </LinearLayout>
         </LinearLayout>
 
-        <!-- Hora + badge -->
+        <!-- Hora + badge (columna derecha) -->
         <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:orientation="vertical"
-            android:gravity="center_horizontal">
+            android:gravity="center_horizontal"
+            android:paddingTop="14dp"
+            android:paddingBottom="14dp"
+            android:layout_marginStart="10dp">
 
             <TextView
-                android:id="@+id/tvHora"
+                android:id="@+id/txtHora"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="10:30"
                 android:textSize="11sp"
-                android:textColor="#8FA8C0"
-                android:fontFamily="sans-serif" />
+                android:textColor="#AABFBB"/>
 
-            <TextView
-                android:id="@+id/tvBadge"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:gravity="center"
-                android:textSize="9.5sp"
-                android:textColor="#FFFFFF"
-                android:textStyle="bold"
-                android:background="@drawable/bg_badge"
-                android:layout_marginTop="5dp"
-                android:visibility="gone" />
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+
+            <!-- Badge no leídos — teal vibrante -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/badgeItem"
+                android:layout_width="wrap_content"
+                android:layout_height="20dp"
+                android:layout_gravity="center_horizontal"
+                app:cardCornerRadius="10dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#1AB99F"
+                app:strokeWidth="0dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/txtNoLeidosItem"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="1"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:gravity="center"
+                    android:minWidth="20dp"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"/>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
-
     </LinearLayout>
 
-</androidx.cardview.widget.CardView>
+    <!-- Divisor muy sutil -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0.6dp"
+        android:background="#EAF5F2"
+        android:layout_marginStart="80dp"/>
+
+</LinearLayout>

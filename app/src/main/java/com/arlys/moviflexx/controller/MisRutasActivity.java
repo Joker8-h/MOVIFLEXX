@@ -1,9 +1,8 @@
 package com.arlys.moviflexx.controller;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.ProgressBar;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -12,10 +11,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.arlys.moviflexx.R;
+import com.arlys.moviflexx.adapter.RutasAdapter;
 import com.arlys.moviflexx.model.ConexionApi;
 import com.arlys.moviflexx.model.Constantes;
-import com.arlys.moviflexx.model.SessionManager;
-import com.google.android.material.button.MaterialButton;
 
 import org.json.JSONObject;
 
@@ -24,71 +22,54 @@ import java.util.List;
 
 public class MisRutasActivity extends AppCompatActivity {
 
-    private RecyclerView recycler;
-    private ProgressBar progress;
-    private TextView txtSinRutas;
-    private MaterialButton btnCrearRuta;
+    private RecyclerView   recycler;
+    private RutasAdapter   adapter;
+    private LinearLayout   layoutEmpty;
+    private TextView       txtContador;
+
     private final List<JSONObject> rutas = new ArrayList<>();
-    private SessionManager session;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mis_rutas);
 
-        session = new SessionManager(this);
+        recycler    = findViewById(R.id.recyclerRutas);
+        layoutEmpty = findViewById(R.id.layoutEmpty);
+        txtContador = findViewById(R.id.txtContadorRutas);
 
-        recycler = findViewById(R.id.recyclerRutas);
-        progress = findViewById(R.id.progress);
-
+        // ── Botón atrás ──────────────────────────────────────────────────────
+        View btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null) btnBack.setOnClickListener(v -> onBackPressed());
 
         recycler.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new RutasAdapter(this, rutas);
+        recycler.setAdapter(adapter);
 
-        if (btnCrearRuta != null) {
-            btnCrearRuta.setOnClickListener(v ->
-                    startActivity(new Intent(this, PublicarRuta.class))
-            );
-        }
-
-        cargarMisRutas();
+        cargarRutas();
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        cargarMisRutas();
-    }
-
-    private void cargarMisRutas() {
-        if (progress != null) progress.setVisibility(View.VISIBLE);
-        if (txtSinRutas != null) txtSinRutas.setVisibility(View.GONE);
-
+    private void cargarRutas() {
         ConexionApi.getInstance(this).getArray(
                 Constantes.MIS_RUTAS,
                 response -> {
-                    if (progress != null) progress.setVisibility(View.GONE);
-
                     rutas.clear();
-
                     for (int i = 0; i < response.length(); i++) {
-                        rutas.add(response.optJSONObject(i));
+                        JSONObject r = response.optJSONObject(i);
+                        if (r != null) rutas.add(r);
                     }
+                    adapter.notifyDataSetChanged();
 
-                    if (rutas.isEmpty()) {
-                        if (txtSinRutas != null) {
-                            txtSinRutas.setVisibility(View.VISIBLE);
-                            txtSinRutas.setText("No tienes rutas creadas\n\nCrea una ruta para publicar viajes");
-                        }
-                        Toast.makeText(this, "No tienes rutas creadas", Toast.LENGTH_SHORT).show();
-                    } else {
-                        // TODO: Crear adapter para mostrar rutas
-                        Toast.makeText(this, "Rutas cargadas: " + rutas.size(), Toast.LENGTH_SHORT).show();
-                    }
+                    int total = rutas.size();
+                    if (txtContador != null)
+                        txtContador.setText(total + (total == 1 ? " ruta" : " rutas"));
+
+                    boolean vacio = rutas.isEmpty();
+                    if (layoutEmpty != null)
+                        layoutEmpty.setVisibility(vacio ? View.VISIBLE : View.GONE);
+                    recycler.setVisibility(vacio ? View.GONE : View.VISIBLE);
                 },
-                error -> {
-                    if (progress != null) progress.setVisibility(View.GONE);
-                    Toast.makeText(this, "Error cargando rutas", Toast.LENGTH_LONG).show();
-                }
+                error -> Toast.makeText(this, "Error cargando rutas", Toast.LENGTH_SHORT).show()
         );
     }
 }

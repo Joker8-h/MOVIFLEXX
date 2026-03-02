@@ -67,4 +67,20 @@
     </style>
 
 
+    <style name="BottomSheetDialogThemeMoviFlexx"
+        parent="Theme.MaterialComponents.Light.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/BottomSheetStyleMoviFlexx</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:navigationBarColor">#FFFFFF</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+
+    <style name="BottomSheetStyleMoviFlexx"
+        parent="Widget.MaterialComponents.BottomSheet.Modal">
+        <!-- Transparente para que el bg_sheet_white con sus esquinas se vea -->
+        <item name="android:background">@android:color/transparent</item>
+        <item name="backgroundTint">@android:color/transparent</item>
+    </style>
+
+
 </resources>

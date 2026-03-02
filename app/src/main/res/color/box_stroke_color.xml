@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/color/box_stroke_color.xml
+     Reemplaza el atributo boxStrokeColorFocused que no existe en todas las versiones de Material.
+     Teal cuando está enfocado, mint suave cuando no lo está.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true"  android:color="#1AB99F"/>
+    <item android:state_hovered="true"  android:color="#1AB99F"/>
+    <item android:color="#A8EDE4"/>
+</selector>

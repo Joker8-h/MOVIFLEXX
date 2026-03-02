@@ -1,6 +1,7 @@
 package com.arlys.moviflexx.controller;
 
 import android.Manifest;
+import android.app.Dialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -11,8 +12,9 @@ import android.graphics.YuvImage;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
+import android.view.Window;
+import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -70,9 +72,9 @@ public class Register extends AppCompatActivity {
 
     private TextInputEditText edtNombre, edtEmail, edtTelefono, edtPassword;
     private TextInputLayout   tilNombre, tilEmail, tilTelefono, tilPassword;
-    private RadioGroup rgRol;
     private MaterialButton btnRegistrar;
     private View layoutFormulario;
+    private CheckBox cbTerminos;
 
     private ConstraintLayout layoutFace;
     private PreviewView previewView;
@@ -111,12 +113,16 @@ public class Register extends AppCompatActivity {
         edtTelefono = findViewById(R.id.edt_telefono);
         edtPassword = findViewById(R.id.edt_password);
 
-        rgRol        = findViewById(R.id.rgRol);
         btnRegistrar = findViewById(R.id.btn_register);
 
         layoutFace  = findViewById(R.id.layoutFace);
         previewView = findViewById(R.id.previewView);
         txtEstado   = findViewById(R.id.txtEstado);
+
+        // ── Términos y Condiciones ──
+        cbTerminos = findViewById(R.id.cbTerminos);
+        TextView tvLinkTerminos = findViewById(R.id.tvLinkTerminos);
+        tvLinkTerminos.setOnClickListener(v -> mostrarTerminosYCondiciones());
 
         layoutFace.setVisibility(View.GONE);
 
@@ -143,27 +149,69 @@ public class Register extends AppCompatActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
+    //  TÉRMINOS Y CONDICIONES
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private void mostrarTerminosYCondiciones() {
+        Dialog dialog = new Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_terminos);
+
+        android.widget.ScrollView scrollView = dialog.findViewById(R.id.scrollTerminos);
+        Button btnCerrarTop = dialog.findViewById(R.id.btnCerrarTerminosTop);
+        Button btnCerrar    = dialog.findViewById(R.id.btnCerrarTerminos);
+        Button btnAceptar   = dialog.findViewById(R.id.btnAceptarTerminos);
+        TextView tvProgreso = dialog.findViewById(R.id.tvProgreso);
+
+        // El botón Acepto arranca deshabilitado (gris)
+        btnAceptar.setEnabled(false);
+
+        // Detectar cuando el usuario llegó al final del scroll
+        scrollView.getViewTreeObserver().addOnScrollChangedListener(() -> {
+            android.widget.ScrollView sv = scrollView;
+            int totalScrollHeight = sv.getChildAt(0).getHeight() - sv.getHeight();
+            int currentScroll     = sv.getScrollY();
+
+            // Si está a 50px o menos del fondo → habilitar
+            if (totalScrollHeight - currentScroll <= 50) {
+                if (!btnAceptar.isEnabled()) {
+                    btnAceptar.setEnabled(true);
+                    btnAceptar.getBackground().setTint(0xFF2EC4B6); // teal
+                    tvProgreso.setText("✅  Ya puedes aceptar los Términos y Condiciones");
+                    tvProgreso.setTextColor(0xFF2E7D32); // verde
+                }
+            }
+        });
+
+        btnCerrarTop.setOnClickListener(v -> dialog.dismiss());
+        btnCerrar.setOnClickListener(v -> dialog.dismiss());
+
+        btnAceptar.setOnClickListener(v -> {
+            cbTerminos.setChecked(true);
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
     //  VALIDACIONES EN TIEMPO REAL
     // ══════════════════════════════════════════════════════════════════════════
 
     private void configurarValidacionesEnTiempoReal() {
 
-        // Nombre — valida al salir del campo
         edtNombre.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) validarNombre(edtNombre.getText().toString());
         });
 
-        // Email — valida al salir del campo
         edtEmail.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) validarEmail(edtEmail.getText().toString());
         });
 
-        // Teléfono — valida al salir del campo
         edtTelefono.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) validarTelefono(edtTelefono.getText().toString());
         });
 
-        // Contraseña — valida mientras escribe mostrando TODOS los requisitos pendientes
         edtPassword.addTextChangedListener(new android.text.TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
@@ -180,7 +228,7 @@ public class Register extends AppCompatActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  VALIDADORES — muestran TODOS los requisitos que faltan a la vez
+    //  VALIDADORES
     // ══════════════════════════════════════════════════════════════════════════
 
     private boolean validarNombre(String valor) {
@@ -255,7 +303,6 @@ public class Register extends AppCompatActivity {
             return false;
         }
 
-        // Acumula TODOS los requisitos faltantes al mismo tiempo
         StringBuilder faltantes = new StringBuilder();
 
         if (valor.length() < 8)
@@ -278,7 +325,6 @@ public class Register extends AppCompatActivity {
         return true;
     }
 
-    // Valida todos los campos de una sola vez al presionar el botón
     private boolean validarTodosLosCampos(String nombre, String email,
                                           String telefono, String password) {
         boolean ok = true;
@@ -301,19 +347,20 @@ public class Register extends AppCompatActivity {
 
         if (!validarTodosLosCampos(nombre, email, telefono, password)) return;
 
-        int checkedId = rgRol.getCheckedRadioButtonId();
-        if (checkedId == -1) {
-            mostrarAlerta("Rol no seleccionado", "Por favor selecciona un rol (Pasajero o Conductor)");
+        // ── Validación de Términos y Condiciones ──
+        if (!cbTerminos.isChecked()) {
+            mostrarAlerta(
+                    "Términos y Condiciones requeridos",
+                    "Para registrarte debes leer y aceptar los Términos y Condiciones.\n\nToca el enlace «Términos y Condiciones» para leerlos."
+            );
             return;
         }
-
-        RadioButton rb = findViewById(checkedId);
 
         datosNombre   = nombre;
         datosEmail    = email;
         datosTelefono = telefono;
         datosPassword = password;
-        datosRol      = rb.getText().toString().toUpperCase();
+        datosRol      = "PASAJERO";
 
         Log.d(TAG, "Formulario válido → escaneo facial");
         mostrarEscaneoFacial();

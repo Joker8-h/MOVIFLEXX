@@ -23,11 +23,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.model.ConexionApi;
 import com.arlys.moviflexx.model.Constantes;
+import com.arlys.moviflexx.model.Manager.CalificacionesManager;
+import com.arlys.moviflexx.model.NotificacionesHelper;
 import com.arlys.moviflexx.model.SessionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -39,7 +42,7 @@ public class HomePasajero extends AppCompatActivity {
 
     private static final String TAG = "HomePasajero";
 
-    // ── Views ─────────────────────────────────────────────────────────────────
+    // ── Views ──────────────────────────────────────────────────────────────
     private TextView             tvNombreUsuario;
     private TextView             tvSaludo;
     private ProgressBar          pbRutas;
@@ -47,20 +50,23 @@ public class HomePasajero extends AppCompatActivity {
     private MaterialButton       btnBuscarViaje;
     private BottomNavigationView bottomNavigation;
 
-    // ── Carrusel MoviFlex Info ─────────────────────────────────────────────────
+    // ── Carrusel MoviFlex Info ─────────────────────────────────────────────
     private RecyclerView         rvCarruselInfo;
     private LinearLayout         layoutDotsInfo;
     private CarruselInfoAdapter  carruselAdapter;
-    private final Handler        carruselHandler  = new Handler(Looper.getMainLooper());
+    private final Handler        carruselHandler = new Handler(Looper.getMainLooper());
     private Runnable             carruselRunnable;
-    private int                  carruselPos      = 0;
+    private int                  carruselPos     = 0;
 
-    // ── Data ──────────────────────────────────────────────────────────────────
+    // ── Data ───────────────────────────────────────────────────────────────
     private SessionManager session;
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // ── Flag para no lanzar calificaciones múltiples veces por onResume ───
+    private boolean calificacionPendienteVerificada = false;
+
+    // ─────────────────────────────────────────────────────────────────────
     //  LIFECYCLE
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,17 +88,37 @@ public class HomePasajero extends AppCompatActivity {
         super.onResume();
         cargarRutasFrecuentesPasajero();
         iniciarAutoScrollCarrusel();
+
+        // ── Campana: cargar badge de notificaciones no leídas ──
+        NotificacionesHelper.configurar(this);
+
+        // Asegurar que el ítem inicio esté seleccionado al volver
+        if (bottomNavigation != null)
+            bottomNavigation.setSelectedItemId(R.id.nav_inicio);
+
+        // ── Verificar calificaciones pendientes ──────────────────────────
+        // Se lanza con un pequeño delay para que la UI esté completamente cargada
+        // y el BottomSheet tenga una Activity visible donde anclarse.
+        // El flag evita múltiples invocaciones si onResume se llama repetidamente.
+        if (!calificacionPendienteVerificada) {
+            calificacionPendienteVerificada = true;
+            new Handler(Looper.getMainLooper()).postDelayed(
+                    this::verificarCalificacionesPendientes, 1200
+            );
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         detenerAutoScrollCarrusel();
+        // Resetear flag para que al volver se vuelva a verificar
+        calificacionPendienteVerificada = false;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
     //  BIND
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
 
     private void bindViews() {
         tvNombreUsuario  = findViewById(R.id.tv_nombre_usuario);
@@ -101,15 +127,13 @@ public class HomePasajero extends AppCompatActivity {
         layoutRutas      = findViewById(R.id.layout_rutas_frecuentes);
         btnBuscarViaje   = findViewById(R.id.btn_buscar_viaje);
         bottomNavigation = findViewById(R.id.bottom_navigation);
-
-        // Carrusel informativo
-        rvCarruselInfo  = findViewById(R.id.rv_carrusel_info);
-        layoutDotsInfo  = findViewById(R.id.layout_dots_info);
+        rvCarruselInfo   = findViewById(R.id.rv_carrusel_info);
+        layoutDotsInfo   = findViewById(R.id.layout_dots_info);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
     //  NOMBRE + SALUDO
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
 
     private void mostrarNombreUsuario() {
         String nombre = session.getNombre();
@@ -151,14 +175,165 @@ public class HomePasajero extends AppCompatActivity {
     }
 
     // =========================================================================
-    //  RUTAS FRECUENTES — personalizadas por historial del pasajero
+    //  CALIFICACIONES PENDIENTES
     //
-    //  Flujo:
-    //   1. Consulta mis-reservas del pasajero.
-    //   2. Agrupa por destino y cuenta frecuencia.
-    //   3. Ordena de mayor a menor uso.
-    //   4. Muestra top-6 como cards en el HorizontalScrollView.
-    //   5. Si no hay historial → fallback a rutas del sistema.
+    //  Al volver al Home, consultamos mis-reservas y buscamos viajes FINALIZADO
+    //  que el pasajero aún no haya calificado al conductor.
+    //  Solo se lanza UN BottomSheet (la primera reserva sin calificar).
+    //  Si califica, al cerrarse ya no aparece más (cache local lo evita).
+    // =========================================================================
+
+    private void verificarCalificacionesPendientes() {
+        if (isFinishing() || isDestroyed()) return;
+
+        int idPasajero = session.getIdUsuario();
+        if (idPasajero <= 0) return;
+
+        Log.d(TAG, "Verificando calificaciones pendientes para pasajero=" + idPasajero);
+
+        ConexionApi.getInstance(this).getArray(
+                Constantes.MIS_RESERVAS,
+                response -> {
+                    // Recopilar viajes finalizados pendientes de calificar
+                    // Estructura: { viajeId, idConductor, nomConductor }
+                    List<int[]>    viajeIds     = new ArrayList<>();
+                    List<String>   nomConduct   = new ArrayList<>();
+
+                    for (int i = 0; i < response.length(); i++) {
+                        JSONObject reserva = response.optJSONObject(i);
+                        if (reserva == null) continue;
+
+                        // Solo reservas cuyo viaje está finalizado
+                        String estReserva = reserva.optString("estado", "").toUpperCase();
+                        String estViaje   = "";
+                        JSONObject viaje  = reserva.optJSONObject("viaje");
+                        if (viaje != null)
+                            estViaje = viaje.optString("estado", "").toUpperCase();
+
+                        boolean finalizado = "FINALIZADO".equals(estViaje)
+                                || "COMPLETADO".equals(estViaje)
+                                || "COMPLETADO".equals(estReserva)
+                                || "COMPLETADA".equals(estReserva);
+
+                        if (!finalizado) continue;
+
+                        // Obtener idViaje
+                        int viajeId = reserva.optInt("idViaje", 0);
+                        if (viajeId == 0 && viaje != null)
+                            viajeId = viaje.optInt("idViaje", viaje.optInt("id", 0));
+                        if (viajeId == 0) continue;
+
+                        // Obtener idConductor y nombre
+                        int    idCond  = -1;
+                        String nomCond = "";
+
+                        if (viaje != null) {
+                            idCond = viaje.optInt("idConductor",
+                                    viaje.optInt("conductorId", -1));
+                            JSONObject condObj = viaje.optJSONObject("conductor");
+                            if (condObj != null) {
+                                if (idCond <= 0) {
+                                    for (String k : new String[]{"id","idUsuarios","idUsuario"}) {
+                                        int id = condObj.optInt(k, -1);
+                                        if (id > 0) { idCond = id; break; }
+                                    }
+                                }
+                                nomCond = extraerNombreConductor(condObj);
+                            }
+                        }
+
+                        if (idCond <= 0) continue;
+
+                        viajeIds.add(new int[]{viajeId, idCond});
+                        nomConduct.add(nomCond.isEmpty() ? "el conductor" : nomCond);
+                    }
+
+                    if (viajeIds.isEmpty()) {
+                        Log.d(TAG, "Sin viajes finalizados pendientes de calificar");
+                        return;
+                    }
+
+                    // Encadenar verificaciones en el hilo principal
+                    new Handler(Looper.getMainLooper()).post(() ->
+                            verificarYMostrarSiguiente(
+                                    viajeIds, nomConduct, idPasajero, 0)
+                    );
+                },
+                error -> Log.w(TAG, "No se pudo consultar mis-reservas para calificación")
+        );
+    }
+
+    /**
+     * Recorre la lista de viajes finalizados en orden.
+     * Por cada uno, verifica en cache si ya lo calificó.
+     * Si no → muestra el BottomSheet y para (1 sheet a la vez).
+     * Si sí → pasa al siguiente.
+     */
+    private void verificarYMostrarSiguiente(List<int[]>  viajeIds,
+                                            List<String> nombres,
+                                            int          idPasajero,
+                                            int          indice) {
+        if (indice >= viajeIds.size()) {
+            Log.d(TAG, "Todos los viajes finalizados ya fueron calificados");
+            return;
+        }
+        if (isFinishing() || isDestroyed()) return;
+
+        int    viajeId     = viajeIds.get(indice)[0];
+        int    idConductor = viajeIds.get(indice)[1];
+        String nomCond     = nombres.get(indice);
+        int    siguiente   = indice + 1;
+
+        CalificacionesManager manager = new CalificacionesManager(this);
+
+        manager.verificarCalificacion(viajeId, idPasajero, idConductor,
+                new CalificacionesManager.OnVerificacionListener() {
+
+                    @Override
+                    public void onDebeCalificar() {
+                        Log.d(TAG, "Mostrando BottomSheet calificación pendiente: "
+                                + "viaje=" + viajeId + " conductor=" + idConductor);
+
+                        // Mostrar el BottomSheet desde la Activity real
+                        runOnUiThread(() ->
+                                CalificacionController.mostrarBottomSheetCalificar(
+                                        HomePasajero.this,
+                                        viajeId,
+                                        idConductor,     // calificado = conductor
+                                        nomCond,
+                                        idPasajero,      // calificador = pasajero
+                                        false,           // esConductor = false
+                                        (puntuacion, comentario) -> {
+                                            Log.d(TAG, "Calificación enviada: "
+                                                    + puntuacion + "⭐ viaje=" + viajeId);
+                                            // Después de enviar, verificar si hay otro pendiente
+                                            new Handler(Looper.getMainLooper()).postDelayed(
+                                                    () -> verificarYMostrarSiguiente(
+                                                            viajeIds, nombres,
+                                                            idPasajero, siguiente),
+                                                    800
+                                            );
+                                        }
+                                )
+                        );
+                        // Si el usuario cierra el BottomSheet sin calificar,
+                        // NO avanzamos al siguiente para no ser intrusivos.
+                        // Volverá a aparecer la próxima vez que abra el Home.
+                    }
+
+                    @Override
+                    public void onYaCalifico(int puntuacion, String estrellas) {
+                        Log.d(TAG, "Ya calificó viaje=" + viajeId + " " + estrellas);
+                        // Pasar al siguiente sin delay
+                        verificarYMostrarSiguiente(
+                                viajeIds, nombres, idPasajero, siguiente);
+                    }
+                }
+        );
+    }
+
+    // =========================================================================
+    //  RUTAS FRECUENTES — personalizadas por historial del pasajero
     // =========================================================================
 
     private void cargarRutasFrecuentesPasajero() {
@@ -169,16 +344,13 @@ public class HomePasajero extends AppCompatActivity {
         ConexionApi.getInstance(this).getArray(
                 Constantes.MIS_RESERVAS,
                 response -> {
-                    // Contar frecuencia por destino
                     Map<String, Integer> frecuencia = new HashMap<>();
-                    // clave → "destino|origen"
                     Map<String, String>  datos      = new HashMap<>();
 
                     for (int i = 0; i < response.length(); i++) {
                         JSONObject r = response.optJSONObject(i);
                         if (r == null) continue;
 
-                        // ✅ Solo rutas donde el conductor YA FINALIZÓ el viaje
                         String estadoReserva = r.optString("estado", "").toUpperCase();
                         String estadoViaje   = "";
                         JSONObject viaje     = r.optJSONObject("viaje");
@@ -191,7 +363,6 @@ public class HomePasajero extends AppCompatActivity {
                                 || estadoReserva.equals("COMPLETADA");
                         if (!viajeTerminado) continue;
 
-                        // Destino: preferir nombreParada, luego destino del viaje
                         String destino = r.optString("nombreParada", "").trim();
                         String origen  = "";
 
@@ -212,8 +383,8 @@ public class HomePasajero extends AppCompatActivity {
                             datos.put(key, destino + "|" + origen);
                     }
 
-                    // Ordenar por frecuencia descendente
-                    List<Map.Entry<String, Integer>> lista = new ArrayList<>(frecuencia.entrySet());
+                    List<Map.Entry<String, Integer>> lista =
+                            new ArrayList<>(frecuencia.entrySet());
                     lista.sort((a, b) -> b.getValue() - a.getValue());
 
                     List<RutaFrecuenteItem> items = new ArrayList<>();
@@ -230,11 +401,8 @@ public class HomePasajero extends AppCompatActivity {
 
                     runOnUiThread(() -> {
                         pbRutas.setVisibility(View.GONE);
-                        if (items.isEmpty()) {
-                            cargarRutasSistemaFallback();
-                        } else {
-                            mostrarRutasFrecuentesPersonalizadas(items);
-                        }
+                        if (items.isEmpty()) cargarRutasSistemaFallback();
+                        else                 mostrarRutasFrecuentesPersonalizadas(items);
                     });
                 },
                 error -> runOnUiThread(() -> {
@@ -244,7 +412,6 @@ public class HomePasajero extends AppCompatActivity {
         );
     }
 
-    /** Fallback: rutas populares del sistema cuando el pasajero no tiene historial */
     private void cargarRutasSistemaFallback() {
         if (layoutRutas == null) return;
         ConexionApi.getInstance(this).getArray(
@@ -254,13 +421,14 @@ public class HomePasajero extends AppCompatActivity {
                             0xFF00897B, 0xFF00ACC1, 0xFF26A69A, 0xFF0097A7,
                             0xFF26C6DA, 0xFF4DB6AC
                     };
-                    String[] emojis = {"\uD83D\uDCCD","\uD83D\uDE0F","\uD83D\uDE98","\uD83D\uDE09","⏱\uFE0F","⚡"};
+                    String[] emojis = {"\uD83D\uDCCD","\uD83D\uDE0F","\uD83D\uDE98",
+                            "\uD83D\uDE09","⏱\uFE0F","⚡"};
                     int total = Math.min(response.length(), 6);
                     for (int i = 0; i < total; i++) {
                         JSONObject ruta = response.optJSONObject(i);
                         if (ruta != null)
-                            agregarCardRutaSistema(ruta, emojis[i % emojis.length],
-                                    colores[i % colores.length]);
+                            agregarCardRutaSistema(ruta,
+                                    emojis[i % emojis.length], colores[i % colores.length]);
                     }
                     if (total == 0) {
                         TextView empty = new TextView(this);
@@ -274,7 +442,6 @@ public class HomePasajero extends AppCompatActivity {
         );
     }
 
-    /** Muestra las rutas personalizadas del pasajero (por historial) */
     private void mostrarRutasFrecuentesPersonalizadas(List<RutaFrecuenteItem> items) {
         if (layoutRutas == null) return;
         layoutRutas.removeAllViews();
@@ -304,7 +471,7 @@ public class HomePasajero extends AppCompatActivity {
             inner.setLayoutParams(new ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-            // Cabecera de color con LOGO de MoviFlex
+            // Cabecera con logo
             LinearLayout cabecera = new LinearLayout(this);
             cabecera.setLayoutParams(new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, dp(85)));
@@ -312,9 +479,6 @@ public class HomePasajero extends AppCompatActivity {
             cabecera.setGravity(android.view.Gravity.CENTER);
             cabecera.setOrientation(LinearLayout.VERTICAL);
 
-            // ── LOGO MOVIFLEX ──────────────────────────────────────────────
-            // Coloca tu logo en res/drawable/logo_moviflexo (png o xml).
-            // Si aún no lo tienes, se muestra el nombre "M" como placeholder.
             android.widget.ImageView ivLogo = new android.widget.ImageView(this);
             int logoResId = getResources().getIdentifier(
                     "logo_moviflex", "drawable", getPackageName());
@@ -325,7 +489,6 @@ public class HomePasajero extends AppCompatActivity {
                 ivLogo.setLayoutParams(lpLogo);
                 cabecera.addView(ivLogo);
             } else {
-                // Placeholder circular con "M" hasta que pongas el logo
                 TextView tvM = new TextView(this);
                 tvM.setText("M");
                 tvM.setTextSize(26f);
@@ -340,9 +503,7 @@ public class HomePasajero extends AppCompatActivity {
                 tvM.setBackground(circulo);
                 cabecera.addView(tvM);
             }
-            // ──────────────────────────────────────────────────────────────
 
-            // Badge de usos (solo si hay más de 1)
             if (item.vecesUsada > 1) {
                 TextView tvBadge = new TextView(this);
                 tvBadge.setText(item.vecesUsada + " viajes");
@@ -362,7 +523,6 @@ public class HomePasajero extends AppCompatActivity {
                 cabecera.addView(tvBadge);
             }
 
-            // Cuerpo con origen → destino
             LinearLayout cuerpo = new LinearLayout(this);
             cuerpo.setOrientation(LinearLayout.VERTICAL);
             cuerpo.setPadding(dp(12), dp(10), dp(12), dp(12));
@@ -393,7 +553,6 @@ public class HomePasajero extends AppCompatActivity {
             tvDestino.setLayoutParams(lpDes);
             cuerpo.addView(tvDestino);
 
-            // Etiqueta "Tu ruta"
             TextView tvTag = new TextView(this);
             tvTag.setText("✅ Tu ruta");
             tvTag.setTextSize(10f);
@@ -426,7 +585,6 @@ public class HomePasajero extends AppCompatActivity {
         }
     }
 
-    /** Card de ruta del sistema (fallback sin historial personal) */
     private void agregarCardRutaSistema(JSONObject ruta, String emoji, int color) {
         String origen  = ruta.optString("origen",  "Origen");
         String destino = ruta.optString("destino", "");
@@ -518,7 +676,6 @@ public class HomePasajero extends AppCompatActivity {
 
     // =========================================================================
     //  CARRUSEL INFORMATIVO MOVIFLEX
-    //  Auto-scroll cada 4 seg, 6 slides con tips/beneficios, dots indicadores
     // =========================================================================
 
     private void iniciarCarruselMoviflexInfo() {
@@ -584,7 +741,9 @@ public class HomePasajero extends AppCompatActivity {
             dot.setLayoutParams(lp);
             GradientDrawable gd = new GradientDrawable();
             gd.setShape(GradientDrawable.OVAL);
-            gd.setColor(i == 0 ? Color.parseColor("#009B8D") : Color.parseColor("#B2DFDB"));
+            gd.setColor(i == 0
+                    ? Color.parseColor("#009B8D")
+                    : Color.parseColor("#B2DFDB"));
             dot.setBackground(gd);
             layoutDotsInfo.addView(dot);
         }
@@ -633,9 +792,9 @@ public class HomePasajero extends AppCompatActivity {
             carruselHandler.removeCallbacks(carruselRunnable);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
     //  LISTENERS + BOTTOM NAV
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
 
     private void configurarListeners() {
         if (btnBuscarViaje != null)
@@ -657,9 +816,9 @@ public class HomePasajero extends AppCompatActivity {
         });
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
     //  HELPERS
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
 
     private int dp(int dp) {
         return (int)(dp * getResources().getDisplayMetrics().density);
@@ -672,14 +831,16 @@ public class HomePasajero extends AppCompatActivity {
 
     private static String extraerNombreConductor(JSONObject cond) {
         if (cond == null) return "Conductor";
-        String[] campos = {"nombre","nombres","nombreCompleto","name","fullName","displayName","nombreUsuario"};
+        String[] campos = {"nombre","nombres","nombreCompleto","name",
+                "fullName","displayName","nombreUsuario"};
         for (String c : campos) {
             String val = cond.optString(c, "");
             if (!val.isEmpty() && !val.equals("null")) return val;
         }
         String nombres   = cond.optString("nombres",   "");
         String apellidos = cond.optString("apellidos", "");
-        if (!nombres.isEmpty() || !apellidos.isEmpty()) return (nombres + " " + apellidos).trim();
+        if (!nombres.isEmpty() || !apellidos.isEmpty())
+            return (nombres + " " + apellidos).trim();
         return "Conductor";
     }
 
@@ -691,15 +852,20 @@ public class HomePasajero extends AppCompatActivity {
         String destino, origen;
         int    vecesUsada;
         RutaFrecuenteItem(String destino, String origen, int vecesUsada) {
-            this.destino = destino; this.origen = origen; this.vecesUsada = vecesUsada;
+            this.destino   = destino;
+            this.origen    = origen;
+            this.vecesUsada = vecesUsada;
         }
     }
 
     private static class CarruselSlide {
         String titulo, descripcion, colorInicio, colorFin, badge;
         CarruselSlide(String titulo, String desc, String c1, String c2, String badge) {
-            this.titulo = titulo; this.descripcion = desc;
-            this.colorInicio = c1; this.colorFin = c2; this.badge = badge;
+            this.titulo       = titulo;
+            this.descripcion  = desc;
+            this.colorInicio  = c1;
+            this.colorFin     = c2;
+            this.badge        = badge;
         }
     }
 
@@ -707,7 +873,8 @@ public class HomePasajero extends AppCompatActivity {
     //  ADAPTER — Carrusel informativo MoviFlex
     // =========================================================================
 
-    static class CarruselInfoAdapter extends RecyclerView.Adapter<CarruselInfoAdapter.VH> {
+    static class CarruselInfoAdapter
+            extends RecyclerView.Adapter<CarruselInfoAdapter.VH> {
 
         private final List<CarruselSlide> slides;
         CarruselInfoAdapter(List<CarruselSlide> slides) { this.slides = slides; }
@@ -715,8 +882,8 @@ public class HomePasajero extends AppCompatActivity {
         @NonNull @Override
         public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             android.content.Context ctx = parent.getContext();
-            float d   = ctx.getResources().getDisplayMetrics().density;
-            int screenW = ctx.getResources().getDisplayMetrics().widthPixels;
+            float d       = ctx.getResources().getDisplayMetrics().density;
+            int   screenW = ctx.getResources().getDisplayMetrics().widthPixels;
 
             LinearLayout root = new LinearLayout(ctx);
             root.setOrientation(LinearLayout.VERTICAL);
@@ -724,28 +891,27 @@ public class HomePasajero extends AppCompatActivity {
                     screenW - (int)(32 * d), (int)(150 * d));
             lp.setMargins((int)(4 * d), 0, (int)(4 * d), 0);
             root.setLayoutParams(lp);
-            root.setPadding((int)(20 * d), (int)(16 * d), (int)(20 * d), (int)(16 * d));
+            root.setPadding((int)(20*d),(int)(16*d),(int)(20*d),(int)(16*d));
             root.setGravity(android.view.Gravity.CENTER_VERTICAL);
 
-            // Badge
             TextView tvBadge = new TextView(ctx);
             tvBadge.setTag("badge");
             tvBadge.setTextSize(11f);
             tvBadge.setTypeface(null, Typeface.BOLD);
             tvBadge.setTextColor(Color.WHITE);
-            tvBadge.setPadding((int)(10 * d), (int)(3 * d), (int)(10 * d), (int)(3 * d));
+            tvBadge.setPadding((int)(10*d),(int)(3*d),(int)(10*d),(int)(3*d));
             GradientDrawable bgB = new GradientDrawable();
             bgB.setShape(GradientDrawable.RECTANGLE);
             bgB.setCornerRadius(20 * d);
             bgB.setColor(Color.argb(60, 255, 255, 255));
             tvBadge.setBackground(bgB);
             LinearLayout.LayoutParams lpBadge = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
             lpBadge.bottomMargin = (int)(8 * d);
             tvBadge.setLayoutParams(lpBadge);
             root.addView(tvBadge);
 
-            // Título
             TextView tvTitulo = new TextView(ctx);
             tvTitulo.setTag("titulo");
             tvTitulo.setTextSize(17f);
@@ -754,14 +920,14 @@ public class HomePasajero extends AppCompatActivity {
             tvTitulo.setMaxLines(1);
             root.addView(tvTitulo);
 
-            // Descripción
             TextView tvDesc = new TextView(ctx);
             tvDesc.setTag("desc");
             tvDesc.setTextSize(13f);
             tvDesc.setTextColor(Color.argb(220, 255, 255, 255));
             tvDesc.setMaxLines(3);
             LinearLayout.LayoutParams lpDesc = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
             lpDesc.topMargin = (int)(8 * d);
             tvDesc.setLayoutParams(lpDesc);
             root.addView(tvDesc);
@@ -777,7 +943,10 @@ public class HomePasajero extends AppCompatActivity {
 
             GradientDrawable bg = new GradientDrawable(
                     GradientDrawable.Orientation.TL_BR,
-                    new int[]{Color.parseColor(slide.colorInicio), Color.parseColor(slide.colorFin)});
+                    new int[]{
+                            Color.parseColor(slide.colorInicio),
+                            Color.parseColor(slide.colorFin)
+                    });
             bg.setCornerRadius(20 * d);
             root.setBackground(bg);
 
@@ -792,5 +961,4 @@ public class HomePasajero extends AppCompatActivity {
             VH(@NonNull View v) { super(v); }
         }
     }
-
 }

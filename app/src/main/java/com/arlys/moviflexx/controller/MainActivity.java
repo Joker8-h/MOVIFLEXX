@@ -153,14 +153,11 @@ public class MainActivity extends AppCompatActivity {
             particles[i] = findViewById(resId);
         }
 
-        circleOuter  = findViewById(R.id.circle_outer);
-        circleMiddle = findViewById(R.id.circle_middle);
-        circleInner  = findViewById(R.id.circle_inner);
         orbitRing1   = findViewById(R.id.orbit_ring_1);
-        orbitRing2   = findViewById(R.id.orbit_ring_2);
+
 
         splashLogo = findViewById(R.id.splash_logo);
-        logoCard   = findViewById(R.id.logo_card);
+
 
         sparkle1 = findViewById(R.id.sparkle_1);
         sparkle2 = findViewById(R.id.sparkle_2);

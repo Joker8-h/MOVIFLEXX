@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/drawable/ic_loading_moviflexx.xml -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Aro base teal suave -->
+    <path
+        android:pathData="M50,12 A38,38 0 1,1 49.9,12 Z"
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#B2EDE8"
+        android:strokeWidth="4"/>
+
+    <!-- Arco teal (toda la imagen rota desde Java) -->
+    <path
+        android:pathData="M50,12 A38,38 0 0,1 88,50"
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#2EC4B6"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"/>
+
+    <!-- M de Moviflexx -->
+    <path
+        android:pathData="M30,62 L30,40 L42,56 L50,44 L58,56 L70,40 L70,62"
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#1A9E96"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+</vector>

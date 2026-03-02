@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/gradient_background">
+    android:background="@drawable/fondomoviflexx">
 
     <!-- ══════════════════════════════════════════════════════════ -->
     <!--  STEP 1 — LOGIN NORMAL (email + password + Google)         -->
@@ -38,7 +38,7 @@
                 android:layout_gravity="center"
                 android:layout_marginTop="32dp"
                 android:layout_marginBottom="16dp"
-                android:src="@drawable/logomoviflex" />
+                android:src="@drawable/logomoviflexxxx" />
 
             <!-- TITULO -->
             <TextView

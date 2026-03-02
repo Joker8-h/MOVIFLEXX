@@ -5,120 +5,126 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F0F4F8">
+    android:background="#EEF9F7">
 
-    <!-- ══════════════════════════════════════════════════════════
-         HEADER
-    ══════════════════════════════════════════════════════════ -->
-    <androidx.cardview.widget.CardView
+    <!-- HEADER -->
+    <LinearLayout
         android:id="@+id/card_header"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:cardCornerRadius="0dp"
-        app:cardElevation="6dp"
-        app:cardBackgroundColor="#FFFFFF">
+        android:layout_height="68dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#1AB99F"
+        android:paddingStart="8dp"
+        android:paddingEnd="12dp"
+        android:elevation="4dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="12dp"
+            android:background="@drawable/bg_back_premium"
+            android:clickable="true"
+            android:contentDescription="Volver"
+            android:elevation="8dp"
+            android:focusable="true"
+            android:padding="12dp"
+            android:scaleType="center"
+            android:src="@drawable/ic_arrow_back"/>
+
+        <TextView
+            android:id="@+id/tvAvatarHeader"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="10dp"
+            android:gravity="center"
+            android:text="C"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:textColor="#1AB99F"
+            android:background="@drawable/bg_circle_teal_dark"/>
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="8dp"
-            android:paddingEnd="16dp">
-
-            <ImageButton
-                android:id="@+id/btnBack"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@drawable/ic_arrow_back"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Volver"
-                android:tint="#00897B" />
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="10dp">
 
             <TextView
-                android:id="@+id/tvAvatarHeader"
-                android:layout_width="42dp"
-                android:layout_height="42dp"
-                android:layout_marginStart="4dp"
-                android:gravity="center"
-                android:text="C"
-                android:textSize="18sp"
+                android:id="@+id/tvNombreChat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Conductor"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
-                android:background="@drawable/circle_avatar_teal" />
+                android:maxLines="1"
+                android:ellipsize="end"/>
 
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:layout_marginStart="12dp">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="3dp">
+
+                <View
+                    android:id="@+id/dotEstado"
+                    android:layout_width="7dp"
+                    android:layout_height="7dp"
+                    android:background="@drawable/circle_offline"
+                    android:layout_marginEnd="5dp"/>
 
                 <TextView
-                    android:id="@+id/tvNombreChat"
+                    android:id="@+id/tvEstado"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Conductor"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="#004D40"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginTop="2dp">
-
-                    <View
-                        android:id="@+id/dotEstado"
-                        android:layout_width="8dp"
-                        android:layout_height="8dp"
-                        android:background="@drawable/circle_offline" />
-
-                    <TextView
-                        android:id="@+id/tvEstado"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Conectando..."
-                        android:textSize="12sp"
-                        android:textColor="#78909C"
-                        android:layout_marginStart="6dp" />
-                </LinearLayout>
+                    android:text=""
+                    android:textSize="11sp"
+                    android:textColor="#CCF5F1"/>
             </LinearLayout>
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
 
-    <!-- ══════════════════════════════════════════════════════════
-         LISTA DE MENSAJES — peso=1 para ocupar todo el espacio
-    ══════════════════════════════════════════════════════════ -->
+        <ImageButton
+            android:id="@+id/btnMenuOpciones"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_menu_more"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Más opciones"
+            app:tint="#FFFFFF"
+            android:padding="6dp"/>
+    </LinearLayout>
+
+    <!-- LISTA DE MENSAJES -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvMensajes"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:clipToPadding="false"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp" />
+        android:paddingTop="10dp"
+        android:paddingBottom="6dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:overScrollMode="never"
+        android:background="#EEF9F7"/>
 
-    <!-- ══════════════════════════════════════════════════════════
-         PANEL DE SUGERENCIAS
-         visibility="gone" → ocupa 0dp en LinearLayout (correcto)
-    ══════════════════════════════════════════════════════════ -->
+    <!-- PANEL SUGERENCIAS -->
     <LinearLayout
         android:id="@+id/panel_sugerencias"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#E0F7F4"
+        android:background="#D8F5EF"
         android:visibility="gone">
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#80CBC4" />
+            android:background="#A8EDE4"/>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -127,8 +133,8 @@
             android:gravity="center_vertical"
             android:paddingStart="16dp"
             android:paddingEnd="4dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="4dp">
+            android:paddingTop="7dp"
+            android:paddingBottom="3dp">
 
             <TextView
                 android:layout_width="0dp"
@@ -137,7 +143,7 @@
                 android:text="💬 Sugerencias rápidas"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                android:textColor="#00695C" />
+                android:textColor="#0D8C77"/>
 
             <ImageButton
                 android:id="@+id/btn_cerrar_sugerencias"
@@ -145,15 +151,16 @@
                 android:layout_height="36dp"
                 android:src="@android:drawable/ic_menu_close_clear_cancel"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Cerrar sugerencias" />
+                android:contentDescription="Cerrar sugerencias"
+                android:alpha="0.5"/>
         </LinearLayout>
 
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:scrollbars="none"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
             android:paddingBottom="10dp"
             android:clipToPadding="false">
 
@@ -162,37 +169,97 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:singleLine="true"
-                app:chipSpacingHorizontal="6dp" />
-
+                app:chipSpacingHorizontal="6dp"/>
         </HorizontalScrollView>
     </LinearLayout>
 
-    <!-- ══════════════════════════════════════════════════════════
-         BARRA DE INPUT
-    ══════════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         PANEL GRABACIÓN ESTILO WHATSAPP
+         Visible solo mientras se mantiene presionado el botón de audio.
+         Muestra: punto rojo | contador | "◀ Desliza para cancelar"
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/panelGrabacion"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#FFFFFF"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:elevation="6dp"
+        android:visibility="gone">
+
+        <!-- Punto rojo parpadeante -->
+        <View
+            android:id="@+id/dotGrabando"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:background="@drawable/circle_offline"
+            android:layout_marginEnd="10dp"/>
+
+        <!-- Contador: 0:00, 0:01... -->
+        <TextView
+            android:id="@+id/tvTiempoGrabacion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0:00"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#E53935"
+            android:layout_marginEnd="20dp"/>
+
+        <!-- Hint deslizar para cancelar -->
+        <TextView
+            android:id="@+id/tvDeslizarCancelar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="◀  Desliza para cancelar"
+            android:textSize="13sp"
+            android:textColor="#AAAAAA"
+            android:gravity="center"/>
+
+    </LinearLayout>
+
+    <!-- BARRA DE INPUT -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:background="#FFFFFF"
-        android:elevation="8dp"
-        android:paddingStart="12dp"
-        android:paddingEnd="8dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp">
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:paddingTop="9dp"
+        android:paddingBottom="9dp"
+        android:elevation="6dp">
+
+        <!-- Botón micrófono -->
+        <ImageButton
+            android:id="@+id/btnAudio"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:src="@android:drawable/ic_btn_speak_now"
+            android:background="@drawable/bg_circle_white_semi"
+            android:contentDescription="Grabar audio"
+            android:padding="10dp"
+            app:tint="#1AB99F"
+            android:visibility="visible"/>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
-            app:boxCornerRadiusTopStart="24dp"
-            app:boxCornerRadiusTopEnd="24dp"
-            app:boxCornerRadiusBottomStart="24dp"
-            app:boxCornerRadiusBottomEnd="24dp"
-            app:boxStrokeColor="#B2DFDB"
-            app:boxBackgroundColor="#F8FFFE"
+            app:boxCornerRadiusTopStart="26dp"
+            app:boxCornerRadiusTopEnd="26dp"
+            app:boxCornerRadiusBottomStart="26dp"
+            app:boxCornerRadiusBottomEnd="26dp"
+            app:boxStrokeColor="@color/box_stroke_color"
+            app:boxBackgroundColor="#F5FFFE"
             app:hintEnabled="false">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -200,28 +267,30 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Escribe un mensaje..."
+                android:textColorHint="#99C8C2"
                 android:inputType="textMultiLine|textCapSentences"
                 android:maxLines="4"
                 android:textSize="15sp"
-                android:textColor="#004D40"
+                android:textColor="#1A3835"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
-                android:paddingTop="10dp"
-                android:paddingBottom="10dp"
-                android:background="@null" />
-
+                android:paddingTop="11dp"
+                android:paddingBottom="11dp"
+                android:background="@null"/>
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Botón enviar -->
         <ImageButton
             android:id="@+id/btnEnviar"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="8dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:src="@android:drawable/ic_menu_send"
             android:background="@drawable/circle_send_button"
             android:contentDescription="Enviar"
-            android:padding="10dp" />
-
+            android:padding="11dp"
+            android:enabled="false"
+            android:alpha="0.35"
+            android:visibility="gone"/>
     </LinearLayout>
 
 </LinearLayout>

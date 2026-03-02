@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_slide_onboarding.xml
+    Cada slide del carrusel. Se reutiliza 3 veces.
+    Diseño: ilustración grande + card flotante + título + subtítulo + 3 stat pills
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="12dp">
+
+    <!-- ── ZONA ILUSTRACIÓN: círculo con emoji + card flotante ── -->
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal">
+
+        <!-- Círculo principal de ilustración -->
+        <FrameLayout
+            android:layout_width="170dp"
+            android:layout_height="170dp"
+            android:layout_gravity="center_horizontal"
+            android:elevation="6dp">
+
+            <!-- Emoji central grande -->
+            <TextView
+                android:id="@+id/slideEmoji"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="🚌"
+                android:textSize="64sp"/>
+        </FrameLayout>
+
+
+
+
+    </FrameLayout>
+
+    <!-- ── TÍTULO del slide ── -->
+    <TextView
+        android:id="@+id/slideTitulo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:gravity="center"
+        android:text="Viaja con tu\ncomunidad"
+        android:textSize="30sp"
+        android:textColor="#0D1B2A"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-black"
+        android:lineSpacingExtra="3dp"/>
+
+    <!-- ── SUBTÍTULO del slide ── -->
+    <TextView
+        android:id="@+id/slideSubtitulo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:text="Conecta con vecinos y viaja de forma\neconómica, segura y sostenible."
+        android:textSize="14sp"
+        android:textColor="#4A6070"
+        android:fontFamily="sans-serif"
+        android:lineSpacingExtra="5dp"/>
+
+    <!-- ── 3 PILLS de estadísticas ── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="24dp">
+
+        <!-- Pill 1 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_stat_pill"
+            android:layout_marginEnd="6dp"
+            android:paddingVertical="10dp">
+
+            <TextView
+                android:id="@+id/statVal1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1"
+                android:textSize="17sp"
+                android:textColor="#1A2035"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-black"/>
+
+            <TextView
+                android:id="@+id/statLbl1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Usuarios"
+                android:textSize="10sp"
+                android:textColor="#7B9EA3"
+                android:fontFamily="sans-serif"/>
+        </LinearLayout>
+
+        <!-- Pill 2 (resaltado teal) -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_stat_pill_teal"
+            android:layout_marginHorizontal="6dp"
+            android:paddingVertical="10dp">
+
+            <TextView
+                android:id="@+id/statVal2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="50+"
+                android:textSize="17sp"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-black"/>
+
+            <TextView
+                android:id="@+id/statLbl2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Rutas"
+                android:textSize="10sp"
+                android:textColor="#CCF5F3"
+                android:fontFamily="sans-serif"/>
+        </LinearLayout>
+
+        <!-- Pill 3 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_stat_pill"
+            android:layout_marginStart="6dp"
+            android:paddingVertical="10dp">
+
+            <TextView
+                android:id="@+id/statVal3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4.9★"
+                android:textSize="17sp"
+                android:textColor="#1A2035"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-black"/>
+
+            <TextView
+                android:id="@+id/statLbl3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Calificación"
+                android:textSize="10sp"
+                android:textColor="#7B9EA3"
+                android:fontFamily="sans-serif"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

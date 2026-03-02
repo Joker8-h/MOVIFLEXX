@@ -89,14 +89,13 @@ public class ConexionApi {
         queue.add(req);
     }
 
-    // ✅ NUEVO: GET Array forzando no-cache — soluciona el 304 cuando la tabla
+    // ✅ GET Array forzando no-cache — soluciona el 304 cuando la tabla
     //    estaba vacía y Volley sigue devolviendo la respuesta vacía cacheada.
     public void getArrayNoCache(String url,
                                 Response.Listener<JSONArray> ok,
                                 Response.ErrorListener error) {
         Log.d(TAG, "GET Array NoCache → " + url);
 
-        // Request personalizado que ignora caché de Volley Y envía headers no-cache
         Request<JSONArray> req = new Request<JSONArray>(Request.Method.GET, url, error) {
 
             @Override
@@ -112,12 +111,11 @@ public class ConexionApi {
             protected Response<JSONArray> parseNetworkResponse(NetworkResponse response) {
                 try {
                     String charset = HttpHeaderParser.parseCharset(response.headers, "UTF-8");
-                    String json    = new String(response.data, charset);
+                    String json    = new String(response.data, charset).trim();
                     Log.d(TAG, "NoCache response [" + response.statusCode + "]: "
                             + json.substring(0, Math.min(json.length(), 200)));
                     return Response.success(
                             new JSONArray(json),
-                            // ✅ Entrada de caché con TTL=0 para que expire inmediatamente
                             makeFreshCacheEntry(response)
                     );
                 } catch (UnsupportedEncodingException | JSONException e) {
@@ -129,20 +127,8 @@ public class ConexionApi {
             protected void deliverResponse(JSONArray response) { ok.onResponse(response); }
         };
 
-        // ✅ Marcar el request para que Volley siempre vaya a la red
         req.setShouldCache(false);
         queue.add(req);
-    }
-
-    /** Crea una Cache.Entry que expira en 0ms (fuerza revalidación siempre) */
-    private Cache.Entry makeFreshCacheEntry(NetworkResponse response) {
-        Cache.Entry entry = HttpHeaderParser.parseCacheHeaders(response);
-        if (entry == null) entry = new Cache.Entry();
-        entry.ttl         = 0;
-        entry.softTtl     = 0;
-        entry.data        = response.data;
-        entry.responseHeaders = response.headers;
-        return entry;
     }
 
     // ─── GET OBJECT ───────────────────────────────────────────────────────────
@@ -153,6 +139,55 @@ public class ConexionApi {
         JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, null, ok, error) {
             @Override public Map<String, String> getHeaders() { return getAuthHeaders(); }
         };
+        queue.add(req);
+    }
+
+    // ✅ GET Object forzando no-cache
+    //    Si el backend devuelve un array JSON, lo envuelve en { "items": [...] }
+    //    para que el listener siempre reciba un JSONObject.
+    public void getObjectNoCache(String url,
+                                 Response.Listener<JSONObject> ok,
+                                 Response.ErrorListener error) {
+        Log.d(TAG, "GET Object NoCache → " + url);
+
+        Request<JSONObject> req = new Request<JSONObject>(Request.Method.GET, url, error) {
+
+            @Override
+            public Map<String, String> getHeaders() {
+                return getAuthHeadersNoCache();
+            }
+
+            @Override
+            public Cache.Entry getCacheEntry() { return null; }
+
+            @Override
+            protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
+                try {
+                    String charset = HttpHeaderParser.parseCharset(response.headers, "UTF-8");
+                    String json    = new String(response.data, charset).trim();
+                    Log.d(TAG, "ObjectNoCache response [" + response.statusCode + "]: "
+                            + json.substring(0, Math.min(json.length(), 200)));
+
+                    JSONObject result;
+                    // Si el backend devuelve un array, lo envolvemos en { "items": [...] }
+                    if (json.startsWith("[")) {
+                        JSONObject wrapper = new JSONObject();
+                        wrapper.put("items", new JSONArray(json));
+                        result = wrapper;
+                    } else {
+                        result = new JSONObject(json);
+                    }
+                    return Response.success(result, makeFreshCacheEntry(response));
+                } catch (Exception e) {
+                    return Response.error(new ParseError(e));
+                }
+            }
+
+            @Override
+            protected void deliverResponse(JSONObject response) { ok.onResponse(response); }
+        };
+
+        req.setShouldCache(false);
         queue.add(req);
     }
 
@@ -224,5 +259,17 @@ public class ConexionApi {
 
     public void addToRequestQueue(Request<?> request) {
         queue.add(request);
+    }
+
+    // ─── HELPER CACHÉ ─────────────────────────────────────────────────────────
+    /** Crea una Cache.Entry que expira en 0ms (fuerza revalidación siempre) */
+    private Cache.Entry makeFreshCacheEntry(NetworkResponse response) {
+        Cache.Entry entry = HttpHeaderParser.parseCacheHeaders(response);
+        if (entry == null) entry = new Cache.Entry();
+        entry.ttl             = 0;
+        entry.softTtl         = 0;
+        entry.data            = response.data;
+        entry.responseHeaders = response.headers;
+        return entry;
     }
 }

@@ -21,31 +21,84 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:id="@+id/tv_saludo"
-            android:text="Buenos días ☀️"
-            android:textColor="#B2DFDB"
-            android:textSize="14sp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+        <!-- Fila superior: saludo + campana -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="2dp">
 
-        <TextView
-            android:id="@+id/tv_nombre_usuario"
-            android:text="Cargando..."
-            android:textColor="#FFFFFF"
-            android:textSize="26sp"
-            android:textStyle="bold"
-            android:layout_marginTop="2dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            <!-- Textos saludo + nombre -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
-        <TextView
-            android:text="¿A dónde vas hoy? 🚗"
-            android:textColor="#B2DFDB"
-            android:textSize="13sp"
-            android:layout_marginTop="4dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+                <TextView
+                    android:id="@+id/tv_saludo"
+                    android:text="Buenos días ☀️"
+                    android:textColor="#B2DFDB"
+                    android:textSize="14sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <TextView
+                    android:id="@+id/tv_nombre_usuario"
+                    android:text="Cargando..."
+                    android:textColor="#FFFFFF"
+                    android:textSize="26sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="2dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <TextView
+                    android:text="¿A dónde vas hoy? 🚗"
+                    android:textColor="#B2DFDB"
+                    android:textSize="13sp"
+                    android:layout_marginTop="4dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+            </LinearLayout>
+
+            <!-- Campana con badge -->
+            <FrameLayout
+                android:id="@+id/btn_notificaciones"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <!-- Ícono campana -->
+                <ImageView
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_notifications"
+                    android:tint="#FFFFFF"
+                    android:contentDescription="Notificaciones"/>
+
+                <!-- Badge contador (rojo) — se oculta si = 0 -->
+                <TextView
+                    android:id="@+id/tv_badge_notif"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="top|end"
+                    android:gravity="center"
+                    android:textColor="#FFFFFF"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:background="@drawable/bg_badge_red"
+                    android:visibility="gone"
+                    android:text="0"/>
+
+            </FrameLayout>
+
+        </LinearLayout>
 
     </LinearLayout>
 
@@ -67,16 +120,13 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- ══════════════════════════════════════════════
-                 SECCIÓN 1: RUTAS FRECUENTES (personalizadas)
-                 ══════════════════════════════════════════════ -->
+            <!-- SECCIÓN 1: RUTAS FRECUENTES -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:layout_marginTop="20dp">
 
-                <!-- Título de sección -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -100,10 +150,6 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"/>
 
-                        <!-- Subtítulo dinámico:
-                             Se muestra "Tus destinos favoritos" si tiene historial,
-                             o "Destinos más usados del sistema" como fallback.
-                             Puedes actualizarlo desde el Activity si lo deseas. -->
                         <TextView
                             android:id="@+id/tv_subtitulo_rutas"
                             android:text="Tus destinos más usados"
@@ -116,7 +162,6 @@
 
                 </LinearLayout>
 
-                <!-- Loader de rutas -->
                 <ProgressBar
                     android:id="@+id/pb_rutas"
                     android:layout_width="32dp"
@@ -126,7 +171,6 @@
                     android:indeterminateTint="#00897B"
                     android:layout_marginBottom="8dp"/>
 
-                <!-- HorizontalScrollView con las cards de rutas -->
                 <HorizontalScrollView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -155,17 +199,13 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp"/>
 
-            <!-- ══════════════════════════════════════════════
-                 SECCIÓN 2: CARRUSEL INFORMATIVO MOVIFLEX
-                 (reemplaza la lista de viajes en home)
-                 ══════════════════════════════════════════════ -->
+            <!-- SECCIÓN 2: CARRUSEL INFORMATIVO -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:layout_marginTop="22dp">
 
-                <!-- Título de sección -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -193,7 +233,6 @@
 
                 </LinearLayout>
 
-                <!-- RecyclerView horizontal con PagerSnap -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rv_carrusel_info"
                     android:layout_width="match_parent"
@@ -203,7 +242,6 @@
                     android:clipToPadding="false"
                     android:overScrollMode="never"/>
 
-                <!-- Dots indicadores del carrusel -->
                 <LinearLayout
                     android:id="@+id/layout_dots_info"
                     android:layout_width="wrap_content"
@@ -215,9 +253,7 @@
 
             </LinearLayout>
 
-            <!-- ══════════════════════════════════════════════
-                 CTA: BUSCAR VIAJE
-                 ══════════════════════════════════════════════ -->
+            <!-- CTA: BUSCAR VIAJE -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

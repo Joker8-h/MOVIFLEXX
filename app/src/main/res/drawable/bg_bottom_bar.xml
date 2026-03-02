@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Color turquesa -->
+    <solid android:color="#1ABC9C"/>
+
+    <!-- Esquinas redondeadas arriba -->
+    <corners
+        android:topLeftRadius="25dp"
+        android:topRightRadius="25dp"
+        android:bottomLeftRadius="0dp"
+        android:bottomRightRadius="0dp"/>
+
+    <padding
+        android:top="8dp"
+        android:bottom="8dp"/>
+</shape>

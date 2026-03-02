@@ -1,15 +1,23 @@
 package com.arlys.moviflexx.controller;
 
+import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
-import android.widget.ImageButton;
+import android.view.animation.LinearInterpolator;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -37,36 +45,61 @@ public class Conversaciones extends AppCompatActivity {
     private RecyclerView        rvConversaciones;
     private ConversacionAdapter adapter;
     private SwipeRefreshLayout  swipeRefresh;
-    private TextView            tvEmpty;
-    private TextView            tvTitulo;
-    private ImageButton         btnBack;
+    private LinearLayout        tvSinResultados;
+
+    // Loading overlay
+    private LinearLayout        loadingOverlay;
+    private ImageView           ivLoadingAnim;
+    private ObjectAnimator      loadingRotator;
+
+    // Chips de filtro
+    private TextView chipTodos;
+    private TextView chipNoLeidos;
+    private TextView chipFavoritos;
+
+    // Header — notificaciones
+    private FrameLayout btnNotificaciones;
+    private View        dotNotificacion;
+    private FrameLayout badgeNoLeidos;
+    private TextView    txtNoLeidos;
+
+    // Buscador
+    private EditText etBuscar;
 
     // ── Datos ────────────────────────────────────────────────────────────────
-    private SessionManager session;
-    private int            idUsuario;
-    private final List<Conversacion> lista = new ArrayList<>();
+    private SessionManager           session;
+    private int                      idUsuario;
+    private final List<Conversacion> listaCompleta = new ArrayList<>();
+    private final List<Conversacion> listaFiltrada = new ArrayList<>();
+
+    private int     filtroActivo = 0;   // 0=Todos 1=NoLeídos 2=Favoritos
+    private boolean primeraCarga = true;
 
     // ── Polling ──────────────────────────────────────────────────────────────
     private final Handler  handler       = new Handler(Looper.getMainLooper());
     private       Runnable pollRunnable;
     private       boolean  pollingActivo = false;
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═════════════════════════════════════════════════════════════════════════
     //  LIFECYCLE
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═════════════════════════════════════════════════════════════════════════
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_conversaciones);
+        setContentView(R.layout.activity_conversaciones); // ← ajusta si tu layout tiene otro nombre
 
         session   = new SessionManager(this);
         idUsuario = session.getIdUsuario();
         Log.d(TAG, "ID Usuario: " + idUsuario);
 
         bindViews();
-        configurarHeader();
         configurarRecycler();
         configurarSwipe();
+        configurarBuscador();
+        configurarChips();
+        configurarNotificaciones();
+
+        mostrarLoading(true);
         cargarConversaciones();
         arrancarPolling();
     }
@@ -78,28 +111,186 @@ public class Conversaciones extends AppCompatActivity {
         if (!pollingActivo) arrancarPolling();
     }
 
-    @Override protected void onPause()   { super.onPause();   detenerPolling(); }
-    @Override protected void onDestroy() { super.onDestroy(); detenerPolling(); }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        detenerPolling();
+    }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  BIND
-    // ─────────────────────────────────────────────────────────────────────────
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        detenerPolling();
+        pararAnimacionLoading(); // liberar animador
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    //  BIND VIEWS
+    // ═════════════════════════════════════════════════════════════════════════
     private void bindViews() {
-        rvConversaciones = findViewById(R.id.rvConversaciones);
-        swipeRefresh     = findViewById(R.id.swipeRefresh);
-        tvEmpty          = findViewById(R.id.tvEmpty);
-        tvTitulo         = findViewById(R.id.tvTitulo);
-        btnBack          = findViewById(R.id.btnBack);
+        rvConversaciones  = findViewById(R.id.rvConversaciones);
+        swipeRefresh      = findViewById(R.id.swipeRefresh);
+        tvSinResultados   = findViewById(R.id.tvSinResultados);
+
+        loadingOverlay    = findViewById(R.id.loadingOverlay);
+        ivLoadingAnim     = findViewById(R.id.ivLoadingAnim);
+
+        chipTodos         = findViewById(R.id.chipTodos);
+        chipNoLeidos      = findViewById(R.id.chipNoLeidos);
+        chipFavoritos     = findViewById(R.id.chipFavoritos);
+
+        btnNotificaciones = findViewById(R.id.btnNotificaciones);
+        dotNotificacion   = findViewById(R.id.dotNotificacion);
+        badgeNoLeidos     = findViewById(R.id.badgeNoLeidos);
+        txtNoLeidos       = findViewById(R.id.txtNoLeidos);
+
+        etBuscar          = findViewById(R.id.etBuscar);
     }
 
-    private void configurarHeader() {
-        if (tvTitulo != null) tvTitulo.setText("Mensajes");
-        if (btnBack  != null) btnBack.setOnClickListener(v -> finish());
+    // ═════════════════════════════════════════════════════════════════════════
+    //  LOADING — animación Java pura (sin AnimatedVectorDrawable)
+    // ═════════════════════════════════════════════════════════════════════════
+    private void mostrarLoading(boolean mostrar) {
+        if (loadingOverlay == null) return;
+
+        if (mostrar) {
+            loadingOverlay.setVisibility(View.VISIBLE);
+            loadingOverlay.setAlpha(1f);
+            arrancarAnimacionLoading();
+        } else {
+            loadingOverlay.animate()
+                    .alpha(0f)
+                    .setDuration(350)
+                    .withEndAction(() -> {
+                        loadingOverlay.setVisibility(View.GONE);
+                        loadingOverlay.setAlpha(1f);
+                        pararAnimacionLoading();
+                    })
+                    .start();
+        }
     }
 
+    private void arrancarAnimacionLoading() {
+        if (ivLoadingAnim == null) return;
+        pararAnimacionLoading();
+        // Rota toda la imagen 0→360 infinito — compatible con cualquier minSdk
+        loadingRotator = ObjectAnimator.ofFloat(ivLoadingAnim, View.ROTATION, 0f, 360f);
+        loadingRotator.setDuration(900);
+        loadingRotator.setInterpolator(new LinearInterpolator());
+        loadingRotator.setRepeatCount(ObjectAnimator.INFINITE);
+        loadingRotator.start();
+    }
+
+    private void pararAnimacionLoading() {
+        if (loadingRotator != null) {
+            loadingRotator.cancel();
+            loadingRotator = null;
+        }
+        if (ivLoadingAnim != null) ivLoadingAnim.setRotation(0f);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    //  CHIPS DE FILTRO
+    // ═════════════════════════════════════════════════════════════════════════
+    private void configurarChips() {
+        if (chipTodos == null) return;
+        chipTodos.setOnClickListener(v     -> seleccionarChip(0));
+        chipNoLeidos.setOnClickListener(v  -> seleccionarChip(1));
+        chipFavoritos.setOnClickListener(v -> seleccionarChip(2));
+    }
+
+    private void seleccionarChip(int chip) {
+        filtroActivo = chip;
+
+        actualizarEstiloChip(chipTodos,     chip == 0);
+        actualizarEstiloChip(chipNoLeidos,  chip == 1);
+        actualizarEstiloChip(chipFavoritos, chip == 2);
+
+        aplicarFiltro(etBuscar != null ? etBuscar.getText().toString() : "");
+    }
+
+    private void actualizarEstiloChip(TextView tv, boolean seleccionado) {
+        if (tv == null) return;
+        tv.setBackgroundResource(seleccionado
+                ? R.drawable.bg_chip_selected
+                : R.drawable.bg_chip_unselected);
+        tv.setTextColor(seleccionado ? 0xFFFFFFFF : 0xFF555555);
+        tv.setTypeface(null, seleccionado
+                ? android.graphics.Typeface.BOLD
+                : android.graphics.Typeface.NORMAL);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    //  BUSCADOR
+    // ═════════════════════════════════════════════════════════════════════════
+    private void configurarBuscador() {
+        if (etBuscar == null) return;
+        etBuscar.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {
+                aplicarFiltro(s.toString());
+            }
+            @Override public void afterTextChanged(Editable s) {}
+        });
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private void aplicarFiltro(String query) {
+        listaFiltrada.clear();
+        String q = query.toLowerCase().trim();
+
+        for (Conversacion c : listaCompleta) {
+            // ── Filtro chip ──
+            if (filtroActivo == 1 && c.getMensajesNoLeidos() == 0) continue;
+            // filtroActivo == 2 (Favoritos): puedes agregar tu lógica aquí
+
+            // ── Filtro texto ──
+            if (!q.isEmpty()) {
+                String nombre = c.getNombreContacto() != null
+                        ? c.getNombreContacto().toLowerCase() : "";
+                String ultimo = c.getUltimoMensaje() != null
+                        ? c.getUltimoMensaje().toLowerCase() : "";
+                if (!nombre.contains(q) && !ultimo.contains(q)) continue;
+            }
+
+            listaFiltrada.add(c);
+        }
+
+        adapter.notifyDataSetChanged();
+        actualizarEstadoVacio();
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    //  NOTIFICACIONES
+    // ═════════════════════════════════════════════════════════════════════════
+    private void configurarNotificaciones() {
+        if (btnNotificaciones == null) return;
+        btnNotificaciones.setOnClickListener(v -> {
+            // TODO: startActivity(new Intent(this, Notificaciones.class));
+        });
+    }
+
+    private void actualizarBadgeNotificaciones(int totalNoLeidos) {
+        if (totalNoLeidos > 0) {
+            if (dotNotificacion != null) dotNotificacion.setVisibility(View.VISIBLE);
+            if (badgeNoLeidos   != null) badgeNoLeidos.setVisibility(View.VISIBLE);
+            if (txtNoLeidos     != null) txtNoLeidos.setText(
+                    totalNoLeidos > 99 ? "99+" : String.valueOf(totalNoLeidos));
+            if (chipNoLeidos    != null)
+                chipNoLeidos.setText("No leídos  " + totalNoLeidos);
+        } else {
+            if (dotNotificacion != null) dotNotificacion.setVisibility(View.GONE);
+            if (badgeNoLeidos   != null) badgeNoLeidos.setVisibility(View.GONE);
+            if (chipNoLeidos    != null) chipNoLeidos.setText("No leídos");
+        }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    //  RECYCLER
+    // ═════════════════════════════════════════════════════════════════════════
     private void configurarRecycler() {
         rvConversaciones.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new ConversacionAdapter(lista, conv -> {
+        adapter = new ConversacionAdapter(listaFiltrada, conv -> {
             Intent intent = new Intent(this, Chat.class);
             intent.putExtra("idConversacion", conv.getId());
             intent.putExtra("nombre", conv.getNombreContacto());
@@ -109,59 +300,44 @@ public class Conversaciones extends AppCompatActivity {
     }
 
     private void configurarSwipe() {
-        if (swipeRefresh != null) {
-            swipeRefresh.setColorSchemeResources(R.color.turquoise, R.color.royal_blue);
-            swipeRefresh.setOnRefreshListener(this::cargarConversaciones);
-        }
+        if (swipeRefresh == null) return;
+        swipeRefresh.setColorSchemeResources(R.color.teal_500);
+        swipeRefresh.setOnRefreshListener(this::cargarConversaciones);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  CARGAR — intenta getArray primero, luego getObject como fallback
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═════════════════════════════════════════════════════════════════════════
+    //  CARGAR CONVERSACIONES
+    // ═════════════════════════════════════════════════════════════════════════
     private void cargarConversaciones() {
-        Log.d(TAG, "📥 GET: " + Constantes.CHAT_CONVERSACIONES);
-
+        Log.d(TAG, "GET: " + Constantes.CHAT_CONVERSACIONES);
         ConexionApi.getInstance(this).getArray(
                 Constantes.CHAT_CONVERSACIONES,
-                this::onArrayRecibido,
-                this::onErrorArray
+                this::procesarArray,
+                error -> {
+                    Log.w(TAG, "getArray falló, intentando getObject");
+                    ConexionApi.getInstance(this).getObject(
+                            Constantes.CHAT_CONVERSACIONES,
+                            response -> procesarArray(extraerArrayDeObjeto(response)),
+                            err2 -> runOnUiThread(() -> {
+                                Log.e(TAG, "Ambos métodos fallaron: " + err2);
+                                if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+                                mostrarLoading(false);
+                                if (listaCompleta.isEmpty())
+                                    mostrarVacioConMensaje("Sin conexión. Desliza para reintentar.");
+                            })
+                    );
+                }
         );
     }
 
-    // ── Callback éxito con array directo ─────────────────────────────────────
-    private void onArrayRecibido(JSONArray arr) {
-        Log.d(TAG, "✅ Array directo recibido: " + arr.length() + " items");
-        procesarArray(arr);
-    }
-
-    // ── Fallback: el backend envolvió en objeto ───────────────────────────────
-    private void onErrorArray(com.android.volley.VolleyError error) {
-        Log.w(TAG, "⚠️ getArray falló, intentando getObject: " + error);
-        ConexionApi.getInstance(this).getObject(
-                Constantes.CHAT_CONVERSACIONES,
-                response -> {
-                    Log.d(TAG, "✅ getObject exitoso");
-                    JSONArray arr = extraerArrayDeObjeto(response);
-                    procesarArray(arr);
-                },
-                err2 -> runOnUiThread(() -> {
-                    Log.e(TAG, "❌ Ambos métodos fallaron: " + err2);
-                    if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-                    // Solo mostrar error si la lista está vacía
-                    if (lista.isEmpty()) {
-                        mostrarEmpty("Sin conexión. Desliza hacia abajo para reintentar.");
-                    }
-                })
-        );
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═════════════════════════════════════════════════════════════════════════
     //  PROCESAR ARRAY
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═════════════════════════════════════════════════════════════════════════
     @SuppressLint("NotifyDataSetChanged")
     private void procesarArray(JSONArray arr) {
         try {
-            lista.clear();
+            listaCompleta.clear();
+            int totalNoLeidos = 0;
 
             if (arr != null) {
                 for (int i = 0; i < arr.length(); i++) {
@@ -169,71 +345,75 @@ public class Conversaciones extends AppCompatActivity {
                     if (obj == null) continue;
                     Conversacion c = Conversacion.fromJson(obj, idUsuario);
                     if (c.getId() > 0) {
-                        lista.add(c);
-                        Log.d(TAG, "Conv[" + i + "]: id=" + c.getId()
-                                + " contacto=" + c.getNombreContacto());
+                        listaCompleta.add(c);
+                        totalNoLeidos += c.getMensajesNoLeidos();
+                        Log.d(TAG, "Conv[" + i + "]: " + c.getNombreContacto());
                     }
                 }
             }
 
+            final int badge = totalNoLeidos;
+
             runOnUiThread(() -> {
                 if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-                adapter.notifyDataSetChanged();
 
-                if (lista.isEmpty()) {
-                    mostrarEmpty("Aún no tienes conversaciones.\nLos chats aparecerán aquí.");
-                } else {
-                    if (tvEmpty != null) tvEmpty.setVisibility(View.GONE);
-                    rvConversaciones.setVisibility(View.VISIBLE);
+                // Ocultar loading solo en la primera carga
+                if (primeraCarga) {
+                    primeraCarga = false;
+                    mostrarLoading(false);
                 }
+
+                aplicarFiltro(etBuscar != null ? etBuscar.getText().toString() : "");
+                actualizarBadgeNotificaciones(badge);
             });
 
-            Log.d(TAG, "✅ " + lista.size() + " conversaciones cargadas");
+            Log.d(TAG, listaCompleta.size() + " conversaciones cargadas");
 
         } catch (Exception e) {
-            Log.e(TAG, "❌ procesarArray", e);
+            Log.e(TAG, "procesarArray error", e);
             runOnUiThread(() -> {
                 if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-                if (lista.isEmpty()) mostrarEmpty("Error al procesar datos.");
+                mostrarLoading(false);
+                if (listaCompleta.isEmpty())
+                    mostrarVacioConMensaje("Error al procesar datos.");
             });
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  HELPERS
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═════════════════════════════════════════════════════════════════════════
+    //  HELPERS UI
+    // ═════════════════════════════════════════════════════════════════════════
     private JSONArray extraerArrayDeObjeto(JSONObject response) {
         if (response == null) return null;
         if (response.has("content"))        return response.optJSONArray("content");
         if (response.has("conversaciones")) return response.optJSONArray("conversaciones");
         if (response.has("data"))           return response.optJSONArray("data");
-        try {
-            String raw = response.toString();
-            if (raw.startsWith("[")) return new JSONArray(raw);
-        } catch (Exception e) {
-            Log.w(TAG, "No se pudo parsear como array");
-        }
         return null;
     }
 
-    private void mostrarEmpty(String msg) {
+    private void actualizarEstadoVacio() {
+        boolean listaVacia = listaFiltrada.isEmpty();
+        rvConversaciones.setVisibility(listaVacia ? View.GONE : View.VISIBLE);
+        if (tvSinResultados != null)
+            tvSinResultados.setVisibility(
+                    listaVacia && !listaCompleta.isEmpty() ? View.VISIBLE : View.GONE);
+    }
+
+    private void mostrarVacioConMensaje(String msg) {
         runOnUiThread(() -> {
-            if (tvEmpty != null) {
-                tvEmpty.setText(msg);
-                tvEmpty.setVisibility(View.VISIBLE);
-            }
-            if (rvConversaciones != null)
-                rvConversaciones.setVisibility(View.GONE);
+            if (tvSinResultados != null) tvSinResultados.setVisibility(View.VISIBLE);
+            rvConversaciones.setVisibility(View.GONE);
+            Log.d(TAG, "Empty state: " + msg);
         });
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═════════════════════════════════════════════════════════════════════════
     //  POLLING
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═════════════════════════════════════════════════════════════════════════
     private void arrancarPolling() {
         if (pollingActivo) return;
         pollingActivo = true;
-        pollRunnable  = new Runnable() {
+        pollRunnable = new Runnable() {
             @Override public void run() {
                 if (!pollingActivo) return;
                 cargarConversaciones();
@@ -241,12 +421,12 @@ public class Conversaciones extends AppCompatActivity {
             }
         };
         handler.postDelayed(pollRunnable, POLL_INTERVAL);
-        Log.d(TAG, "✅ Polling iniciado");
+        Log.d(TAG, "Polling iniciado");
     }
 
     private void detenerPolling() {
         pollingActivo = false;
         if (pollRunnable != null) handler.removeCallbacks(pollRunnable);
-        Log.d(TAG, "⏹ Polling detenido");
+        Log.d(TAG, "Polling detenido");
     }
 }

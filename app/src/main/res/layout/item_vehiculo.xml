@@ -1,31 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:background="#FFFFFF"
-    android:layout_margin="8dp"
-    android:elevation="2dp">
+    android:layout_marginBottom="10dp"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="3dp"
+    app:cardBackgroundColor="#FFFFFF"
+    app:strokeWidth="0dp">
 
-    <TextView
-        android:id="@+id/txtMarcaModelo"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textStyle="bold"
-        android:textSize="18sp"/>
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical">
 
-    <TextView
-        android:id="@+id/txtPlaca"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="16sp"/>
+        <!-- Avatar inicial -->
+        <TextView
+            android:id="@+id/txtAvatarVehiculo"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:gravity="center"
+            android:text="T"
+            android:textColor="#6366F1"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:background="@drawable/bg_icon_circle_purple"
+            android:layout_marginEnd="14dp"/>
 
-    <TextView
-        android:id="@+id/txtCapacidad"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="16sp"/>
+        <!-- Info -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-</LinearLayout>
+            <!-- txtNombreVehiculo: marca + modelo -->
+            <TextView
+                android:id="@+id/txtNombreVehiculo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Marca Modelo"
+                android:textColor="#1A1A2E"
+                android:textSize="15sp"
+                android:textStyle="bold"/>
+
+            <!-- txtSubtituloVehiculo: placa · tipo · color -->
+            <TextView
+                android:id="@+id/txtSubtituloVehiculo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ABC123"
+                android:textColor="#6366F1"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_placa"/>
+
+            <!-- txtCuposVehiculo -->
+            <TextView
+                android:id="@+id/txtCuposVehiculo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-- cupos"
+                android:textColor="#6B7280"
+                android:textSize="12sp"
+                android:layout_marginTop="6dp"/>
+
+        </LinearLayout>
+
+        <!-- Badge estado -->
+        <TextView
+            android:id="@+id/txtEstadoVehiculo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Activo"
+            android:textColor="#059669"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:background="@drawable/bg_estado_activo"/>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

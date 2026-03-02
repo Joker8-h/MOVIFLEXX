@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/gradient_background">
+    android:background="@drawable/fondomoviflexx">
 
     <!-- ══════════════════════════════════════════════════════════ -->
     <!--  STEP 1 — FORMULARIO DE REGISTRO                          -->
@@ -47,7 +47,7 @@
                 android:layout_gravity="center"
                 android:layout_marginTop="20dp"
                 android:layout_marginBottom="12dp"
-                android:src="@drawable/logomoviflex" />
+                android:src="@drawable/logomoviflexxxx" />
 
             <!-- TITULO -->
             <TextView
@@ -176,40 +176,61 @@
                     android:padding="14dp"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- ROL -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="Selecciona tu rol"
-                android:textStyle="bold"
-                android:textColor="#2B2B2B" />
 
-            <RadioGroup
-                android:id="@+id/rgRol"
+
+            <!-- ══════════════════════════════════════════════════ -->
+            <!--  TÉRMINOS Y CONDICIONES                           -->
+            <!-- ══════════════════════════════════════════════════ -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal">
+                android:layout_marginTop="20dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/info_box_background"
+                android:padding="12dp">
 
-                <RadioButton
-                    android:id="@+id/rbPasajero"
+                <CheckBox
+                    android:id="@+id/cbTerminos"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="#2EC4B6" />
+
+                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Pasajero"
-                    android:textColor="#2B2B2B"
-                    android:buttonTint="#2EC4B6"/>
+                    android:layout_marginStart="8dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="He leído y acepto los "
+                        android:textColor="#2B2B2B"
+                        android:textSize="13sp" />
 
-            </RadioGroup>
+                    <TextView
+                        android:id="@+id/tvLinkTerminos"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Términos y Condiciones"
+                        android:textColor="#2EC4B6"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground" />
+
+                </LinearLayout>
+            </LinearLayout>
 
             <!-- NOTA RECONOCIMIENTO FACIAL -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="12dp"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/info_box_background"
                 android:orientation="horizontal"
                 android:padding="16dp">
@@ -250,7 +271,7 @@
                 android:id="@+id/btn_register"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="16dp"
                 android:text="@string/register_btn"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"

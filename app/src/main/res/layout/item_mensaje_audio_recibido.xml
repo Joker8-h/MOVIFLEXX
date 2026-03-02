@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp"
+    android:paddingStart="10dp"
+    android:paddingEnd="60dp">
+
+    <!-- Header de fecha -->
+    <TextView
+        android:id="@+id/tvFechaHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/bg_fecha_pill"
+        android:text="Hoy"
+        android:textSize="11sp"
+        android:textColor="#1AB99F"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:layout_marginBottom="6dp"
+        android:visibility="gone"/>
+
+    <!-- Burbuja de audio estilo WhatsApp -->
+    <LinearLayout
+        android:layout_width="240dp"
+        android:layout_height="64dp"
+        android:layout_gravity="start"
+        android:orientation="horizontal"
+        android:background="@drawable/bg_bubble_received"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical">
+
+        <!-- Botón Play/Pause circular verde -->
+        <ImageButton
+            android:id="@+id/btnPlayPause"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:src="@android:drawable/ic_media_play"
+            android:background="@drawable/circle_online"
+            android:tint="#FFFFFF"
+            android:padding="10dp"
+            android:scaleType="fitCenter"
+            android:elevation="2dp"/>
+
+        <!-- Centro: barra + duración + hora -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="8dp"
+            android:gravity="center_vertical">
+
+            <SeekBar
+                android:id="@+id/seekBarAudio"
+                android:layout_width="match_parent"
+                android:layout_height="16dp"
+                android:max="100"
+                android:progress="0"
+                android:progressTint="#1AB99F"
+                android:thumbTint="#1AB99F"
+                android:progressBackgroundTint="#D0ECEA"
+                android:splitTrack="false"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:id="@+id/tvDuracionAudio"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0:00"
+                    android:textSize="10sp"
+                    android:textColor="#99B8B4"/>
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"/>
+
+                <TextView
+                    android:id="@+id/tvHora"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:textSize="10sp"
+                    android:textColor="#99B8B4"/>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

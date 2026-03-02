@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    res/anim/pulse_dot.xml
+    Animación de pulsación para el dot verde de "En línea".
+    Se aplica con animatorSet desde Chat.java cuando el estado cambia a "En línea".
+
+    USO EN Chat.java:
+        ObjectAnimator pulseX = ObjectAnimator.ofFloat(dotEstado, "scaleX", 1f, 1.5f, 1f);
+        ObjectAnimator pulseY = ObjectAnimator.ofFloat(dotEstado, "scaleY", 1f, 1.5f, 1f);
+        pulseX.setDuration(1200);
+        pulseY.setDuration(1200);
+        pulseX.setRepeatCount(ObjectAnimator.INFINITE);
+        pulseY.setRepeatCount(ObjectAnimator.INFINITE);
+        pulseX.setInterpolator(new CycleInterpolator(1f));
+        pulseY.setInterpolator(new CycleInterpolator(1f));
+        AnimatorSet set = new AnimatorSet();
+        set.playTogether(pulseX, pulseY);
+        set.start();
+        // Guardar referencia para cancelarla cuando el usuario se desconecte
+        dotPulseAnimator = set;
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:interpolator="@android:anim/decelerate_interpolator">
+    <scale
+        android:fromXScale="1.0"
+        android:toXScale="1.5"
+        android:fromYScale="1.0"
+        android:toYScale="1.5"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:duration="600"
+        android:repeatCount="infinite"
+        android:repeatMode="reverse"/>
+</set>

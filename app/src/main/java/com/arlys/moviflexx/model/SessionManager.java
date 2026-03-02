@@ -10,18 +10,22 @@ public class SessionManager {
 
     private static final String PREF_NAME = "MoviFlexxPrefs";
 
-    private static final String KEY_IS_LOGGED_IN = "IS_LOGGED_IN";
-    private static final String KEY_TOKEN        = "token";
-    private static final String KEY_NOMBRE       = "nombre";
-    private static final String KEY_EMAIL        = "email";
-    private static final String KEY_TELEFONO     = "telefono";
-    private static final String KEY_ID_ROL       = "idRol";
-    private static final String KEY_ID_USUARIO   = "id_usuario";
+    private static final String KEY_IS_LOGGED_IN          = "IS_LOGGED_IN";
+    private static final String KEY_TOKEN                  = "token";
+    private static final String KEY_NOMBRE                 = "nombre";
+    private static final String KEY_EMAIL                  = "email";
+    private static final String KEY_TELEFONO               = "telefono";
+    private static final String KEY_ID_ROL                 = "idRol";
+    private static final String KEY_ID_USUARIO             = "id_usuario";
+    private static final String KEY_CALIFICACION_PROMEDIO  = "calificacion_promedio";
+    private static final String KEY_CALIFICACION_TOTAL     = "calificacion_total";
 
     private SharedPreferences        prefs;
     private SharedPreferences.Editor editor;
+    private final Context            context;  // ← guardamos context para limpiar favoritos en logoutCompleto
 
     public SessionManager(Context context) {
+        this.context = context.getApplicationContext();
         prefs  = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         editor = prefs.edit();
     }
@@ -99,6 +103,45 @@ public class SessionManager {
         return user;
     }
 
+    // ================= ACTUALIZAR PERFIL =================
+
+    /**
+     * Actualiza solo nombre y teléfono en la sesión local.
+     * El email NO se puede modificar desde el perfil.
+     */
+    public void actualizarPerfil(String nombre, String telefono) {
+        editor.putString(KEY_NOMBRE,   nombre);
+        editor.putString(KEY_TELEFONO, telefono);
+        editor.apply();
+    }
+
+    // ================= CALIFICACIONES =================
+
+    /**
+     * Guarda el promedio y total de calificaciones del usuario en sesión local.
+     * Se llama después de calificar un viaje o al cargar el perfil.
+     */
+    public void guardarCalificacion(double promedio, int total) {
+        editor.putFloat(KEY_CALIFICACION_PROMEDIO, (float) promedio);
+        editor.putInt(KEY_CALIFICACION_TOTAL, total);
+        editor.apply();
+    }
+
+    /**
+     * Retorna el promedio de calificaciones guardado localmente.
+     * 0.0 si el usuario no tiene calificaciones aún.
+     */
+    public double getCalificacionPromedio() {
+        return prefs.getFloat(KEY_CALIFICACION_PROMEDIO, 0f);
+    }
+
+    /**
+     * Retorna el total de calificaciones recibidas guardado localmente.
+     */
+    public int getCalificacionTotal() {
+        return prefs.getInt(KEY_CALIFICACION_TOTAL, 0);
+    }
+
     // ================= VEHÍCULO POR USUARIO =================
 
     /** Clave base única por usuario para aislar vehículos entre conductores. */
@@ -165,9 +208,30 @@ public class SessionManager {
 
     // ================= LOGOUT =================
 
+    /**
+     * Cierra la sesión del usuario actual.
+     * Los favoritos NO se borran — se conservan por si el usuario
+     * vuelve a iniciar sesión. Cada usuario tiene sus propios favoritos
+     * en SharedPreferences "moviflexx_favoritos_usuario_<idUsuario>".
+     */
     public void logout() {
         editor.clear();
         editor.apply();
         SesionUsuario.cerrarSesion();
+    }
+
+    /**
+     * Logout completo: borra sesión Y favoritos del usuario actual.
+     * Usar solo si el usuario pide explícitamente "eliminar mis datos".
+     */
+    public void logoutCompleto() {
+        int idUsuario = getIdUsuario();
+        logout();
+        if (idUsuario != -1) {
+            context.getSharedPreferences(
+                    "moviflexx_favoritos_usuario_" + idUsuario,
+                    Context.MODE_PRIVATE
+            ).edit().clear().apply();
+        }
     }
 }
