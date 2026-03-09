@@ -16,10 +16,8 @@ import android.view.Window;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
@@ -35,6 +33,8 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputLayout;
 import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.model.Constantes;
+import com.arlys.moviflexx.model.MoviAlert;
+import com.arlys.moviflexx.model.FieldTooltip;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -75,6 +75,12 @@ public class Register extends AppCompatActivity {
     private MaterialButton btnRegistrar;
     private View layoutFormulario;
     private CheckBox cbTerminos;
+
+    // Controla si el usuario ya leyó los términos hasta el final
+    private boolean terminosLeidos = false;
+
+    // Loading dialog (para mostrarlo/cerrarlo)
+    private Dialog loadingDialog = null;
 
     private ConstraintLayout layoutFace;
     private PreviewView previewView;
@@ -122,9 +128,30 @@ public class Register extends AppCompatActivity {
         // ── Términos y Condiciones ──
         cbTerminos = findViewById(R.id.cbTerminos);
         TextView tvLinkTerminos = findViewById(R.id.tvLinkTerminos);
+
+        // Checkbox bloqueado hasta que el usuario lea completo
+        cbTerminos.setEnabled(false);
+        cbTerminos.setAlpha(0.4f);
+
+        // Si intenta tocar el checkbox sin haber leído
+        cbTerminos.setOnClickListener(v -> {
+            if (!terminosLeidos) {
+                cbTerminos.setChecked(false);
+                MoviAlert.toast(this,
+                        "Primero debes leer los Términos y Condiciones",
+                        MoviAlert.WARNING);
+            }
+        });
+
         tvLinkTerminos.setOnClickListener(v -> mostrarTerminosYCondiciones());
 
         layoutFace.setVisibility(View.GONE);
+
+        // ── Tooltips al tocar el ícono de error de cada campo ──
+        FieldTooltip.attach(tilNombre,   "Nombre completo");
+        FieldTooltip.attach(tilEmail,    "Correo electrónico");
+        FieldTooltip.attach(tilTelefono, "Teléfono");
+        FieldTooltip.attach(tilPassword, "Contraseña");
 
         configurarValidacionesEnTiempoReal();
 
@@ -137,6 +164,7 @@ public class Register extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if (cameraExecutor != null) cameraExecutor.shutdown();
+        if (loadingDialog != null && loadingDialog.isShowing()) loadingDialog.dismiss();
     }
 
     @Override
@@ -163,22 +191,18 @@ public class Register extends AppCompatActivity {
         Button btnAceptar   = dialog.findViewById(R.id.btnAceptarTerminos);
         TextView tvProgreso = dialog.findViewById(R.id.tvProgreso);
 
-        // El botón Acepto arranca deshabilitado (gris)
         btnAceptar.setEnabled(false);
 
-        // Detectar cuando el usuario llegó al final del scroll
         scrollView.getViewTreeObserver().addOnScrollChangedListener(() -> {
-            android.widget.ScrollView sv = scrollView;
-            int totalScrollHeight = sv.getChildAt(0).getHeight() - sv.getHeight();
-            int currentScroll     = sv.getScrollY();
+            int totalScrollHeight = scrollView.getChildAt(0).getHeight() - scrollView.getHeight();
+            int currentScroll     = scrollView.getScrollY();
 
-            // Si está a 50px o menos del fondo → habilitar
             if (totalScrollHeight - currentScroll <= 50) {
                 if (!btnAceptar.isEnabled()) {
                     btnAceptar.setEnabled(true);
-                    btnAceptar.getBackground().setTint(0xFF2EC4B6); // teal
+                    btnAceptar.getBackground().setTint(0xFF2EC4B6);
                     tvProgreso.setText("✅  Ya puedes aceptar los Términos y Condiciones");
-                    tvProgreso.setTextColor(0xFF2E7D32); // verde
+                    tvProgreso.setTextColor(0xFF2E7D32);
                 }
             }
         });
@@ -187,8 +211,13 @@ public class Register extends AppCompatActivity {
         btnCerrar.setOnClickListener(v -> dialog.dismiss());
 
         btnAceptar.setOnClickListener(v -> {
+            terminosLeidos = true;
+            cbTerminos.setEnabled(true);
+            cbTerminos.setAlpha(1.0f);
             cbTerminos.setChecked(true);
             dialog.dismiss();
+            // Toast premium de confirmación
+            MoviAlert.toast(this, "Términos aceptados. ¡Ya puedes registrarte!", MoviAlert.SUCCESS);
         });
 
         dialog.show();
@@ -233,100 +262,49 @@ public class Register extends AppCompatActivity {
 
     private boolean validarNombre(String valor) {
         valor = valor.trim();
-
-        if (valor.isEmpty()) {
-            tilNombre.setError("El nombre es obligatorio");
-            return false;
-        }
-
-        StringBuilder faltantes = new StringBuilder();
-        if (valor.length() < 3)
-            faltantes.append("• Mínimo 3 caracteres\n");
-        if (!Character.isUpperCase(valor.charAt(0)))
-            faltantes.append("• Debe comenzar con mayúscula\n");
-        if (!valor.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"))
-            faltantes.append("• Solo se permiten letras, sin números ni símbolos\n");
-
-        if (faltantes.length() > 0) {
-            tilNombre.setError(faltantes.toString().trim());
-            return false;
-        }
-        tilNombre.setError(null);
-        tilNombre.setErrorEnabled(false);
-        return true;
+        if (valor.isEmpty()) { tilNombre.setError("El nombre es obligatorio"); return false; }
+        StringBuilder f = new StringBuilder();
+        if (valor.length() < 3) f.append("• Mínimo 3 caracteres\n");
+        if (!Character.isUpperCase(valor.charAt(0))) f.append("• Debe comenzar con mayúscula\n");
+        if (!valor.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+")) f.append("• Solo letras, sin números ni símbolos\n");
+        if (f.length() > 0) { tilNombre.setError(f.toString().trim()); return false; }
+        tilNombre.setError(null); tilNombre.setErrorEnabled(false); return true;
     }
 
     private boolean validarEmail(String valor) {
         valor = valor.trim();
-
-        if (valor.isEmpty()) {
-            tilEmail.setError("El correo es obligatorio");
-            return false;
-        }
+        if (valor.isEmpty()) { tilEmail.setError("El correo es obligatorio"); return false; }
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(valor).matches()) {
-            tilEmail.setError("Formato inválido — debe ser: usuario@correo.com");
-            return false;
+            tilEmail.setError("Formato inválido — debe ser: usuario@correo.com"); return false;
         }
-        tilEmail.setError(null);
-        tilEmail.setErrorEnabled(false);
-        return true;
+        tilEmail.setError(null); tilEmail.setErrorEnabled(false); return true;
     }
 
     private boolean validarTelefono(String valor) {
         valor = valor.trim();
-
-        if (valor.isEmpty()) {
-            tilTelefono.setError("El teléfono es obligatorio");
-            return false;
-        }
-
-        StringBuilder faltantes = new StringBuilder();
-        if (!valor.matches("[0-9]+"))
-            faltantes.append("• Solo se permiten números, sin espacios ni guiones\n");
-        else if (valor.length() < 7)
-            faltantes.append("• Mínimo 7 dígitos\n");
-        else if (valor.length() > 15)
-            faltantes.append("• Máximo 15 dígitos\n");
-
-        if (faltantes.length() > 0) {
-            tilTelefono.setError(faltantes.toString().trim());
-            return false;
-        }
-        tilTelefono.setError(null);
-        tilTelefono.setErrorEnabled(false);
-        return true;
+        if (valor.isEmpty()) { tilTelefono.setError("El teléfono es obligatorio"); return false; }
+        StringBuilder f = new StringBuilder();
+        if (!valor.matches("[0-9]+")) f.append("• Solo números, sin espacios ni guiones\n");
+        else if (valor.length() < 7) f.append("• Mínimo 7 dígitos\n");
+        else if (valor.length() > 15) f.append("• Máximo 15 dígitos\n");
+        if (f.length() > 0) { tilTelefono.setError(f.toString().trim()); return false; }
+        tilTelefono.setError(null); tilTelefono.setErrorEnabled(false); return true;
     }
 
     private boolean validarPassword(String valor) {
-        if (valor.isEmpty()) {
-            tilPassword.setError("La contraseña es obligatoria");
-            return false;
-        }
-
-        StringBuilder faltantes = new StringBuilder();
-
-        if (valor.length() < 8)
-            faltantes.append("• Mínimo 8 caracteres\n");
-        if (!valor.matches(".*[A-Z].*"))
-            faltantes.append("• Al menos una letra mayúscula (A-Z)\n");
-        if (!valor.matches(".*[a-z].*"))
-            faltantes.append("• Al menos una letra minúscula (a-z)\n");
-        if (!valor.matches(".*[0-9].*"))
-            faltantes.append("• Al menos un número (0-9)\n");
+        if (valor.isEmpty()) { tilPassword.setError("La contraseña es obligatoria"); return false; }
+        StringBuilder f = new StringBuilder();
+        if (valor.length() < 8)                                             f.append("• Mínimo 8 caracteres\n");
+        if (!valor.matches(".*[A-Z].*"))                                    f.append("• Al menos una mayúscula (A-Z)\n");
+        if (!valor.matches(".*[a-z].*"))                                    f.append("• Al menos una minúscula (a-z)\n");
+        if (!valor.matches(".*[0-9].*"))                                    f.append("• Al menos un número (0-9)\n");
         if (!valor.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*"))
-            faltantes.append("• Al menos un carácter especial (!@#$%...)\n");
-
-        if (faltantes.length() > 0) {
-            tilPassword.setError("Faltan requisitos:\n" + faltantes.toString().trim());
-            return false;
-        }
-        tilPassword.setError(null);
-        tilPassword.setErrorEnabled(false);
-        return true;
+            f.append("• Al menos un carácter especial (!@#$...)\n");
+        if (f.length() > 0) { tilPassword.setError("Faltan requisitos:\n" + f.toString().trim()); return false; }
+        tilPassword.setError(null); tilPassword.setErrorEnabled(false); return true;
     }
 
-    private boolean validarTodosLosCampos(String nombre, String email,
-                                          String telefono, String password) {
+    private boolean validarTodosLosCampos(String nombre, String email, String telefono, String password) {
         boolean ok = true;
         if (!validarNombre(nombre))     ok = false;
         if (!validarEmail(email))       ok = false;
@@ -345,14 +323,15 @@ public class Register extends AppCompatActivity {
         String telefono = edtTelefono.getText().toString().trim();
         String password = edtPassword.getText().toString().trim();
 
-        if (!validarTodosLosCampos(nombre, email, telefono, password)) return;
+        if (!validarTodosLosCampos(nombre, email, telefono, password)) {
+            MoviAlert.toast(this, "Revisa los campos marcados en rojo", MoviAlert.WARNING);
+            return;
+        }
 
-        // ── Validación de Términos y Condiciones ──
-        if (!cbTerminos.isChecked()) {
-            mostrarAlerta(
-                    "Términos y Condiciones requeridos",
-                    "Para registrarte debes leer y aceptar los Términos y Condiciones.\n\nToca el enlace «Términos y Condiciones» para leerlos."
-            );
+        if (!terminosLeidos || !cbTerminos.isChecked()) {
+            MoviAlert.warning(this,
+                    "Términos requeridos",
+                    "Debes leer y aceptar los Términos y Condiciones para continuar.\n\nToca el enlace azul para leerlos.");
             return;
         }
 
@@ -415,8 +394,10 @@ public class Register extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 iniciarCamara();
             } else {
-                mostrarAlerta("Permiso requerido", "Se necesita acceso a la cámara");
-                mostrarFormulario();
+                MoviAlert.error(this,
+                        "Permiso requerido",
+                        "Necesitamos acceso a la cámara para el reconocimiento facial.",
+                        this::mostrarFormulario);
             }
         }
     }
@@ -434,7 +415,8 @@ public class Register extends AppCompatActivity {
                 bindPreview(future.get());
             } catch (Exception e) {
                 Log.e(TAG, "Error iniciando cámara: " + e.getMessage());
-                mostrarAlerta("Error", "Error al iniciar la cámara");
+                runOnUiThread(() -> MoviAlert.error(this, "Error de cámara",
+                        "No se pudo iniciar la cámara. Intenta de nuevo."));
             }
         }, ContextCompat.getMainExecutor(this));
     }
@@ -476,12 +458,20 @@ public class Register extends AppCompatActivity {
                 runOnUiThread(() -> iniciarCuentaRegresiva(() -> {
                     yaCapturado.set(true);
                     if (ultimoFrameBitmap != null) {
-                        txtEstado.setText("☁️ Subiendo imagen...");
+                        runOnUiThread(() -> {
+                            txtEstado.setText("☁️ Subiendo imagen...");
+                            // Mostrar loading premium
+                            loadingDialog = MoviAlert.loading(this, "Subiendo imagen...");
+                        });
                         subirACloudinary(ultimoFrameBitmap);
                     } else {
-                        txtEstado.setText("❌ Error capturando imagen");
-                        yaCapturado.set(false);
-                        cuentaRegresivaIniciada.set(false);
+                        runOnUiThread(() -> {
+                            txtEstado.setText("❌ Error capturando imagen");
+                            MoviAlert.error(this, "Error de captura",
+                                    "No se pudo capturar la imagen. Por favor intenta de nuevo.");
+                            yaCapturado.set(false);
+                            cuentaRegresivaIniciada.set(false);
+                        });
                     }
                 }));
             }
@@ -522,11 +512,11 @@ public class Register extends AppCompatActivity {
             yuvImage.compressToJpeg(new Rect(0, 0, image.getWidth(), image.getHeight()), 90, out);
 
             byte[] imageBytes = out.toByteArray();
-            Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+            Bitmap bmp = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
 
             android.graphics.Matrix matrix = new android.graphics.Matrix();
             matrix.postRotate(image.getImageInfo().getRotationDegrees());
-            return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            return Bitmap.createBitmap(bmp, 0, 0, bmp.getWidth(), bmp.getHeight(), matrix, true);
         } catch (Exception e) {
             Log.e(TAG, "Error convirtiendo imagen: " + e.getMessage());
             return null;
@@ -538,7 +528,6 @@ public class Register extends AppCompatActivity {
     // ══════════════════════════════════════════════════════════════════════════
 
     private void subirACloudinary(Bitmap bitmap) {
-        runOnUiThread(() -> txtEstado.setText("☁️ Subiendo imagen..."));
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             bitmap.compress(Bitmap.CompressFormat.JPEG, 95, baos);
@@ -555,37 +544,54 @@ public class Register extends AppCompatActivity {
                     .enqueue(new Callback() {
                         @Override public void onFailure(Call call, IOException e) {
                             runOnUiThread(() -> {
+                                dismissLoading();
                                 txtEstado.setText("❌ Sin internet");
-                                mostrarAlerta("Error de conexión", "No se pudo subir la imagen");
-                                mostrarBotonReintentar();
+                                MoviAlert.error(Register.this,
+                                        "Sin conexión",
+                                        "No se pudo subir la imagen. Verifica tu internet e intenta de nuevo.",
+                                        () -> mostrarBotonReintentar());
                             });
                         }
+
                         @Override public void onResponse(Call call, Response response) throws IOException {
                             String body = response.body() != null ? response.body().string() : "";
                             if (response.isSuccessful()) {
                                 try {
-                                    registrarEnBackend(new JSONObject(body).getString("secure_url"));
+                                    String imageUrl = new JSONObject(body).getString("secure_url");
+                                    runOnUiThread(() -> {
+                                        dismissLoading();
+                                        loadingDialog = MoviAlert.loading(Register.this, "Creando tu cuenta...");
+                                    });
+                                    registrarEnBackend(imageUrl);
                                 } catch (JSONException e) {
                                     runOnUiThread(() -> {
+                                        dismissLoading();
                                         txtEstado.setText("❌ Error procesando");
-                                        mostrarAlerta("Error", "Error procesando imagen");
-                                        mostrarBotonReintentar();
+                                        MoviAlert.error(Register.this,
+                                                "Error inesperado",
+                                                "Hubo un problema al procesar la imagen. Inténtalo de nuevo.",
+                                                () -> mostrarBotonReintentar());
                                     });
                                 }
                             } else {
                                 runOnUiThread(() -> {
+                                    dismissLoading();
                                     txtEstado.setText("❌ Error subiendo imagen");
-                                    mostrarAlerta("Error", "Error al subir imagen");
-                                    mostrarBotonReintentar();
+                                    MoviAlert.error(Register.this,
+                                            "Error al subir imagen",
+                                            "El servidor rechazó la imagen (código " + response.code() + "). Intenta de nuevo.",
+                                            () -> mostrarBotonReintentar());
                                 });
                             }
                         }
                     });
         } catch (Exception e) {
             runOnUiThread(() -> {
+                dismissLoading();
                 txtEstado.setText("❌ Error");
-                mostrarAlerta("Error", "Error: " + e.getMessage());
-                mostrarBotonReintentar();
+                MoviAlert.error(this, "Error interno",
+                        "Ocurrió un error inesperado: " + e.getMessage(),
+                        this::mostrarBotonReintentar);
             });
         }
     }
@@ -595,7 +601,6 @@ public class Register extends AppCompatActivity {
     // ══════════════════════════════════════════════════════════════════════════
 
     private void registrarEnBackend(String faceImageUrl) {
-        runOnUiThread(() -> txtEstado.setText("💾 Creando cuenta..."));
         try {
             JSONObject json = new JSONObject();
             json.put("nombre",       datosNombre);
@@ -613,42 +618,57 @@ public class Register extends AppCompatActivity {
             ).enqueue(new Callback() {
                 @Override public void onFailure(Call call, IOException e) {
                     runOnUiThread(() -> {
+                        dismissLoading();
                         txtEstado.setText("❌ Sin conexión");
-                        mostrarAlerta("Error de conexión", "No se puede conectar al servidor");
-                        mostrarBotonReintentar();
+                        MoviAlert.error(Register.this,
+                                "Sin conexión al servidor",
+                                "No se pudo conectar. Verifica tu internet e intenta más tarde.",
+                                () -> mostrarBotonReintentar());
                     });
                 }
+
                 @Override public void onResponse(Call call, Response response) throws IOException {
                     String responseBody = response.body() != null ? response.body().string() : "";
                     runOnUiThread(() -> {
+                        dismissLoading();
                         if (response.isSuccessful()) {
                             txtEstado.setText("✅ ¡Cuenta creada!");
-                            mostrarAlerta("✅ ¡Éxito!", "Registro exitoso. Ahora inicia sesión.", () -> {
-                                startActivity(new Intent(Register.this, Login.class));
-                                finish();
-                            });
+                            MoviAlert.success(Register.this,
+                                    "¡Registro exitoso!",
+                                    "Tu cuenta fue creada correctamente.\nYa puedes iniciar sesión.",
+                                    () -> {
+                                        startActivity(new Intent(Register.this, Login.class));
+                                        finish();
+                                    });
                         } else {
-                            String errorMsg = "Error en el registro";
+                            String errorMsg;
                             switch (response.code()) {
-                                case 400: errorMsg = "Datos inválidos";                          break;
-                                case 409: errorMsg = "El email ya está registrado";              break;
-                                case 429: errorMsg = "Demasiados intentos. Espera 5 minutos.";  break;
-                                case 500: errorMsg = "Error del servidor";                       break;
+                                case 400: errorMsg = "Los datos enviados son inválidos.";              break;
+                                case 409: errorMsg = "Este correo ya está registrado en la plataforma."; break;
+                                case 429: errorMsg = "Demasiados intentos. Espera 5 minutos e intenta de nuevo."; break;
+                                case 500: errorMsg = "Error interno del servidor. Inténtalo más tarde."; break;
+                                default:  errorMsg = "Error desconocido (código " + response.code() + ").";
                             }
+
                             try {
                                 JSONObject err = new JSONObject(responseBody);
                                 if (err.has("message"))    errorMsg = err.getString("message");
                                 else if (err.has("error")) errorMsg = err.getString("error");
                             } catch (Exception ignored) {}
 
-                            txtEstado.setText("❌ " + errorMsg);
-                            mostrarAlerta("Error", errorMsg);
+                            final String mensajeFinal = errorMsg;
+                            txtEstado.setText("❌ " + mensajeFinal);
 
-                            if (response.code() != 429) {
-                                mostrarBotonReintentar();
-                            } else {
+                            if (response.code() == 429) {
+                                MoviAlert.warning(Register.this, "Límite de intentos", mensajeFinal);
                                 new android.os.Handler(android.os.Looper.getMainLooper())
                                         .postDelayed(() -> mostrarFormulario(), 3000);
+                            } else if (response.code() == 409) {
+                                MoviAlert.warning(Register.this, "Correo ya registrado", mensajeFinal);
+                                mostrarBotonReintentar();
+                            } else {
+                                MoviAlert.error(Register.this, "Error en el registro", mensajeFinal,
+                                        () -> mostrarBotonReintentar());
                             }
                         }
                     });
@@ -656,29 +676,13 @@ public class Register extends AppCompatActivity {
             });
         } catch (Exception e) {
             runOnUiThread(() -> {
+                dismissLoading();
                 txtEstado.setText("❌ Error interno");
-                mostrarAlerta("Error", "Error interno: " + e.getMessage());
-                mostrarBotonReintentar();
+                MoviAlert.error(this, "Error interno",
+                        "Ocurrió un error inesperado: " + e.getMessage(),
+                        this::mostrarBotonReintentar);
             });
         }
-    }
-
-    // ══════════════════════════════════════════════════════════════════════════
-    //  ALERTAS
-    // ══════════════════════════════════════════════════════════════════════════
-
-    private void mostrarAlerta(String titulo, String mensaje) {
-        new AlertDialog.Builder(this)
-                .setTitle(titulo).setMessage(mensaje)
-                .setPositiveButton("OK", (d, w) -> d.dismiss())
-                .setCancelable(false).show();
-    }
-
-    private void mostrarAlerta(String titulo, String mensaje, Runnable onOk) {
-        new AlertDialog.Builder(this)
-                .setTitle(titulo).setMessage(mensaje)
-                .setPositiveButton("OK", (d, w) -> { d.dismiss(); onOk.run(); })
-                .setCancelable(false).show();
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -719,6 +723,13 @@ public class Register extends AppCompatActivity {
     // ══════════════════════════════════════════════════════════════════════════
     //  UTILIDADES
     // ══════════════════════════════════════════════════════════════════════════
+
+    private void dismissLoading() {
+        if (loadingDialog != null && loadingDialog.isShowing()) {
+            loadingDialog.dismiss();
+            loadingDialog = null;
+        }
+    }
 
     private void resetBoton() {
         btnRegistrar.setEnabled(true);

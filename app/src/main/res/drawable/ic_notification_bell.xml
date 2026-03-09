@@ -9,7 +9,7 @@
     <!-- Cuerpo de la campana -->
     <path
         android:fillColor="@android:color/transparent"
-        android:strokeColor="#FFFFFF"
+        android:strokeColor="#00CED1"
         android:strokeWidth="1.8"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
@@ -18,7 +18,7 @@
     <!-- Tallo superior -->
     <path
         android:fillColor="@android:color/transparent"
-        android:strokeColor="#FFFFFF"
+        android:strokeColor="#00CED1"
         android:strokeWidth="1.8"
         android:strokeLineCap="round"
         android:pathData="M12,3 L12,5"/>
@@ -26,7 +26,7 @@
     <!-- Badín inferior (silencio) -->
     <path
         android:fillColor="@android:color/transparent"
-        android:strokeColor="#FFFFFF"
+        android:strokeColor="#00CED1"
         android:strokeWidth="1.8"
         android:strokeLineCap="round"
         android:pathData="M10,17 A2,2 0 0,0 14,17"/>

@@ -8,6 +8,9 @@
         <item name="android:windowFullscreen">true</item>
     </style>
 
+
+
+
     <!-- Main Theme -->
     <style name="Theme.MoviFlexx" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primary</item>

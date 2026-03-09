@@ -13,10 +13,6 @@ import com.arlys.moviflexx.model.SessionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 
-/**
- * PerfilUsuario — extends BaseActivity.
- * Navbar idéntico al de HomeConductor: goTo() + Transition.NONE.
- */
 public class PerfilUsuario extends BaseActivity {
 
     private SessionManager session;
@@ -30,9 +26,9 @@ public class PerfilUsuario extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_perfil_usuario);
 
+        // Siempre crear nuevo SessionManager para leer datos frescos
         session = new SessionManager(this);
 
-        // Vistas
         tvNombre           = findViewById(R.id.tv_nombre);
         tvEmail            = findViewById(R.id.tv_email);
         tvTelefono         = findViewById(R.id.tv_telefono);
@@ -43,12 +39,10 @@ public class PerfilUsuario extends BaseActivity {
         tvPlaca            = findViewById(R.id.tv_placa_vehiculo);
         tvAsientos         = findViewById(R.id.tv_asientos);
 
-        // Datos básicos
         tvNombre.setText(session.getNombre());
         tvEmail.setText(session.getEmail());
         tvTelefono.setText(session.getTelefono());
 
-        // Botones
         if (btnRegistrarV != null)
             animateButton(btnRegistrarV,
                     () -> goTo(RegistrarVehiculo.class, Transition.SLIDE));
@@ -63,19 +57,19 @@ public class PerfilUsuario extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
+        // Recrear SessionManager para leer siempre datos frescos de SharedPreferences
+        session = new SessionManager(this);
+
         tvNombre.setText(session.getNombre());
         tvEmail.setText(session.getEmail());
         tvTelefono.setText(session.getTelefono());
         actualizarInterfaz();
 
-        // Marcar item activo igual que HomeConductor hace en onResume
         BottomNavigationView nav = findViewById(R.id.bottom_navigation);
         if (nav != null) nav.setSelectedItemId(R.id.nav_perfil);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  NAVBAR — mismo patrón que HomeConductor
-    // ─────────────────────────────────────────────────────────────
     private void configurarBottomNav() {
         BottomNavigationView nav = findViewById(R.id.bottom_navigation);
         if (nav == null) return;
@@ -86,7 +80,7 @@ public class PerfilUsuario extends BaseActivity {
         nav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
 
-            if (id == R.id.nav_perfil) return true;   // ya estamos aquí
+            if (id == R.id.nav_perfil) return true;
 
             if (esConductor) {
                 if      (id == R.id.nav_inicio)     goTo(HomeConductor.class,  Transition.NONE);
@@ -105,9 +99,6 @@ public class PerfilUsuario extends BaseActivity {
         });
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  UI según rol
-    // ─────────────────────────────────────────────────────────────
     private void actualizarInterfaz() {
         if (session.getIdRol() == 2) {
             if (layoutVehiculoRoot != null) layoutVehiculoRoot.setVisibility(View.VISIBLE);
@@ -126,9 +117,6 @@ public class PerfilUsuario extends BaseActivity {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  onClick desde XML
-    // ─────────────────────────────────────────────────────────────
     public void irEditarPerfil(View v) {
         goTo(EditarPerfil.class, Transition.SLIDE);
     }

@@ -5,7 +5,7 @@
     android:orientation="vertical"
     android:background="#FFFFFF">
 
-    <!-- BARRA SUPERIOR -->
+    <!-- ══ BARRA SUPERIOR ══ -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="56dp"
@@ -35,7 +35,7 @@
 
     </LinearLayout>
 
-    <!-- AVISO: leer hasta el final -->
+    <!-- ══ AVISO: leer hasta el final ══ -->
     <TextView
         android:id="@+id/tvAvisoLeer"
         android:layout_width="match_parent"
@@ -46,7 +46,7 @@
         android:textSize="12sp"
         android:padding="12dp" />
 
-    <!-- CONTENIDO DEL CONTRATO -->
+    <!-- ══ CONTENIDO DEL CONTRATO ══ -->
     <ScrollView
         android:id="@+id/scrollTerminos"
         android:layout_width="match_parent"
@@ -64,9 +64,9 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="CONTRATO MARCO DE LICENCIA DE USO DE SOFTWARE, INTERMEDIACIÓN TECNOLÓGICA Y ESTATUTO DE TÉRMINOS Y CONDICIONES GLOBALES DE LA PLATAFORMA &quot;MOVIFLEX&quot;"
+                android:text="CONTRATO MARCO DE LICENCIA DE USO DE SOFTWARE,\nINTERMEDIACIÓN TECNOLÓGICA Y ESTATUTO DE TÉRMINOS\nY CONDICIONES GLOBALES DE LA PLATAFORMA «MOVIFLEX»"
                 android:textColor="#1A1A1A"
-                android:textSize="15sp"
+                android:textSize="14sp"
                 android:textStyle="bold"
                 android:gravity="center"
                 android:paddingBottom="8dp"/>
@@ -74,178 +74,187 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="VERSIÓN: 1.0 (2024)  |  DOMICILIO LEGAL: POPAYÁN, CAUCA, COLOMBIA.\nEMPRESA: MOVIFLEX S.A.S. (NIT EN TRÁMITE)."
+                android:text="VERSIÓN: 1.0 (2024)  |  DOMICILIO LEGAL: POPAYÁN, CAUCA, COLOMBIA."
+                android:textColor="#444444"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:paddingBottom="2dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="EMPRESA: MOVIFLEX S.A.S. (NIT EN TRÁMITE)"
                 android:textColor="#444444"
                 android:textSize="12sp"
                 android:gravity="center"
                 android:paddingBottom="16dp"/>
 
-            <View android:layout_width="match_parent" android:layout_height="1dp"
-                android:background="#DDDDDD" android:layout_marginBottom="16dp"/>
+            <View android:layout_width="match_parent" android:layout_height="2dp"
+                android:background="#2EC4B6" android:layout_marginBottom="16dp"/>
 
-            <!-- PREÁMBULO -->
+            <!-- ── PREÁMBULO ── -->
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="PREÁMBULO: DECLARACIÓN DE VOLUNTAD Y NATURALEZA JURÍDICA"
                 android:textColor="#2EC4B6" android:textSize="13sp" android:textStyle="bold"
                 android:paddingBottom="8dp"/>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="El presente documento constituye un acuerdo legal vinculante y obligatorio (en adelante, el &quot;CONTRATO&quot;) entre MOVIFLEX S.A.S., una sociedad comercial colombiana debidamente constituida, con domicilio principal en la Oficina Fábrica de Software Alto del Cauca SENA de la ciudad de Popayán (en adelante, &quot;LA COMPAÑÍA&quot; o &quot;MOVIFLEX&quot;) y cualquier persona natural o jurídica que, de forma libre y espontánea, decida registrarse, descargar o utilizar el ecosistema digital (en adelante, el &quot;USUARIO&quot; o el &quot;CONDUCTOR&quot;, y colectivamente denominados las &quot;PARTES&quot;)."
+                android:text="El presente documento constituye un acuerdo legal vinculante y obligatorio (en adelante, el «CONTRATO») entre MOVIFLEX S.A.S., sociedad comercial colombiana con domicilio en Popayán (en adelante, «LA COMPAÑÍA» o «MOVIFLEX»), y cualquier persona natural o jurídica que decida registrarse, descargar o utilizar el ecosistema digital (en adelante, el «USUARIO» o el «CONDUCTOR», y colectivamente las «PARTES»)."
                 android:textColor="#333333" android:textSize="13sp" android:paddingBottom="16dp"/>
 
             <View android:layout_width="match_parent" android:layout_height="1dp"
                 android:background="#DDDDDD" android:layout_marginBottom="16dp"/>
 
-            <!-- CAPÍTULO I -->
+            <!-- ── CAPÍTULO I ── -->
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="CAPÍTULO I: DE LA NATURALEZA DEL OBJETO SOCIAL Y LA ACTIVIDAD TECNOLÓGICA"
+                android:text="CAPÍTULO I: NATURALEZA DEL OBJETO SOCIAL Y LA ACTIVIDAD TECNOLÓGICA"
                 android:textColor="#1A1A1A" android:textSize="13sp" android:textStyle="bold"
-                android:paddingBottom="8dp"/>
+                android:paddingBottom="10dp"/>
 
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="ARTÍCULO 1: DEFINICIÓN DE LA ACTIVIDAD"
+                android:text="ARTÍCULO 1 — Definición de la actividad"
                 android:textColor="#2EC4B6" android:textSize="12sp" android:textStyle="bold"
-                android:paddingBottom="6dp"/>
+                android:paddingBottom="4dp"/>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="MOVIFLEX S.A.S. declara, y las PARTES aceptan, que su objeto social no es la prestación del servicio de transporte público ni privado. MOVIFLEX es una Empresa de Base Tecnológica (EBT) dedicada exclusivamente al desarrollo, mantenimiento y licenciamiento de una plataforma de software. La función de la App es la de un CORREDOR TECNOLÓGICO (Art. 1340 del Código de Comercio Colombiano), que simplemente facilita el contacto entre dos partes independientes: quien demanda un servicio de movilidad y quien ofrece su capacidad de transporte autónomo."
+                android:text="MOVIFLEX S.A.S. no presta servicio de transporte público ni privado. Es una Empresa de Base Tecnológica (EBT) dedicada exclusivamente al desarrollo y licenciamiento de software. Actúa como CORREDOR TECNOLÓGICO (Art. 1340 del Código de Comercio Colombiano), facilitando el contacto entre quien demanda un servicio de movilidad y quien ofrece su capacidad de transporte autónomo."
                 android:textColor="#333333" android:textSize="13sp" android:paddingBottom="12dp"/>
 
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="ARTÍCULO 2: AUSENCIA DE HABILITACIÓN DE TRANSPORTE"
+                android:text="ARTÍCULO 2 — Ausencia de habilitación de transporte"
                 android:textColor="#2EC4B6" android:textSize="12sp" android:textStyle="bold"
-                android:paddingBottom="6dp"/>
+                android:paddingBottom="4dp"/>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="Las PARTES reconocen que MOVIFLEX no ostenta, ni requiere, habilitación por parte del Ministerio de Transporte como empresa transportadora, toda vez que no posee flota de vehículos, no ejerce el control de la operación, no despacha vehículos y no recibe remuneración por concepto de flete, sino por concepto de &quot;Tarifa de Licencia de Uso de Software&quot;."
+                android:text="MOVIFLEX no posee flota de vehículos, no ejerce control de la operación, no despacha vehículos y no recibe remuneración por flete, sino por «Tarifa de Licencia de Uso de Software». Por tanto, no requiere habilitación del Ministerio de Transporte como empresa transportadora."
                 android:textColor="#333333" android:textSize="13sp" android:paddingBottom="16dp"/>
 
             <View android:layout_width="match_parent" android:layout_height="1dp"
                 android:background="#DDDDDD" android:layout_marginBottom="16dp"/>
 
-            <!-- CAPÍTULO II -->
+            <!-- ── CAPÍTULO II ── -->
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="CAPÍTULO II: RÉGIMEN DE CONTRATACIÓN DEL CONDUCTOR (BLINDAJE LABORAL)"
                 android:textColor="#1A1A1A" android:textSize="13sp" android:textStyle="bold"
-                android:paddingBottom="8dp"/>
+                android:paddingBottom="10dp"/>
 
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="ARTÍCULO 3: DECLARACIÓN EXPRESA DE INDEPENDENCIA (ART. 23 C.S.T.)"
+                android:text="ARTÍCULO 3 — Declaración expresa de independencia (Art. 23 C.S.T.)"
                 android:textColor="#2EC4B6" android:textSize="12sp" android:textStyle="bold"
-                android:paddingBottom="6dp"/>
+                android:paddingBottom="4dp"/>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="El Conductor declara bajo la gravedad de juramento que su relación con MOVIFLEX es de naturaleza civil y comercial, regida por las normas del Corretaje y Mandato (Código de Comercio). En consecuencia, se deja constancia de la inexistencia de los elementos del contrato de trabajo:\n\n1. NO SUBORDINACIÓN: El Conductor no está sujeto a reglamentos de trabajo, órdenes, ni jerarquías. Conserva la potestad de aceptar o rechazar cualquier solicitud de viaje.\n\n2. NO PRESTACIÓN PERSONAL EXCLUSIVA: El Conductor puede utilizar otras plataformas o dedicarse a otras actividades económicas sin restricción alguna.\n\n3. NO REMUNERACIÓN SALARIAL: Los ingresos percibidos por el Conductor son pagos directos del Usuario Pasajero. MOVIFLEX no paga nómina, prestaciones, primas ni vacaciones."
+                android:text="El Conductor declara bajo juramento que su relación con MOVIFLEX es de naturaleza civil y comercial. Se deja constancia de la inexistencia de los elementos del contrato de trabajo:\n\n• NO SUBORDINACIÓN: El Conductor no está sujeto a reglamentos ni órdenes. Conserva la potestad de aceptar o rechazar cualquier viaje.\n\n• NO PRESTACIÓN EXCLUSIVA: Puede utilizar otras plataformas o dedicarse a otras actividades sin restricción.\n\n• NO REMUNERACIÓN SALARIAL: Los ingresos son pagos directos del Pasajero. MOVIFLEX no paga nómina, prestaciones, primas ni vacaciones."
                 android:textColor="#333333" android:textSize="13sp" android:paddingBottom="12dp"/>
 
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="ARTÍCULO 4: ASUNCIÓN DE CARGAS PRESTACIONALES Y PARAFISCALES"
+                android:text="ARTÍCULO 4 — Asunción de cargas prestacionales y parafiscales"
                 android:textColor="#2EC4B6" android:textSize="12sp" android:textStyle="bold"
-                android:paddingBottom="6dp"/>
+                android:paddingBottom="4dp"/>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="De conformidad con la Ley 1562 de 2012 y el Decreto 1072 de 2015, el Conductor, como trabajador independiente y contratista autónomo, es el único responsable de su afiliación y pago al Sistema de Seguridad Social Integral (Salud, Pensión y ARL). El Conductor mantendrá indemne a MOVIFLEX ante cualquier reclamación de la UGPP o entidades de seguridad social."
+                android:text="Conforme a la Ley 1562 de 2012 y el Decreto 1072 de 2015, el Conductor, como trabajador independiente, es el único responsable de su afiliación y pago al Sistema de Seguridad Social Integral (Salud, Pensión y ARL), y mantendrá indemne a MOVIFLEX ante cualquier reclamación de la UGPP."
                 android:textColor="#333333" android:textSize="13sp" android:paddingBottom="16dp"/>
 
             <View android:layout_width="match_parent" android:layout_height="1dp"
                 android:background="#DDDDDD" android:layout_marginBottom="16dp"/>
 
-            <!-- CAPÍTULO III -->
+            <!-- ── CAPÍTULO III ── -->
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="CAPÍTULO III: MODELOS ECONÓMICOS Y PACTOS DE ESTABILIDAD"
                 android:textColor="#1A1A1A" android:textSize="13sp" android:textStyle="bold"
-                android:paddingBottom="8dp"/>
+                android:paddingBottom="10dp"/>
 
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="ARTÍCULO 5: ESQUEMAS DE CONTRAPRESTACIÓN"
+                android:text="ARTÍCULO 5 — Esquemas de contraprestación"
                 android:textColor="#2EC4B6" android:textSize="12sp" android:textStyle="bold"
-                android:paddingBottom="6dp"/>
+                android:paddingBottom="4dp"/>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="El Conductor podrá optar por dos modalidades de licenciamiento:\n\n• PLAN ESTÁNDAR: Comisión del siete por ciento (7%) por cada intermediación exitosa. Este valor se deduce de la tarifa sugerida por la plataforma.\n\n• PLAN PRO CONDUCTOR FUNDADOR: Pago de una suscripción mensual de TREINTA MIL PESOS M/CTE ($30.000 COP).\n\n  – Párrafo Primero (Estabilidad): Los Conductores que se vinculen bajo esta modalidad durante la etapa de lanzamiento en Popayán gozarán de un Pacto de Estabilidad de Precio, manteniendo esta tarifa mensual de por vida, siempre que no interrumpan su suscripción por más de 30 días.\n\n  – Párrafo Segundo: MOVIFLEX se reserva el derecho de ajustar el valor de este plan para futuros usuarios según la inflación o el IPC, sin afectar a los &quot;Conductores Fundadores&quot;."
+                android:text="El Conductor puede elegir entre dos modalidades:\n\n• PLAN ESTÁNDAR: Comisión del 7 % por cada intermediación exitosa.\n\n• PLAN PRO CONDUCTOR FUNDADOR: Suscripción mensual de $30.000 COP, con Pacto de Estabilidad de Precio de por vida para quienes se vinculen durante el lanzamiento en Popayán, siempre que no interrumpan la suscripción por más de 30 días."
                 android:textColor="#333333" android:textSize="13sp" android:paddingBottom="16dp"/>
 
             <View android:layout_width="match_parent" android:layout_height="1dp"
                 android:background="#DDDDDD" android:layout_marginBottom="16dp"/>
 
-            <!-- CAPÍTULO IV -->
+            <!-- ── CAPÍTULO IV ── -->
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="CAPÍTULO IV: EXONERACIÓN ABSOLUTA DE RESPONSABILIDAD (BLINDAJE CIVIL Y PENAL)"
+                android:text="CAPÍTULO IV: EXONERACIÓN DE RESPONSABILIDAD (BLINDAJE CIVIL Y PENAL)"
                 android:textColor="#1A1A1A" android:textSize="13sp" android:textStyle="bold"
-                android:paddingBottom="8dp"/>
+                android:paddingBottom="10dp"/>
 
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="ARTÍCULO 6: CLÁUSULA DE INDEMNIDAD POR RIESGO OPERATIVO"
+                android:text="ARTÍCULO 6 — Cláusula de indemnidad por riesgo operativo"
                 android:textColor="#2EC4B6" android:textSize="12sp" android:textStyle="bold"
-                android:paddingBottom="6dp"/>
+                android:paddingBottom="4dp"/>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="Dado que el transporte es una actividad peligrosa (Art. 2356 del Código Civil), el Conductor y el Usuario Pasajero asumen el riesgo total de la operación. MOVIFLEX no responderá solidaria ni directamente por:\n\n1. Accidentes de Tránsito: Todo siniestro se rige por el SOAT del vehículo y la responsabilidad civil del propietario.\n\n2. Responsabilidad Penal: En caso de delitos cometidos dentro del vehículo (hurto, acoso, lesiones, homicidio), la responsabilidad será estrictamente individual del autor. MOVIFLEX no garantiza la idoneidad moral de los usuarios, limitándose a la verificación documental estándar.\n\n3. Contenidos y Objetos: Se prohíbe el transporte de armas, drogas o sustancias explosivas. El Conductor debe inspeccionar su vehículo; MOVIFLEX no custodia ni conoce el contenido de lo transportado."
+                android:text="Dado que el transporte es una actividad peligrosa (Art. 2356 del Código Civil), las PARTES asumen el riesgo total de la operación. MOVIFLEX no responderá por:\n\n• Accidentes de tránsito: se rigen por el SOAT y la responsabilidad civil del propietario del vehículo.\n\n• Responsabilidad penal: delitos cometidos dentro del vehículo son responsabilidad estrictamente individual de su autor.\n\n• Objetos prohibidos: se prohíbe el transporte de armas, drogas o sustancias explosivas."
                 android:textColor="#333333" android:textSize="13sp" android:paddingBottom="16dp"/>
 
             <View android:layout_width="match_parent" android:layout_height="1dp"
                 android:background="#DDDDDD" android:layout_marginBottom="16dp"/>
 
-            <!-- CAPÍTULO V -->
+            <!-- ── CAPÍTULO V ── -->
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="CAPÍTULO V: SEGURIDAD, PRUEBAS JUDICIALES Y TECNOLOGÍA"
                 android:textColor="#1A1A1A" android:textSize="13sp" android:textStyle="bold"
-                android:paddingBottom="8dp"/>
+                android:paddingBottom="10dp"/>
 
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="ARTÍCULO 7: CONSENTIMIENTO PARA EL USO DE MEDIOS AUDIOVISUALES"
+                android:text="ARTÍCULO 7 — Consentimiento para el uso de medios audiovisuales"
                 android:textColor="#2EC4B6" android:textSize="12sp" android:textStyle="bold"
-                android:paddingBottom="6dp"/>
+                android:paddingBottom="4dp"/>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="En virtud de la Ley 906 de 2004 (Código de Procedimiento Penal), las PARTES otorgan su consentimiento expreso para que la plataforma grabe audio y video durante los trayectos.\n\n• Finalidad: Estas grabaciones serán custodiadas bajo estándares de seguridad informática y solo serán reveladas ante orden judicial o para dirimir conflictos internos de la plataforma.\n\n• Valor Probatorio: Las PARTES aceptan que estas grabaciones constituyen prueba plena en procesos civiles o denuncias ante la Fiscalía General de la Nación."
+                android:text="En virtud de la Ley 906 de 2004, las PARTES otorgan consentimiento expreso para que la plataforma grabe audio y video durante los trayectos. Estas grabaciones solo se revelarán ante orden judicial o para dirimir conflictos internos, y constituyen prueba plena en procesos civiles o denuncias ante la Fiscalía General de la Nación."
                 android:textColor="#333333" android:textSize="13sp" android:paddingBottom="16dp"/>
 
             <View android:layout_width="match_parent" android:layout_height="1dp"
                 android:background="#DDDDDD" android:layout_marginBottom="16dp"/>
 
-            <!-- CAPÍTULO VI -->
+            <!-- ── CAPÍTULO VI ── -->
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="CAPÍTULO VI: POLÍTICA DE DATOS PERSONALES (HABEAS DATA)"
                 android:textColor="#1A1A1A" android:textSize="13sp" android:textStyle="bold"
-                android:paddingBottom="8dp"/>
+                android:paddingBottom="10dp"/>
 
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="ARTÍCULO 8: CUMPLIMIENTO LEY 1581 DE 2012"
+                android:text="ARTÍCULO 8 — Cumplimiento Ley 1581 de 2012"
                 android:textColor="#2EC4B6" android:textSize="12sp" android:textStyle="bold"
-                android:paddingBottom="6dp"/>
+                android:paddingBottom="4dp"/>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="MOVIFLEX S.A.S., como Responsable del Tratamiento, recolectará datos sensibles (biometría, ubicación GPS, registros de voz). El titular autoriza el tratamiento de estos datos para:\n\n1. Geolocalización en tiempo real del servicio.\n2. Verificación de identidad mediante reconocimiento facial.\n3. Fines comerciales y de marketing de MOVIFLEX."
+                android:text="MOVIFLEX S.A.S., como Responsable del Tratamiento, recolectará datos sensibles (biometría, ubicación GPS, voz). El titular autoriza su tratamiento para:\n\n1. Geolocalización en tiempo real del servicio.\n2. Verificación de identidad mediante reconocimiento facial.\n3. Fines comerciales y de marketing de MOVIFLEX."
                 android:textColor="#333333" android:textSize="13sp" android:paddingBottom="16dp"/>
 
             <View android:layout_width="match_parent" android:layout_height="1dp"
                 android:background="#DDDDDD" android:layout_marginBottom="16dp"/>
 
-            <!-- CAPÍTULO VII -->
+            <!-- ── CAPÍTULO VII ── -->
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="CAPÍTULO VII: RÉGIMEN DISCIPLINARIO Y PENALIDADES"
                 android:textColor="#1A1A1A" android:textSize="13sp" android:textStyle="bold"
-                android:paddingBottom="8dp"/>
+                android:paddingBottom="10dp"/>
 
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="ARTÍCULO 9: MULTAS POR CANCELACIÓN (CLÁUSULA PENAL)"
+                android:text="ARTÍCULO 9 — Multas por cancelación (cláusula penal)"
                 android:textColor="#2EC4B6" android:textSize="12sp" android:textStyle="bold"
-                android:paddingBottom="6dp"/>
+                android:paddingBottom="4dp"/>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="Para proteger la confianza del consumidor, se establecen multas por cancelación injustificada:\n\n• A partir de la 3ra cancelación: $2.000 COP.\n• A partir de la 5ta cancelación: $5.000 COP. Estas multas se consideran una estimación anticipada de perjuicios por lucro cesante y daño a la imagen de la plataforma."
+                android:text="Para proteger la confianza del consumidor se establecen multas por cancelación injustificada:\n\n• A partir de la 3.ª cancelación: $2.000 COP.\n• A partir de la 5.ª cancelación: $5.000 COP.\n\nEstas multas son una estimación anticipada de perjuicios por lucro cesante y daño a la imagen de la plataforma."
                 android:textColor="#333333" android:textSize="13sp" android:paddingBottom="16dp"/>
 
             <View android:layout_width="match_parent" android:layout_height="1dp"
                 android:background="#DDDDDD" android:layout_marginBottom="16dp"/>
 
-            <!-- CAPÍTULO VIII -->
+            <!-- ── CAPÍTULO VIII ── -->
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="CAPÍTULO VIII: RESOLUCIÓN DE CONFLICTOS Y CLÁUSULA COMPROMISORIA"
                 android:textColor="#1A1A1A" android:textSize="13sp" android:textStyle="bold"
-                android:paddingBottom="8dp"/>
+                android:paddingBottom="10dp"/>
 
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="ARTÍCULO 10: PROCEDIMIENTO DE LEY"
+                android:text="ARTÍCULO 10 — Procedimiento de ley"
                 android:textColor="#2EC4B6" android:textSize="12sp" android:textStyle="bold"
-                android:paddingBottom="6dp"/>
+                android:paddingBottom="4dp"/>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="Toda controversia se resolverá bajo los principios de economía y celeridad procesal:\n\n1. Etapa de Arreglo Directo: 15 días hábiles mediante comunicación escrita a somosmoviflex@gmail.com.\n2. Conciliación Obligatoria: En caso de fracaso, se acudirá a un Centro de Conciliación en Popayán, conforme a la Ley 640 de 2001.\n3. Jurisdicción Ordinaria: Los jueces civiles del circuito de Popayán serán los competentes para conocer cualquier demanda."
+                android:text="Toda controversia se resolverá bajo los principios de economía y celeridad:\n\n1. Arreglo Directo: 15 días hábiles por escrito a somosmoviflex@gmail.com.\n2. Conciliación Obligatoria: en un Centro de Conciliación en Popayán (Ley 640 de 2001).\n3. Jurisdicción Ordinaria: jueces civiles del circuito de Popayán."
                 android:textColor="#333333" android:textSize="13sp" android:paddingBottom="24dp"/>
 
-            <View android:layout_width="match_parent" android:layout_height="1dp"
-                android:background="#DDDDDD" android:layout_marginBottom="16dp"/>
+            <View android:layout_width="match_parent" android:layout_height="2dp"
+                android:background="#2EC4B6" android:layout_marginBottom="16dp"/>
 
             <!-- DECLARACIÓN FINAL -->
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -256,14 +265,14 @@
                 android:id="@+id/tvDeclaracionFinal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="El Usuario y/o Conductor manifiesta que ha leído este documento de 25 Capítulos y 120 Artículos (representados en este estatuto marco), que entiende las implicaciones de la ausencia de relación laboral y la exoneración de responsabilidad de MOVIFLEX, y que acepta cada cláusula como ley para las partes."
+                android:text="El Usuario y/o Conductor manifiesta que ha leído este documento, que entiende las implicaciones de la ausencia de relación laboral y la exoneración de responsabilidad de MOVIFLEX, y que acepta cada cláusula como ley para las partes."
                 android:textColor="#333333" android:textSize="13sp"
                 android:paddingBottom="32dp"/>
 
         </LinearLayout>
     </ScrollView>
 
-    <!-- PIE: indicador + botones -->
+    <!-- ══ PIE: indicador + botones ══ -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

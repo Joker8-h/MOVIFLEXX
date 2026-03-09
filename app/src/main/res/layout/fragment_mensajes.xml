@@ -24,45 +24,45 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="227dp"
+            android:background="@drawable/fondomoviflexxx"
             android:orientation="vertical"
-            android:background="@drawable/bg_header_teal"
             android:paddingStart="20dp"
-            android:paddingEnd="20dp"
             android:paddingTop="50dp"
+            android:paddingEnd="20dp"
             android:paddingBottom="0dp">
 
             <!-- Fila: título + campana + badge -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
                 android:gravity="center_vertical"
+                android:orientation="horizontal"
                 android:paddingBottom="14dp">
 
                 <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:orientation="vertical">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="MOVIFLEXX"
-                        android:textSize="9sp"
-                        android:textColor="#B2EDE8"
+                        android:layout_marginBottom="2dp"
                         android:letterSpacing="0.18"
-                        android:layout_marginBottom="2dp"/>
+                        android:text="MOVIFLEXX"
+                        android:textColor="#00CED1"
+                        android:textSize="9sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:letterSpacing="-0.01"
                         android:text="Mensajes"
+                        android:textColor="#00CED1"
                         android:textSize="26sp"
-                        android:textStyle="bold"
-                        android:textColor="#FFFFFF"
-                        android:letterSpacing="-0.01"/>
+                        android:textStyle="bold" />
                 </LinearLayout>
 
                 <!-- Campana de notificaciones con punto rojo -->
@@ -76,8 +76,8 @@
                         android:layout_width="26dp"
                         android:layout_height="26dp"
                         android:layout_gravity="center"
-                        android:src="@drawable/ic_notification_bell"
-                        android:contentDescription="Notificaciones"/>
+                        android:contentDescription="Notificaciones"
+                        android:src="@drawable/ic_notification_bell" />
 
                     <!-- Punto rojo -->
                     <View
@@ -88,7 +88,7 @@
                         android:layout_marginTop="6dp"
                         android:layout_marginEnd="6dp"
                         android:background="@drawable/bg_dot_red"
-                        android:visibility="gone"/>
+                        android:visibility="gone" />
                 </FrameLayout>
 
                 <!-- Badge total no leídos -->
@@ -96,23 +96,24 @@
                     android:id="@+id/badgeNoLeidos"
                     android:layout_width="wrap_content"
                     android:layout_height="28dp"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="#33FFFFFF"
                     app:cardCornerRadius="14dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="#33FFFFFF"
-                    app:strokeWidth="0dp"
-                    android:visibility="gone">
+                    app:strokeWidth="0dp">
+
                     <TextView
                         android:id="@+id/txtNoLeidos"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
-                        android:text="0"
-                        android:textSize="11sp"
-                        android:textStyle="bold"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
                         android:minWidth="28dp"
                         android:paddingStart="10dp"
-                        android:paddingEnd="10dp"/>
+                        android:paddingEnd="10dp"
+                        android:text="0"
+                        android:textColor="#FFFFFF"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
@@ -121,9 +122,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/bg_search_in_header"
-                android:paddingTop="14dp"
                 android:paddingStart="16dp"
+                android:paddingTop="14dp"
                 android:paddingEnd="16dp"
                 android:paddingBottom="0dp">
 
@@ -131,87 +131,87 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="42dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
                     android:background="@drawable/bg_search_field"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
                     android:paddingStart="14dp"
                     android:paddingEnd="14dp">
 
                     <ImageView
                         android:layout_width="18dp"
                         android:layout_height="18dp"
-                        android:src="@drawable/ic_search"
                         android:layout_marginEnd="10dp"
-                        android:contentDescription="Buscar"/>
+                        android:contentDescription="Buscar"
+                        android:src="@drawable/ic_search" />
 
                     <EditText
                         android:id="@+id/etBuscar"
                         android:layout_width="0dp"
-                        android:layout_weight="1"
                         android:layout_height="match_parent"
-                        android:hint="Buscar conversación..."
-                        android:textColorHint="#AAAAAA"
-                        android:textColor="#111111"
-                        android:textSize="14sp"
+                        android:layout_weight="1"
                         android:background="@android:color/transparent"
-                        android:inputType="text"
+                        android:hint="Buscar conversación..."
                         android:imeOptions="actionSearch"
-                        android:maxLines="1"/>
+                        android:inputType="text"
+                        android:maxLines="1"
+                        android:textColor="#111111"
+                        android:textColorHint="#AAAAAA"
+                        android:textSize="14sp" />
                 </LinearLayout>
 
                 <!-- Chips de filtro estilo WhatsApp -->
                 <HorizontalScrollView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:scrollbars="none"
                     android:paddingTop="10dp"
-                    android:paddingBottom="10dp">
+                    android:paddingBottom="10dp"
+                    android:scrollbars="none">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
                         <TextView
                             android:id="@+id/chipTodos"
                             android:layout_width="wrap_content"
                             android:layout_height="34dp"
-                            android:text="Todos"
-                            android:textSize="13sp"
-                            android:textStyle="bold"
-                            android:textColor="#FFFFFF"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/bg_chip_selected"
                             android:gravity="center"
                             android:paddingStart="18dp"
                             android:paddingEnd="18dp"
-                            android:background="@drawable/bg_chip_selected"
-                            android:layout_marginEnd="8dp"/>
+                            android:text="Todos"
+                            android:textColor="#FFFFFF"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/chipNoLeidos"
                             android:layout_width="wrap_content"
                             android:layout_height="34dp"
-                            android:text="No leídos"
-                            android:textSize="13sp"
-                            android:textColor="#555555"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/bg_chip_unselected"
                             android:gravity="center"
                             android:paddingStart="18dp"
                             android:paddingEnd="18dp"
-                            android:background="@drawable/bg_chip_unselected"
-                            android:layout_marginEnd="8dp"/>
+                            android:text="No leídos"
+                            android:textColor="#555555"
+                            android:textSize="13sp" />
 
                         <TextView
                             android:id="@+id/chipFavoritos"
                             android:layout_width="wrap_content"
                             android:layout_height="34dp"
-                            android:text="Favoritos"
-                            android:textSize="13sp"
-                            android:textColor="#555555"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/bg_chip_unselected"
                             android:gravity="center"
                             android:paddingStart="18dp"
                             android:paddingEnd="18dp"
-                            android:background="@drawable/bg_chip_unselected"
-                            android:layout_marginEnd="8dp"/>
+                            android:text="Favoritos"
+                            android:textColor="#555555"
+                            android:textSize="13sp" />
 
                     </LinearLayout>
                 </HorizontalScrollView>
@@ -299,37 +299,37 @@
             <LinearLayout
                 android:id="@+id/loadingOverlay"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:gravity="center"
+                android:layout_height="456dp"
                 android:background="#FFFFFF"
+                android:gravity="center"
+                android:orientation="vertical"
                 android:visibility="visible">
 
                 <ImageView
                     android:id="@+id/ivLoadingAnim"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
-                    android:src="@drawable/ic_loading_moviflexx"
                     android:layout_marginBottom="18dp"
-                    android:contentDescription="Cargando"/>
+                    android:contentDescription="Cargando"
+                    android:src="@drawable/ic_loading_moviflexx" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="MOVIFLEXX"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="#2EC4B6"
+                    android:layout_marginBottom="8dp"
                     android:letterSpacing="0.25"
-                    android:layout_marginBottom="8dp"/>
+                    android:text="MOVIFLEXX"
+                    android:textColor="#2EC4B6"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvLoadingMsg"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Cargando mensajes..."
-                    android:textSize="13sp"
-                    android:textColor="#AAAAAA"/>
+                    android:textColor="#AAAAAA"
+                    android:textSize="13sp" />
 
             </LinearLayout>
 

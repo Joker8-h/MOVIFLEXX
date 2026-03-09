@@ -35,7 +35,7 @@ public class BuscarViajesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_buscar_viajes);
 
-        recycler = findViewById(R.id.recyclerViajes);
+        recycler = findViewById(R.id.rv_viajes);
         progress = findViewById(R.id.progress);
 
         recycler.setLayoutManager(new LinearLayoutManager(this));

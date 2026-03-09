@@ -1,6 +1,5 @@
 package com.arlys.moviflexx.controller;
 
-import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
@@ -9,7 +8,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
-import android.view.animation.OvershootInterpolator;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -31,22 +29,18 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
-// ════════════════════════════════════════════════════════
-// CAMBIO 1/3: extends BaseActivity (antes AppCompatActivity)
-// ════════════════════════════════════════════════════════
 public class PublicarViaje extends BaseActivity {
 
-    private static final String TAG = "PublicarViaje";
+    private static final String TAG               = "PublicarViaje";
     private static final int    MAX_DIAS_ADELANTE = 30;
-    private static final double PRECIO_MINIMO     = 1.0;
     private static final int    CUPOS_MAXIMO      = 8;
 
     // ─── VISTAS ───────────────────────────────────────────────────────────────
     private TextInputEditText    editFechaHora;
-    private TextInputEditText    editPrecio;
+    private TextInputEditText    editPrecio;          // solo lectura, no editable
     private Spinner              spinnerCupos;
-    private MaterialCardView     mainCard;           // ← MaterialCardView (design system)
-    private MaterialCardView     loaderContainer;    // ← MaterialCardView (design system)
+    private MaterialCardView     mainCard;
+    private MaterialCardView     loaderContainer;
     private View                 overlayBackground;
     private MaterialButton       btnPublicar;
     private BottomNavigationView bottomNavigation;
@@ -56,7 +50,7 @@ public class PublicarViaje extends BaseActivity {
     private TextView         txtVehiculoInfo;
     private TextView         txtConductorInfo;
     private TextView         txtPrecioSugerido;
-    private MaterialCardView txtPrecioSugeridoCard; // ← wrapping card del badge
+    private MaterialCardView txtPrecioSugeridoCard;
 
     // ─── SESIÓN ───────────────────────────────────────────────────────────────
     private SessionManager session;
@@ -73,6 +67,9 @@ public class PublicarViaje extends BaseActivity {
     private double costoCombustible  = 0;
     private String tipoTransporte    = "driving";
     private int    indiceRuta        = 0;
+
+    // ─── PRECIO CALCULADO (fijo, no editable) ─────────────────────────────────
+    private int precioCalculado = 0;
 
     // ─── FECHA ────────────────────────────────────────────────────────────────
     private final Calendar calendarioSalida = Calendar.getInstance();
@@ -143,23 +140,20 @@ public class PublicarViaje extends BaseActivity {
     /* ─── ENLAZAR VISTAS ─────────────────────────────────────────────────────── */
 
     private void enlazarVistas() {
-        editFechaHora          = findViewById(R.id.edit_fecha_hora);
-        editPrecio             = findViewById(R.id.edit_precio);
-        spinnerCupos           = findViewById(R.id.spinnerCupo);
-        mainCard               = findViewById(R.id.main_card);
-        loaderContainer        = findViewById(R.id.loader_container);
-        overlayBackground      = findViewById(R.id.overlay_background);
-        btnPublicar            = findViewById(R.id.btn_publicar_viaje);
-        bottomNavigation       = findViewById(R.id.bottom_navigation);
-        txtDestinoInfo         = findViewById(R.id.txt_destino_info);
-        txtOrigenInfo          = findViewById(R.id.txt_origen_info);
-        txtVehiculoInfo        = findViewById(R.id.txt_vehiculo_info);
-        txtConductorInfo       = findViewById(R.id.txt_conductor_info);
-        txtPrecioSugerido      = findViewById(R.id.txt_precio_sugerido);
-        // ════════════════════════════════════════════════════════
-        // CAMBIO 2/3: card wrapper del badge (nuevo en design system)
-        // ════════════════════════════════════════════════════════
-        txtPrecioSugeridoCard  = findViewById(R.id.txt_precio_sugerido_card);
+        editFechaHora         = findViewById(R.id.edit_fecha_hora);
+        editPrecio            = findViewById(R.id.edit_precio);
+        spinnerCupos          = findViewById(R.id.spinnerCupo);
+        mainCard              = findViewById(R.id.main_card);
+        loaderContainer       = findViewById(R.id.loader_container);
+        overlayBackground     = findViewById(R.id.overlay_background);
+        btnPublicar           = findViewById(R.id.btn_publicar_viaje);
+        bottomNavigation      = findViewById(R.id.bottom_navigation);
+        txtDestinoInfo        = findViewById(R.id.txt_destino_info);
+        txtOrigenInfo         = findViewById(R.id.txt_origen_info);
+        txtVehiculoInfo       = findViewById(R.id.txt_vehiculo_info);
+        txtConductorInfo      = findViewById(R.id.txt_conductor_info);
+        txtPrecioSugerido     = findViewById(R.id.txt_precio_sugerido);
+        txtPrecioSugeridoCard = findViewById(R.id.txt_precio_sugerido_card);
     }
 
     /* ─── CONFIGURAR UI ──────────────────────────────────────────────────────── */
@@ -176,11 +170,8 @@ public class PublicarViaje extends BaseActivity {
         txtConductorInfo.setText("🚗 Conductor: " + nombreConductor);
 
         configurarSpinnerConCapacidad();
-        colocarPrecioAutomatico();
+        calcularYMostrarPrecio();      // calcula precioCalculado, lo muestra y bloquea el campo
         configurarSelectorFechaHora();
-        // ════════════════════════════════════════════════════════
-        // CAMBIO 3/3: animateButton reemplaza setOnClickListener
-        // ════════════════════════════════════════════════════════
         animateButton(btnPublicar, () -> {
             if (validarFormulario()) publicarViaje();
         });
@@ -207,34 +198,46 @@ public class PublicarViaje extends BaseActivity {
         spinnerCupos.setSelection(maxCupos - 1);
     }
 
-    /* ─── PRECIO AUTOMÁTICO ─────────────────────────────────────────────────── */
+    /* ─── CALCULAR Y MOSTRAR PRECIO (no editable) ───────────────────────────── */
 
-    private void colocarPrecioAutomatico() {
-        double precioFinal;
+    private void calcularYMostrarPrecio() {
+        double precioDouble;
         String origenPrecio;
 
         if (costoCombustible > 0) {
-            precioFinal  = costoCombustible;
+            precioDouble = costoCombustible;
             origenPrecio = "ruta";
         } else if (distanciaKm > 0) {
-            precioFinal  = distanciaKm * 700.0;
+            precioDouble = distanciaKm * 700.0;
             origenPrecio = "km";
         } else {
-            precioFinal  = 5000.0;
+            precioDouble = 5000.0;
             origenPrecio = "base";
         }
 
-        precioFinal = Math.ceil(precioFinal / 100.0) * 100.0;
-        precioFinal = Math.max(precioFinal, PRECIO_MINIMO);
+        precioDouble    = Math.ceil(precioDouble / 100.0) * 100.0;
+        precioCalculado = Math.max((int) Math.round(precioDouble), 1);
 
-        editPrecio.setText(String.format(Locale.getDefault(), "%.0f", precioFinal));
+        Log.d(TAG, "Precio calculado automáticamente: $" + precioCalculado + " COP");
 
+        // ── Mostrar en el campo y bloquearlo completamente ──
+        if (editPrecio != null) {
+            editPrecio.setText(String.format(Locale.getDefault(), "%,d", precioCalculado));
+            editPrecio.setFocusable(false);
+            editPrecio.setFocusableInTouchMode(false);
+            editPrecio.setClickable(false);
+            editPrecio.setLongClickable(false);
+            editPrecio.setCursorVisible(false);
+            editPrecio.setKeyListener(null);   // elimina el teclado al tocar
+        }
+
+        // ── Detalle informativo ──
         if (txtPrecioSugerido != null) {
             StringBuilder detalle = new StringBuilder();
             switch (origenPrecio) {
                 case "ruta":
                     detalle.append(String.format(Locale.getDefault(),
-                            "💡 Precio de la ruta  ·  ⛽ $%,.0f COP combustible", costoCombustible));
+                            "⛽ $%,d COP combustible", (int) Math.round(costoCombustible)));
                     break;
                 case "km":
                     detalle.append("💡 Estimado: $700/km");
@@ -246,9 +249,8 @@ public class PublicarViaje extends BaseActivity {
                 detalle.append(String.format(Locale.getDefault(), "  ·  📏 %.1f km", distanciaKm));
             if (duracionMin > 0)
                 detalle.append(String.format(Locale.getDefault(), "  ·  ⏱ %.0f min", duracionMin));
-            detalle.append("  ·  editable ✏️");
+
             txtPrecioSugerido.setText(detalle.toString());
-            // mostrar tanto el texto como la card wrapper
             txtPrecioSugerido.setVisibility(View.VISIBLE);
             if (txtPrecioSugeridoCard != null) txtPrecioSugeridoCard.setVisibility(View.VISIBLE);
         }
@@ -332,23 +334,9 @@ public class PublicarViaje extends BaseActivity {
                     Toast.LENGTH_SHORT).show();
             return false;
         }
-        String precioTxt = editPrecio.getText() != null
-                ? editPrecio.getText().toString().trim() : "";
-        if (precioTxt.isEmpty()) {
-            editPrecio.setError("Ingresa el precio por pasajero");
+        if (precioCalculado <= 0) {
             animarError(mainCard);
-            return false;
-        }
-        try {
-            double precio = Double.parseDouble(precioTxt);
-            if (precio < PRECIO_MINIMO) {
-                editPrecio.setError("El precio debe ser mayor a $0");
-                animarError(mainCard);
-                return false;
-            }
-        } catch (NumberFormatException e) {
-            editPrecio.setError("Precio inválido");
-            animarError(mainCard);
+            Toast.makeText(this, "❌ Error en el precio de la ruta", Toast.LENGTH_SHORT).show();
             return false;
         }
         return true;
@@ -363,24 +351,23 @@ public class PublicarViaje extends BaseActivity {
         mostrarLoader(true);
 
         try {
-            int    cupos     = Integer.parseInt(spinnerCupos.getSelectedItem().toString());
-            double precio    = Double.parseDouble(editPrecio.getText().toString().trim());
+            int    cupos    = Integer.parseInt(spinnerCupos.getSelectedItem().toString());
             String fechaHora = editFechaHora.getText().toString().trim();
 
+            Log.d(TAG, "✅ Publicando → precio=" + precioCalculado
+                    + " | cupos=" + cupos
+                    + " | fecha=" + fechaHora
+                    + " | rutaId=" + rutaId
+                    + " | vehiculoId=" + vehiculoIdInt);
+
+            // precioCalculado viene de calcularYMostrarPrecio(), nunca del EditText
             JSONObject body = new JSONObject();
             body.put("idRuta",           rutaId);
             body.put("idVehiculos",      vehiculoIdInt);
-            body.put("idConductor",      conductorIdInt);
             body.put("fechaHoraSalida",  fechaHora);
             body.put("cuposTotales",     cupos);
             body.put("cuposDisponibles", cupos);
-            body.put("precio",           precio);
-            body.put("estado",           "PROGRAMADO");
-            body.put("indiceRuta",       indiceRuta);
-            if (distanciaKm > 0)      body.put("distanciaKm",      distanciaKm);
-            if (duracionMin > 0)      body.put("duracionMin",       duracionMin);
-            if (costoCombustible > 0) body.put("costoCombustible",  costoCombustible);
-            if (fuelLitros > 0)       body.put("combustibleLitros", fuelLitros);
+            body.put("precio",           precioCalculado);
 
             Log.d(TAG, "POST /api/viajes → " + body.toString());
 
@@ -388,7 +375,7 @@ public class PublicarViaje extends BaseActivity {
                     Constantes.VIAJES, body,
                     response -> {
                         mostrarLoader(false);
-                        Log.d(TAG, "Viaje publicado: " + response.toString());
+                        Log.d(TAG, "✅ Viaje publicado: " + response.toString());
                         Toast.makeText(this, "✅ ¡Viaje publicado correctamente!", Toast.LENGTH_LONG).show();
                         goTo(HomeConductor.class, Transition.SLIDE, true);
                     },
@@ -397,15 +384,20 @@ public class PublicarViaje extends BaseActivity {
                         animarError(mainCard);
                         String msg = "❌ Error al publicar el viaje";
                         if (error != null && error.networkResponse != null) {
-                            switch (error.networkResponse.statusCode) {
-                                case 400: msg = "❌ Datos inválidos (400)"; break;
-                                case 401: msg = "❌ Sesión expirada (401)"; break;
-                                case 403: msg = "❌ Sin permisos (403)"; break;
-                                case 404: msg = "❌ Ruta no encontrada (404)"; break;
+                            int status = error.networkResponse.statusCode;
+                            try {
+                                String errorBody = new String(error.networkResponse.data, "UTF-8");
+                                Log.e(TAG, "Error HTTP " + status + " → " + errorBody);
+                            } catch (Exception ignored) {}
+                            switch (status) {
+                                case 400: msg = "❌ Datos inválidos (400)";                    break;
+                                case 401: msg = "❌ Sesión expirada (401)";                    break;
+                                case 403: msg = "❌ Sin permisos (403)";                       break;
+                                case 404: msg = "❌ Ruta no encontrada (404)";                 break;
                                 case 409: msg = "❌ Ya existe un viaje con estos datos (409)"; break;
-                                case 422: msg = "❌ Validación fallida (422)"; break;
-                                case 429: msg = "❌ Demasiadas solicitudes (429)"; break;
-                                case 500: msg = "❌ Error en el servidor (500)"; break;
+                                case 422: msg = "❌ Validación fallida (422)";                 break;
+                                case 429: msg = "❌ Demasiadas solicitudes (429)";             break;
+                                case 500: msg = "❌ Error en el servidor (500)";               break;
                             }
                         }
                         Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
@@ -414,7 +406,7 @@ public class PublicarViaje extends BaseActivity {
 
         } catch (Exception e) {
             mostrarLoader(false);
-            Log.e(TAG, "Error construyendo JSON del viaje: " + e.getMessage());
+            Log.e(TAG, "Error construyendo JSON: " + e.getMessage());
             Toast.makeText(this, "Error inesperado. Intenta de nuevo.", Toast.LENGTH_SHORT).show();
         }
     }

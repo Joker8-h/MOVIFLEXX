@@ -60,7 +60,7 @@
                     android:layout_weight="1"
                     android:lineSpacingExtra="3dp"
                     android:text="Ruta no disponible"
-                    android:textColor="#FFFFFF"
+                    android:textColor="#00CED1"
                     android:textSize="15sp"
                     android:textStyle="bold" />
             </LinearLayout>

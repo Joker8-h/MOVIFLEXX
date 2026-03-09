@@ -17,18 +17,7 @@ import com.google.android.material.card.MaterialCardView;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
- * Adapter para mostrar en el Home del conductor la lista de pasajeros
- * de viajes finalizados que aún no han sido calificados.
- *
- * Cada item muestra:
- *  - Avatar con inicial del nombre
- *  - Nombre del pasajero
- *  - ID del viaje al que pertenece
- *  - Botón "Calificar" que dispara el BottomSheet
- *
- * Requiere el layout: res/layout/item_calificacion_pendiente.xml
- */
+
 public class CalificacionesPendientesAdapter
         extends RecyclerView.Adapter<CalificacionesPendientesAdapter.ViewHolder> {
 

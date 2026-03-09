@@ -55,7 +55,7 @@
             android:contentDescription="@string/app_name"
             android:elevation="8dp"
             android:scaleType="fitCenter"
-            android:src="@drawable/logomoviflexxxx" />
+            android:src="@drawable/logomo" />
 
         <!-- ── VIEWPAGER2: carrusel de slides ── -->
         <androidx.viewpager2.widget.ViewPager2

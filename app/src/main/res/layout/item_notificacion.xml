@@ -1,101 +1,127 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/card_notif"
+    android:id="@+id/item_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp"
-    app:cardCornerRadius="14dp"
-    app:cardElevation="2dp"
-    app:cardBackgroundColor="#FFFFFF"
-    app:strokeWidth="0dp">
+    android:background="#FFFFFF"
+    android:orientation="vertical"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="14dp"
-        android:gravity="top">
+        android:paddingStart="14dp"
+        android:paddingEnd="10dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:gravity="center_vertical">
 
-        <!-- Puntito no-leída -->
-        <View
-            android:id="@+id/view_puntito"
-            android:layout_width="10dp"
-            android:layout_height="10dp"
-            android:layout_marginTop="5dp"
-            android:layout_marginEnd="10dp"
-            android:background="@drawable/bg_circle_teal"
-            android:visibility="visible"/>
+        <!-- Avatar circular con badge -->
+        <FrameLayout
+            android:layout_width="58dp"
+            android:layout_height="58dp"
+            android:layout_marginEnd="12dp">
 
-        <!-- Contenido -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_avatar"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                app:cardCornerRadius="28dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#12A89D"
+                app:strokeWidth="0dp">
+                <TextView
+                    android:id="@+id/tv_inicial"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="C"
+                    android:textColor="#FFFFFF"
+                    android:textSize="22sp"
+                    android:textStyle="bold"/>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_badge"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="bottom|end"
+                app:cardCornerRadius="11dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#12A89D"
+                app:strokeColor="#FFFFFF"
+                app:strokeWidth="2dp">
+                <ImageView
+                    android:id="@+id/iv_badge_icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_chat"
+                    android:padding="4dp"
+                    app:tint="#FFFFFF"/>
+            </com.google.android.material.card.MaterialCardView>
+
+        </FrameLayout>
+
+        <!-- Texto -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical">
 
-            <!-- Título -->
             <TextView
-                android:id="@+id/tv_notif_titulo"
+                android:id="@+id/tv_notif_texto"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="#1A1A1A"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:maxLines="2"
+                android:text="Carlos te envió un mensaje"
+                android:textColor="#050505"
+                android:textSize="14.5sp"
+                android:lineSpacingMultiplier="1.3"
+                android:maxLines="3"
                 android:ellipsize="end"/>
 
-            <!-- Mensaje -->
             <TextView
-                android:id="@+id/tv_notif_mensaje"
-                android:layout_width="match_parent"
+                android:id="@+id/tv_notif_fecha"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textColor="#555555"
-                android:textSize="13sp"
-                android:maxLines="3"
-                android:ellipsize="end"
-                android:lineSpacingMultiplier="1.3"/>
-
-            <!-- Fila inferior: tipo + fecha -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical">
-
-                <!-- Chip tipo -->
-                <TextView
-                    android:id="@+id/tv_notif_tipo"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:paddingTop="3dp"
-                    android:paddingBottom="3dp"
-                    android:textColor="#2EC4B6"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:background="@drawable/bg_chip_teal_light"/>
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
-
-                <!-- Fecha -->
-                <TextView
-                    android:id="@+id/tv_notif_fecha"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="#AAAAAA"
-                    android:textSize="11sp"/>
-
-            </LinearLayout>
+                android:layout_marginTop="3dp"
+                android:text="hace 5 min"
+                android:textColor="#0A8A81"
+                android:textSize="12.5sp"
+                android:textStyle="bold"/>
 
         </LinearLayout>
+
+        <!-- Punto turquesa no leído -->
+        <View
+            android:id="@+id/view_dot"
+            android:layout_width="11dp"
+            android:layout_height="11dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/circle_dot_teal"
+            android:visibility="gone"/>
+
+        <!-- Botón 3 puntos -->
+        <ImageView
+            android:id="@+id/btn_more_notif"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_more_vert"
+            android:padding="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            app:tint="#65676B"
+            android:contentDescription="Más opciones"/>
+
     </LinearLayout>
 
-</com.google.android.material.card.MaterialCardView>
+    <!-- SIN línea divisora — el separado se logra solo con el fondo blanco/gris entre items -->
+
+</LinearLayout>

@@ -42,12 +42,12 @@
 
             <!-- LOGO -->
             <ImageView
-                android:layout_width="90dp"
-                android:layout_height="90dp"
+                android:layout_width="136dp"
+                android:layout_height="92dp"
                 android:layout_gravity="center"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="12dp"
-                android:src="@drawable/logomoviflexxxx" />
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="16dp"
+                android:src="@drawable/logomo" />
 
             <!-- TITULO -->
             <TextView
@@ -56,7 +56,7 @@
                 android:layout_gravity="center"
                 android:layout_marginBottom="28dp"
                 android:text="@string/register_title"
-                android:textColor="#2B2B2B"
+                android:textColor="#00CED1"
                 android:textSize="28sp"
                 android:textStyle="bold" />
 

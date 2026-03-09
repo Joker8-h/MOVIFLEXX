@@ -1,5 +1,6 @@
 package com.arlys.moviflexx.controller;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -54,6 +55,8 @@ public class HomeConductor extends BaseActivity {
     private MaterialCardView btnMisRutas;
     private MaterialCardView btnMisVehiculos;
 
+
+
     // ── Calificaciones pendientes ─────────────────────────────────────────────
     private LinearLayout                    layoutCalificacionesPendientes;
     private View                            dividerCalificaciones;
@@ -62,22 +65,18 @@ public class HomeConductor extends BaseActivity {
     private CalificacionesPendientesAdapter adapterCalificaciones;
     private final List<PasajeroPendiente>   listaPendientes = new ArrayList<>();
 
+    private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh;
+
     // ── Sesión / datos ────────────────────────────────────────────────────────
     private final List<JSONObject> viajes = new ArrayList<>();
     private SessionManager session;
     private int conductorId = -1;
 
-    /** Evita lanzar la verificación múltiples veces por rotación / backstack. */
     private boolean calificacionPendienteVerificada = false;
 
     // =========================================================================
     //  MODELO INTERNO
     // =========================================================================
-
-    /**
-     * Representa un pasajero de un viaje finalizado que todavía
-     * no ha sido calificado por este conductor.
-     */
     public static class PasajeroPendiente {
         public final int    viajeId;
         public final int    pasajeroId;
@@ -93,7 +92,6 @@ public class HomeConductor extends BaseActivity {
     // =========================================================================
     //  LIFECYCLE
     // =========================================================================
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -124,20 +122,38 @@ public class HomeConductor extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
-        // Limpiar la sección de pendientes para recargar desde cero
         resetCalificacionesPendientes();
-
         cargarMisViajes();
-
-        // Badge campana de notificaciones
         NotificacionesHelper.configurar(this);
 
         BottomNavigationView nav = findViewById(R.id.bottom_navigation);
         if (nav != null) nav.setSelectedItemId(R.id.nav_inicio);
 
-        // Verificar calificaciones pendientes con delay para que la Activity
-        // esté completamente visible antes de mostrar cualquier BottomSheet.
+        // Verificar si hay viaje activo para habilitar/deshabilitar el botón Mapa
+        ConexionApi.getInstance(this).getArrayNoCache(
+                Constantes.MIS_VIAJES,
+                response -> {
+                    boolean tieneViajeActivo = false;
+                    if (response != null) {
+                        for (int i = 0; i < response.length(); i++) {
+                            JSONObject v = response.optJSONObject(i);
+                            if (v == null) continue;
+                            String est = v.optString("estado", "").toUpperCase().trim();
+                            if ("INICIADO".equals(est) || "EN_CURSO".equals(est) || "ACTIVO".equals(est)) {
+                                tieneViajeActivo = true;
+                                break;
+                            }
+                        }
+                    }
+                    final boolean fActivo = tieneViajeActivo;
+                    runOnUiThread(() -> {
+                        BottomNavigationView n = findViewById(R.id.bottom_navigation);
+                        if (n != null) n.getMenu().findItem(R.id.nav_mapa).setEnabled(fActivo);
+                    });
+                },
+                err -> {} // si falla, queda deshabilitado
+        );
+
         if (!calificacionPendienteVerificada) {
             calificacionPendienteVerificada = true;
             new Handler(Looper.getMainLooper()).postDelayed(
@@ -148,41 +164,32 @@ public class HomeConductor extends BaseActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        // Resetear para que al volver se vuelva a verificar
         calificacionPendienteVerificada = false;
     }
 
     // =========================================================================
     //  ENLAZAR VISTAS
     // =========================================================================
-
     private void enlazarVistas() {
-        // Viajes activos
-        rvViajes           = findViewById(R.id.rv_viajes_activos);
-        progress           = findViewById(R.id.progress);
-        layoutEmpty        = findViewById(R.id.layout_empty);
-        chipTotal          = findViewById(R.id.chip_total);
-
-        // Header
-        txtBienvenida      = findViewById(R.id.txt_bienvenida);
-        txtNombreConductor = findViewById(R.id.txt_nombre_conductor);
-
-        // Acciones rápidas
-        btnPublicarViaje   = findViewById(R.id.btn_publicar_viaje);
-        btnMisRutas        = findViewById(R.id.btn_mis_rutas);
-        btnMisVehiculos    = findViewById(R.id.btn_mis_vehiculos);
-
-        // Calificaciones pendientes
+        rvViajes                       = findViewById(R.id.rv_viajes_activos);
+        progress                       = findViewById(R.id.progress);
+        layoutEmpty                    = findViewById(R.id.layout_empty);
+        chipTotal                      = findViewById(R.id.chip_total);
+        txtBienvenida                  = findViewById(R.id.txt_bienvenida);
+        txtNombreConductor             = findViewById(R.id.txt_nombre_conductor);
+        btnPublicarViaje               = findViewById(R.id.btn_publicar_viaje);
+        btnMisRutas                    = findViewById(R.id.btn_mis_rutas);
+        btnMisVehiculos                = findViewById(R.id.btn_mis_vehiculos);
         layoutCalificacionesPendientes = findViewById(R.id.layout_calificaciones_pendientes);
         dividerCalificaciones          = findViewById(R.id.divider_calificaciones);
         chipCalificacionesPendientes   = findViewById(R.id.chip_calificaciones_pendientes);
         rvCalificacionesPendientes     = findViewById(R.id.rv_calificaciones_pendientes);
+        swipeRefresh = findViewById(R.id.swipe_refresh);
     }
 
     // =========================================================================
     //  CONFIGURACIÓN
     // =========================================================================
-
     private void configurarSaludo() {
         int hora = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
         String saludo;
@@ -190,9 +197,7 @@ public class HomeConductor extends BaseActivity {
         else if (hora >= 12 && hora < 18) saludo = "Buenas tardes,";
         else                               saludo = "Buenas noches,";
 
-        if (txtBienvenida != null)
-            txtBienvenida.setText(saludo);
-
+        if (txtBienvenida      != null) txtBienvenida.setText(saludo);
         if (txtNombreConductor != null) {
             String nombre = session.getNombre();
             if (nombre != null && !nombre.isEmpty())
@@ -201,13 +206,11 @@ public class HomeConductor extends BaseActivity {
     }
 
     private void configurarRecyclers() {
-        // RecyclerView viajes activos
         rvViajes.setLayoutManager(new LinearLayoutManager(this));
         adapter = new ViajesAdapter(this, viajes);
         rvViajes.setAdapter(adapter);
         rvViajes.setNestedScrollingEnabled(false);
 
-        // RecyclerView calificaciones pendientes
         if (rvCalificacionesPendientes != null) {
             rvCalificacionesPendientes.setLayoutManager(new LinearLayoutManager(this));
             adapterCalificaciones = new CalificacionesPendientesAdapter(
@@ -224,6 +227,11 @@ public class HomeConductor extends BaseActivity {
             animateButton(btnMisRutas, () -> goTo(MisRutasActivity.class, Transition.SLIDE));
         if (btnMisVehiculos != null)
             animateButton(btnMisVehiculos, () -> goTo(MisVehiculosActivity.class, Transition.SLIDE));
+
+        if (swipeRefresh != null) {
+            swipeRefresh.setColorSchemeResources(R.color.teal_500);
+            swipeRefresh.setOnRefreshListener(() -> cargarMisViajes());
+        }
     }
 
     private void configurarBottomNav() {
@@ -231,15 +239,16 @@ public class HomeConductor extends BaseActivity {
         if (nav == null) return;
 
         nav.setSelectedItemId(R.id.nav_inicio);
+        nav.getMenu().findItem(R.id.nav_mapa).setEnabled(false); // deshabilitado por defecto
+
         nav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if      (id == R.id.nav_inicio)     return true;
-            else if (id == R.id.nav_mis_viajes) goTo(PublicarRuta.class,  Transition.NONE);
-            else if (id == R.id.nav_mapa)       goTo(Mapa.class,          Transition.NONE);
-            else if (id == R.id.nav_mensajes)   goTo(Mensajes.class,      Transition.NONE);
-            else if (id == R.id.nav_perfil)     goTo(PerfilUsuario.class, Transition.NONE);
-            finish();
-            return true;
+            else if (id == R.id.nav_mis_viajes) { goTo(PublicarRuta.class, Transition.NONE); finish(); return true; }
+            else if (id == R.id.nav_mapa)       { verificarViajeActivoYAbrirMapa(); return true; }
+            else if (id == R.id.nav_mensajes)   { goTo(Mensajes.class, Transition.NONE); finish(); return true; }
+            else if (id == R.id.nav_perfil)     { goTo(PerfilUsuario.class, Transition.NONE); finish(); return true; }
+            return false;
         });
     }
 
@@ -251,43 +260,266 @@ public class HomeConductor extends BaseActivity {
         if (layoutEmpty      != null) animateViewEntrance(layoutEmpty,      160);
     }
 
+
+
     // =========================================================================
-    //  CARGAR VIAJES ACTIVOS
+    //  MAPA — verificar viaje activo antes de abrir
     // =========================================================================
+    private void verificarViajeActivoYAbrirMapa() {
+        ConexionApi.getInstance(this).getArray(
+                Constantes.MIS_VIAJES,
+                response -> {
+                    JSONObject viajeActivo = null;
+                    for (int i = 0; i < response.length(); i++) {
+                        JSONObject v = response.optJSONObject(i);
+                        if (v == null) continue;
+                        String est = v.optString("estado", "").toUpperCase();
+                        if ("INICIADO".equals(est) || "EN_CURSO".equals(est)) {
+                            viajeActivo = v;
+                            break;
+                        }
+
+                    }
+
+                    if (viajeActivo == null) {
+                        runOnUiThread(() ->
+                                new android.app.AlertDialog.Builder(this)
+                                        .setTitle("🚗 Sin viaje activo")
+                                        .setMessage("Primero debes publicar e iniciar un viaje para acceder al mapa.")
+                                        .setCancelable(true)
+                                        .setPositiveButton("📋 Publicar viaje", (d, w) -> goTo(PublicarRuta.class, Transition.SLIDE))
+                                        .setNegativeButton("Cancelar", null)
+                                        .show()
+                        );
+                        return;
+                    }
+
+                    // ── Extraer ID del viaje (varios nombres posibles) ──────────
+                    final int idViaje = viajeActivo.optInt("idViajes",
+                            viajeActivo.optInt("idViaje",
+                                    viajeActivo.optInt("id", 0)));
+
+                    // ── Extraer coords: directo > ruta > paradas ────────────────
+                    double latO = viajeActivo.optDouble("latOrigen",  0);
+                    double lngO = viajeActivo.optDouble("lngOrigen",  0);
+                    double latD = viajeActivo.optDouble("latDestino", 0);
+                    double lngD = viajeActivo.optDouble("lngDestino", 0);
+                    String origen  = viajeActivo.optString("origen",  "");
+                    String destino = viajeActivo.optString("destino", "");
+
+                    // Nivel 2: desde objeto "ruta"
+                    JSONObject ruta = viajeActivo.optJSONObject("ruta");
+                    if (ruta != null) {
+                        if (latO == 0) latO = ruta.optDouble("latOrigen",
+                                ruta.optDouble("latitudOrigen", 0));
+                        if (lngO == 0) lngO = ruta.optDouble("lngOrigen",
+                                ruta.optDouble("longitudOrigen", 0));
+                        if (latD == 0) latD = ruta.optDouble("latDestino",
+                                ruta.optDouble("latitudDestino", 0));
+                        if (lngD == 0) lngD = ruta.optDouble("lngDestino",
+                                ruta.optDouble("longitudDestino", 0));
+                        if (origen.isEmpty())  origen  = ruta.optString("origen",  "");
+                        if (destino.isEmpty()) destino = ruta.optString("destino", "");
+                        if (origen.isEmpty())  origen  = ruta.optString("nombre",  "");
+                    }
+
+                    // ── Extraer paradas intermedias para waypoints OSRM ─────────
+                    JSONArray paradasArr = null;
+                    if (ruta != null) paradasArr = ruta.optJSONArray("paradas");
+                    if (paradasArr == null) paradasArr = viajeActivo.optJSONArray("paradas");
+
+                    String paradasJson = "";
+                    if (paradasArr != null && paradasArr.length() > 0) {
+                        paradasJson = paradasArr.toString();
+                    }
+
+                    // Nivel 3: desde paradas (la primera = origen, la última = destino)
+                    if (latO == 0 || latD == 0) {
+                        try {
+                            JSONArray paradas = paradasArr;
+                            if (paradas != null && paradas.length() >= 2) {
+                                JSONObject p0 = paradas.getJSONObject(0);
+                                JSONObject pN = paradas.getJSONObject(paradas.length() - 1);
+
+                                if (latO == 0) {
+                                    latO = p0.optDouble("lat", p0.optDouble("latitud", 0));
+                                    lngO = p0.optDouble("lng", p0.optDouble("longitud", 0));
+                                }
+                                if (latD == 0) {
+                                    latD = pN.optDouble("lat", pN.optDouble("latitud", 0));
+                                    lngD = pN.optDouble("lng", pN.optDouble("longitud", 0));
+                                }
+                                if (origen.isEmpty())
+                                    origen  = p0.optString("nombre", "");
+                                if (destino.isEmpty())
+                                    destino = pN.optString("nombre", "");
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "Error leyendo paradas: " + e.getMessage());
+                        }
+                    }
+
+                    // ── LOG para verificar en Logcat ────────────────────────────
+                    Log.d(TAG, "Viaje activo → id=" + idViaje
+                            + " latO=" + latO + " lngO=" + lngO
+                            + " latD=" + latD + " lngD=" + lngD
+                            + " origen=" + origen + " destino=" + destino
+                            + " paradas=" + paradasJson.length() + " chars");
+
+                    // ── Si aún no hay coords, cargar el viaje completo por ID ───
+                    if ((latO == 0 || latD == 0) && idViaje > 0) {
+                        cargarViajeCompletoYAbrirMapa(idViaje);
+                        return;
+                    }
+
+                    final double fLatO = latO, fLngO = lngO;
+                    final double fLatD = latD, fLngD = lngD;
+                    final String fOrig = origen.isEmpty() ? "Origen"  : origen;
+                    final String fDest = destino.isEmpty() ? "Destino" : destino;
+                    final String fParadas = paradasJson;
+
+                    runOnUiThread(() -> {
+                        // ── CRÍTICO: construir intent con PARADAS_JSON ANTES de startActivity ──
+                        Intent intent = new Intent(this, Mapa.class);
+                        intent.putExtra("ID_VIAJE",      idViaje);
+                        intent.putExtra("DESDE_VIAJE",   true);
+                        intent.putExtra("ORIGEN_LAT",    fLatO);
+                        intent.putExtra("ORIGEN_LNG",    fLngO);
+                        intent.putExtra("DESTINO_LAT",   fLatD);
+                        intent.putExtra("DESTINO_LNG",   fLngD);
+                        intent.putExtra("NOM_SUBIDA",    fOrig);
+                        intent.putExtra("NOM_BAJADA",    fDest);
+                        intent.putExtra("NOM_CONDUCTOR", session.getNombre());
+                        intent.putExtra("PARADAS_JSON",  fParadas);   // ← ANTES de startActivity
+                        startActivity(intent);
+                    });
+                },
+                error -> runOnUiThread(() ->
+                        startActivity(new Intent(this, Mapa.class)))
+        );
+    }
+
+    private void cargarViajeCompletoYAbrirMapa(int idViaje) {
+        Log.d(TAG, "Cargando viaje completo id=" + idViaje);
+        ConexionApi.getInstance(this).getObject(
+                Constantes.viajePorId((long) idViaje),
+                viajeCompleto -> {
+                    double latO = 0, lngO = 0, latD = 0, lngD = 0;
+                    String origen = "", destino = "";
+
+                    // Desde raíz
+                    latO = viajeCompleto.optDouble("latOrigen",  0);
+                    lngO = viajeCompleto.optDouble("lngOrigen",  0);
+                    latD = viajeCompleto.optDouble("latDestino", 0);
+                    lngD = viajeCompleto.optDouble("lngDestino", 0);
+                    origen  = viajeCompleto.optString("origen",  "");
+                    destino = viajeCompleto.optString("destino", "");
+
+                    // Desde "ruta"
+                    JSONObject ruta = viajeCompleto.optJSONObject("ruta");
+                    if (ruta != null) {
+                        if (latO == 0) latO = ruta.optDouble("latOrigen",
+                                ruta.optDouble("latitudOrigen", 0));
+                        if (lngO == 0) lngO = ruta.optDouble("lngOrigen",
+                                ruta.optDouble("longitudOrigen", 0));
+                        if (latD == 0) latD = ruta.optDouble("latDestino",
+                                ruta.optDouble("latitudDestino", 0));
+                        if (lngD == 0) lngD = ruta.optDouble("lngDestino",
+                                ruta.optDouble("longitudDestino", 0));
+                        if (origen.isEmpty())
+                            origen  = ruta.optString("origen",  ruta.optString("nombre", ""));
+                        if (destino.isEmpty())
+                            destino = ruta.optString("destino", "");
+                    }
+
+                    // ── Extraer paradas para waypoints ──────────────────────────
+                    JSONArray paradasArr = null;
+                    if (ruta != null) paradasArr = ruta.optJSONArray("paradas");
+                    if (paradasArr == null) paradasArr = viajeCompleto.optJSONArray("paradas");
+
+                    String paradasJson = "";
+                    if (paradasArr != null && paradasArr.length() > 0) {
+                        paradasJson = paradasArr.toString();
+                    }
+
+                    // Desde paradas (más confiable)
+                    try {
+                        JSONArray paradas = paradasArr;
+                        if (paradas != null && paradas.length() >= 2) {
+                            JSONObject p0 = paradas.getJSONObject(0);
+                            JSONObject pN = paradas.getJSONObject(paradas.length() - 1);
+                            if (latO == 0) {
+                                latO = p0.optDouble("lat", p0.optDouble("latitud", 0));
+                                lngO = p0.optDouble("lng", p0.optDouble("longitud", 0));
+                            }
+                            if (latD == 0) {
+                                latD = pN.optDouble("lat", pN.optDouble("latitud", 0));
+                                lngD = pN.optDouble("lng", pN.optDouble("longitud", 0));
+                            }
+                            if (origen.isEmpty())  origen  = p0.optString("nombre", "");
+                            if (destino.isEmpty()) destino = pN.optString("nombre", "");
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "cargarViajeCompleto paradas: " + e.getMessage());
+                    }
+
+                    Log.d(TAG, "Viaje completo → latO=" + latO + " latD=" + latD
+                            + " paradas=" + paradasJson.length() + " chars");
+
+                    final double fLatO = latO, fLngO = lngO;
+                    final double fLatD = latD, fLngD = lngD;
+                    final String fOrig = origen.isEmpty()  ? "Origen"  : origen;
+                    final String fDest = destino.isEmpty() ? "Destino" : destino;
+                    final String fParadas = paradasJson;
+
+                    runOnUiThread(() -> {
+                        Intent intent = new Intent(this, Mapa.class);
+                        intent.putExtra("ID_VIAJE",      idViaje);
+                        intent.putExtra("DESDE_VIAJE",   true);
+                        intent.putExtra("ORIGEN_LAT",    fLatO);
+                        intent.putExtra("ORIGEN_LNG",    fLngO);
+                        intent.putExtra("DESTINO_LAT",   fLatD);
+                        intent.putExtra("DESTINO_LNG",   fLngD);
+                        intent.putExtra("NOM_SUBIDA",    fOrig);
+                        intent.putExtra("NOM_BAJADA",    fDest);
+                        intent.putExtra("NOM_CONDUCTOR", session.getNombre());
+                        intent.putExtra("PARADAS_JSON",  fParadas);   // ← waypoints
+                        startActivity(intent);
+                    });
+                },
+                error -> {
+                    Log.e(TAG, "Error cargando viaje completo");
+                    runOnUiThread(() -> startActivity(new Intent(this, Mapa.class)));
+                }
+        );
+    }
 
     private void cargarMisViajes() {
         if (conductorId == -1) {
-            Toast.makeText(this, "Error de sesión. Vuelve a iniciar sesión.",
-                    Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Error de sesión. Vuelve a iniciar sesión.", Toast.LENGTH_LONG).show();
             irAlLogin();
             return;
         }
-
         mostrarCargando(true);
-
         ConexionApi.getInstance(this).getArray(
                 Constantes.MIS_VIAJES,
                 response -> {
                     mostrarCargando(false);
+                    if (swipeRefresh != null) swipeRefresh.setRefreshing(false); // ← AQUÍ
                     viajes.clear();
-
                     for (int i = 0; i < response.length(); i++) {
                         JSONObject viaje = response.optJSONObject(i);
                         if (viaje == null) continue;
-
                         String estado = viaje.optString("estado", "").trim().toUpperCase();
                         boolean esActivo = estado.equals("CREADO")
                                 || estado.equals("PROGRAMADO")
                                 || estado.equals("DISPONIBLE")
                                 || estado.equals("EN_CURSO")
                                 || estado.equals("INICIADO");
-
                         if (esActivo) viajes.add(viaje);
                     }
-
                     adapter.notifyDataSetChanged();
                     actualizarContadorViajes();
-
                     boolean vacio = viajes.isEmpty();
                     if (layoutEmpty != null)
                         layoutEmpty.setVisibility(vacio ? View.VISIBLE : View.GONE);
@@ -296,11 +528,11 @@ public class HomeConductor extends BaseActivity {
                 },
                 error -> {
                     mostrarCargando(false);
+                    if (swipeRefresh != null) swipeRefresh.setRefreshing(false); // ← Y AQUÍ
                     Toast.makeText(this, "Error cargando viajes.", Toast.LENGTH_LONG).show();
                 }
         );
     }
-
     private void actualizarContadorViajes() {
         int total = viajes.size();
         if (chipTotal != null)
@@ -313,13 +545,8 @@ public class HomeConductor extends BaseActivity {
     }
 
     // =========================================================================
-    //  CALIFICACIONES PENDIENTES — SECCIÓN VISUAL EN EL HOME
+    //  CALIFICACIONES PENDIENTES
     // =========================================================================
-
-    /**
-     * Limpia la sección de pendientes y la oculta.
-     * Se llama al inicio de cada onResume() para evitar datos stale.
-     */
     private void resetCalificacionesPendientes() {
         listaPendientes.clear();
         if (adapterCalificaciones != null) adapterCalificaciones.notifyDataSetChanged();
@@ -330,17 +557,11 @@ public class HomeConductor extends BaseActivity {
         actualizarBadgePendientes();
     }
 
-    /**
-     * Agrega la card de un pasajero pendiente al Home.
-     * Evita duplicados y corre en el UI thread automáticamente.
-     */
     private void agregarPendienteEnLayout(int viajeId, int pasajeroId, String nombre) {
-        // Evitar duplicados
         for (PasajeroPendiente p : listaPendientes) {
             if (p.viajeId == viajeId && p.pasajeroId == pasajeroId) return;
         }
         listaPendientes.add(new PasajeroPendiente(viajeId, pasajeroId, nombre));
-
         runOnUiThread(() -> {
             if (adapterCalificaciones != null) adapterCalificaciones.notifyDataSetChanged();
             actualizarBadgePendientes();
@@ -351,17 +572,11 @@ public class HomeConductor extends BaseActivity {
         });
     }
 
-    /**
-     * Quita la card del pasajero ya calificado.
-     * Oculta la sección entera si ya no quedan pendientes.
-     */
     private void quitarPendienteDelLayout(int viajeId, int pasajeroId) {
         listaPendientes.removeIf(p -> p.viajeId == viajeId && p.pasajeroId == pasajeroId);
-
         runOnUiThread(() -> {
             if (adapterCalificaciones != null) adapterCalificaciones.notifyDataSetChanged();
             actualizarBadgePendientes();
-
             if (listaPendientes.isEmpty()) {
                 if (layoutCalificacionesPendientes != null)
                     layoutCalificacionesPendientes.setVisibility(View.GONE);
@@ -371,7 +586,6 @@ public class HomeConductor extends BaseActivity {
         });
     }
 
-    /** Actualiza el chip del badge con el total de pendientes. */
     private void actualizarBadgePendientes() {
         int total = listaPendientes.size();
         if (chipCalificacionesPendientes != null)
@@ -379,21 +593,15 @@ public class HomeConductor extends BaseActivity {
                     total + (total == 1 ? " pendiente" : " pendientes"));
     }
 
-    /**
-     * Callback del adapter cuando el conductor pulsa "Calificar" en una card.
-     * Abre el bottom_sheet_calificar.xml a través de CalificacionController
-     * y, al confirmar, quita la card del Home.
-     */
     private void onCalificarPasajero(PasajeroPendiente pendiente) {
         if (isFinishing() || isDestroyed()) return;
-
         CalificacionController.mostrarBottomSheetCalificar(
                 this,
                 pendiente.viajeId,
-                pendiente.pasajeroId,    // idCalificado  = pasajero
+                pendiente.pasajeroId,
                 pendiente.nombrePasajero,
-                conductorId,             // idCalificador = conductor
-                true,                    // esConductor   = true → usa CHIPS_PASAJERO
+                conductorId,
+                true,
                 (puntuacion, comentario) -> {
                     Log.d(TAG, "Calificado desde card Home → pasajero="
                             + pendiente.pasajeroId + " " + puntuacion + "⭐");
@@ -402,30 +610,14 @@ public class HomeConductor extends BaseActivity {
         );
     }
 
-    // =========================================================================
-    //  CALIFICACIONES PENDIENTES — VERIFICACIÓN AUTOMÁTICA AL ABRIR
-    //
-    //  Flujo completo:
-    //   1. GET mis-viajes  →  filtrar estado FINALIZADO / COMPLETADO
-    //   2. Por cada viaje  →  GET reservas  →  extraer pasajeros activos
-    //   3. Por cada pasajero  →  CalificacionesManager.verificarCalificacion()
-    //      (usa caché SharedPreferences sin endpoint extra, clave única por
-    //       viaje+calificador+calificado)
-    //   4a. onDebeCalificar()  →  agregarPendienteEnLayout() + BottomSheet encadenado
-    //   4b. onYaCalifico()     →  asegurar que no aparezca en el Home
-    // =========================================================================
-
     private void verificarCalificacionesPendientes() {
         if (isFinishing() || isDestroyed()) return;
         if (conductorId <= 0) return;
-
-        Log.d(TAG, "Verificando calificaciones pendientes conductor=" + conductorId);
 
         ConexionApi.getInstance(this).getArray(
                 Constantes.MIS_VIAJES,
                 response -> {
                     List<Integer> viajesFinalizados = new ArrayList<>();
-
                     for (int i = 0; i < response.length(); i++) {
                         JSONObject viaje = response.optJSONObject(i);
                         if (viaje == null) continue;
@@ -435,13 +627,7 @@ public class HomeConductor extends BaseActivity {
                             if (vid > 0) viajesFinalizados.add(vid);
                         }
                     }
-
-                    if (viajesFinalizados.isEmpty()) {
-                        Log.d(TAG, "Sin viajes finalizados para calificar");
-                        return;
-                    }
-
-                    Log.d(TAG, "Viajes finalizados encontrados: " + viajesFinalizados.size());
+                    if (viajesFinalizados.isEmpty()) return;
                     new Handler(Looper.getMainLooper()).post(() ->
                             buscarPasajerosPendientesEnViaje(viajesFinalizados, 0));
                 },
@@ -449,50 +635,34 @@ public class HomeConductor extends BaseActivity {
         );
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Paso 2: iterar viaje por viaje
-    // ─────────────────────────────────────────────────────────────────────────
-
     private void buscarPasajerosPendientesEnViaje(List<Integer> viajesIds, int indiceViaje) {
-        if (indiceViaje >= viajesIds.size()) {
-            Log.d(TAG, "Revisión de viajes finalizados completada");
-            return;
-        }
+        if (indiceViaje >= viajesIds.size()) return;
         if (isFinishing() || isDestroyed()) return;
 
         int viajeId = viajesIds.get(indiceViaje);
-        Log.d(TAG, "Buscando pasajeros en viaje=" + viajeId);
-
-        String url = Constantes.viajeReservasDetalle((long) viajeId);
 
         ConexionApi.getInstance(this).getArrayNoCache(
-                url,
-                reservas -> procesarReservasParaCalificar(
-                        reservas, viajeId, viajesIds, indiceViaje),
-                err -> {
-                    // Fallback a endpoint alternativo
-                    String urlAlt = Constantes.BASE_URL + "/api/reservas?idViaje=" + viajeId;
-                    ConexionApi.getInstance(this).getArrayNoCache(
-                            urlAlt,
-                            reservas2 -> procesarReservasParaCalificar(
-                                    reservas2, viajeId, viajesIds, indiceViaje),
-                            err2 -> {
-                                Log.w(TAG, "Sin reservas para viaje=" + viajeId);
-                                buscarPasajerosPendientesEnViaje(viajesIds, indiceViaje + 1);
-                            }
-                    );
-                }
+                Constantes.MIS_RESERVAS,
+                reservas -> {
+                    JSONArray filtradas = new JSONArray();
+                    for (int i = 0; i < reservas.length(); i++) {
+                        JSONObject r = reservas.optJSONObject(i);
+                        if (r == null) continue;
+                        int idV = r.optInt("idViaje", 0);
+                        if (idV == 0) {
+                            JSONObject vo = r.optJSONObject("viaje");
+                            if (vo != null) idV = vo.optInt("idViajes", vo.optInt("id", 0));
+                        }
+                        if (idV == viajeId) filtradas.put(r);
+                    }
+                    procesarReservasParaCalificar(filtradas, viajeId, viajesIds, indiceViaje);
+                },
+                err -> buscarPasajerosPendientesEnViaje(viajesIds, indiceViaje + 1)
         );
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Paso 3: extraer pasajeros de la respuesta de reservas
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private void procesarReservasParaCalificar(JSONArray reservas,
-                                               int viajeId,
-                                               List<Integer> viajesIds,
-                                               int indiceViaje) {
+    private void procesarReservasParaCalificar(JSONArray reservas, int viajeId,
+                                               List<Integer> viajesIds, int indiceViaje) {
         try {
             if (reservas == null || reservas.length() == 0) {
                 buscarPasajerosPendientesEnViaje(viajesIds, indiceViaje + 1);
@@ -505,15 +675,12 @@ public class HomeConductor extends BaseActivity {
             for (int i = 0; i < reservas.length(); i++) {
                 JSONObject res = reservas.optJSONObject(i);
                 if (res == null) continue;
-
-                // Ignorar reservas canceladas
                 String est = res.optString("estado", "").toUpperCase();
                 if ("CANCELADO".equals(est) || "CANCELADA".equals(est)) continue;
 
                 int    idPasajero  = -1;
                 String nomPasajero = "";
 
-                // Buscar el objeto pasajero en campos conocidos del JSON
                 JSONObject po = null;
                 for (String k : new String[]{"pasajero", "usuario", "user", "passenger"}) {
                     JSONObject c = res.optJSONObject(k);
@@ -525,7 +692,7 @@ public class HomeConductor extends BaseActivity {
                         if (id > 0) { idPasajero = id; break; }
                     }
                     if (idPasajero > 0) {
-                        for (String k : new String[]{"nombre", "nombreCompleto", "name", "nombres"}) {
+                        for (String k : new String[]{"nombre", "nombreCompleto", "name"}) {
                             String n = po.optString(k, "");
                             if (!n.isEmpty() && !n.equals("null")) { nomPasajero = n; break; }
                         }
@@ -536,9 +703,8 @@ public class HomeConductor extends BaseActivity {
                         }
                     }
                 }
-                // Fallback: IDs directos en el objeto reserva
                 if (idPasajero <= 0) {
-                    for (String k : new String[]{"idUsuarios", "idUsuario", "idPasajero", "pasajeroId"}) {
+                    for (String k : new String[]{"idUsuarios","idUsuario","idPasajero","pasajeroId"}) {
                         int id = res.optInt(k, -1);
                         if (id > 0) { idPasajero = id; break; }
                     }
@@ -550,8 +716,6 @@ public class HomeConductor extends BaseActivity {
                     String nomFinal = nomPasajero.isEmpty() ? "Pasajero" : nomPasajero;
                     ids.add(idPasajero);
                     nombres.add(nomFinal);
-
-                    // Mostrar card en el Home de inmediato (antes del BottomSheet)
                     final int    idF  = idPasajero;
                     final String nF   = nomFinal;
                     final int    vidF = viajeId;
@@ -578,25 +742,9 @@ public class HomeConductor extends BaseActivity {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Paso 4: BottomSheets encadenados, uno por pasajero
-    //
-    //  - CalificacionesManager verifica caché SharedPreferences
-    //    (clave: "viaje_{id}_cal_{idCalificador}_to_{idCalificado}")
-    //  - Si ya calificó → onYaCalifico() → quita card + salta al siguiente
-    //  - Si no calificó → onDebeCalificar() → muestra bottom_sheet_calificar.xml
-    //    a través de CalificacionController.mostrarBottomSheetCalificar()
-    //  - Al confirmar → CalificacionesManager.enviarCalificacion() (POST /api/calificaciones)
-    //    maneja 409 como éxito y guarda en caché para no repetir
-    //  - Si cierra sin calificar → la card queda en el Home, avanza tras 3s
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private void mostrarCalificacionesEncadenadas(List<Integer> ids,
-                                                  List<String>  nombres,
-                                                  int           idCalificador,
-                                                  int           viajeId,
-                                                  int           indice,
-                                                  Runnable      onTodosListos) {
+    private void mostrarCalificacionesEncadenadas(List<Integer> ids, List<String> nombres,
+                                                  int idCalificador, int viajeId,
+                                                  int indice, Runnable onTodosListos) {
         if (indice >= ids.size()) {
             if (onTodosListos != null) onTodosListos.run();
             return;
@@ -610,27 +758,14 @@ public class HomeConductor extends BaseActivity {
         new CalificacionesManager(this).verificarCalificacion(
                 viajeId, idCalificador, idPasajero,
                 new CalificacionesManager.OnVerificacionListener() {
-
-                    @Override
-                    public void onDebeCalificar() {
-                        Log.d(TAG, "Abriendo BottomSheet → viaje=" + viajeId
-                                + " pasajero=" + idPasajero
-                                + " [" + (indice + 1) + "/" + ids.size() + "]");
-
+                    @Override public void onDebeCalificar() {
                         runOnUiThread(() ->
                                 CalificacionController.mostrarBottomSheetCalificar(
                                         HomeConductor.this,
-                                        viajeId,
-                                        idPasajero,    // calificado  = pasajero
-                                        nomPasajero,
-                                        idCalificador, // calificador = conductor
-                                        true,          // esConductor = true → CHIPS_PASAJERO
+                                        viajeId, idPasajero, nomPasajero,
+                                        idCalificador, true,
                                         (puntuacion, comentario) -> {
-                                            Log.d(TAG, "Calificación enviada "
-                                                    + puntuacion + "⭐ pasajero=" + idPasajero);
-                                            // Quitar la card del Home al confirmar
                                             quitarPendienteDelLayout(viajeId, idPasajero);
-                                            // Siguiente pasajero con pequeño delay
                                             new Handler(Looper.getMainLooper()).postDelayed(
                                                     () -> mostrarCalificacionesEncadenadas(
                                                             ids, nombres, idCalificador,
@@ -639,20 +774,13 @@ public class HomeConductor extends BaseActivity {
                                         }
                                 )
                         );
-
-                        // Si cierra el sheet sin calificar → avanzar tras 3s
-                        // La card queda en el Home para calificar después manualmente
                         new Handler(Looper.getMainLooper()).postDelayed(
                                 () -> mostrarCalificacionesEncadenadas(
                                         ids, nombres, idCalificador,
                                         viajeId, siguiente, onTodosListos),
                                 3000);
                     }
-
-                    @Override
-                    public void onYaCalifico(int puntuacion, String estrellas) {
-                        Log.d(TAG, "Ya calificó pasajero=" + idPasajero + " " + estrellas);
-                        // Asegurar que la card no aparezca en el Home
+                    @Override public void onYaCalifico(int puntuacion, String estrellas) {
                         quitarPendienteDelLayout(viajeId, idPasajero);
                         mostrarCalificacionesEncadenadas(
                                 ids, nombres, idCalificador,
@@ -665,7 +793,6 @@ public class HomeConductor extends BaseActivity {
     // =========================================================================
     //  HELPERS
     // =========================================================================
-
     private void irAlLogin() {
         goTo(Login.class, Transition.FADE, true);
     }

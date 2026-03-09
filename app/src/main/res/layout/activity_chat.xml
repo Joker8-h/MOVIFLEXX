@@ -14,7 +14,7 @@
         android:layout_height="68dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:background="#1AB99F"
+        android:background="#9FE0D8"
         android:paddingStart="8dp"
         android:paddingEnd="12dp"
         android:elevation="4dp">

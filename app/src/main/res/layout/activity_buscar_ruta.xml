@@ -19,7 +19,7 @@
         android:paddingEnd="16dp"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
-        android:background="#FFFFFF"
+        android:background="#BFEDE6"
         android:elevation="4dp">
 
         <ImageButton
@@ -59,7 +59,7 @@
             android:layout_height="wrap_content"
             android:text="⏳ GPS"
             android:textSize="12sp"
-            android:textColor="#F59E0B"
+            android:textColor="#00CED1"
             android:textStyle="bold"/>
     </LinearLayout>
 
@@ -210,7 +210,8 @@
                 android:textSize="15sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
-                app:backgroundTint="#009B8D"
+                android:background="@drawable/bg_btn_login"
+                app:backgroundTint="@null"
                 app:cornerRadius="16dp"
                 app:icon="@drawable/ic_search"
                 app:iconGravity="textStart"

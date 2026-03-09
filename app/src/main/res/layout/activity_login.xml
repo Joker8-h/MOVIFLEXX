@@ -5,10 +5,6 @@
     android:layout_height="match_parent"
     android:background="@drawable/fondomoviflexx">
 
-    <!-- ══════════════════════════════════════════════════════════ -->
-    <!--  STEP 1 — LOGIN NORMAL (email + password + Google)         -->
-    <!-- ══════════════════════════════════════════════════════════ -->
-
     <!-- Fondo animado -->
     <com.arlys.moviflexx.views.BubbleView
         android:id="@+id/bubbleView"
@@ -17,6 +13,9 @@
         android:clickable="false"
         android:focusable="false" />
 
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!--  STEP 1 — LOGIN NORMAL                                    -->
+    <!-- ══════════════════════════════════════════════════════════ -->
     <ScrollView
         android:id="@+id/layoutLogin"
         android:layout_width="match_parent"
@@ -38,7 +37,7 @@
                 android:layout_gravity="center"
                 android:layout_marginTop="32dp"
                 android:layout_marginBottom="16dp"
-                android:src="@drawable/logomoviflexxxx" />
+                android:src="@drawable/logomo" />
 
             <!-- TITULO -->
             <TextView
@@ -47,7 +46,7 @@
                 android:text="@string/login"
                 android:textSize="26sp"
                 android:textStyle="bold"
-                android:textColor="#2B2B2B"
+                android:textColor="#00CED1"
                 android:layout_gravity="center"
                 android:layout_marginBottom="28dp" />
 
@@ -170,6 +169,21 @@
                 app:strokeWidth="2dp"
                 app:cornerRadius="20dp" />
 
+            <!-- ══ BOTÓN QR — ID ÚNICO, sin duplicar ══ -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnQrLogin"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="12dp"
+                android:onClick="irQrScanner"
+                android:text="📱  Ingresar con código QR"
+                android:textColor="#7B1FA2"
+                android:textStyle="bold"
+                app:strokeColor="#7B1FA2"
+                app:strokeWidth="2dp"
+                app:cornerRadius="20dp" />
+
             <!-- GOOGLE -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnGoogle"
@@ -209,7 +223,7 @@
     </ScrollView>
 
     <!-- ══════════════════════════════════════════════════════════ -->
-    <!--  STEP 2 — RECONOCIMIENTO FACIAL (oculto al inicio)         -->
+    <!--  STEP 2 — RECONOCIMIENTO FACIAL (oculto al inicio)        -->
     <!-- ══════════════════════════════════════════════════════════ -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layoutFace"

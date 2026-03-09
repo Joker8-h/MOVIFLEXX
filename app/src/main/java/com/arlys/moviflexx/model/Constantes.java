@@ -126,20 +126,46 @@ public class Constantes {
     public static final String PAGOS =
             BASE_URL + "/api/pagos";
 
+    /** GET /api/pagos/{idPago} — consulta estado / confirmaciones de un pago */
+    public static String pagoPorId(long idPago) {
+        return BASE_URL + "/api/pagos/" + idPago;
+    }
+
+    /**
+     * GET /api/pagos/viaje/{idViaje}/usuario/{idUsuario}
+     * Verifica si el usuario ya tiene un pago activo para ese viaje.
+     * ⚠️ En Express esta ruta DEBE declararse ANTES de /api/pagos/:idPago
+     *    para que Express no confunda "viaje" con un id numérico.
+     */
+    public static String pagoDeUsuarioEnViaje(long idViaje, long idUsuario) {
+        return BASE_URL + "/api/pagos/viaje/" + idViaje + "/usuario/" + idUsuario;
+    }
+
+    /** GET /api/pagos/viaje/{idViaje} — todos los pagos del viaje (para el conductor) */
+    public static String pagosPorViaje(long idViaje) {
+        return BASE_URL + "/api/pagos/viaje/" + idViaje;
+    }
+
+    /** PUT /api/pagos/confirmarPasajero/{idPago} */
+    public static String pagoConfirmarPasajero(long idPago) {
+        return BASE_URL + "/api/pagos/confirmarPasajero/" + idPago;
+    }
+
+    /** PUT /api/pagos/confirmarConductor/{idPago} */
+    public static String pagoConfirmarConductor(long idPago) {
+        return BASE_URL + "/api/pagos/confirmarConductor/" + idPago;
+    }
+
 
     // ================= CHAT =================
-    // Rutas reales del backend (Node/Express con verificarToken middleware)
-
     public static final String CHAT_CONVERSACIONES =
             BASE_URL + "/api/chat/conversaciones";
 
     /**
      * El backend ya filtra por token JWT automáticamente (usa verificarToken).
      * NO necesita idUsuario en la URL — el middleware lo extrae del token.
-     * Usar siempre CHAT_CONVERSACIONES directamente.
      */
     public static String chatConversacionesPorUsuario(int idUsuario) {
-        // El backend filtra por token, no por parámetro — ignoramos idUsuario
         return BASE_URL + "/api/chat/conversaciones";
     }
 
@@ -149,13 +175,6 @@ public class Constantes {
     public static String chatMensajesPorConversacion(Long idConversacion) {
         return BASE_URL + "/api/chat/conversaciones/" + idConversacion + "/mensajes";
     }
-
-    /**
-     * ⚠️ El backend NO tiene endpoint para marcar mensajes individuales como leídos.
-     * Estas rutas no existen — no usar hasta que el backend las implemente.
-     * Por ahora se omiten para evitar los 404.
-     */
-    // chatMarcarLeido y chatMensajeMarcarLeido eliminados (404 en backend)
 
 
     // ================= CALIFICACIONES =================
@@ -222,54 +241,26 @@ public class Constantes {
 
 
     // ================= NOTIFICACIONES =================
-    // Rutas reales del backend Node/Express:
-    //   GET    /api/notificaciones/usuario/:idUsuario
-    //   GET    /api/notificaciones/usuario/:idUsuario/count
-    //   PATCH  /api/notificaciones/:id/leida
-    //   PATCH  /api/notificaciones/usuario/:idUsuario/leer-todas
-    //   DELETE /api/notificaciones/:id
-
-    /**
-     * Obtener todas las notificaciones de un usuario.
-     * Requiere el ID del usuario en la URL (el backend NO usa token para filtrar).
-     */
     public static String misNotificaciones(int idUsuario) {
         return BASE_URL + "/api/notificaciones/usuario/" + idUsuario;
     }
 
-    /**
-     * Contador de notificaciones no leídas.
-     */
     public static String notificacionesCount(int idUsuario) {
         return BASE_URL + "/api/notificaciones/usuario/" + idUsuario + "/count";
     }
 
-    /**
-     * Marcar una notificación como leída.
-     * PATCH /api/notificaciones/:id/leida
-     */
     public static String notificacionMarcarLeida(long idNotificacion) {
         return BASE_URL + "/api/notificaciones/" + idNotificacion + "/leida";
     }
 
-    /**
-     * Marcar todas las notificaciones de un usuario como leídas.
-     * PATCH /api/notificaciones/usuario/:idUsuario/leer-todas
-     */
     public static String notificacionesMarcarTodas(int idUsuario) {
         return BASE_URL + "/api/notificaciones/usuario/" + idUsuario + "/leer-todas";
     }
 
-    /**
-     * @deprecated Usar misNotificaciones(idUsuario) — esta URL devuelve 404
-     */
     @Deprecated
     public static final String MIS_NOTIFICACIONES =
             BASE_URL + "/api/notificaciones/mis-notificaciones";
 
-    /**
-     * @deprecated Usar notificacionesMarcarTodas(idUsuario) — esta URL devuelve 404
-     */
     @Deprecated
     public static final String NOTIFICACIONES_MARCAR_TODAS =
             BASE_URL + "/api/notificaciones/marcar-todas-leidas";

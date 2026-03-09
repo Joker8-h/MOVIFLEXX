@@ -6,6 +6,9 @@ import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,7 +25,9 @@ import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.model.ConexionApi;
 import com.arlys.moviflexx.model.Constantes;
 import com.arlys.moviflexx.model.SessionManager;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -30,7 +35,6 @@ import org.json.JSONObject;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -43,12 +47,11 @@ public class Notificaciones extends AppCompatActivity {
 
     private static final String TAG = "Notificaciones";
 
-    // Formatos de fecha — confirmado en Logcat: "2026-02-27T16:11:42.943Z"
-    private static final SimpleDateFormat SDF_ISO_Z  =
+    private static final SimpleDateFormat SDF_ISO_Z =
             new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
-    private static final SimpleDateFormat SDF_ISO    =
+    private static final SimpleDateFormat SDF_ISO =
             new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
-    private static final SimpleDateFormat SDF_MYSQL  =
+    private static final SimpleDateFormat SDF_MYSQL =
             new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
 
     private RecyclerView   rvNotificaciones;
@@ -57,30 +60,28 @@ public class Notificaciones extends AppCompatActivity {
     private ImageView      btnBack;
     private MaterialButton btnMarcarTodas;
 
-    private NotificacionesAdapter adapter;
-    private final List<NotifItem> lista       = new ArrayList<>();
-    private final Set<Long>       idsYaVistos = new HashSet<>();
+    private NotificacionesAdapter       adapter;
+    private final List<NotifItem>       lista       = new ArrayList<>();
+    private final Set<Long>             idsYaVistos = new HashSet<>();
+    private boolean                     primerasCargaCompleta = false;
 
     private SessionManager session;
     private int idUsuario;
 
-    // ─── SoundPool ────────────────────────────────────────────────────────────
     private SoundPool soundPool;
     private int       soundId    = -1;
     private boolean   soundListo = false;
 
-    // ═════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
     //  LIFECYCLE
-    // ═════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_notificaciones);
-
         session   = new SessionManager(this);
         idUsuario = session.getIdUsuario();
-
         inicializarSonido();
         bindViews();
         configurarRecyclerView();
@@ -91,10 +92,9 @@ public class Notificaciones extends AppCompatActivity {
     @Override protected void onResume()  { super.onResume();  cargarNotificaciones(); }
     @Override protected void onDestroy() { super.onDestroy(); if (soundPool != null) { soundPool.release(); soundPool = null; } }
 
-    // ═════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
     //  SONIDO
-    //  El archivo res/raw/notificacion.mp3 ya fue colocado por el usuario.
-    // ═════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
 
     private void inicializarSonido() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -106,10 +106,7 @@ public class Notificaciones extends AppCompatActivity {
         } else {
             soundPool = new SoundPool(2, AudioManager.STREAM_NOTIFICATION, 0);
         }
-        soundPool.setOnLoadCompleteListener((pool, sampleId, status) -> {
-            soundListo = (status == 0);
-            Log.d(TAG, "Sonido listo: " + soundListo);
-        });
+        soundPool.setOnLoadCompleteListener((pool, sampleId, status) -> soundListo = (status == 0));
         soundId = soundPool.load(this, R.raw.notificacion, 1);
     }
 
@@ -118,21 +115,19 @@ public class Notificaciones extends AppCompatActivity {
             soundPool.play(soundId, 1f, 1f, 1, 0, 1f);
             return;
         }
-        // Fallback: vibración corta
         try {
             android.os.Vibrator v = (android.os.Vibrator) getSystemService(VIBRATOR_SERVICE);
             if (v != null && v.hasVibrator()) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                    v.vibrate(android.os.VibrationEffect.createOneShot(180, android.os.VibrationEffect.DEFAULT_AMPLITUDE));
-                else
-                    v.vibrate(180);
+                    v.vibrate(android.os.VibrationEffect.createOneShot(200, android.os.VibrationEffect.DEFAULT_AMPLITUDE));
+                else v.vibrate(200);
             }
         } catch (Exception ignored) {}
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
     //  BIND & CONFIG
-    // ═════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
 
     private void bindViews() {
         rvNotificaciones = findViewById(R.id.rv_notificaciones);
@@ -154,9 +149,9 @@ public class Notificaciones extends AppCompatActivity {
         if (btnMarcarTodas != null) btnMarcarTodas.setOnClickListener(v -> marcarTodasLeidas());
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    //  CARGAR NOTIFICACIONES
-    // ═════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
+    //  CARGAR
+    // ═══════════════════════════════════════════════════════
 
     private void cargarNotificaciones() {
         if (idUsuario <= 0) { mostrarVacio(); return; }
@@ -186,9 +181,9 @@ public class Notificaciones extends AppCompatActivity {
         return null;
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    //  PROCESAR RESPUESTA
-    // ═════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
+    //  PROCESAR
+    // ═══════════════════════════════════════════════════════
 
     private void procesarRespuesta(JSONArray response) {
         Set<Long> idsNuevos = new HashSet<>();
@@ -196,7 +191,8 @@ public class Notificaciones extends AppCompatActivity {
             JSONObject obj = response.optJSONObject(i);
             if (obj == null) continue;
             long id = obj.optLong("idNotificacion", obj.optLong("id", -1));
-            if (id != -1 && !idsYaVistos.contains(id)) idsNuevos.add(id);
+            if (id != -1 && !idsYaVistos.contains(id) && primerasCargaCompleta)
+                idsNuevos.add(id);
         }
 
         lista.clear();
@@ -211,43 +207,42 @@ public class Notificaciones extends AppCompatActivity {
             item.tipo          = obj.optString("tipo", "SISTEMA").toUpperCase();
             item.leido         = obj.optInt("leido", 0) == 1 || obj.optBoolean("leido", false);
             item.fechaCreacion = obj.optString("fechaCreacion",
-                    obj.optString("createdAt",
-                            obj.optString("fecha", "")));
+                    obj.optString("createdAt", obj.optString("fecha", "")));
 
-            // 1. Intentar leer idReferencia directamente del JSON
-            item.idReferencia = obj.optLong("idReferencia",
-                    obj.optLong("idConversacion",
-                            obj.optLong("idViaje",
-                                    obj.optLong("idReserva", -1))));
-
-            // 2. Intentar desde objeto anidado "data" / "extra"
+            item.idReferencia = obj.optLong("idReferencia", -1);
+            if (item.idReferencia == -1) item.idReferencia = obj.optLong("idConversacion", -1);
+            if (item.idReferencia == -1) item.idReferencia = obj.optLong("conversacionId", -1);
+            if (item.idReferencia == -1) item.idReferencia = obj.optLong("idViaje", -1);
+            if (item.idReferencia == -1) item.idReferencia = obj.optLong("idReserva", -1);
             if (item.idReferencia == -1) {
-                JSONObject data = obj.optJSONObject("data");
-                if (data == null) data = obj.optJSONObject("extra");
-                if (data != null)
-                    item.idReferencia = data.optLong("idConversacion",
-                            data.optLong("idViaje",
-                                    data.optLong("id", -1)));
+                for (String key : new String[]{"data","extra","metadata","payload"}) {
+                    JSONObject nested = obj.optJSONObject(key);
+                    if (nested == null) continue;
+                    item.idReferencia = nested.optLong("idConversacion",
+                            nested.optLong("id", -1));
+                    if (item.idReferencia != -1) break;
+                }
             }
-
-            // 3. Fallback: intentar extraer ID del texto del mensaje
             if (item.idReferencia == -1)
                 item.idReferencia = extraerIdDelMensaje(item.mensaje);
-
-            Log.d(TAG, "Notif id=" + item.id + " tipo=" + item.tipo
-                    + " idRef=" + item.idReferencia
-                    + " fecha='" + item.fechaCreacion + "'"
-                    + " → '" + formatearFecha(item.fechaCreacion) + "'");
 
             lista.add(item);
             idsYaVistos.add(item.id);
         }
 
+        lista.sort((a, b) -> {
+            Date da = parsearFecha(a.fechaCreacion);
+            Date db = parsearFecha(b.fechaCreacion);
+            if (da == null && db == null) return 0;
+            if (da == null) return 1;
+            if (db == null) return -1;
+            return db.compareTo(da);
+        });
+
         final boolean hayNuevas = !idsNuevos.isEmpty();
         runOnUiThread(() -> {
             if (progressBar != null) progressBar.setVisibility(View.GONE);
             if (lista.isEmpty()) { mostrarVacio(); return; }
-
             if (layoutEmpty      != null) layoutEmpty.setVisibility(View.GONE);
             if (rvNotificaciones != null) rvNotificaciones.setVisibility(View.VISIBLE);
             adapter.notifyDataSetChanged();
@@ -258,6 +253,7 @@ public class Notificaciones extends AppCompatActivity {
                 btnMarcarTodas.setVisibility(noLeidas > 0 ? View.VISIBLE : View.GONE);
 
             if (hayNuevas) reproducirSonido();
+            primerasCargaCompleta = true;
         });
     }
 
@@ -268,95 +264,272 @@ public class Notificaciones extends AppCompatActivity {
         if (btnMarcarTodas   != null) btnMarcarTodas.setVisibility(View.GONE);
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    //  NAVEGACIÓN AL HACER CLICK
-    //
-    //  Con ID  → abre la pantalla exacta (chat específico / viaje específico)
-    //  Sin ID  → abre la lista correspondiente (Conversaciones / MisViajes)
-    //            así SIEMPRE hay una ventana a la que ir.
-    //
-    //  Chat.java recibe:              getLongExtra("idConversacion", -1)
-    //  DetalleViajeActivity recibe:   getIntExtra("ID_VIAJE", 0)
-    // ═════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
+    //  BOTTOM SHEET ESTILO FACEBOOK — se abre al tocar ···
+    // ═══════════════════════════════════════════════════════
+
+    private void mostrarOpcionesBottomSheet(NotifItem item, int position) {
+        // DESPUÉS (usa tu estilo que ya existe):
+        BottomSheetDialog dialog = new BottomSheetDialog(this, R.style.BottomSheetTheme);
+        View sheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_notif_opciones, null);
+        dialog.setContentView(sheetView);
+
+        // ── Header: avatar + título de la notif ──
+        MaterialCardView bsCardAvatar = sheetView.findViewById(R.id.bs_card_avatar);
+        TextView         bsTvInicial  = sheetView.findViewById(R.id.bs_tv_inicial);
+        TextView         bsTvTitulo   = sheetView.findViewById(R.id.bs_tv_titulo);
+
+        String nombre = extraerNombreDelMensaje(item.mensaje);
+        String contenido = extraerContenidoMensaje(item.mensaje);
+
+        String inicial = !nombre.isEmpty()
+                ? String.valueOf(nombre.charAt(0)).toUpperCase()
+                : inicialPorTipo(item.tipo);
+        bsTvInicial.setText(inicial);
+        bsCardAvatar.setCardBackgroundColor(colorPorTipo(item.tipo));
+
+        // Título descriptivo en el header
+        SpannableString headerSpan = construirTextoFacebook(item.tipo, nombre, contenido, item.titulo);
+        bsTvTitulo.setText(headerSpan);
+
+        // ── Opción 1: Marcar leída / no leída ──
+        LinearLayout opLeida      = sheetView.findViewById(R.id.bs_opcion_leida);
+        ImageView    iconLeida    = sheetView.findViewById(R.id.bs_icon_leida);
+        TextView     textoLeida   = sheetView.findViewById(R.id.bs_texto_leida);
+
+        if (item.leido) {
+            textoLeida.setText("Marcar como no leída");
+            iconLeida.setImageResource(R.drawable.ic_notifications);
+        } else {
+            textoLeida.setText("Marcar como leída");
+            iconLeida.setImageResource(R.drawable.ic_check_circle);
+        }
+
+        opLeida.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (!item.leido) {
+                // Marcar como leída
+                ConexionApi.getInstance(this).patch(
+                        Constantes.notificacionMarcarLeida(item.id), new JSONObject(),
+                        r -> runOnUiThread(() -> {
+                            item.leido = true;
+                            adapter.notifyItemChanged(position);
+                            long noLeidas = 0;
+                            for (NotifItem n : lista) if (!n.leido) noLeidas++;
+                            if (btnMarcarTodas != null && noLeidas == 0)
+                                btnMarcarTodas.setVisibility(View.GONE);
+                        }),
+                        e -> Log.e(TAG, "Error al marcar leída")
+                );
+            } else {
+                // Marcar como no leída — si tu backend lo soporta
+                // Por ahora solo actualizamos localmente
+                item.leido = false;
+                adapter.notifyItemChanged(position);
+                if (btnMarcarTodas != null)
+                    btnMarcarTodas.setVisibility(View.VISIBLE);
+            }
+        });
+
+        // ── Opción 2: Abrir destino (chat / viaje / reserva) ──
+        LinearLayout opAbrir     = sheetView.findViewById(R.id.bs_opcion_abrir);
+        ImageView    iconAbrir   = sheetView.findViewById(R.id.bs_icon_abrir);
+        TextView     textoAbrir  = sheetView.findViewById(R.id.bs_texto_abrir);
+
+        // Personalizar icono y texto según tipo
+        switch (item.tipo) {
+            case "MENSAJE":
+            case "CHAT":
+                iconAbrir.setImageResource(R.drawable.ic_chat);
+                textoAbrir.setText("Ir al chat");
+                break;
+            case "VIAJE":
+                iconAbrir.setImageResource(R.drawable.ic_directions_car);
+                textoAbrir.setText("Ver viaje");
+                break;
+            case "RESERVA":
+                iconAbrir.setImageResource(R.drawable.ic_description);
+                textoAbrir.setText("Ver reserva");
+                break;
+            case "PAGO":
+                iconAbrir.setImageResource(R.drawable.ic_credit_card);
+                textoAbrir.setText("Ver pago");
+                break;
+            default:
+                iconAbrir.setImageResource(R.drawable.ic_info);
+                textoAbrir.setText("Ver detalles");
+        }
+
+        opAbrir.setOnClickListener(v -> {
+            dialog.dismiss();
+            // Marcar leída automáticamente al abrir
+            if (!item.leido) {
+                ConexionApi.getInstance(this).patch(
+                        Constantes.notificacionMarcarLeida(item.id), new JSONObject(),
+                        r -> runOnUiThread(() -> {
+                            item.leido = true;
+                            adapter.notifyItemChanged(position);
+                        }),
+                        e -> { /* silencioso */ }
+                );
+            }
+            abrirDestino(item);
+        });
+
+        // ── Opción 3: Eliminar ──
+        LinearLayout opEliminar = sheetView.findViewById(R.id.bs_opcion_eliminar);
+        opEliminar.setOnClickListener(v -> {
+            dialog.dismiss();
+            eliminarNotificacion(item, position);
+        });
+
+        // ── Opción 4: Desactivar este tipo ──
+        LinearLayout opDesactivar      = sheetView.findViewById(R.id.bs_opcion_desactivar);
+        TextView     textoDesactivar   = sheetView.findViewById(R.id.bs_texto_desactivar);
+        TextView     subtextoDesactivar = sheetView.findViewById(R.id.bs_subtexto_desactivar);
+
+        String tipoLabel = obtenerLabelTipo(item.tipo);
+        textoDesactivar.setText("Desactivar notificaciones de " + tipoLabel);
+        subtextoDesactivar.setText("Ya no recibirás avisos de este tipo");
+
+        opDesactivar.setOnClickListener(v -> {
+            dialog.dismiss();
+            // Filtrar localmente: ocultar todas las notificaciones de este tipo
+            // (puedes guardar en SharedPreferences si quieres persistirlo)
+            int removidos = 0;
+            for (int i2 = lista.size() - 1; i2 >= 0; i2--) {
+                if (lista.get(i2).tipo.equals(item.tipo)) {
+                    lista.remove(i2);
+                    adapter.notifyItemRemoved(i2);
+                    removidos++;
+                }
+            }
+            adapter.notifyItemRangeChanged(0, lista.size());
+            if (lista.isEmpty()) mostrarVacio();
+
+            android.widget.Toast.makeText(this,
+                    "Notificaciones de " + tipoLabel + " ocultadas",
+                    android.widget.Toast.LENGTH_SHORT).show();
+        });
+
+        dialog.show();
+    }
+
+    private String obtenerLabelTipo(String tipo) {
+        switch (tipo) {
+            case "MENSAJE":
+            case "CHAT":    return "mensajes";
+            case "VIAJE":   return "viajes";
+            case "RESERVA": return "reservas";
+            case "PAGO":    return "pagos";
+            default:        return "este tipo";
+        }
+    }
+
+    // Métodos de colorPorTipo e inicialPorTipo accesibles desde mostrarOpcionesBottomSheet
+    private int colorPorTipo(String tipo) {
+        switch (tipo) {
+            case "MENSAJE":
+            case "CHAT":       return 0xFF0A7A72;
+            case "VIAJE":      return 0xFF1565C0;
+            case "RESERVA":    return 0xFFE65100;
+            case "PAGO":       return 0xFF2E7D32;
+            case "BIENVENIDA": return 0xFF880E4F;
+            default:           return 0xFF4A148C;
+        }
+    }
+
+    private String inicialPorTipo(String tipo) {
+        switch (tipo) {
+            case "VIAJE":      return "V";
+            case "RESERVA":    return "R";
+            case "PAGO":       return "$";
+            case "BIENVENIDA": return "B";
+            default:           return "M";
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  NAVEGACIÓN
+    // ═══════════════════════════════════════════════════════
 
     private void abrirDestino(NotifItem item) {
         switch (item.tipo) {
-
             case "MENSAJE":
             case "CHAT": {
                 if (item.idReferencia > 0) {
-                    // ✅ Tenemos el id → abrir chat específico
-                    Intent intent = new Intent(this, Chat.class);
-                    intent.putExtra("idConversacion", item.idReferencia);
-                    String nombre = extraerNombreDelMensaje(item.mensaje);
-                    if (!nombre.isEmpty()) intent.putExtra("nombre", nombre);
-                    startActivity(intent);
+                    abrirChatPorId(item.idReferencia, extraerNombreDelMensaje(item.mensaje));
                 } else {
-                    // ⚠️ Sin id → abrir lista de conversaciones
-                    Log.w(TAG, "MENSAJE sin idConversacion → abriendo Conversaciones");
-                    startActivity(new Intent(this, Conversaciones.class));
+                    buscarConversacionPorConductorYAbrir(extraerNombreDelMensaje(item.mensaje));
                 }
                 break;
             }
-
             case "VIAJE":
             case "RESERVA": {
                 if (item.idReferencia > 0) {
-                    // ✅ Tenemos el id → abrir detalle del viaje específico
-                    Intent intent = new Intent(this, DetalleViajeActivity.class);
-                    intent.putExtra("ID_VIAJE", (int) item.idReferencia);
-                    startActivity(intent);
+                    Intent i = new Intent(this, DetalleViajeActivity.class);
+                    i.putExtra("ID_VIAJE", (int) item.idReferencia);
+                    startActivity(i);
                 } else {
-                    // ⚠️ Sin id → abrir lista de mis viajes
-                    Log.w(TAG, "VIAJE/RESERVA sin idViaje → abriendo MisViajes");
                     startActivity(new Intent(this, MisViajesActivity.class));
                 }
                 break;
             }
-
             default:
-                // SISTEMA, BIENVENIDA, CALIFICACION, PAGO → sin navegación
                 Log.d(TAG, "Tipo sin navegación: " + item.tipo);
-                break;
         }
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    //  HELPERS DE EXTRACCIÓN
-    // ═════════════════════════════════════════════════════════════════════════
+    private void abrirChatPorId(long idConversacion, String nombre) {
+        Intent intent = new Intent(this, Chat.class);
+        intent.putExtra("idConversacion", idConversacion);
+        if (nombre != null && !nombre.isEmpty()) intent.putExtra("nombre", nombre);
+        startActivity(intent);
+    }
 
-    /** Intenta extraer un ID numérico del texto del mensaje como último recurso */
-    private long extraerIdDelMensaje(String mensaje) {
-        if (mensaje == null || mensaje.isEmpty()) return -1;
-        Pattern[] patrones = {
-                Pattern.compile("(?:viaje|trip)\\s*#?\\s*(\\d+)", Pattern.CASE_INSENSITIVE),
-                Pattern.compile("(?:reserva|booking)\\s*#?\\s*(\\d+)", Pattern.CASE_INSENSITIVE),
-                Pattern.compile("(?:conversaci[oó]n|chat)\\s*#?\\s*(\\d+)", Pattern.CASE_INSENSITIVE),
-                Pattern.compile("\\bid\\s*[:=#]?\\s*(\\d+)\\b", Pattern.CASE_INSENSITIVE),
-        };
-        for (Pattern p : patrones) {
-            Matcher m = p.matcher(mensaje);
-            if (m.find()) {
-                try { return Long.parseLong(m.group(1)); }
-                catch (NumberFormatException ignored) {}
-            }
+    private void buscarConversacionPorConductorYAbrir(String nombreBuscado) {
+        if (nombreBuscado == null || nombreBuscado.isEmpty()) {
+            startActivity(new Intent(this, Conversaciones.class));
+            return;
         }
-        return -1;
+        ConexionApi.getInstance(this).getArrayNoCache(
+                Constantes.CHAT_CONVERSACIONES,
+                conversaciones -> {
+                    long   idConvEncontrada = -1;
+                    String nombreFinal      = nombreBuscado;
+                    for (int i = 0; i < conversaciones.length(); i++) {
+                        JSONObject conv = conversaciones.optJSONObject(i);
+                        if (conv == null) continue;
+                        JSONObject conductor = conv.optJSONObject("conductor");
+                        JSONObject pasajero  = conv.optJSONObject("pasajero");
+                        String nc = conductor != null ? conductor.optString("nombre","") : "";
+                        String np = pasajero  != null ? pasajero.optString("nombre","")  : "";
+                        String nb = nombreBuscado.trim().toLowerCase();
+                        if (!nc.isEmpty() && nc.trim().toLowerCase().contains(nb)) {
+                            idConvEncontrada = conv.optLong("idConversacion", -1);
+                            nombreFinal = nc;
+                            break;
+                        }
+                        if (!np.isEmpty() && np.trim().toLowerCase().contains(nb)) {
+                            idConvEncontrada = conv.optLong("idConversacion", -1);
+                            nombreFinal = np;
+                            break;
+                        }
+                    }
+                    final long   idF = idConvEncontrada;
+                    final String nF  = nombreFinal;
+                    runOnUiThread(() -> {
+                        if (idF > 0) abrirChatPorId(idF, nF);
+                        else startActivity(new Intent(this, Conversaciones.class));
+                    });
+                },
+                error -> runOnUiThread(() -> startActivity(new Intent(this, Conversaciones.class)))
+        );
     }
 
-    /** Extrae "Juan" de "Tienes un nuevo mensaje de Juan: ..." */
-    private String extraerNombreDelMensaje(String mensaje) {
-        if (mensaje == null || mensaje.isEmpty()) return "";
-        Pattern p = Pattern.compile(
-                "(?:mensaje de|message from)\\s+([A-ZÁÉÍÓÚÑa-záéíóúñ][a-záéíóúñA-ZÁÉÍÓÚÑ ]+?)(?:\\s*:|\")",
-                Pattern.CASE_INSENSITIVE);
-        Matcher m = p.matcher(mensaje);
-        return m.find() ? m.group(1).trim() : "";
-    }
-
-    // ═════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
     //  MARCAR LEÍDAS
-    // ═════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
 
     private void marcarTodasLeidas() {
         ConexionApi.getInstance(this).patch(
@@ -366,7 +539,7 @@ public class Notificaciones extends AppCompatActivity {
                     adapter.notifyDataSetChanged();
                     if (btnMarcarTodas != null) btnMarcarTodas.setVisibility(View.GONE);
                 }),
-                e -> Log.e(TAG, "Error marcar todas leídas")
+                e -> Log.e(TAG, "Error marcar todas")
         );
     }
 
@@ -381,33 +554,56 @@ public class Notificaciones extends AppCompatActivity {
                         for (NotifItem n : lista) if (!n.leido) noLeidas++;
                         if (btnMarcarTodas != null && noLeidas == 0)
                             btnMarcarTodas.setVisibility(View.GONE);
-                        abrirDestino(item);      // navegar DESPUÉS de marcar
+                        abrirDestino(item);
                     }),
-                    e -> abrirDestino(item)      // navegar igual aunque falle el PATCH
+                    e -> abrirDestino(item)
             );
         } else {
             abrirDestino(item);
         }
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
+    private void eliminarNotificacion(NotifItem item, int position) {
+        ConexionApi.getInstance(this).delete(
+                Constantes.BASE_URL + "/api/notificaciones/" + item.id,
+                r -> runOnUiThread(() -> {
+                    if (position < lista.size()) {
+                        lista.remove(position);
+                        adapter.notifyItemRemoved(position);
+                        adapter.notifyItemRangeChanged(position, lista.size());
+                        if (lista.isEmpty()) mostrarVacio();
+                    }
+                }),
+                e -> runOnUiThread(() -> {
+                    if (position < lista.size()) {
+                        lista.remove(position);
+                        adapter.notifyItemRemoved(position);
+                        adapter.notifyItemRangeChanged(position, lista.size());
+                        if (lista.isEmpty()) mostrarVacio();
+                    }
+                })
+        );
+    }
+
+    // ═══════════════════════════════════════════════════════
     //  MODELO
-    // ═════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
 
     static class NotifItem {
-        long    id;
-        long    idReferencia = -1;
-        String  titulo, mensaje, tipo, fechaCreacion;
+        long   id;
+        long   idReferencia = -1;
+        String titulo, mensaje, tipo, fechaCreacion;
         boolean leido;
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
     //  ADAPTER
-    // ═════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
 
     class NotificacionesAdapter extends RecyclerView.Adapter<NotificacionesAdapter.VH> {
 
         private final List<NotifItem> items;
+
         NotificacionesAdapter(List<NotifItem> items) { this.items = items; }
 
         @Override
@@ -420,77 +616,225 @@ public class Notificaciones extends AppCompatActivity {
         public void onBindViewHolder(VH holder, int position) {
             NotifItem item = items.get(position);
 
-            holder.tvTitulo.setText(item.titulo);
-            holder.tvMensaje.setText(item.mensaje);
+            String nombre = extraerNombreDelMensaje(item.mensaje);
+            String textoMensaje = extraerContenidoMensaje(item.mensaje);
+            SpannableString spannable = construirTextoFacebook(item.tipo, nombre, textoMensaje, item.titulo);
+            holder.tvTexto.setText(spannable);
+
             holder.tvFecha.setText(formatearFecha(item.fechaCreacion));
-            holder.tvTipo.setText(obtenerEmojiTipo(item.tipo) + " " + item.tipo);
+
+            String inicial = (!nombre.isEmpty())
+                    ? String.valueOf(nombre.charAt(0)).toUpperCase()
+                    : inicialPorTipo(item.tipo);
+            holder.tvInicial.setText(inicial);
+            holder.cardAvatar.setCardBackgroundColor(colorPorTipo(item.tipo));
+
+            holder.ivBadge.setImageResource(iconoPorTipo(item.tipo));
+            holder.cardBadge.setCardBackgroundColor(colorPorTipo(item.tipo));
 
             if (!item.leido) {
-                holder.card.setCardBackgroundColor(0xFFFFFFFF);
-                holder.card.setStrokeColor(0xFF2EC4B6);
-                holder.card.setStrokeWidth(3);
-                holder.puntito.setVisibility(View.VISIBLE);
-                holder.tvTitulo.setTextColor(0xFF1A1A1A);
+                holder.itemRoot.setBackgroundColor(0xFFE8F8F7);
+                holder.tvFecha.setTextColor(0xFF0A8A81);
+                holder.viewDot.setVisibility(View.VISIBLE);
             } else {
-                holder.card.setCardBackgroundColor(0xFFF7F7F7);
-                holder.card.setStrokeWidth(0);
-                holder.puntito.setVisibility(View.GONE);
-                holder.tvTitulo.setTextColor(0xFF888888);
+                holder.itemRoot.setBackgroundColor(0xFFFFFFFF);
+                holder.tvFecha.setTextColor(0xFF65676B);
+                holder.viewDot.setVisibility(View.GONE);
             }
 
-            holder.card.setOnClickListener(v ->
+            holder.itemRoot.setAlpha(0f);
+            holder.itemRoot.setTranslationY(10f);
+            holder.itemRoot.animate()
+                    .alpha(1f).translationY(0f)
+                    .setDuration(220)
+                    .setStartDelay(position * 30L)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                    .start();
+
+            // Click en el item → marcar leída y abrir destino
+            holder.itemRoot.setOnClickListener(v ->
                     marcarUnaLeida(item, holder.getAdapterPosition()));
+
+            // Click en ··· → bottom sheet con opciones
+            holder.btnMore.setOnClickListener(v ->
+                    mostrarOpcionesBottomSheet(item, holder.getAdapterPosition()));
         }
 
         @Override public int getItemCount() { return items.size(); }
 
+        private SpannableString construirTextoFacebook(String tipo, String nombre, String contenido, String tituloOriginal) {
+            String texto;
+            switch (tipo) {
+                case "MENSAJE":
+                case "CHAT":
+                    if (!nombre.isEmpty() && !contenido.isEmpty())
+                        texto = nombre + " te envió un mensaje: \"" + contenido + "\"";
+                    else if (!nombre.isEmpty())
+                        texto = nombre + " te envió un mensaje.";
+                    else
+                        texto = tituloOriginal;
+                    break;
+                case "VIAJE":
+                    texto = tituloOriginal.isEmpty() ? "Tu viaje fue actualizado." : tituloOriginal;
+                    break;
+                case "RESERVA":
+                    texto = tituloOriginal.isEmpty() ? "Tu reserva fue actualizada." : tituloOriginal;
+                    break;
+                case "PAGO":
+                    texto = tituloOriginal.isEmpty() ? "Se procesó un pago." : tituloOriginal;
+                    break;
+                case "BIENVENIDA":
+                    texto = "¡Bienvenido a MoviFlexx! Encuentra tu próximo viaje.";
+                    break;
+                default:
+                    texto = tituloOriginal;
+            }
+            SpannableString ss = new SpannableString(texto);
+            if (!nombre.isEmpty() && texto.startsWith(nombre)) {
+                ss.setSpan(new StyleSpan(android.graphics.Typeface.BOLD),
+                        0, nombre.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            return ss;
+        }
+
+        private int iconoPorTipo(String tipo) {
+            switch (tipo) {
+                case "MENSAJE":
+                case "CHAT":       return R.drawable.ic_chat;
+                case "VIAJE":      return R.drawable.ic_directions_car;
+                case "RESERVA":    return R.drawable.ic_description;
+                case "PAGO":       return R.drawable.ic_credit_card;
+                case "BIENVENIDA": return R.drawable.ic_waving_hand;
+                default:           return R.drawable.ic_info;
+            }
+        }
+
         class VH extends RecyclerView.ViewHolder {
-            com.google.android.material.card.MaterialCardView card;
-            TextView tvTitulo, tvMensaje, tvFecha, tvTipo;
-            View     puntito;
+            LinearLayout itemRoot;
+            com.google.android.material.card.MaterialCardView cardAvatar, cardBadge;
+            TextView tvInicial, tvTexto, tvFecha;
+            ImageView ivBadge, btnMore;
+            View viewDot;
+
             VH(View v) {
                 super(v);
-                card      = v.findViewById(R.id.card_notif);
-                tvTitulo  = v.findViewById(R.id.tv_notif_titulo);
-                tvMensaje = v.findViewById(R.id.tv_notif_mensaje);
-                tvFecha   = v.findViewById(R.id.tv_notif_fecha);
-                tvTipo    = v.findViewById(R.id.tv_notif_tipo);
-                puntito   = v.findViewById(R.id.view_puntito);
+                itemRoot   = v.findViewById(R.id.item_root);
+                cardAvatar = v.findViewById(R.id.card_avatar);
+                cardBadge  = v.findViewById(R.id.card_badge);
+                tvInicial  = v.findViewById(R.id.tv_inicial);
+                tvTexto    = v.findViewById(R.id.tv_notif_texto);
+                tvFecha    = v.findViewById(R.id.tv_notif_fecha);
+                ivBadge    = v.findViewById(R.id.iv_badge_icon);
+                btnMore    = v.findViewById(R.id.btn_more_notif);
+                viewDot    = v.findViewById(R.id.view_dot);
             }
         }
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    //  FORMATO DE FECHA — "Hoy · 16:11" / "Ayer · 09:00" / "Lunes · 14:30"
-    // ═════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
+    //  HELPERS
+    // ═══════════════════════════════════════════════════════
+
+    private String extraerNombreDelMensaje(String mensaje) {
+        if (mensaje == null || mensaje.isEmpty()) return "";
+        Pattern p = Pattern.compile(
+                "(?:mensaje de|message from)\\s+([A-ZÁÉÍÓÚÑa-záéíóúñ][A-ZÁÉÍÓÚÑa-záéíóúñ ]{0,40}?)(?:\\s*[:\"])",
+                Pattern.CASE_INSENSITIVE);
+        Matcher m = p.matcher(mensaje);
+        return m.find() ? m.group(1).trim() : "";
+    }
+
+    private String extraerContenidoMensaje(String mensaje) {
+        if (mensaje == null || mensaje.isEmpty()) return "";
+        Pattern p = Pattern.compile("[\"\u201C\u201D]([^\"\u201C\u201D]+)[\"\u201C\u201D]\\s*$");
+        Matcher m = p.matcher(mensaje);
+        if (m.find()) return m.group(1).trim();
+        int idx = mensaje.lastIndexOf(':');
+        if (idx != -1 && idx < mensaje.length() - 1) {
+            return mensaje.substring(idx + 1).replaceAll("[\"\u201C\u201D\\s]", "").trim();
+        }
+        return "";
+    }
+
+    private long extraerIdDelMensaje(String mensaje) {
+        if (mensaje == null || mensaje.isEmpty()) return -1;
+        Pattern[] patrones = {
+                Pattern.compile("(?:viaje|trip)\\s*#?\\s*(\\d+)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("(?:reserva|booking)\\s*#?\\s*(\\d+)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("(?:conversaci[oó]n|chat)\\s*#?\\s*(\\d+)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("\\bid\\s*[:=#]?\\s*(\\d+)\\b", Pattern.CASE_INSENSITIVE),
+        };
+        for (Pattern p : patrones) {
+            Matcher m = p.matcher(mensaje);
+            if (m.find()) {
+                try { return Long.parseLong(m.group(1)); } catch (NumberFormatException ignored) {}
+            }
+        }
+        return -1;
+    }
+
+    // ── Construir SpannableString (accesible desde fuera del adapter) ──
+    private SpannableString construirTextoFacebook(String tipo, String nombre, String contenido, String tituloOriginal) {
+        String texto;
+        switch (tipo) {
+            case "MENSAJE":
+            case "CHAT":
+                if (!nombre.isEmpty() && !contenido.isEmpty())
+                    texto = nombre + " te envió un mensaje: \"" + contenido + "\"";
+                else if (!nombre.isEmpty())
+                    texto = nombre + " te envió un mensaje.";
+                else
+                    texto = tituloOriginal;
+                break;
+            case "VIAJE":
+                texto = tituloOriginal.isEmpty() ? "Tu viaje fue actualizado." : tituloOriginal;
+                break;
+            case "RESERVA":
+                texto = tituloOriginal.isEmpty() ? "Tu reserva fue actualizada." : tituloOriginal;
+                break;
+            case "PAGO":
+                texto = tituloOriginal.isEmpty() ? "Se procesó un pago." : tituloOriginal;
+                break;
+            case "BIENVENIDA":
+                texto = "¡Bienvenido a MoviFlexx! Encuentra tu próximo viaje.";
+                break;
+            default:
+                texto = tituloOriginal;
+        }
+        SpannableString ss = new SpannableString(texto);
+        if (!nombre.isEmpty() && texto.startsWith(nombre)) {
+            ss.setSpan(new StyleSpan(android.graphics.Typeface.BOLD),
+                    0, nombre.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        return ss;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  FECHA RELATIVA
+    // ═══════════════════════════════════════════════════════
 
     private String formatearFecha(String raw) {
         if (raw == null || raw.isEmpty()) return "";
         Date date = parsearFecha(raw);
         if (date == null) {
-            // Extraer al menos la hora del string: "2026-02-27T16:11:..."
             try { return raw.substring(11, 16); } catch (Exception ignored) {}
             return raw;
         }
-
-        Locale esCol = new Locale("es", "CO");
-        String hora  = new SimpleDateFormat("HH:mm", esCol).format(date);
-
-        Calendar hoy  = Calendar.getInstance();
-        Calendar ayer = Calendar.getInstance();
-        ayer.add(Calendar.DAY_OF_YEAR, -1);
-        Calendar fc = Calendar.getInstance();
-        fc.setTime(date);
-
-        if (mismodia(hoy,  fc)) return "Hoy · " + hora;
-        if (mismodia(ayer, fc)) return "Ayer · " + hora;
-
-        long dias = (hoy.getTimeInMillis() - fc.getTimeInMillis()) / 86_400_000L;
-        if (dias < 7) {
-            String dia = new SimpleDateFormat("EEEE", esCol).format(date);
-            return dia.substring(0, 1).toUpperCase() + dia.substring(1) + " · " + hora;
-        }
-        return new SimpleDateFormat("dd MMM yyyy", esCol).format(date) + " · " + hora;
+        long diff = System.currentTimeMillis() - date.getTime();
+        long seg  = diff / 1000;
+        long min  = seg  / 60;
+        long hora = min  / 60;
+        long dias = hora / 24;
+        long sem  = dias / 7;
+        long mes  = dias / 30;
+        long anio = dias / 365;
+        if (seg  < 60)  return "hace un momento";
+        if (min  < 60)  return "hace " + min  + " min";
+        if (hora < 24)  return "hace " + hora + (hora == 1 ? " hora" : " horas");
+        if (dias < 7)   return "hace " + dias + (dias == 1 ? " día"  : " días");
+        if (sem  < 4)   return "hace " + sem  + (sem  == 1 ? " sem"  : " sem");
+        if (mes  < 12)  return "hace " + mes  + (mes  == 1 ? " mes"  : " meses");
+        return "hace " + anio + (anio == 1 ? " año" : " años");
     }
 
     private Date parsearFecha(String raw) {
@@ -500,25 +844,5 @@ public class Notificaciones extends AppCompatActivity {
         try { synchronized (SDF_MYSQL) { return SDF_MYSQL.parse(raw); } } catch (ParseException ignored) {}
         try { return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault()).parse(raw); } catch (Exception ignored) {}
         return null;
-    }
-
-    private boolean mismodia(Calendar a, Calendar b) {
-        return a.get(Calendar.YEAR) == b.get(Calendar.YEAR)
-                && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);
-    }
-
-    private String obtenerEmojiTipo(String tipo) {
-        if (tipo == null) return "🔔";
-        switch (tipo.toUpperCase()) {
-            case "VIAJE":        return "🚗";
-            case "RESERVA":      return "📋";
-            case "PAGO":         return "💳";
-            case "CHAT":
-            case "MENSAJE":      return "💬";
-            case "SISTEMA":      return "⚙️";
-            case "BIENVENIDA":   return "👋";
-            case "CALIFICACION": return "⭐";
-            default:             return "🔔";
-        }
     }
 }

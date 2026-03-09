@@ -31,7 +31,7 @@
                 android:layout_marginBottom="4dp"
                 android:letterSpacing="0.14"
                 android:text="MOVIFLEXX · CONDUCTOR"
-                android:textColor="#B2EDE8"
+                android:textColor="#00CED1"
                 android:textSize="10sp" />
 
             <TextView
@@ -40,7 +40,7 @@
                 android:layout_marginBottom="18dp"
                 android:letterSpacing="-0.01"
                 android:text="Planifica tu ruta"
-                android:textColor="#FFFFFF"
+                android:textColor="#00CED1"
                 android:textSize="28sp"
                 android:textStyle="bold" />
 
@@ -74,7 +74,7 @@
                         android:layout_height="wrap_content"
                         android:letterSpacing="0.04"
                         android:text="Buscando GPS..."
-                        android:textColor="#B2EDE8"
+                        android:textColor="#00CED1"
                         android:textSize="10sp"
                         android:textStyle="bold" />
                 </LinearLayout>

@@ -13,7 +13,7 @@
         android:id="@+id/header_buscar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="#00897B"
+        android:background="#9FE0D8"
         android:orientation="vertical"
         android:paddingStart="20dp"
         android:paddingEnd="20dp"
@@ -26,7 +26,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🔍 Buscar Viaje"
+            android:text="Buscar Viaje"
             android:textColor="#FFFFFF"
             android:textSize="22sp"
             android:textStyle="bold"
@@ -51,6 +51,7 @@
         android:scrollbars="none"
         android:clipToPadding="false"
         android:paddingBottom="20dp"
+        android:background="@drawable/fondomoviflexxx"
         app:layout_constraintTop_toBottomOf="@id/header_buscar"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -195,12 +196,13 @@
                         android:id="@+id/btn_buscar_viajes"
                         android:layout_width="match_parent"
                         android:layout_height="54dp"
-                        android:text="🔍  BUSCAR VIAJES CERCANOS"
+                        android:text="BUSCAR VIAJES CERCANOS"
                         android:textSize="14sp"
                         android:textStyle="bold"
+                        android:background="@drawable/bg_btn_login"
                         android:textColor="#FFFFFF"
                         app:cornerRadius="14dp"
-                        app:backgroundTint="#00897B"
+                        app:backgroundTint="@null"
                         app:elevation="4dp"/>
 
                     <!-- LOADER -->

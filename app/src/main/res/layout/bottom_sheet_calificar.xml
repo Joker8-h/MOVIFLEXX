@@ -263,7 +263,8 @@
             android:letterSpacing="0.04"
             android:enabled="false"
             android:alpha="0.4"
-            android:background="@drawable/bg_btn_send_teal"
+            android:background="@drawable/bg_btn_login"
+            app:backgroundTint="@null"
             android:insetTop="0dp"
             android:insetBottom="0dp"/>
 
