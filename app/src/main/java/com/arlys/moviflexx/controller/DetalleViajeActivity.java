@@ -2431,7 +2431,32 @@ public class DetalleViajeActivity extends AppCompatActivity {
             body.put("nombreParada",       pd.nombre);
             body.put("latDestino",         pd.lat);
             body.put("lngDestino",         pd.lng);
+
+            // Intentar asociar la parada de SUBIDA al origen real de la ruta
+            // para que el backend pueda usar la lógica de segment-fares (idParadaSubida + idParadaBajada)
+            int idParadaSubidaBD = 0;
+            if (!paradasRuta.isEmpty()) {
+                for (JSONObject p : paradasRuta) {
+                    String nom = p.optString("nombre", "").trim();
+                    String tipo = p.optString("tipo", "");
+                    int idP = p.optInt("idParada", p.optInt("id", 0));
+
+                    boolean esOrigenNombre = !nom.isEmpty() && nom.equalsIgnoreCase(origenActual);
+                    boolean esOrigenTipo = tipo != null && tipo.toUpperCase(Locale.ROOT).contains("ORIGEN");
+
+                    if (idP > 0 && (esOrigenNombre || esOrigenTipo)) {
+                        idParadaSubidaBD = idP;
+                        break;
+                    }
+                }
+            }
+            if (idParadaSubidaBD > 0) {
+                body.put("idParadaSubida", idParadaSubidaBD);
+                body.put("idParadaInicio", idParadaSubidaBD);
+            }
+
             if (pd.idParadaBD > 0) {
+                // Parada de BAJADA
                 body.put("idParadaBajada", pd.idParadaBD);
                 body.put("idParadaFin",    pd.idParadaBD);
                 body.put("idParada",       pd.idParadaBD);
