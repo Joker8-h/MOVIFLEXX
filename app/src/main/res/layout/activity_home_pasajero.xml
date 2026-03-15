@@ -4,98 +4,228 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/fondomoviflexxx">
+    android:background="#F0FAFA">
 
-    <!-- ══════════════ HEADER ══════════════ -->
+    <!-- ══════════════════════════════════════════════════════
+         HEADER HERO — mismo teal sólido que el conductor
+    ══════════════════════════════════════════════════════ -->
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="0dp"
-        android:layout_height="145dp"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingStart="20dp"
-        android:paddingTop="32dp"
-        android:paddingEnd="20dp"
-        android:paddingBottom="22dp"
+        android:background="#00CED1"
+        android:paddingStart="22dp"
+        android:paddingTop="36dp"
+        android:paddingEnd="22dp"
+        android:paddingBottom="24dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <LinearLayout
+        <!-- Blob decorativo top-right -->
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:clipChildren="false">
+
+            <View
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="-40dp"
+                android:layout_marginEnd="-40dp"
+                android:alpha="0.15"
+                android:background="@drawable/bg_glow_circle_teal"
+                android:clickable="false"/>
 
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/tv_saludo"
-                    android:layout_width="wrap_content"
+                <!-- ── Fila: Avatar + Saludo + Campana ── -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Buenos días ☀️"
-                    android:textColor="#00CED1"
-                    android:textSize="14sp" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="20dp">
 
-                <TextView
-                    android:id="@+id/tv_nombre_usuario"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Cargando..."
-                    android:textColor="#00CED1"
-                    android:textSize="26sp"
-                    android:textStyle="bold" />
+                    <!-- Avatar con anillo blanco y punto online -->
+                    <!-- POR ESTO: -->
+                    <FrameLayout
+                        android:layout_width="54dp"
+                        android:layout_height="54dp"
+                        android:layout_marginEnd="14dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="¿A dónde vas hoy?"
-                    android:textColor="#00CED1"
-                    android:textSize="13sp" />
+                        <View
+                            android:layout_width="54dp"
+                            android:layout_height="54dp"
+                            android:background="@drawable/bg_avatar_ring_white"/>
+
+                        <!-- Card inicial (logo, visible por defecto) -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_avatar_inicial_header"
+                            android:layout_width="46dp"
+                            android:layout_height="46dp"
+                            android:layout_gravity="center"
+                            app:cardBackgroundColor="#FFFFFF"
+                            app:cardCornerRadius="23dp"
+                            app:cardElevation="4dp"
+                            app:strokeWidth="0dp">
+
+                            <ImageView
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="Logo"
+                                android:src="@drawable/logomo" />
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Card foto real Cloudinary (oculta por defecto) -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_avatar_foto_header"
+                            android:layout_width="46dp"
+                            android:layout_height="46dp"
+                            android:layout_gravity="center"
+                            android:visibility="gone"
+                            app:cardCornerRadius="23dp"
+                            app:cardElevation="4dp"
+                            app:strokeColor="#FFFFFF"
+                            app:strokeWidth="1.5dp">
+
+                            <ImageView
+                                android:id="@+id/iv_avatar_header"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:contentDescription="Foto de perfil"/>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <View
+                            android:layout_width="13dp"
+                            android:layout_height="13dp"
+                            android:layout_gravity="bottom|end"
+                            android:layout_marginEnd="1dp"
+                            android:layout_marginBottom="1dp"
+                            android:background="@drawable/bg_dot_online"/>
+                    </FrameLayout>
+
+                    <!-- Saludo -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tv_saludo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Buenos días,"
+                            android:textColor="#CCFFFE"
+                            android:textSize="12sp"
+                            android:letterSpacing="0.04"/>
+
+                        <TextView
+                            android:id="@+id/tv_nombre_usuario"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Cargando..."
+                            android:textColor="#FFFFFF"
+                            android:textSize="22sp"
+                            android:textStyle="bold"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="¿A dónde vas hoy?"
+                            android:textColor="#CCFFFE"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+
+                    <!-- Campana notificaciones -->
+                    <FrameLayout
+                        android:id="@+id/btn_notificaciones"
+                        android:layout_width="46dp"
+                        android:layout_height="46dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="@drawable/bg_icon_circle_white_alpha">
+
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_notifications"
+                            app:tint="#FFFFFF"
+                            android:contentDescription="Notificaciones"/>
+
+                        <TextView
+                            android:id="@+id/tv_badge_notif"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_gravity="top|end"
+                            android:gravity="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp"
+                            android:textStyle="bold"
+                            android:background="@drawable/bg_badge_red"
+                            android:visibility="gone"
+                            android:text="0"/>
+                    </FrameLayout>
+
+                </LinearLayout>
+
+                <!-- ── BOTÓN MIS VIAJES ── -->
+                <!-- Blanco con texto teal — consistente con conductor -->
+                <FrameLayout
+                    android:id="@+id/btn_mis_viajes_frame"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:elevation="6dp"
+                    android:background="@drawable/bg_btn_white_rounded">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:clickable="false">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_car"
+                            android:layout_marginEnd="10dp"
+                            app:tint="#00CED1"
+                            android:contentDescription="Mis viajes"/>
+
+                        <TextView
+                            android:id="@+id/btn_mis_viajes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="MIS VIAJES REALIZADOS"
+                            android:textColor="#00CED1"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.06"
+                            android:clickable="false"/>
+                    </LinearLayout>
+                </FrameLayout>
 
             </LinearLayout>
-
-            <FrameLayout
-                android:id="@+id/btn_notificaciones"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:contentDescription="Notificaciones"
-                    android:src="@drawable/ic_notifications"
-                    app:tint="#00CED1" />
-
-                <TextView
-                    android:id="@+id/tv_badge_notif"
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="top|end"
-                    android:background="@drawable/bg_badge_red"
-                    android:gravity="center"
-                    android:text="0"
-                    android:textColor="#FFFFFF"
-                    android:textSize="9sp"
-                    android:textStyle="bold"
-                    android:visibility="gone" />
-
-            </FrameLayout>
-
-        </LinearLayout>
+        </FrameLayout>
 
     </LinearLayout>
 
-    <!-- ══════════════ SCROLL PRINCIPAL ══════════════ -->
+    <!-- ══════════════════════════════════════════════════════
+         SCROLL PRINCIPAL
+    ══════════════════════════════════════════════════════ -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -111,31 +241,12 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingTop="8dp">
 
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- BOTÓN "MIS VIAJES" — SIEMPRE VISIBLE                  -->
-            <!-- Abre BottomSheet con historial + calificar conductor   -->
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_mis_viajes"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginEnd="16dp"
-                android:text="🚗  Mis Viajes Realizados"
-                android:textColor="#FFFFFF"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                app:backgroundTint="#00897B"
-                app:cornerRadius="14dp"
-                app:icon="@null" />
-
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- SECCIÓN: POR CALIFICAR (aparece solo si hay pendientes)-->
-            <!-- Todo el contenido se genera desde Java sin drawables   -->
-            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- ════════════════════════════════════════════
+                 SECCIÓN: POR CALIFICAR
+            ════════════════════════════════════════════ -->
             <LinearLayout
                 android:id="@+id/section_por_calificar"
                 android:layout_width="match_parent"
@@ -146,7 +257,6 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-                <!-- Encabezado + cards generados dinámicamente desde Java -->
                 <LinearLayout
                     android:id="@+id/layout_calificaciones_pendientes"
                     android:layout_width="match_parent"
@@ -155,7 +265,6 @@
 
             </LinearLayout>
 
-            <!-- Divisor debajo de sección Por calificar -->
             <View
                 android:id="@+id/divider_calificar"
                 android:layout_width="match_parent"
@@ -163,26 +272,65 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginEnd="16dp"
-                android:background="#D0EEEB"
+                android:background="#D0ECEC"
                 android:visibility="gone" />
 
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- SECCIÓN 1: RUTAS FRECUENTES                           -->
-            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- ════════════════════════════════════════════
+                 SECCIÓN: PAGOS PENDIENTES
+            ════════════════════════════════════════════ -->
+            <LinearLayout
+                android:id="@+id/section_pagos_pendientes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="14dp"
+                android:layout_marginEnd="16dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/layout_pagos_pendientes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+            </LinearLayout>
+
+            <View
+                android:id="@+id/divider_pagos"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="16dp"
+                android:background="#D0ECEC"
+                android:visibility="gone" />
+
+            <!-- ════════════════════════════════════════════
+                 SECCIÓN: RUTAS FRECUENTES
+            ════════════════════════════════════════════ -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:orientation="vertical">
 
+                <!-- Encabezado con barra acento teal -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
+                    android:layout_marginBottom="14dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp">
+
+                    <!-- Barra acento izquierda — igual que conductor -->
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/bg_line_teal_rounded"/>
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -193,10 +341,10 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="📍 Rutas Frecuentes"
-                            android:textColor="#004D40"
+                            android:text="Rutas Frecuentes"
+                            android:textColor="#1A2F4A"
                             android:textSize="17sp"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"/>
 
                         <TextView
                             android:id="@+id/tv_subtitulo_rutas"
@@ -204,13 +352,13 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="Tus destinos más usados"
-                            android:textColor="#90A4AE"
-                            android:textSize="12sp" />
-
+                            android:textColor="#7A9BAA"
+                            android:textSize="12sp"/>
                     </LinearLayout>
 
                 </LinearLayout>
 
+                <!-- ProgressBar -->
                 <ProgressBar
                     android:id="@+id/pb_rutas"
                     android:layout_width="32dp"
@@ -218,8 +366,9 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginBottom="8dp"
                     android:indeterminateTint="#00CED1"
-                    android:visibility="visible" />
+                    android:visibility="visible"/>
 
+                <!-- Scroll horizontal rutas -->
                 <HorizontalScrollView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -233,7 +382,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:paddingEnd="8dp" />
+                        android:paddingEnd="8dp"/>
 
                 </HorizontalScrollView>
 
@@ -246,17 +395,18 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="24dp"
                 android:layout_marginEnd="16dp"
-                android:background="#D0EEEB" />
+                android:background="#D0ECEC"/>
 
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- SECCIÓN 2: CARRUSEL ¿SABÍAS QUE?                      -->
-            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- ════════════════════════════════════════════
+                 SECCIÓN: ¿SABÍAS QUE?
+            ════════════════════════════════════════════ -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
                 android:orientation="vertical">
 
+                <!-- Encabezado -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -266,21 +416,28 @@
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp">
 
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/bg_line_teal_rounded"/>
+
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="💡 ¿Sabías que?"
-                        android:textColor="#004D40"
+                        android:text="¿Sabías que?"
+                        android:textColor="#1A2F4A"
                         android:textSize="17sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"/>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="MoviFlex Tips"
-                        android:textColor="#80CBC4"
-                        android:textSize="12sp" />
+                        android:textColor="#00CED1"
+                        android:textSize="12sp"
+                        android:textStyle="bold"/>
 
                 </LinearLayout>
 
@@ -291,8 +448,9 @@
                     android:clipToPadding="false"
                     android:overScrollMode="never"
                     android:paddingStart="12dp"
-                    android:paddingEnd="12dp" />
+                    android:paddingEnd="12dp"/>
 
+                <!-- Dots indicadores -->
                 <LinearLayout
                     android:id="@+id/layout_dots_info"
                     android:layout_width="wrap_content"
@@ -300,13 +458,15 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="10dp"
                     android:layout_marginBottom="4dp"
-                    android:orientation="horizontal" />
+                    android:orientation="horizontal"/>
 
             </LinearLayout>
 
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- CTA: BUSCAR VIAJE                                     -->
-            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- ════════════════════════════════════════════
+                 CTA: BUSCAR VIAJE
+                 Card con fondo teal degradado igual al
+                 botón "GUARDAR CAMBIOS" de la web
+            ════════════════════════════════════════════ -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -314,17 +474,33 @@
                 android:layout_marginTop="28dp"
                 android:layout_marginEnd="16dp"
                 android:layout_marginBottom="80dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="6dp">
+                app:cardBackgroundColor="#00CED1"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="6dp"
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_btn_login"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="20dp"
-                    app:backgroundTint="@null">
+                    android:padding="20dp">
+
+                    <!-- Ícono decorativo izquierda -->
+                    <FrameLayout
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@drawable/bg_icon_circle_white_alpha">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_menu_compass"
+                            app:tint="#FFFFFF"
+                            android:contentDescription="Buscar"/>
+                    </FrameLayout>
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -338,30 +514,35 @@
                             android:text="¿No encuentras tu viaje?"
                             android:textColor="#FFFFFF"
                             android:textSize="15sp"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"/>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:text="Busca por origen y destino"
-                            android:textColor="#B2DFDB"
-                            android:textSize="12sp" />
-
+                            android:textColor="#CCFFFE"
+                            android:textSize="12sp"/>
                     </LinearLayout>
 
+                    <!-- Botón blanco con texto teal -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_buscar_viaje"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:paddingStart="20dp"
-                        android:paddingEnd="20dp"
+                        android:layout_height="42dp"
+                        android:layout_marginStart="12dp"
+                        android:paddingStart="18dp"
+                        android:paddingEnd="18dp"
                         android:text="Buscar"
-                        android:textColor="#00796B"
+                        android:textColor="#00CED1"
                         android:textSize="13sp"
                         android:textStyle="bold"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
                         app:backgroundTint="#FFFFFF"
-                        app:cornerRadius="20dp" />
+                        app:cornerRadius="21dp"
+                        app:elevation="2dp"
+                        app:rippleColor="#2000CED1"/>
 
                 </LinearLayout>
 
@@ -371,17 +552,18 @@
 
     </androidx.core.widget.NestedScrollView>
 
-    <!-- ══════════════ BOTTOM NAVIGATION ══════════════ -->
+    <!-- ══════════════════════════════════════════════════════
+         BOTTOM NAVIGATION
+    ══════════════════════════════════════════════════════ -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
+        style="@style/BottomNav.Moviflexx"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#FFFFFF"
         app:elevation="16dp"
-        app:itemIconTint="@color/bottom_nav_color_selector"
-        app:itemTextColor="@color/bottom_nav_color_selector"
         app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:menu="@menu/bottom_navigation_menu" />
+        app:menu="@menu/bottom_navigation_menu"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

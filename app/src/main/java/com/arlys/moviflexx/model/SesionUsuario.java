@@ -11,17 +11,13 @@ public class SesionUsuario {
 
     private static final String TAG = "SesionUsuario";
 
-    private static int idUsuario = -1;
-    private static int idRol = -1;
-    private static String token = null;
+    private static int    idUsuario      = -1;
+    private static int    idRol          = -1;
+    private static String token          = null;
     private static SessionManager sessionManager = null;
 
     // ================= INICIALIZACIÓN =================
 
-    /**
-     * Inicializa SesionUsuario cargando datos desde SharedPreferences.
-     * DEBE llamarse al iniciar la app (en Application o MainActivity).
-     */
     public static void init(Context context) {
         if (sessionManager == null) {
             sessionManager = new SessionManager(context.getApplicationContext());
@@ -30,14 +26,11 @@ public class SesionUsuario {
         }
     }
 
-    /**
-     * Carga los datos de sesión desde SharedPreferences a memoria.
-     */
     private static void cargarDesdePreferencias() {
         if (sessionManager != null && sessionManager.isLoggedIn()) {
-            token = sessionManager.getToken();
+            token     = sessionManager.getToken();
             idUsuario = sessionManager.getIdUsuario();
-            idRol = sessionManager.getIdRol();
+            idRol     = sessionManager.getIdRol();
 
             Log.d(TAG, "📦 Sesión cargada - Usuario: " + idUsuario +
                     " | Rol: " + idRol +
@@ -53,14 +46,12 @@ public class SesionUsuario {
     }
 
     public static int getIdUsuario() {
-        // Si no hay valor en memoria, intentar cargar
         if (idUsuario == -1 && sessionManager != null) {
             idUsuario = sessionManager.getIdUsuario();
         }
         return idUsuario;
     }
 
-    // Alias para compatibilidad con código existente
     public static int getId() {
         return getIdUsuario();
     }
@@ -73,7 +64,6 @@ public class SesionUsuario {
     }
 
     public static int getIdRol() {
-        // Si no hay valor en memoria, intentar cargar
         if (idRol == -1 && sessionManager != null) {
             idRol = sessionManager.getIdRol();
         }
@@ -88,7 +78,6 @@ public class SesionUsuario {
     }
 
     public static String getToken() {
-        // Si no hay token en memoria, intentar cargar desde preferencias
         if (token == null && sessionManager != null) {
             token = sessionManager.getToken();
             Log.d(TAG, "Token cargado desde preferencias: " + (token != null ? "✓" : "✗"));
@@ -101,11 +90,9 @@ public class SesionUsuario {
     public static boolean estaLogueado() {
         boolean logueado = idUsuario > 0 && token != null;
 
-        // Double check con SessionManager
         if (!logueado && sessionManager != null) {
             logueado = sessionManager.isLoggedIn();
             if (logueado) {
-                // Si está logueado pero no tenemos datos, recargar
                 cargarDesdePreferencias();
             }
         }
@@ -113,16 +100,22 @@ public class SesionUsuario {
         return logueado;
     }
 
+    /**
+     * Limpia los campos estáticos en memoria.
+     *
+     * IMPORTANTE: NO llama a sessionManager.logout() para evitar recursión
+     * infinita. El ciclo era:
+     *   SessionManager.logout() → SesionUsuario.cerrarSesion()
+     *     → sessionManager.logout() → SesionUsuario.cerrarSesion() → ∞ crash
+     *
+     * La limpieza de SharedPreferences la hace SessionManager.logout().
+     * Este método solo limpia la memoria estática.
+     */
     public static void cerrarSesion() {
         idUsuario = -1;
-        idRol = -1;
-        token = null;
-
-        if (sessionManager != null) {
-            sessionManager.logout();
-        }
-
-        Log.d(TAG, "🚪 Sesión cerrada");
+        idRol     = -1;
+        token     = null;
+        Log.d(TAG, "🚪 Sesión cerrada (memoria limpiada)");
     }
 
     // ================= DEBUG =================
@@ -131,9 +124,9 @@ public class SesionUsuario {
         Log.d(TAG, "═══════════════════════════════════════");
         Log.d(TAG, "Estado de SesionUsuario:");
         Log.d(TAG, "  Usuario ID: " + idUsuario);
-        Log.d(TAG, "  Rol ID: " + idRol);
-        Log.d(TAG, "  Token: " + (token != null ? "Presente" : "Ausente"));
-        Log.d(TAG, "  Logueado: " + estaLogueado());
+        Log.d(TAG, "  Rol ID:     " + idRol);
+        Log.d(TAG, "  Token:      " + (token != null ? "Presente" : "Ausente"));
+        Log.d(TAG, "  Logueado:   " + estaLogueado());
         Log.d(TAG, "═══════════════════════════════════════");
     }
 }

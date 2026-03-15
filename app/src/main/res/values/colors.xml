@@ -271,5 +271,9 @@
     <color name="input_stroke_default">#E5E7EB</color>
     <color name="input_stroke_focused">#2EC4B6</color>
 
-
+    <!-- Gris con tono turquesa -->
+    <color name="gray_turquesa_50">#F4FAFA</color>
+    <color name="gray_turquesa_100">#E6F4F4</color>
+    <color name="gray_turquesa_200">#D5EBEB</color>
+    <color name="gray_turquesa_300">#C3E2E2</color>
 </resources>

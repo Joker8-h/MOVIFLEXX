@@ -30,8 +30,9 @@ public class MensajeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private static final int TIPO_AUDIO_PROPIO   = 3;
     private static final int TIPO_AUDIO_RECIBIDO = 4;
 
-    private static final int COLOR_TICK_GRIS = 0xFF80AFAA;
-    private static final int COLOR_TICK_TEAL = 0xFF1AB99F;
+    // Colores ticks estilo WhatsApp
+    private static final int COLOR_TICK_GRIS = 0xFF9E9E9E;  // gris — enviado/entregado
+    private static final int COLOR_TICK_TEAL = 0xFF1AB99F;  // teal — leído por el contacto
     private static final int COLOR_HORA_SENT = 0xFF4DA89F;
     private static final int COLOR_HORA_RECV = 0xFF99B8B4;
 
@@ -47,8 +48,8 @@ public class MensajeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private MediaPlayer mediaPlayerActivo = null;
     private VHAudio     vhActivo          = null;
     private String      rutaActiva        = null;
-    private final Handler   progressHandler  = new Handler(Looper.getMainLooper());
-    private Runnable        progressRunnable = null;
+    private final Handler  progressHandler  = new Handler(Looper.getMainLooper());
+    private Runnable       progressRunnable = null;
 
     public MensajeAdapter(List<Mensaje> lista, int idUsuarioActual) {
         this.lista           = lista;
@@ -107,51 +108,37 @@ public class MensajeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     //  BIND AUDIO
     // ─────────────────────────────────────────────────────────────────────────
     private void bindAudio(VHAudio h, Mensaje m, boolean mostrarFecha) {
-        // Header fecha
         if (h.tvFechaHeader != null) {
             h.tvFechaHeader.setVisibility(mostrarFecha ? View.VISIBLE : View.GONE);
             if (mostrarFecha) h.tvFechaHeader.setText(formatearHeaderFecha(m.getFechaEnvio()));
         }
-
-        // Hora
         h.tvHora.setText(formatearHora(m.getFechaEnvio()));
-
-        // Duración
         h.tvDuracion.setText(extraerDuracion(m.getContenido()));
 
-        // Ticks (solo propio)
         if (h.esPropio && h.tvTicks != null) {
             aplicarTicks(h.tvTicks, h.pbEnviando, m);
         }
 
-        // Ruta local — verificar que el archivo exista
         String ruta = m.getRutaAudioLocal();
         boolean archivoDisponible = ruta != null && !ruta.isEmpty() && new File(ruta).exists();
 
-        // Resetear UI según si este VH es el activo
         if (vhActivo == h && mediaPlayerActivo != null) {
-            // Este VH sigue siendo el reproductor activo — mantener estado
             h.btnPlayPause.setImageResource(
                     mediaPlayerActivo.isPlaying()
                             ? android.R.drawable.ic_media_pause
                             : android.R.drawable.ic_media_play);
         } else {
-            // VH reciclado — resetear
             h.btnPlayPause.setImageResource(android.R.drawable.ic_media_play);
             h.seekBar.setProgress(0);
             h.tvDuracion.setText(extraerDuracion(m.getContenido()));
         }
 
-        // Opacidad si no hay archivo
         h.btnPlayPause.setAlpha(archivoDisponible ? 1f : 0.45f);
-
-        // Click en play/pause
         h.btnPlayPause.setOnClickListener(v -> {
             if (!archivoDisponible) return;
             toggleReproduccion(h, m, ruta);
         });
 
-        // SeekBar — adelantar/retroceder
         h.seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar sb, int progress, boolean fromUser) {
@@ -168,13 +155,10 @@ public class MensajeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     //  LÓGICA REPRODUCCIÓN
     // ─────────────────────────────────────────────────────────────────────────
     private void toggleReproduccion(VHAudio h, Mensaje m, String ruta) {
-        // Detener otro reproductor activo
         if (vhActivo != null && vhActivo != h) {
             pararReproductor(true);
         }
-
         if (vhActivo == h && mediaPlayerActivo != null) {
-            // Pausar o reanudar
             if (mediaPlayerActivo.isPlaying()) {
                 mediaPlayerActivo.pause();
                 h.btnPlayPause.setImageResource(android.R.drawable.ic_media_play);
@@ -185,7 +169,6 @@ public class MensajeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 iniciarProgressRunnable(h, m);
             }
         } else {
-            // Crear nuevo reproductor
             try {
                 mediaPlayerActivo = new MediaPlayer();
                 mediaPlayerActivo.setDataSource(ruta);
@@ -193,12 +176,9 @@ public class MensajeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 mediaPlayerActivo.start();
                 vhActivo   = h;
                 rutaActiva = ruta;
-
                 h.btnPlayPause.setImageResource(android.R.drawable.ic_media_pause);
-                // Mostrar duración real
                 h.tvDuracion.setText(formatearSegundos(mediaPlayerActivo.getDuration() / 1000));
                 iniciarProgressRunnable(h, m);
-
                 mediaPlayerActivo.setOnCompletionListener(mp -> {
                     h.btnPlayPause.setImageResource(android.R.drawable.ic_media_play);
                     h.seekBar.setProgress(0);
@@ -209,7 +189,6 @@ public class MensajeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     vhActivo          = null;
                     rutaActiva        = null;
                 });
-
             } catch (Exception e) {
                 e.printStackTrace();
                 h.btnPlayPause.setImageResource(android.R.drawable.ic_media_play);
@@ -242,7 +221,6 @@ public class MensajeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     int curr = mediaPlayerActivo.getCurrentPosition();
                     if (dur > 0) {
                         h.seekBar.setProgress((int) (curr * 100f / dur));
-                        // Mostrar tiempo transcurrido
                         h.tvDuracion.setText(formatearSegundos(curr / 1000));
                     }
                     if (mediaPlayerActivo.isPlaying()) {
@@ -293,27 +271,47 @@ public class MensajeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    //  TICKS
+    //  TICKS ESTILO WHATSAPP
+    //  ✓  gris  = enviado localmente (id negativo, aún no confirmado)
+    //  ✓✓ gris  = entregado al servidor, contacto NO lo ha leído
+    //  ✓✓ teal  = contacto ya lo leyó (leido=true viene del backend)
+    //  ⚠  rojo  = falló el envío
+    //  ⏱  gris  = enviando...
     // ─────────────────────────────────────────────────────────────────────────
     private void aplicarTicks(TextView tvTicks, ProgressBar pb, Mensaje m) {
         if (tvTicks == null) return;
+
         if (m.isEnviando()) {
+            // Enviando — mostrar spinner, ocultar ticks
             tvTicks.setVisibility(View.GONE);
             if (pb != null) pb.setVisibility(View.VISIBLE);
+
         } else if (m.isFallido()) {
+            // Error de envío
             if (pb != null) pb.setVisibility(View.GONE);
             tvTicks.setVisibility(View.VISIBLE);
             tvTicks.setText("⚠");
             tvTicks.setTextColor(0xFFE53935);
+
         } else if (m.isLeido()) {
+            // Leído por el contacto → ✓✓ teal
             if (pb != null) pb.setVisibility(View.GONE);
             tvTicks.setVisibility(View.VISIBLE);
             tvTicks.setText("✓✓");
             tvTicks.setTextColor(COLOR_TICK_TEAL);
-        } else {
+
+        } else if (m.getId() > 0) {
+            // Entregado al servidor pero no leído → ✓✓ gris
             if (pb != null) pb.setVisibility(View.GONE);
             tvTicks.setVisibility(View.VISIBLE);
             tvTicks.setText("✓✓");
+            tvTicks.setTextColor(COLOR_TICK_GRIS);
+
+        } else {
+            // ID negativo = mensaje optimista local = ✓ gris simple
+            if (pb != null) pb.setVisibility(View.GONE);
+            tvTicks.setVisibility(View.VISIBLE);
+            tvTicks.setText("✓");
             tvTicks.setTextColor(COLOR_TICK_GRIS);
         }
     }
@@ -369,15 +367,12 @@ public class MensajeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     // ─────────────────────────────────────────────────────────────────────────
     //  HELPERS
     // ─────────────────────────────────────────────────────────────────────────
-
-    /** Extrae duración de "🎤 Audio (3s)" → "0:03" */
     private String extraerDuracion(String contenido) {
         if (contenido == null) return "0:00";
         try {
             java.util.regex.Matcher m =
                     java.util.regex.Pattern.compile("\\((\\d+)s\\)").matcher(contenido);
             if (m.find()) return formatearSegundos(Integer.parseInt(m.group(1)));
-
             m = java.util.regex.Pattern.compile("\\((\\d+)m (\\d+)s\\)").matcher(contenido);
             if (m.find()) {
                 int min = Integer.parseInt(m.group(1));
@@ -406,16 +401,23 @@ public class MensajeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private String formatearHeaderFecha(String fechaStr) {
         long ts = parsearTimestamp(fechaStr);
         if (ts == 0) return "";
-        Calendar hoy   = Calendar.getInstance();
-        Calendar fecha = Calendar.getInstance(); fecha.setTimeInMillis(ts);
+        java.util.TimeZone tz = java.util.TimeZone.getTimeZone("America/Bogota");
+        Calendar hoy   = Calendar.getInstance(tz);
+        Calendar fecha = Calendar.getInstance(tz);
+        fecha.setTimeInMillis(ts);
         if (esMismoDia(hoy, fecha)) return "Hoy";
         hoy.add(Calendar.DAY_OF_YEAR, -1);
         if (esMismoDia(hoy, fecha)) return "Ayer";
-        Calendar inicioSemana = Calendar.getInstance();
+        Calendar inicioSemana = Calendar.getInstance(tz);
         inicioSemana.add(Calendar.DAY_OF_YEAR, -6);
-        if (fecha.after(inicioSemana))
-            return new SimpleDateFormat("EEE, d MMM", new Locale("es", "CO")).format(new Date(ts));
-        return new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(new Date(ts));
+        if (fecha.after(inicioSemana)) {
+            SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM", new Locale("es", "CO"));
+            sdf.setTimeZone(tz);
+            return sdf.format(new Date(ts));
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+        sdf.setTimeZone(tz);
+        return sdf.format(new Date(ts));
     }
 
     private boolean esMismoDia(Calendar a, Calendar b) {
@@ -427,22 +429,30 @@ public class MensajeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if (fechaStr == null || fechaStr.isEmpty()) return "";
         long ts = parsearTimestamp(fechaStr);
         if (ts == 0) return "";
-        return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(ts));
+        java.util.TimeZone tz = java.util.TimeZone.getTimeZone("America/Bogota");
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+        sdf.setTimeZone(tz);
+        return sdf.format(new Date(ts));
     }
 
     private long parsearTimestamp(String fecha) {
         if (fecha == null || fecha.isEmpty()) return 0L;
-        try {
-            long num = Long.parseLong(fecha);
-            return num < 10_000_000_000L ? num * 1000L : num;
-        } catch (NumberFormatException ignored) {}
-        String[] fmts = {
-                "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd HH:mm:ss",
-                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd"
+        // Si es número directo (timestamp unix)
+        try { long n = Long.parseLong(fecha); return n < 10_000_000_000L ? n * 1000L : n; }
+        catch (NumberFormatException ignored) {}
+
+        // Formatos ISO — los que terminan en Z son UTC
+        String[][] formatos = {
+                {"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "UTC"},
+                {"yyyy-MM-dd'T'HH:mm:ssX",       "UTC"},
+                {"yyyy-MM-dd'T'HH:mm:ss",        "America/Bogota"},
+                {"yyyy-MM-dd HH:mm:ss",          "America/Bogota"},
         };
-        for (String f : fmts) {
+        for (String[] par : formatos) {
             try {
-                Date d = new SimpleDateFormat(f, Locale.getDefault()).parse(fecha);
+                SimpleDateFormat sdf = new SimpleDateFormat(par[0], Locale.getDefault());
+                sdf.setTimeZone(java.util.TimeZone.getTimeZone(par[1]));
+                Date d = sdf.parse(fecha);
                 if (d != null) return d.getTime();
             } catch (Exception ignored) {}
         }

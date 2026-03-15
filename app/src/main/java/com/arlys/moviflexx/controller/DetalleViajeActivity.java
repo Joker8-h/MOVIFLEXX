@@ -47,6 +47,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.arlys.moviflexx.model.Manager.PrecioTramoPasajeroManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -79,6 +80,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
     private static final int    POLLING_MS = 5000;
     private static final int    GPS_CONDUCTOR_POLLING_MS = 3000; // ← cada 3 seg para pasajero
     private static final int    LOCATION_PERMISSION_REQUEST = 1001;
+
 
     private static final int    COLOR_RUTA            = 0xFF009B8D;
     private static final int    COLOR_RUTA_WAYPOINT   = 0xFF7B1FA2;
@@ -162,6 +164,8 @@ public class DetalleViajeActivity extends AppCompatActivity {
     private double  latOrigen, lngOrigen, latDestino, lngDestino;
     private int     cuposTotales = 0, cuposDisponibles = 0;
     private double  precioViaje  = 0;
+
+    private double precioCalculadoPasajero = 0;
     private double  distanciaKm  = 0, duracionMin = 0;
     private int     indiceRuta   = 0;
     private String  miParadaBajada = "";
@@ -191,6 +195,8 @@ public class DetalleViajeActivity extends AppCompatActivity {
         actualizarMarcadorConductorSuave(nuevaPos);
     }
 
+
+
     // ── NUEVAS: punto de RECOGIDA (subida) del pasajero ──────────────────────
     private GeoPoint gpSubida             = null;
     private String   nombreSubidaPasajero = "";
@@ -206,6 +212,8 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
     private boolean coordsOrigenInvalidas  = false;
     private boolean coordsDestinoInvalidas = false;
+
+    private boolean calificacionYaDisparada = false;  // ← AGREGAR AQUÍ
 
     // ── Polling general (estado del viaje) ───────────────────────────────────
     private final Handler pollingHandler = new Handler(Looper.getMainLooper());
@@ -284,9 +292,9 @@ public class DetalleViajeActivity extends AppCompatActivity {
             marcadorConductor.setId(MID_CONDUCTOR);
             marcadorConductor.setPosition(nuevaPos);
             marcadorConductor.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-            marcadorConductor.setTitle(esConductor ? "📍 Tu posición actual" : "🚗 Conductor");
+            marcadorConductor.setTitle(esConductor ? "Tu posición actual" : "Conductor");
             marcadorConductor.setIcon(new BitmapDrawable(getResources(),
-                    crearBitmapMarcador(COLOR_CONDUCTOR, "🚗")));
+                    crearBitmapMarcador(COLOR_CONDUCTOR, "")));
             map.getOverlays().add(marcadorConductor);
         }
 
@@ -319,7 +327,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
     private void mostrarBotonPago(double monto, String conductor) {
         if (btnPagarViaje == null) return;
         java.text.NumberFormat nf = java.text.NumberFormat.getNumberInstance(new java.util.Locale("es", "CO"));
-        btnPagarViaje.setText("💳  Pagar  $" + nf.format(monto));
+        btnPagarViaje.setText("Pagar  $" + nf.format(monto));
         btnPagarViaje.setVisibility(View.VISIBLE);
         btnPagarViaje.setEnabled(true);
         btnPagarViaje.setAlpha(1f);
@@ -336,7 +344,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
     private void confirmarPagoComoCondutor() {
         // Buscar el pago del viaje con confirmacionPasajero=true y confirmacionConductor=false
-        String url = com.arlys.moviflexx.model.Constantes.pagosPorViaje(viajeId);
+        String url = com.arlys.moviflexx.model.Constantes.pagosPorViaje((long) viajeId);
         com.arlys.moviflexx.model.ConexionApi.getInstance(this).getArrayNoCache(url,
                 pagos -> {
                     if (pagos == null || pagos.length() == 0) {
@@ -355,8 +363,13 @@ public class DetalleViajeActivity extends AppCompatActivity {
                             com.arlys.moviflexx.model.ConexionApi.getInstance(this).put(
                                     com.arlys.moviflexx.model.Constantes.pagoConfirmarConductor(id),
                                     new org.json.JSONObject(),
-                                    resp -> Toast.makeText(this, "✅ ¡Pago confirmado!", Toast.LENGTH_SHORT).show(),
-                                    err  -> Toast.makeText(this, "Error al confirmar", Toast.LENGTH_LONG).show()
+                                    resp -> {
+                                        Toast.makeText(this, "✅ ¡Pago confirmado!", Toast.LENGTH_SHORT).show();
+                                        // Ir a calificar a los pasajeros del viaje
+                                        new android.os.Handler(android.os.Looper.getMainLooper())
+                                                .postDelayed(this::paso3BuscarPasajerosParaCalificar, 1200);
+                                    },
+                                    err -> Toast.makeText(this, "Error al confirmar", Toast.LENGTH_LONG).show()
                             );
                             return;
                         }
@@ -558,6 +571,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
         cardHistorial       = findViewById(R.id.card_historial);
         cardAcciones        = findViewById(R.id.card_acciones);
         loaderDetalle       = findViewById(R.id.loader_detalle);
+        btnPagarViaje = findViewById(R.id.btn_pagar_viaje);
 
         rvHistorialParadas.setLayoutManager(new LinearLayoutManager(this));
 
@@ -889,7 +903,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
         encabezado.addView(etiqueta);
 
         TextView icono = new TextView(this);
-        icono.setText("🎫");
+        icono.setText("");
         icono.setTextSize(20f);
         encabezado.addView(icono);
         inner.addView(encabezado);
@@ -898,7 +912,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
         inner.addView(crearSeparadorFila(d, p6));
         inner.addView(crearFilaReserva(ROW_ID_BAJADA,   "🚏", "Bajarás en",          "—", d, 0, p6));
         inner.addView(crearSeparadorFila(d, p6));
-        inner.addView(crearFilaReserva(ROW_ID_PRECIO,   "💰", "Precio total",        "—", d, 0, 0));
+        inner.addView(crearFilaReserva(ROW_ID_PRECIO,   "", "Precio total",        "—", d, 0, 0));
 
         txtMiReservaInfo = new TextView(this);
         txtMiReservaInfo.setVisibility(View.GONE);
@@ -1205,7 +1219,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
         }
         JSONObject veh = r.optJSONObject("vehiculo");
         if (veh != null && txtVehiculo != null)
-            txtVehiculo.setText("🚘 " + veh.optString("marca","") + " "
+            txtVehiculo.setText("" + veh.optString("marca","") + " "
                     + veh.optString("modelo","") + " • " + veh.optString("placa",""));
 
         // ── Precio — distanciaKm ya disponible ──
@@ -1230,7 +1244,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
         }
 
         actualizarNombreConductorUI();
-        txtRuta.setText("📍 " + origenActual + " → " + destinoActual);
+        txtRuta.setText("" + origenActual + " → " + destinoActual);
         txtEstado.setText(etiquetaEstado(estadoViaje));
         actualizarChipsCupos(cuposTotales, cuposDisponibles);
         configurarBotones();
@@ -1247,6 +1261,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
 
     private void cargarNombreConductorPorId(int id) {
+        if (id <= 0) return;  // ← AGREGAR
         ConexionApi.getInstance(this).getObject(Constantes.USUARIOS + "/" + id,
                 perfil -> {
                     String nom = extractNombre(perfil);
@@ -1258,7 +1273,16 @@ public class DetalleViajeActivity extends AppCompatActivity {
                         });
                     }
                 },
-                err -> Log.w(TAG, "No se pudo cargar nombre del conductor #" + id)
+                err -> {
+                    // ← AGREGAR: si es 404, asignar nombre genérico y NO reintentar
+                    int code = (err != null && err.networkResponse != null)
+                            ? err.networkResponse.statusCode : 0;
+                    if (code == 404) {
+                        nombreConductorViaje = "Conductor";
+                        runOnUiThread(() -> actualizarNombreConductorUI());
+                    }
+                    Log.w(TAG, "No se pudo cargar nombre del conductor #" + id + " (código " + code + ")");
+                }
         );
     }
 
@@ -1511,7 +1535,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
         if (pasajeroRecogido) {
             // ══ YA FUE RECOGIDO ══════════════════════════════════════════════
             agregarMarcador(MID_DESTINO, gpDestino, 0xFFEF5350, "B",
-                    "🏁 Destino final: " + destinoActual);
+                    "Destino final: " + destinoActual);
 
             if (gpParada != null) {
                 agregarMarcador(MID_PARADA, gpParada, 0xFFFF6F00, "🚏",
@@ -1550,7 +1574,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
             if (subidaEsDistintaDeOrigen) {
                 agregarMarcador(MID_SUBIDA, gpSubida, 0xFF00C853, "🙋",
-                        "📍 Aquí te recogen: " + nomSubida);
+                        "Aquí te recogen: " + nomSubida);
             }
 
             if (gpParada != null) {
@@ -2027,7 +2051,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
                     String nom=pDest.optString("nombre","").trim();
                     if(!nom.isEmpty()&&!nom.equals("null")&&destinoActual.equals("Destino")) destinoActual=nom;}}
             if(txtRuta!=null)
-                runOnUiThread(()->txtRuta.setText("📍 "+origenActual+" → "+destinoActual));
+                runOnUiThread(()->txtRuta.setText(""+origenActual+" → "+destinoActual));
         } catch(Exception e){Log.e(TAG,"Error recuperando coords",e);}
     }
 
@@ -2337,10 +2361,12 @@ public class DetalleViajeActivity extends AppCompatActivity {
         if (cardMiReserva == null || txtMiReservaInfo == null) return;
         String estado = reserva.optString("estado", "").toUpperCase();
         if (EST_CANCELADO.equals(estado)) {
-            cardMiReserva.setVisibility(View.GONE); yaReservo = false; return;
+            cardMiReserva.setVisibility(View.GONE);
+            yaReservo = false;
+            return;
         }
-        String np  = reserva.optString("nombreParada", destinoActual);
-        int    asi = reserva.optInt("numeroAsientos", reserva.optInt("asientos", 1));
+        String np = reserva.optString("nombreParada", destinoActual);
+        int asi = reserva.optInt("numeroAsientos", reserva.optInt("asientos", 1));
 
         // ── Precio con fallbacks ──
         double pre = reserva.optDouble("precio",
@@ -2352,17 +2378,30 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
         miParadaBajada = np.isEmpty() ? destinoActual : np;
         actualizarValorFila(ROW_ID_ASIENTOS, asi + (asi == 1 ? " asiento" : " asientos"));
-        actualizarValorFila(ROW_ID_BAJADA,   miParadaBajada);
-        actualizarValorFila(ROW_ID_PRECIO,   pre > 0
-                ? "$ " + String.format(Locale.getDefault(), "%,.0f", pre) + " COP"
+        actualizarValorFila(ROW_ID_BAJADA, miParadaBajada);
+        double precioMostrar = precioCalculadoPasajero > 0 ? precioCalculadoPasajero : pre;
+        actualizarValorFila(ROW_ID_PRECIO, precioMostrar > 0
+                ? String.format(Locale.getDefault(), "%.0f COP", precioMostrar)
                 : "No definido");
 
         int bgColor, strokeColor;
         switch (estado) {
-            case EST_ESPERANDO_RECOGIDA: bgColor=Color.parseColor("#FFF8E1"); strokeColor=Color.parseColor("#FFE082"); break;
-            case EST_RECOGIDO:           bgColor=Color.parseColor("#E0F7FA"); strokeColor=Color.parseColor("#80DEEA"); break;
-            case EST_COMPLETADO:         bgColor=Color.parseColor("#E8F5E9"); strokeColor=Color.parseColor("#A5D6A7"); break;
-            default:                     bgColor=Color.parseColor("#F0FAFA"); strokeColor=Color.parseColor("#80CBC4"); break;
+            case EST_ESPERANDO_RECOGIDA:
+                bgColor = Color.parseColor("#FFF8E1");
+                strokeColor = Color.parseColor("#FFE082");
+                break;
+            case EST_RECOGIDO:
+                bgColor = Color.parseColor("#E0F7FA");
+                strokeColor = Color.parseColor("#80DEEA");
+                break;
+            case EST_COMPLETADO:
+                bgColor = Color.parseColor("#E8F5E9");
+                strokeColor = Color.parseColor("#A5D6A7");
+                break;
+            default:
+                bgColor = Color.parseColor("#F0FAFA");
+                strokeColor = Color.parseColor("#80CBC4");
+                break;
         }
         cardMiReserva.setCardBackgroundColor(bgColor);
         cardMiReserva.setStrokeColor(strokeColor);
@@ -2370,10 +2409,14 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
         if (!esConductor && cardHistorial != null) mostrarParadaPasajero();
 
-        // ── FIX BUG 3: mostrar/ocultar botón de pago según estado ────────────────
+        // ── Mostrar/ocultar botón de pago según estado ────────────────────────────
+        // ── Mostrar/ocultar botón de pago según estado ──
         if (!esConductor) {
-            if (EST_RECOGIDO.equals(estado) || EST_COMPLETADO.equals(estado)) {
-                final double montoFinal = pre;
+            boolean viajeTerminado = "FINALIZADO".equals(estadoViaje)
+                    || "COMPLETADO".equals(estadoViaje);
+
+            if (viajeTerminado) {
+                final double montoFinal = precioCalculadoPasajero > 0 ? precioCalculadoPasajero : pre;
                 mostrarBotonPago(montoFinal, nombreConductorViaje);
                 View divider = findViewById(R.id.divider_pago);
                 if (divider != null) divider.setVisibility(View.VISIBLE);
@@ -2384,7 +2427,6 @@ public class DetalleViajeActivity extends AppCompatActivity {
             }
         }
     }
-
     // =========================================================================
     //  RESERVAS — FLUJO COMPLETO
     // =========================================================================
@@ -3169,7 +3211,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
         root.addView(crearSeparadorO(dp, p8));
 
         // ── Campo de búsqueda ──
-        android.widget.EditText editBuscar = crearEditBuscar(dp, p12, p8, "🔍  Escribe tu barrio de subida...");
+        android.widget.EditText editBuscar = crearEditBuscar(dp, p12, p8, "Escribe tu barrio de subida...");
         root.addView(editBuscar);
 
         // ── Lista de paradas ──
@@ -3372,7 +3414,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
         root.addView(tvElegida);
 
         // ── Campo de búsqueda ──
-        android.widget.EditText editBuscar = crearEditBuscar(dp, p12, p8, "✏️  Escribe un barrio o lugar de bajada...");
+        android.widget.EditText editBuscar = crearEditBuscar(dp, p12, p8, "Escribe un barrio o lugar de bajada...");
         root.addView(editBuscar);
 
         // ── Lista de paradas ──
@@ -3654,6 +3696,9 @@ public class DetalleViajeActivity extends AppCompatActivity {
                     estadoReserva = response.optString("estado", EST_CONFIRMADA).toUpperCase();
                     yaReservo = true;
                     gpParada = bajada.toGeoPoint(); nombreParada = bajada.nombre;
+
+                    calcularYMostrarPrecioTramo(); // ← línea nueva
+                    DetalleViajeActivity activity = this;
                     // Guardar subida definitiva
                     if (subida != null && !sonIguales(latS, lngS, latOrigen, lngOrigen)) {
                         gpSubida = subida.toGeoPoint(); nombreSubidaPasajero = subida.nombre;
@@ -3885,7 +3930,8 @@ public class DetalleViajeActivity extends AppCompatActivity {
                     int    nd = response.optInt("cuposDisponibles", cuposDisponibles);
                     int    nt = response.optInt("cuposTotales",     cuposTotales);
                     String ne = response.optString("estado", estadoViaje).trim().toUpperCase();
-
+                    if (esConductor && ("FINALIZADO".equals(estadoViaje) || "COMPLETADO".equals(estadoViaje)))
+                        verificarYMostrarBotonPagoRecibido();
                     if (nd != cuposDisponibles || nt != cuposTotales) {
                         cuposDisponibles = nd;
                         cuposTotales     = nt;
@@ -3894,23 +3940,30 @@ public class DetalleViajeActivity extends AppCompatActivity {
                         runOnUiThread(this::actualizarBotonPasajero);
                     }
 
+                    // EN refrescar() — ya tienes este bloque, solo verifica que esté así:
+
                     if (!ne.equals(estadoViaje)) {
                         String estadoAnterior = estadoViaje;
                         estadoViaje = ne;
                         runOnUiThread(() -> txtEstado.setText(etiquetaEstado(estadoViaje)));
 
-                        if (("INICIADO".equals(ne) || "EN_CURSO".equals(ne)) && esConductor)
-                            iniciarGPSConductor();
-                        if (("INICIADO".equals(ne) || "EN_CURSO".equals(ne)) && !esConductor)
-                            iniciarPollingUbicacionConductor();
-
-                        // ★ Cuando el viaje pasa a FINALIZADO o COMPLETADO → calificar
                         boolean ahora_finalizado = "FINALIZADO".equals(ne) || "COMPLETADO".equals(ne);
-                        boolean antes_no_era    = !"FINALIZADO".equals(estadoAnterior)
+                        boolean antes_no_era = !"FINALIZADO".equals(estadoAnterior)
                                 && !"COMPLETADO".equals(estadoAnterior);
+
+                        if (ahora_finalizado && antes_no_era && !esConductor) {
+                            // ← Solo para pasajero: mostrar botón de pago directo
+                            // sin esperar a que cargarDetalleViaje() lo dispare
+                            runOnUiThread(() -> {
+                                mostrarBotonPago(precioViaje, nombreConductorViaje);
+                                View divider = findViewById(R.id.divider_pago);
+                                if (divider != null) divider.setVisibility(View.VISIBLE);
+                            });
+                        }
+
                         if (ahora_finalizado && antes_no_era) {
                             cargarDetalleViaje();
-                            new android.os.Handler(android.os.Looper.getMainLooper())
+                            new Handler(Looper.getMainLooper())
                                     .postDelayed(this::dispararCalificacionSegunRol, 1500);
                             return;
                         }
@@ -3927,11 +3980,11 @@ public class DetalleViajeActivity extends AppCompatActivity {
         );
     }
     private void dispararCalificacionSegunRol() {
+        if (calificacionYaDisparada) return;  // ← AGREGAR
+        calificacionYaDisparada = true;        // ← AGREGAR
         if (esConductor) {
-            // Conductor califica a sus pasajeros
             paso3BuscarPasajerosParaCalificar();
         } else {
-            // Pasajero califica al conductor
             dispararCalificacionAlConductor();
         }
     }
@@ -4179,24 +4232,22 @@ public class DetalleViajeActivity extends AppCompatActivity {
     }
 
     private void dispararCalificacionAlConductor() {
-        // Solo aplica si el viaje está finalizado
+        if (calificacionYaDisparada) return;  // ← AGREGAR
         if (!"FINALIZADO".equals(estadoViaje) && !"COMPLETADO".equals(estadoViaje)) return;
 
-        // Si aún no tenemos el id del conductor, buscarlo y reintentar
         if (idConductorViaje <= 0) {
             ConexionApi.getInstance(this).getObject(Constantes.viajePorId((long) viajeId),
                     viajeObj -> {
                         extraerConductor(viajeObj);
                         if (idConductorViaje > 0) {
-                            new android.os.Handler(android.os.Looper.getMainLooper())
+                            new Handler(Looper.getMainLooper())
                                     .postDelayed(this::dispararCalificacionAlConductor, 500);
                         } else {
-                            android.util.Log.w("DetalleViaje",
-                                    "dispararCalificacionAlConductor: no se pudo obtener idConductor");
+                            Log.w(TAG, "No se pudo obtener idConductor — abortando calificación");
+                            // ← No reintentar, conductor inválido
                         }
                     },
-                    err -> android.util.Log.w("DetalleViaje",
-                            "dispararCalificacionAlConductor: error cargando viaje")
+                    err -> Log.w(TAG, "dispararCalificacionAlConductor: error cargando viaje")
             );
             return;
         }
@@ -4250,8 +4301,11 @@ public class DetalleViajeActivity extends AppCompatActivity {
         if(btnAccionPrincipal!=null) btnAccionPrincipal.setVisibility(View.GONE);
         btnIniciar.setVisibility(View.GONE); btnFinalizar.setVisibility(View.GONE);
         if(btnMensajeConductor!=null) btnMensajeConductor.setVisibility(View.GONE);
-        if(btnRecoger!=null) btnRecoger.setVisibility(View.GONE);
 
+        if(btnRecoger!=null) btnRecoger.setVisibility(View.GONE);
+        if ("FINALIZADO".equals(estadoViaje) || "COMPLETADO".equals(estadoViaje)) {
+            verificarYMostrarBotonPagoRecibido();
+        }
         if(esConductor){
             if(estadoViaje.equals("CREADO")||estadoViaje.equals("PROGRAMADO")||estadoViaje.equals("DISPONIBLE"))
                 btnIniciar.setVisibility(View.VISIBLE);
@@ -4280,6 +4334,39 @@ public class DetalleViajeActivity extends AppCompatActivity {
                     runOnUiThread(()->{ if(bloqueado) mostrarBannerReservaActiva(); else actualizarBotonPasajero(); });
                 },
                 error->runOnUiThread(this::actualizarBotonPasajero));
+    }
+
+    private void verificarYMostrarBotonPagoRecibido() {
+        String url = Constantes.pagosPorViaje(viajeId);
+        ConexionApi.getInstance(this).getArrayNoCache(url,
+                pagos -> {
+                    for (int i = 0; i < pagos.length(); i++) {
+                        JSONObject p = pagos.optJSONObject(i);
+                        if (p == null) continue;
+                        boolean cp = p.optBoolean("confirmacionPasajero", false);
+                        boolean cc = p.optBoolean("confirmacionConductor", false);
+                        if (cp && !cc) {
+                            runOnUiThread(() -> mostrarBotonPagoRecibido(p));
+                            return;
+                        }
+                    }
+                },
+                err -> {}
+        );
+    }
+
+    private void mostrarBotonPagoRecibido(JSONObject pago) {
+        if (btnPagarViaje == null) return;
+        double monto = pago.optDouble("monto", precioViaje);
+        String modo  = pago.optString("metodoPago", "");
+        java.text.NumberFormat nf = java.text.NumberFormat
+                .getNumberInstance(new java.util.Locale("es", "CO"));
+        btnPagarViaje.setText("✅  Pago recibido — $" + nf.format(monto)
+                + (modo.isEmpty() ? "" : "  (" + modo + ")"));
+        btnPagarViaje.setVisibility(View.VISIBLE);
+        btnPagarViaje.setEnabled(true);
+        btnPagarViaje.setBackgroundColor(Color.parseColor("#2E7D32"));
+        btnPagarViaje.setOnClickListener(v -> confirmarPagoComoCondutor());
     }
 
     private void mostrarBannerEsperaInicio() {
@@ -4368,34 +4455,81 @@ public class DetalleViajeActivity extends AppCompatActivity {
     // =========================================================================
     //  CHAT
     // =========================================================================
-    private void abrirOCrearChat(){
-        if(!esConductor&&idConductorViaje<=0){
-            Toast.makeText(this,"Cargando datos del conductor...",Toast.LENGTH_SHORT).show();
+    private void abrirOCrearChat() {
+        Log.d(TAG, "abrirOCrearChat → esConductor=" + esConductor
+                + " idConductorViaje=" + idConductorViaje
+                + " nombreConductorViaje=" + nombreConductorViaje
+                + " idPasajeroViaje=" + idPasajeroViaje);
+
+        if (!esConductor && idConductorViaje <= 0) {
+            Toast.makeText(this, "Cargando datos del conductor...", Toast.LENGTH_SHORT).show();
             cargarConductorDelViaje();
-            new Handler(Looper.getMainLooper()).postDelayed(()->{
-                if(idConductorViaje>0) iniciarConversacion();
-                else Toast.makeText(this,"No se pudo identificar al conductor.",Toast.LENGTH_LONG).show();
-            },1500);
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                Log.d(TAG, "Después de cargar → idConductorViaje=" + idConductorViaje
+                        + " nombre=" + nombreConductorViaje);
+                if (idConductorViaje > 0) iniciarConversacion();
+                else Toast.makeText(this, "No se pudo identificar al conductor.", Toast.LENGTH_LONG).show();
+            }, 1500);
             return;
         }
         iniciarConversacion();
     }
 
-    private void iniciarConversacion(){
-        if(!esConductor&&idConductorViaje<=0){
-            Toast.makeText(this,"No se pudo identificar al conductor.",Toast.LENGTH_LONG).show(); return;
+    private void iniciarConversacion() {
+        if (!esConductor && idConductorViaje <= 0) {
+            Toast.makeText(this, "No se pudo identificar al conductor.", Toast.LENGTH_LONG).show();
+            return;
         }
-        int miId=session.getIdUsuario(); int idP,idC; String nom;
-        if(esConductor){idP=idPasajeroViaje>0?idPasajeroViaje:miId;idC=miId;nom=nombrePasajeroViaje.isEmpty()?"Pasajero":nombrePasajeroViaje;}
-        else{idP=miId;idC=idConductorViaje;nom=nombreConductorViaje.isEmpty()?"Conductor":nombreConductorViaje;}
-        JSONObject body=new JSONObject();
-        try{body.put("idViaje",viajeId);body.put("idPasajero",idP);body.put("idConductor",idC);}
-        catch(JSONException e){return;}
-        final String nf=nom; final int pf=idP; final int cf=idC;
+        int miId = session.getIdUsuario();
+        int idP, idC;
+        String nom;
+        if (esConductor) {
+            idP = idPasajeroViaje > 0 ? idPasajeroViaje : miId;
+            idC = miId;
+            nom = nombrePasajeroViaje.isEmpty() ? "Pasajero" : nombrePasajeroViaje;
+        } else {
+            idP = miId;
+            idC = idConductorViaje;
+            nom = nombreConductorViaje.isEmpty() ? "Conductor" : nombreConductorViaje;
+        }
+
+        // ── LOG para diagnosticar qué IDs se están usando ──
+        Log.d(TAG, "iniciarConversacion → esConductor=" + esConductor
+                + " | miId=" + miId
+                + " | idP=" + idP
+                + " | idC=" + idC
+                + " | nom=" + nom
+                + " | idConductorViaje=" + idConductorViaje
+                + " | nombreConductorViaje=" + nombreConductorViaje
+                + " | idPasajeroViaje=" + idPasajeroViaje
+                + " | nombrePasajeroViaje=" + nombrePasajeroViaje);
+
+        JSONObject body = new JSONObject();
+        try {
+            body.put("idViaje",    viajeId);
+            body.put("idPasajero", idP);
+            body.put("idConductor", idC);
+        } catch (JSONException e) {
+            return;
+        }
+        final String nf = nom;
+        final int pf = idP;
+        final int cf = idC;
         loaderDetalle.setVisibility(View.VISIBLE);
         ConexionApi.getInstance(this).post(Constantes.CHAT_CONVERSACIONES, body,
-                response->{ loaderDetalle.setVisibility(View.GONE); long ic=extraerIdConversacion(response); if(ic>0) navegarAlChat(ic,nf); else buscarConversacion(pf,cf,nf); },
-                error->{ loaderDetalle.setVisibility(View.GONE); buscarConversacion(pf,cf,nf); });
+                response -> {
+                    loaderDetalle.setVisibility(View.GONE);
+                    long ic = extraerIdConversacion(response);
+                    Log.d(TAG, "POST conversacion → response=" + response.toString()
+                            + " | idConversacion=" + ic);
+                    if (ic > 0) navegarAlChat(ic, nf);
+                    else buscarConversacion(pf, cf, nf);
+                },
+                error -> {
+                    loaderDetalle.setVisibility(View.GONE);
+                    Log.w(TAG, "POST conversacion falló → buscando conversacion existente");
+                    buscarConversacion(pf, cf, nf);
+                });
     }
 
     private void buscarConversacion(int idP, int idC, String nom){
@@ -4423,9 +4557,37 @@ public class DetalleViajeActivity extends AppCompatActivity {
         return -1;
     }
 
-    private void navegarAlChat(long idC, String nom){
-        Intent i=new Intent(this,Chat.class);
-        i.putExtra("idConversacion",idC); i.putExtra("nombre",nom); startActivity(i);
+    private void navegarAlChat(long idC, String nom) {
+        String nombreFinal;
+
+        if (esConductor) {
+            // Soy conductor → el contacto es el PASAJERO
+            nombreFinal = (nombrePasajeroViaje != null && !nombrePasajeroViaje.isEmpty())
+                    ? nombrePasajeroViaje
+                    : (nom != null && !nom.isEmpty() ? nom : "Pasajero");
+        } else {
+            // Soy pasajero → el contacto es el CONDUCTOR
+            boolean nomGenerico = nom == null || nom.isEmpty()
+                    || nom.equals("Conductor") || nom.equals("Pasajero")
+                    || nom.startsWith("Conductor #") || nom.startsWith("Pasajero #");
+
+            nombreFinal = nomGenerico
+                    ? (nombreConductorViaje != null
+                    && !nombreConductorViaje.isEmpty()
+                    && !nombreConductorViaje.startsWith("Conductor #")
+                    ? nombreConductorViaje
+                    : (nom != null ? nom : "Conductor"))
+                    : nom;
+        }
+
+        Log.d(TAG, "navegarAlChat → idConversacion=" + idC
+                + " nombreFinal=" + nombreFinal
+                + " esConductor=" + esConductor);
+
+        Intent i = new Intent(this, Chat.class);
+        i.putExtra("idConversacion", idC);
+        i.putExtra("nombre", nombreFinal);
+        startActivity(i);
     }
 
     private void cargarConductorDelViaje(){
@@ -4630,6 +4792,44 @@ public class DetalleViajeActivity extends AppCompatActivity {
         if(txtConductor==null) return;
         String n=nombreConductorViaje.isEmpty()?"Sin asignar":nombreConductorViaje;
         txtConductor.setText(esConductor&&idConductorViaje==session.getIdUsuario()?"🚗 Tú ("+n+")":"🚗 "+n);
+    }
+    private void calcularYMostrarPrecioTramo() {
+        if (gpParada == null) return;
+
+        double latSubida = gpSubida != null ? gpSubida.getLatitude()  : latOrigen;
+        double lngSubida = gpSubida != null ? gpSubida.getLongitude() : lngOrigen;
+
+        // Si no tenemos distancia total de la ruta, no podemos calcular proporcionalmente
+        if (distanciaKm <= 0) {
+            Log.w(TAG, "calcularYMostrarPrecioTramo: distanciaKm no disponible");
+            return;
+        }
+
+        PrecioTramoPasajeroManager.calcular(
+                latSubida,               lngSubida,
+                gpParada.getLatitude(),  gpParada.getLongitude(),
+                distanciaKm,
+                precioViaje,
+                resultado -> {
+                    // ← ya estamos en el hilo UI
+                    precioCalculadoPasajero = resultado.precioFinal;
+
+                    // Actualizar fila "Precio total" en la card Tu Reserva
+                    actualizarValorFila(ROW_ID_PRECIO, resultado.precioFormateado);
+
+                    // Actualizar el TextView principal de precio
+                    if (txtPrecio != null)
+                        txtPrecio.setText(resultado.precioFormateado);
+
+                    // Toast informativo para el pasajero
+                    String info = "💰 Tu precio: " + resultado.precioFormateado
+                            + "  (" + String.format(Locale.getDefault(),
+                            "%.1f km", resultado.distanciaKm) + ")";
+                    Toast.makeText(this, info, Toast.LENGTH_LONG).show();
+
+                    Log.d(TAG, "Precio tramo calculado: " + resultado);
+                }
+        );
     }
 
     private void mostrarFechaHora(String fh){

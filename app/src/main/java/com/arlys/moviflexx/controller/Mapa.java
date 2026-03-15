@@ -1289,9 +1289,9 @@ public class Mapa extends AppCompatActivity {
                 map.invalidate();
             }
             if (pBajada != null && miUltimaPosicion != null) {
-                pOrigen  = miUltimaPosicion;
-                pDestino = pBajada;
-                map.post(() -> dibujarRutaViaje(true));
+                // Actualizar la línea naranja hacia la bajada SIN borrar la ruta completa
+                actualizarLineaNaranja(miUltimaPosicion);
+
             }
             Log.d(TAG, "Pasajero recogido a " + distMetros + " m");
         }
@@ -1321,14 +1321,14 @@ public class Mapa extends AppCompatActivity {
     }
 
     private void mostrarDialogoLlegada() {}
-     /**   new AlertDialog.Builder(this)
-                .setTitle("🏁 ¡Llegaste al destino!")
-                .setMessage("Estás a menos de 50 m del punto B. ¿Deseas finalizar el viaje ahora?")
-                .setCancelable(false)
-                .setPositiveButton("✅ Finalizar viaje", (d, w) -> ejecutarFinalizarViaje())
-                .setNegativeButton("Continuar", (d, w) -> viajeYaFinalizado = false)
-                .show();
-    }*/
+    /**   new AlertDialog.Builder(this)
+     .setTitle("🏁 ¡Llegaste al destino!")
+     .setMessage("Estás a menos de 50 m del punto B. ¿Deseas finalizar el viaje ahora?")
+     .setCancelable(false)
+     .setPositiveButton("✅ Finalizar viaje", (d, w) -> ejecutarFinalizarViaje())
+     .setNegativeButton("Continuar", (d, w) -> viajeYaFinalizado = false)
+     .show();
+     }*/
 
     /** Botón manual en el banner — pregunta antes de finalizar. */
     private void confirmarFinalizarManual() {
@@ -2145,19 +2145,13 @@ public class Mapa extends AppCompatActivity {
 
     private void mostrarPantallaViajeTerminado() {
         if (isFinishing() || isDestroyed()) return;
-
-        // Detener polling del conductor
         if (rPoll != null) hPoll.removeCallbacks(rPoll);
 
-        // Mostrar diálogo informativo al pasajero
         new AlertDialog.Builder(this)
-                .setTitle("🏁 Viaje finalizado")
-                .setMessage("El conductor llegó al destino. ¡Gracias por usar MoviFlex!")
+                .setTitle("Viaje finalizado")
+                .setMessage("El conductor llegó al destino. ¡Gracias por usar MoviFlex!\n\nAhora puedes registrar tu pago.")
                 .setCancelable(false)
-                .setPositiveButton("✅ Calificar conductor", (d, w) -> {
-                    // Ir a calificar directamente
-                    irACalificarConductorDesdeMapa();
-                })
+                .setPositiveButton("Pagar viaje", (d, w) -> irAPagarDesdeMapa())
                 .setNegativeButton("Cerrar mapa", (d, w) -> {
                     Intent intent = new Intent(this, HomePasajero.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -2166,6 +2160,40 @@ public class Mapa extends AppCompatActivity {
                 })
                 .show();
     }
+
+    private void irAPagarDesdeMapa() {
+        // Obtener el precio del viaje para pasarlo a PagoActivity
+        ConexionApi.getInstance(this).getObjectNoCache(
+                Constantes.viajePorId((long) idViaje),
+                viajeObj -> {
+                    double monto = viajeObj.optDouble("precio", 0);
+                    if (monto <= 0) {
+                        JSONObject ruta = viajeObj.optJSONObject("ruta");
+                        if (ruta != null)
+                            monto = ruta.optDouble("precio",
+                                    ruta.optDouble("costoCombustible", 0));
+                    }
+                    final double fMonto = monto;
+                    runOnUiThread(() -> {
+                        Intent intent = new Intent(this, PagoActivity.class);
+                        intent.putExtra(PagoActivity.EXTRA_ID_VIAJE, idViaje);
+                        intent.putExtra(PagoActivity.EXTRA_MONTO,    fMonto);
+                        intent.putExtra(PagoActivity.EXTRA_CONDUCTOR, nomConductor);
+                        startActivity(intent);
+                        // NO hacemos finish() aquí para que pueda volver al mapa si cancela
+                    });
+                },
+                err -> runOnUiThread(() -> {
+                    // Sin precio → abrir PagoActivity con monto 0 (el pasajero verá "Consultar con conductor")
+                    Intent intent = new Intent(this, PagoActivity.class);
+                    intent.putExtra(PagoActivity.EXTRA_ID_VIAJE, idViaje);
+                    intent.putExtra(PagoActivity.EXTRA_MONTO,    0.0);
+                    intent.putExtra(PagoActivity.EXTRA_CONDUCTOR, nomConductor);
+                    startActivity(intent);
+                })
+        );
+    }
+
     private void verificarAccesoAlMapa() {
         boolean esConductor = session.isConductor();
 

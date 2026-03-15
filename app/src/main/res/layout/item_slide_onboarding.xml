@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    item_slide_onboarding.xml
-    Cada slide del carrusel. Se reutiliza 3 veces.
-    Diseño: ilustración grande + card flotante + título + subtítulo + 3 stat pills
--->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -14,40 +8,12 @@
     android:paddingHorizontal="24dp"
     android:paddingTop="12dp">
 
-    <!-- ── ZONA ILUSTRACIÓN: círculo con emoji + card flotante ── -->
-    <FrameLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal">
-
-        <!-- Círculo principal de ilustración -->
-        <FrameLayout
-            android:layout_width="170dp"
-            android:layout_height="170dp"
-            android:layout_gravity="center_horizontal"
-            android:elevation="6dp">
-
-            <!-- Emoji central grande -->
-            <TextView
-                android:id="@+id/slideEmoji"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:text="🚌"
-                android:textSize="64sp"/>
-        </FrameLayout>
-
-
-
-
-    </FrameLayout>
-
     <!-- ── TÍTULO del slide ── -->
     <TextView
         android:id="@+id/slideTitulo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="8dp"
         android:gravity="center"
         android:text="Viaja con tu\ncomunidad"
         android:textSize="30sp"
@@ -92,7 +58,7 @@
                 android:id="@+id/statVal1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="1"
+                android:text="10K+"
                 android:textSize="17sp"
                 android:textColor="#1A2035"
                 android:textStyle="bold"

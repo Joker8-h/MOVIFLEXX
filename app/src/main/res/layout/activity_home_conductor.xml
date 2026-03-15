@@ -4,17 +4,23 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_screen">
+    android:background="#F0FAFA">
 
+    <!-- ════════════════════════════════════════════════════
+         BOTTOM NAVIGATION
+    ════════════════════════════════════════════════════ -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         style="@style/BottomNav.Moviflexx"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        app:elevation="12dp"
+        app:elevation="16dp"
         app:menu="@menu/bottom_navigation_menu" />
 
+    <!-- ════════════════════════════════════════════════════
+         APP BAR — HEADER
+    ════════════════════════════════════════════════════ -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -23,244 +29,340 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="291dp"
-            android:background="@drawable/fondomoviflexxx"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingStart="20dp"
-            android:paddingTop="25dp"
-            android:paddingEnd="20dp"
-            android:paddingBottom="28dp">
+            android:paddingStart="22dp"
+            android:paddingTop="36dp"
+            android:paddingEnd="22dp"
+            android:paddingBottom="24dp"
+            android:background="#00CED1">
 
-            <!-- ── Fila: Logo + Saludo + Campana ── -->
-            <LinearLayout
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:clipChildren="false">
 
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:layout_marginEnd="12dp"
-                    app:cardBackgroundColor="#FFFFFF"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="0dp"
-                    app:strokeWidth="0dp">
-
-                    <ImageView
-                        android:layout_width="35dp"
-                        android:layout_height="29dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="Logo"
-                        android:src="@drawable/logomo" />
-                </com.google.android.material.card.MaterialCardView>
+                <!-- Blob decorativo -->
+                <View
+                    android:layout_width="160dp"
+                    android:layout_height="160dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="-50dp"
+                    android:layout_marginEnd="-50dp"
+                    android:alpha="0.15"
+                    android:background="@drawable/bg_glow_circle_teal"
+                    android:clickable="false"/>
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:orientation="vertical">
 
-                    <TextView
-                        android:id="@+id/txt_bienvenida"
-                        android:layout_width="wrap_content"
+                    <!-- ── Fila: Avatar + Saludo + Campana ── -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Buenos días,"
-                        android:textColor="#00CED1"
-                        android:textSize="13sp" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="20dp">
 
-                    <TextView
-                        android:id="@+id/txt_nombre_conductor"
-                        android:layout_width="wrap_content"
+                        <!-- Avatar -->
+
+                        <FrameLayout
+                            android:layout_width="54dp"
+                            android:layout_height="54dp"
+                            android:layout_marginEnd="14dp">
+
+                            <View
+                                android:layout_width="54dp"
+                                android:layout_height="54dp"
+                                android:background="@drawable/bg_avatar_ring_white"/>
+
+                            <!-- Card inicial (logo, visible por defecto) -->
+                            <com.google.android.material.card.MaterialCardView
+                                android:id="@+id/card_avatar_inicial_header"
+                                android:layout_width="46dp"
+                                android:layout_height="46dp"
+                                android:layout_gravity="center"
+                                app:cardBackgroundColor="#FFFFFF"
+                                app:cardCornerRadius="23dp"
+                                app:cardElevation="4dp"
+                                app:strokeWidth="0dp">
+
+                                <ImageView
+                                    android:layout_width="30dp"
+                                    android:layout_height="30dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="Logo"
+                                    android:src="@drawable/logomo" />
+                            </com.google.android.material.card.MaterialCardView>
+
+                            <!-- Card foto real Cloudinary (oculta por defecto) -->
+                            <com.google.android.material.card.MaterialCardView
+                                android:id="@+id/card_avatar_foto_header"
+                                android:layout_width="46dp"
+                                android:layout_height="46dp"
+                                android:layout_gravity="center"
+                                android:visibility="gone"
+                                app:cardCornerRadius="23dp"
+                                app:cardElevation="4dp"
+                                app:strokeColor="#FFFFFF"
+                                app:strokeWidth="1.5dp">
+
+                                <ImageView
+                                    android:id="@+id/iv_avatar_header"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:scaleType="centerCrop"
+                                    android:contentDescription="Foto de perfil"/>
+                            </com.google.android.material.card.MaterialCardView>
+
+                            <View
+                                android:layout_width="13dp"
+                                android:layout_height="13dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_marginEnd="1dp"
+                                android:layout_marginBottom="1dp"
+                                android:background="@drawable/bg_dot_online"/>
+                        </FrameLayout>
+
+                        <!-- Saludo -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/txt_bienvenida"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Buenos días,"
+                                android:textColor="#CCFFFE"
+                                android:textSize="12sp"
+                                android:letterSpacing="0.04"/>
+
+                            <TextView
+                                android:id="@+id/txt_nombre_conductor"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Conductor"
+                                android:textColor="#FFFFFF"
+                                android:textSize="22sp"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+
+                        <!-- Campana -->
+                        <FrameLayout
+                            android:id="@+id/btn_notificaciones"
+                            android:layout_width="46dp"
+                            android:layout_height="46dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="@drawable/bg_icon_circle_white_alpha">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_notifications"
+                                app:tint="#FFFFFF"
+                                android:contentDescription="Notificaciones"/>
+
+                            <TextView
+                                android:id="@+id/tv_badge_notif"
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="top|end"
+                                android:gravity="center"
+                                android:textColor="#FFFFFF"
+                                android:textSize="9sp"
+                                android:textStyle="bold"
+                                android:background="@drawable/bg_badge_red"
+                                android:visibility="gone"
+                                android:text="0"/>
+                        </FrameLayout>
+
+                    </LinearLayout>
+
+                    <!-- ── BOTÓN PUBLICAR ── -->
+                    <FrameLayout
+                        android:id="@+id/btn_publicar_viaje"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_marginBottom="16dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:elevation="6dp"
+                        android:background="@drawable/bg_btn_white_rounded">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            android:clickable="false">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_add"
+                                android:layout_marginEnd="10dp"
+                                app:tint="#00CED1"
+                                android:contentDescription="Publicar"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="PUBLICAR NUEVO VIAJE"
+                                android:textColor="#00CED1"
+                                android:textSize="15sp"
+                                android:textStyle="bold"
+                                android:letterSpacing="0.06"
+                                android:clickable="false"/>
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <!-- ── CARDS: Mis Rutas + Vehículos ── -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Conductor"
-                        android:textColor="#00CED1"
-                        android:textSize="21sp"
-                        android:textStyle="bold" />
+                        android:orientation="horizontal"
+                        android:weightSum="2">
+
+                        <!-- Card Mis Rutas -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/btn_mis_rutas"
+                            android:layout_width="0dp"
+                            android:layout_height="72dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="7dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardBackgroundColor="#1EFFFFFF"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#50FFFFFF"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="10dp">
+
+                                <FrameLayout
+                                    android:layout_width="36dp"
+                                    android:layout_height="36dp"
+                                    android:layout_marginEnd="10dp"
+                                    android:background="@drawable/bg_icon_circle_white_alpha">
+
+                                    <ImageView
+                                        android:layout_width="18dp"
+                                        android:layout_height="18dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="Rutas"
+                                        android:src="@drawable/ic_menu_compass"
+                                        app:tint="#FFFFFF"/>
+                                </FrameLayout>
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Mis Rutas"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="13sp"
+                                        android:textStyle="bold"/>
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Ver todas →"
+                                        android:textColor="#CCF5F3"
+                                        android:textSize="11sp"/>
+                                </LinearLayout>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Card Mis Vehículos -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/btn_mis_vehiculos"
+                            android:layout_width="0dp"
+                            android:layout_height="72dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="7dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardBackgroundColor="#1EFFFFFF"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#50FFFFFF"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="10dp">
+
+                                <FrameLayout
+                                    android:layout_width="36dp"
+                                    android:layout_height="36dp"
+                                    android:layout_marginEnd="10dp"
+                                    android:background="@drawable/bg_icon_circle_white_alpha">
+
+                                    <ImageView
+                                        android:layout_width="18dp"
+                                        android:layout_height="18dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="Vehículos"
+                                        android:src="@drawable/ic_car"
+                                        app:tint="#FFFFFF"/>
+                                </FrameLayout>
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Vehículos"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="13sp"
+                                        android:textStyle="bold"/>
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Administrar →"
+                                        android:textColor="#CCF5F3"
+                                        android:textSize="11sp"/>
+                                </LinearLayout>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </LinearLayout>
+
                 </LinearLayout>
+            </FrameLayout>
 
-                <FrameLayout
-                    android:id="@+id/btn_notificaciones"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="@drawable/bg_icon_circle_white_alpha">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_notifications"
-                        app:tint="#00CED1"
-                        android:contentDescription="Notificaciones"/>
-
-                    <TextView
-                        android:id="@+id/tv_badge_notif"
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:layout_gravity="top|end"
-                        android:gravity="center"
-                        android:textColor="#FFFFFF"
-                        android:textSize="9sp"
-                        android:textStyle="bold"
-                        android:background="@drawable/bg_badge_red"
-                        android:visibility="gone"
-                        android:text="0"/>
-                </FrameLayout>
-
-            </LinearLayout>
-
-            <!-- ── Botón Publicar ── -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_publicar_viaje"
-                style="@style/Button.Moviflexx.White"
-                android:layout_width="match_parent"
-                android:layout_height="54dp"
-                android:layout_marginBottom="18dp"
-                app:backgroundTint="@null"
-                android:background="@drawable/bg_btn_login"
-                android:text="Publicar nuevo viaje"
-                app:icon="@drawable/ic_add"
-                app:iconGravity="textStart"
-                app:iconPadding="6dp"
-                app:iconSize="18dp"
-                app:iconTint="#FFFFFF" />
-
-            <!-- ── Cards acceso rápido ── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <!-- Card Mis Rutas -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/btn_mis_rutas"
-                    style="@style/Card.Moviflexx.Teal"
-                    android:layout_width="0dp"
-                    android:layout_height="72dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_weight="1">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center_vertical"
-                        android:background="@drawable/bg_btn_login"
-                        app:backgroundTint="@null"
-                        android:orientation="horizontal"
-                        android:paddingStart="14dp"
-                        android:paddingEnd="10dp">
-
-                        <com.google.android.material.card.MaterialCardView
-                            android:layout_width="34dp"
-                            android:layout_height="34dp"
-                            android:layout_marginEnd="10dp"
-                            app:cardBackgroundColor="#1FA99E"
-                            app:cardCornerRadius="10dp"
-                            app:cardElevation="0dp"
-                            app:strokeWidth="0dp">
-
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:layout_gravity="center"
-                                android:contentDescription="Rutas"
-                                android:src="@drawable/ic_menu_compass" />
-                        </com.google.android.material.card.MaterialCardView>
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Mis Rutas"
-                                android:textColor="#FFFFFF"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Ver todas"
-                                android:textColor="#B2EDE8"
-                                android:textSize="11sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Card Mis Vehículos -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/btn_mis_vehiculos"
-                    style="@style/Card.Moviflexx.Teal"
-                    android:layout_width="0dp"
-                    android:layout_height="72dp"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center_vertical"
-                        android:background="@drawable/bg_btn_login"
-                        app:backgroundTint="@null"
-                        android:orientation="horizontal"
-                        android:paddingStart="14dp"
-                        android:paddingEnd="10dp">
-
-                        <com.google.android.material.card.MaterialCardView
-                            android:layout_width="34dp"
-                            android:layout_height="34dp"
-                            android:layout_marginEnd="10dp"
-                            app:cardBackgroundColor="#1FA99E"
-                            app:cardCornerRadius="10dp"
-                            app:cardElevation="0dp"
-                            app:strokeWidth="0dp">
-
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:layout_gravity="center"
-                                android:contentDescription="Vehículos"
-                                android:src="@drawable/ic_car" />
-                        </com.google.android.material.card.MaterialCardView>
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Vehículos"
-                                android:textColor="#FFFFFF"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Administrar"
-                                android:textColor="#B2EDE8"
-                                android:textSize="11sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-            </LinearLayout>
         </LinearLayout>
-
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- ══════════════════════════════════════════
-         ★ SwipeRefreshLayout envuelve al NestedScrollView
-           ESTE es el orden correcto
-         ══════════════════════════════════════════ -->
+    <!-- ════════════════════════════════════════════════════
+         CONTENIDO SCROLLABLE
+    ════════════════════════════════════════════════════ -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipe_refresh"
         android:layout_width="match_parent"
@@ -270,19 +372,18 @@
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/bg_screen">
+            android:background="#F0FAFA">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingTop="20dp"
-                android:paddingBottom="90dp"
-                android:background="@drawable/moviletgo">
+                android:paddingTop="24dp"
+                android:paddingBottom="100dp">
 
-                <!-- ══════════════════════════════════════════
-                     SECCIÓN: CALIFICACIONES PENDIENTES
-                     ══════════════════════════════════════════ -->
+                <!-- ════════════════════════════════════════════
+                     CALIFICACIONES PENDIENTES
+                ════════════════════════════════════════════ -->
                 <LinearLayout
                     android:id="@+id/layout_calificaciones_pendientes"
                     android:layout_width="match_parent"
@@ -312,7 +413,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="Calificaciones pendientes"
-                            android:textColor="@color/gray_900"
+                            android:textColor="#1A2F4A"
                             android:textSize="17sp"
                             android:textStyle="bold"/>
 
@@ -324,7 +425,6 @@
                             app:chipBackgroundColor="#FFF3E0"
                             android:textColor="#E65100"
                             android:text="0 pendientes"/>
-
                     </LinearLayout>
 
                     <com.google.android.material.card.MaterialCardView
@@ -332,7 +432,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"
                         app:cardBackgroundColor="#FFF8E1"
-                        app:cardCornerRadius="12dp"
+                        app:cardCornerRadius="14dp"
                         app:cardElevation="0dp"
                         app:strokeColor="#FFE082"
                         app:strokeWidth="1dp">
@@ -359,7 +459,6 @@
                                 android:textColor="#5D4037"
                                 android:textSize="13sp"
                                 android:lineSpacingMultiplier="1.3"/>
-
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
@@ -380,10 +479,12 @@
                     android:layout_marginStart="20dp"
                     android:layout_marginEnd="20dp"
                     android:layout_marginBottom="20dp"
-                    android:background="@color/gray_200"
+                    android:background="#D0ECEC"
                     android:visibility="gone"/>
 
-                <!-- Encabezado sección viajes + chip -->
+                <!-- ════════════════════════════════════════════
+                     ENCABEZADO VIAJES
+                ════════════════════════════════════════════ -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -393,12 +494,18 @@
                     android:paddingEnd="20dp"
                     android:layout_marginBottom="14dp">
 
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/bg_line_teal_rounded"/>
+
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Viajes publicados"
-                        android:textColor="@color/gray_900"
+                        android:textColor="#1A2F4A"
                         android:textSize="17sp"
                         android:textStyle="bold"/>
 
@@ -407,6 +514,8 @@
                         style="@style/Chip.Moviflexx.Status"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        app:chipBackgroundColor="#E0FFFE"
+                        android:textColor="#00868A"
                         android:text="0 activos"/>
                 </LinearLayout>
 
@@ -416,11 +525,11 @@
                     android:layout_width="36dp"
                     android:layout_height="36dp"
                     android:layout_gravity="center_horizontal"
-                    android:indeterminateTint="@color/teal_500"
+                    android:indeterminateTint="#00CED1"
                     android:layout_marginTop="32dp"
                     android:visibility="gone"/>
 
-                <!-- RecyclerView viajes activos -->
+                <!-- RecyclerView viajes -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rv_viajes_activos"
                     android:layout_width="match_parent"
@@ -430,42 +539,39 @@
                     android:clipToPadding="false"
                     android:nestedScrollingEnabled="false"/>
 
-                <!-- Empty State -->
+                <!-- ════════════════════════════════════════════
+                     EMPTY STATE — aquí sí aparece el carro
+                     Solo visible cuando no hay viajes publicados
+                ════════════════════════════════════════════ -->
                 <LinearLayout
                     android:id="@+id/layout_empty"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:gravity="center"
-                    android:paddingTop="56dp"
-                    android:paddingBottom="56dp"
+                    android:paddingTop="32dp"
+                    android:paddingBottom="48dp"
                     android:paddingStart="32dp"
                     android:paddingEnd="32dp"
                     android:visibility="gone">
 
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="90dp"
-                        android:layout_height="90dp"
-                        android:layout_gravity="center"
-                        android:layout_marginBottom="20dp"
-                        app:cardCornerRadius="45dp"
-                        app:cardElevation="0dp"
-                        app:cardBackgroundColor="@color/teal_100"
-                        app:strokeWidth="0dp">
-                        <ImageView
-                            android:layout_width="44dp"
-                            android:layout_height="44dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_car"
-                            android:contentDescription="Sin viajes"/>
-                    </com.google.android.material.card.MaterialCardView>
+                    <!-- Imagen del carro — solo aquí tiene sentido -->
+                    <ImageView
+                        android:layout_width="240dp"
+                        android:layout_height="140dp"
+                        android:src="@drawable/moviflesx"
+                        android:scaleType="fitCenter"
+                        android:adjustViewBounds="true"
+                        android:layout_marginBottom="24dp"
+                        android:alpha="0.85"
+                        android:contentDescription="Sin viajes"/>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="No tienes viajes activos"
-                        android:textColor="@color/gray_900"
-                        android:textSize="17sp"
+                        android:textColor="#1A2F4A"
+                        android:textSize="18sp"
                         android:textStyle="bold"
                         android:gravity="center"
                         android:layout_marginBottom="8dp"/>
@@ -474,10 +580,31 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Publica tu primer viaje y empieza&#10;a conectar con pasajeros"
-                        android:textColor="@color/gray_400"
+                        android:textColor="#7A9BAA"
                         android:textSize="14sp"
                         android:gravity="center"
-                        android:lineSpacingMultiplier="1.4"/>
+                        android:lineSpacingMultiplier="1.4"
+                        android:layout_marginBottom="28dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_publicar_empty"
+                        android:layout_width="220dp"
+                        android:layout_height="52dp"
+                        android:text="Publicar ahora"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.05"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        app:backgroundTint="#00CED1"
+                        app:cornerRadius="26dp"
+                        app:icon="@drawable/ic_add"
+                        app:iconSize="18dp"
+                        app:iconPadding="8dp"
+                        app:iconTint="#FFFFFF"
+                        app:elevation="4dp"
+                        app:rippleColor="#40FFFFFF"/>
 
                 </LinearLayout>
 

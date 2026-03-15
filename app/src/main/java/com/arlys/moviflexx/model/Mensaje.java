@@ -31,9 +31,14 @@ public class Mensaje {
         if (obj == null) return m;
 
         m.id = obj.optLong("idMensaje", obj.optLong("id", obj.optLong("mensajeId", -1)));
-        m.contenido  = obj.optString("mensaje", obj.optString("contenido", obj.optString("message", "")));
-        m.fechaEnvio = obj.optString("fechaEnvio", obj.optString("creadoEn", obj.optString("createdAt", obj.optString("timestamp", ""))));
+        m.contenido  = obj.optString("mensaje",
+                obj.optString("contenido", obj.optString("message", "")));
+        m.fechaEnvio = obj.optString("fechaEnvio",
+                obj.optString("creadoEn",
+                        obj.optString("createdAt",
+                                obj.optString("timestamp", ""))));
 
+        // ── Leer leido del backend — NO forzar nunca ──
         if (obj.has("leido")) {
             try { m.leido = obj.getBoolean("leido"); }
             catch (Exception e) { m.leido = obj.optInt("leido", 0) == 1; }
@@ -47,21 +52,28 @@ public class Mensaje {
 
         JSONObject emisorObj = obj.optJSONObject("emisor");
         if (emisorObj != null) {
-            m.idEmisor     = emisorObj.optInt("id", emisorObj.optInt("idUsuarios", emisorObj.optInt("idUsuario", -1)));
+            m.idEmisor     = emisorObj.optInt("id",
+                    emisorObj.optInt("idUsuarios",
+                            emisorObj.optInt("idUsuario", -1)));
             m.nombreEmisor = emisorObj.optString("nombre", "");
         }
         if (m.idEmisor == -1)
-            m.idEmisor = obj.optInt("idRemitente", obj.optInt("emisorId", obj.optInt("idEmisor", obj.optInt("remitenteId", -1))));
+            m.idEmisor = obj.optInt("idRemitente",
+                    obj.optInt("emisorId",
+                            obj.optInt("idEmisor",
+                                    obj.optInt("remitenteId", -1))));
         if (m.nombreEmisor.isEmpty())
-            m.nombreEmisor = obj.optString("nombreEmisor", obj.optString("nombreRemitente", ""));
+            m.nombreEmisor = obj.optString("nombreEmisor",
+                    obj.optString("nombreRemitente", ""));
 
         m.esPropio = (m.idEmisor == idUsuarioActual && idUsuarioActual != -1);
-        if (m.esPropio) m.leido = true;
+        // ← NO forzar leido=true aquí aunque sea propio
+        // El campo leido real viene del backend y refleja si el CONTACTO lo leyó
 
         return m;
     }
 
-    // Getters
+    // ── Getters ──────────────────────────────────────────────────────────────
     public long    getId()              { return id; }
     public String  getContenido()       { return contenido; }
     public int     getIdEmisor()        { return idEmisor; }
@@ -74,12 +86,12 @@ public class Mensaje {
     public boolean isTipoAudio()        { return tipoAudio; }
     public String  getRutaAudioLocal()  { return rutaAudioLocal; }
 
-    // Setters
+    // ── Setters ──────────────────────────────────────────────────────────────
     public void setId(long v)               { this.id = v; }
-    public void setContenido(String v)      { this.contenido = v; }
+    public void setContenido(String v)      { this.contenido = v != null ? v : ""; }
     public void setIdEmisor(int v)          { this.idEmisor = v; }
-    public void setNombreEmisor(String v)   { this.nombreEmisor = v; }
-    public void setFechaEnvio(String v)     { this.fechaEnvio = v; }
+    public void setNombreEmisor(String v)   { this.nombreEmisor = v != null ? v : ""; }
+    public void setFechaEnvio(String v)     { this.fechaEnvio = v != null ? v : ""; }
     public void setLeido(boolean v)         { this.leido = v; }
     public void setEsPropio(boolean v)      { this.esPropio = v; }
     public void setEnviando(boolean v)      { this.enviando = v; }

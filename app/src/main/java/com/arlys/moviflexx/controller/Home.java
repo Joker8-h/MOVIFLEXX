@@ -12,7 +12,6 @@ import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
-import android.view.animation.OvershootInterpolator;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -24,41 +23,37 @@ import com.arlys.moviflexx.model.OnboardingAdapter;
 
 public class Home extends AppCompatActivity {
 
-    // ── Vistas ────────────────────────────────────────────────────────────
     private ImageView  logoHome;
     private ViewPager2 viewPager;
     private View       dot1, dot2, dot3;
     private View       btnComenzar, shimmerBar;
     private TextView   txtBtnLabel, txtBtnArrow, txtSkip;
 
-    // ── Estado ────────────────────────────────────────────────────────────
-    private int     currentPage  = 0;
-    private boolean isLastPage   = false;
+    private int     currentPage = 0;
+    private boolean isLastPage  = false;
+    private boolean navegando   = false;
 
-    // FIX 1: bandera para bloquear clicks múltiples mientras se navega
-    private boolean navegando = false;
-
-    // ── Timers ────────────────────────────────────────────────────────────
-    private final Handler handler       = new Handler(Looper.getMainLooper());
+    private final Handler handler            = new Handler(Looper.getMainLooper());
     private static final long AUTO_SCROLL_MS = 3500L;
 
-    // ── Animadores ────────────────────────────────────────────────────────
     private ObjectAnimator shimmerAnim;
     private boolean shimmerStarted = false;
 
-    // ─────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════
+    //  LIFECYCLE
+    // ═══════════════════════════════════════════════════════════
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+        // Status bar turquesa — combina con el header del layout
+        getWindow().setStatusBarColor(android.graphics.Color.parseColor("#0ABFA3"));
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
                         View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
 
         setContentView(R.layout.activity_home);
-
 
         bindViews();
         initViewPager();
@@ -66,9 +61,33 @@ public class Home extends AppCompatActivity {
         runEntranceAnimation();
     }
 
-    // ═════════════════════════════════════════════════════════════════════
+    @Override
+    protected void onPause() {
+        super.onPause();
+        handler.removeCallbacks(scrollNext);
+        if (shimmerAnim != null) shimmerAnim.pause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!navegando) {
+            startAutoScroll();
+            if (shimmerAnim != null && shimmerAnim.isPaused()) shimmerAnim.resume();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        handler.removeCallbacks(scrollNext);
+        if (shimmerAnim != null) shimmerAnim.cancel();
+    }
+
+    // ═══════════════════════════════════════════════════════════
     //  BIND
-    // ═════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
+
     private void bindViews() {
         logoHome    = findViewById(R.id.logoHome);
         viewPager   = findViewById(R.id.viewPagerOnboarding);
@@ -82,17 +101,17 @@ public class Home extends AppCompatActivity {
         txtSkip     = findViewById(R.id.txtSkip);
     }
 
-    // ═════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
     //  VIEWPAGER2
-    // ═════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
+
     private void initViewPager() {
         viewPager.setAdapter(new OnboardingAdapter());
         viewPager.setOffscreenPageLimit(1);
         viewPager.setClipToPadding(true);
         viewPager.setClipChildren(true);
-        viewPager.setPageTransformer((page, position) -> {
-            page.setAlpha(position == 0 ? 1f : 0f);
-        });
+        viewPager.setPageTransformer((page, position) ->
+                page.setAlpha(position == 0 ? 1f : 0f));
 
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
@@ -100,9 +119,8 @@ public class Home extends AppCompatActivity {
                 currentPage = pos;
                 isLastPage  = (pos == 2);
                 animateDots(pos);
-                animateBtnLabel(isLastPage ? "INGRESAR" : "SIGUIENTE");
-                // FIX 2: el carrusel siempre se reinicia al cambiar de página,
-                // incluso si el cambio lo hizo el usuario manualmente
+                // Sentence case — más profesional que MAYÚSCULAS
+                animateBtnLabel(isLastPage ? "Ingresar" : "Siguiente");
                 resetAutoScroll();
             }
         });
@@ -110,14 +128,15 @@ public class Home extends AppCompatActivity {
         startAutoScroll();
     }
 
-    // ─── Dots ─────────────────────────────────────────────────────────────
+    // ─── Dots ──────────────────────────────────────────────────
+
     private void animateDots(int active) {
-        View[] dots   = {dot1, dot2, dot3};
-        int tealColor = 0xFF1A2035;
-        int grayColor = 0xFFC0C8D0;
+        View[] dots = {dot1, dot2, dot3};
+        int tealColor = android.graphics.Color.parseColor("#0ABFA3");
+        int grayColor = android.graphics.Color.parseColor("#E5E7EB");
 
         for (int i = 0; i < dots.length; i++) {
-            final int  targetW = dpToPx(i == active ? 28 : 7);
+            final int  targetW = dpToPx(i == active ? 28 : 6);
             final View dot     = dots[i];
             final int  color   = (i == active) ? tealColor : grayColor;
 
@@ -135,13 +154,11 @@ public class Home extends AppCompatActivity {
         }
     }
 
-    // ─── Auto-scroll ──────────────────────────────────────────────────────
+    // ─── Auto-scroll ───────────────────────────────────────────
+
     private final Runnable scrollNext = () -> {
-        // FIX 3: el carrusel sigue aunque estemos en la última página
-        // solo se detiene si ya estamos navegando hacia Login
         if (!navegando) {
-            int next = (currentPage + 1) % 3;
-            viewPager.setCurrentItem(next, true);
+            viewPager.setCurrentItem((currentPage + 1) % 3, true);
         }
     };
 
@@ -151,31 +168,23 @@ public class Home extends AppCompatActivity {
 
     private void resetAutoScroll() {
         handler.removeCallbacks(scrollNext);
-        // Solo reposta si no estamos saliendo de la pantalla
-        if (!navegando) {
-            handler.postDelayed(scrollNext, AUTO_SCROLL_MS);
-        }
+        if (!navegando) handler.postDelayed(scrollNext, AUTO_SCROLL_MS);
     }
 
-    // ═════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
     //  LISTENERS
-    // ═════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
+
     private void initListeners() {
-
         btnComenzar.setOnClickListener(v -> {
-            // FIX 4: si ya se está navegando, ignorar el click completamente
             if (navegando) return;
-
             if (!isLastPage) {
-                // Avanzar slide — el carrusel sigue activo
                 viewPager.setCurrentItem(currentPage + 1, true);
             } else {
-                // Última página → ir al Login
-                // Desactivar el botón inmediatamente para evitar doble click
                 navegando = true;
                 btnComenzar.setEnabled(false);
                 txtSkip.setEnabled(false);
-                handler.removeCallbacks(scrollNext); // detener carrusel solo al salir
+                handler.removeCallbacks(scrollNext);
                 doExitAndNavigate();
             }
         });
@@ -190,62 +199,72 @@ public class Home extends AppCompatActivity {
         });
     }
 
-    // ═════════════════════════════════════════════════════════════════════
-    //  ANIMACIÓN DE ENTRADA
-    // ═════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
+    //  ANIMACIÓN DE ENTRADA — suave y profesional
+    //  Sin OvershootInterpolator exagerado en el logo
+    // ═══════════════════════════════════════════════════════════
+
     private void runEntranceAnimation() {
+        // Estado inicial invisible
         logoHome.setAlpha(0f);
-        logoHome.setScaleX(0.4f);
-        logoHome.setScaleY(0.4f);
-        logoHome.setTranslationY(-20f);
+        logoHome.setTranslationY(-12f);
 
         viewPager.setAlpha(0f);
-        viewPager.setTranslationY(50f);
+        viewPager.setTranslationY(28f);
 
         btnComenzar.setAlpha(0f);
-        btnComenzar.setTranslationY(30f);
-        btnComenzar.setScaleX(0.9f);
+        btnComenzar.setTranslationY(20f);
 
         txtSkip.setAlpha(0f);
-        dot1.setAlpha(0f); dot2.setAlpha(0f); dot3.setAlpha(0f);
+        dot1.setAlpha(0f);
+        dot2.setAlpha(0f);
+        dot3.setAlpha(0f);
 
+        // Logo: fade + slide suave desde arriba
         logoHome.animate()
-                .alpha(1f).scaleX(1f).scaleY(1f).translationY(0f)
-                .setDuration(900)
-                .setInterpolator(new OvershootInterpolator(2.2f))
+                .alpha(1f).translationY(0f)
+                .setDuration(550)
+                .setInterpolator(new DecelerateInterpolator(1.8f))
                 .start();
 
+        // Carrusel
         viewPager.animate()
                 .alpha(1f).translationY(0f)
-                .setDuration(700)
-                .setStartDelay(300)
+                .setDuration(550)
+                .setStartDelay(180)
                 .setInterpolator(new DecelerateInterpolator(1.4f))
                 .start();
 
+        // Dots
         for (View d : new View[]{dot1, dot2, dot3}) {
-            d.animate().alpha(1f).setDuration(300).setStartDelay(700).start();
+            d.animate().alpha(1f).setDuration(300).setStartDelay(420).start();
         }
 
+        // Botón principal
         btnComenzar.animate()
-                .alpha(1f).translationY(0f).scaleX(1f)
-                .setDuration(600)
-                .setStartDelay(850)
-                .setInterpolator(new OvershootInterpolator(1.6f))
+                .alpha(1f).translationY(0f)
+                .setDuration(480)
+                .setStartDelay(520)
+                .setInterpolator(new DecelerateInterpolator(1.6f))
                 .withEndAction(() -> {
                     startShimmer();
                     startArrowOscillation();
-                    startButtonPulse();
                     startLogoFloat();
                 })
                 .start();
 
+        // Skip
         txtSkip.animate()
-                .alpha(1f).setDuration(400).setStartDelay(1100).start();
+                .alpha(1f)
+                .setDuration(350)
+                .setStartDelay(700)
+                .start();
     }
 
-    // ═════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
     //  SHIMMER
-    // ═════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
+
     private void startShimmer() {
         if (shimmerStarted) return;
         shimmerStarted = true;
@@ -256,31 +275,32 @@ public class Home extends AppCompatActivity {
 
             shimmerAnim = ObjectAnimator.ofFloat(shimmerBar, "translationX",
                     -barW, btnW + barW);
-            shimmerAnim.setDuration(1600);
+            shimmerAnim.setDuration(1800);
             shimmerAnim.setInterpolator(new LinearInterpolator());
             shimmerAnim.setRepeatCount(ObjectAnimator.INFINITE);
             shimmerAnim.setRepeatMode(ObjectAnimator.RESTART);
-            shimmerAnim.setStartDelay(1800);
+            shimmerAnim.setStartDelay(2000);
             shimmerAnim.start();
 
             shimmerAnim.addListener(new android.animation.AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationRepeat(android.animation.Animator a) {
-                    a.setStartDelay(1800);
+                    a.setStartDelay(2000);
                 }
             });
         });
     }
 
-    // ─── Flecha oscila ────────────────────────────────────────────────────
+    // ─── Flecha oscila ─────────────────────────────────────────
+
     private void startArrowOscillation() {
         Runnable oscillate = new Runnable() {
             boolean right = true;
             @Override public void run() {
                 if (isFinishing() || isDestroyed()) return;
                 txtBtnArrow.animate()
-                        .translationX(right ? 9f : 0f)
-                        .setDuration(550)
+                        .translationX(right ? 7f : 0f)
+                        .setDuration(600)
                         .setInterpolator(new AccelerateDecelerateInterpolator())
                         .withEndAction(() -> { right = !right; run(); })
                         .start();
@@ -289,33 +309,16 @@ public class Home extends AppCompatActivity {
         oscillate.run();
     }
 
-    // ─── Pulso botón ──────────────────────────────────────────────────────
-    private void startButtonPulse() {
-        Runnable pulse = new Runnable() {
-            boolean grow = true;
-            @Override public void run() {
-                if (isFinishing() || isDestroyed()) return;
-                btnComenzar.animate()
-                        .scaleX(grow ? 1.025f : 1f)
-                        .scaleY(grow ? 1.025f : 1f)
-                        .setDuration(900)
-                        .setInterpolator(new AccelerateDecelerateInterpolator())
-                        .withEndAction(() -> { grow = !grow; run(); })
-                        .start();
-            }
-        };
-        pulse.run();
-    }
+    // ─── Logo flota suavemente ─────────────────────────────────
 
-    // ─── Logo flota ───────────────────────────────────────────────────────
     private void startLogoFloat() {
         Runnable floater = new Runnable() {
             boolean up = true;
             @Override public void run() {
                 if (isFinishing() || isDestroyed()) return;
                 logoHome.animate()
-                        .translationY(up ? -6f : 0f)
-                        .setDuration(1800)
+                        .translationY(up ? -5f : 0f)
+                        .setDuration(2000)
                         .setInterpolator(new AccelerateDecelerateInterpolator())
                         .withEndAction(() -> { up = !up; run(); })
                         .start();
@@ -324,66 +327,36 @@ public class Home extends AppCompatActivity {
         floater.run();
     }
 
-    // ═════════════════════════════════════════════════════════════════════
-    //  CAMBIO DE TEXTO DEL BOTÓN
-    // ═════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
+    //  TEXTO DEL BOTÓN
+    // ═══════════════════════════════════════════════════════════
+
     private void animateBtnLabel(String newLabel) {
-        txtBtnLabel.animate().alpha(0f).setDuration(120)
+        txtBtnLabel.animate().alpha(0f).setDuration(100)
                 .withEndAction(() -> {
                     txtBtnLabel.setText(newLabel);
-                    txtBtnLabel.animate().alpha(1f).setDuration(160).start();
+                    txtBtnLabel.animate().alpha(1f).setDuration(150).start();
                 }).start();
     }
 
-    // ═════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
     //  NAVEGACIÓN
-    // ═════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
+
     private void doExitAndNavigate() {
-        btnComenzar.animate().scaleX(0.91f).scaleY(0.91f).setDuration(90)
-                .withEndAction(() ->
-                        btnComenzar.animate().scaleX(1f).scaleY(1f).setDuration(90)
-                                .withEndAction(() ->
-                                        getWindow().getDecorView()
-                                                .animate().alpha(0f).setDuration(320)
-                                                .withEndAction(() -> {
-                                                    startActivity(new Intent(Home.this, Login.class));
-                                                    overridePendingTransition(
-                                                            android.R.anim.fade_in,
-                                                            android.R.anim.fade_out);
-                                                    finish();
-                                                }).start()
-                                ).start()
-                ).start();
+        getWindow().getDecorView()
+                .animate().alpha(0f).setDuration(280)
+                .withEndAction(() -> {
+                    startActivity(new Intent(Home.this, Login.class));
+                    overridePendingTransition(
+                            android.R.anim.fade_in,
+                            android.R.anim.fade_out);
+                    finish();
+                }).start();
     }
 
-    // ═════════════════════════════════════════════════════════════════════
-    //  LIFECYCLE
-    // ═════════════════════════════════════════════════════════════════════
-    @Override
-    protected void onPause() {
-        super.onPause();
-        handler.removeCallbacks(scrollNext);
-        if (shimmerAnim != null) shimmerAnim.pause();
-    }
+    // ─── Util ──────────────────────────────────────────────────
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Solo reanudar carrusel si no estamos navegando hacia Login
-        if (!navegando) {
-            startAutoScroll();
-            if (shimmerAnim != null && shimmerAnim.isPaused()) shimmerAnim.resume();
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        handler.removeCallbacks(scrollNext);
-        if (shimmerAnim != null) shimmerAnim.cancel();
-    }
-
-    // ── Util ──────────────────────────────────────────────────────────────
     private int dpToPx(int dp) {
         return Math.round(dp * getResources().getDisplayMetrics().density);
     }

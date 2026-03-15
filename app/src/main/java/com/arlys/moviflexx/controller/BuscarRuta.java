@@ -204,7 +204,7 @@ public class BuscarRuta extends AppCompatActivity {
                 ? editParada.getText().toString().trim() : "";
 
         if (parada.isEmpty()) {
-            mostrarSnackbar("✏️ Escribe dónde quieres subir o bajar", true);
+            mostrarSnackbar(" Escribe dónde quieres subir o bajar", true);
             return;
         }
         if (miUbicacion == null) {
@@ -343,12 +343,12 @@ public class BuscarRuta extends AppCompatActivity {
         setTxt(view, R.id.txt_destino_conductor, "🏁 " + destino);
         setTxt(view, R.id.txt_distancia_ruta,    String.format("%.1f km", distanciaKm));
         setTxt(view, R.id.txt_duracion_ruta,     String.format("%.0f min", duracionMin));
-        setTxt(view, R.id.txt_vehiculo,          tipo.equals("motorcycle") ? "🏍 Moto" : "🚗 Carro");
+        setTxt(view, R.id.txt_vehiculo,          tipo.equals("motorcycle") ? "Moto" : "Carro");
 
         if (costo > 0)
             setTxt(view, R.id.txt_costo_ruta, String.format("$%,.0f COP", costo));
         if (asientos > 0)
-            setTxt(view, R.id.txt_asientos, "🪑 " + asientos + " cupos");
+            setTxt(view, R.id.txt_asientos, "" + asientos + " cupos");
         if (!hora.isEmpty()) {
             String horaCorta = hora.replace("T", " ");
             if (horaCorta.length() > 16) horaCorta = horaCorta.substring(0, 16);

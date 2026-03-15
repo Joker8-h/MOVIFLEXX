@@ -4,89 +4,121 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8F9FA">
+    android:background="#F0FAFA">
 
-    <!-- HEADER blanco con borde inferior -->
+    <!-- ════════════════════════════════════════════════════
+         HEADER — teal sólido
+    ════════════════════════════════════════════════════ -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#FFFFFF"
-        android:paddingStart="20dp"
-        android:paddingEnd="20dp"
-        android:paddingTop="48dp"
-        android:paddingBottom="16dp">
+        android:background="#00CED1"
+        android:elevation="4dp">
 
-        <LinearLayout
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:clipChildren="false">
 
-            <ImageView
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:src="@drawable/ic_arrow_back"
-                android:padding="8dp"
-                android:layout_marginEnd="12dp"
-                android:id="@+id/btnBack"
-                android:contentDescription="Volver"
-                android:background="@drawable/bg_icon_circle_gray"/>
+            <View
+                android:layout_width="130dp"
+                android:layout_height="130dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="-30dp"
+                android:layout_marginEnd="-30dp"
+                android:alpha="0.15"
+                android:background="@drawable/bg_glow_circle_teal"
+                android:clickable="false"/>
 
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="22dp"
+                android:paddingTop="36dp"
+                android:paddingEnd="22dp"
+                android:paddingBottom="22dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Mis Vehículos"
-                    android:textColor="#1A1A2E"
-                    android:textSize="22sp"
-                    android:textStyle="bold"/>
+                <FrameLayout
+                    android:id="@+id/btnBack"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:layout_marginEnd="14dp"
+                    android:background="@drawable/bg_icon_circle_white_alpha"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="Volver"
+                        android:src="@drawable/ic_arrow_back"
+                        app:tint="#FFFFFF"/>
+                </FrameLayout>
 
-                <TextView
-                    android:id="@+id/txtContadorVehiculos"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="Cargando..."
-                    android:textColor="#9CA3AF"
-                    android:textSize="13sp"
-                    android:layout_marginTop="2dp"/>
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="MOVIFLEX"
+                        android:textColor="#CCFFFE"
+                        android:textSize="10sp"
+                        android:letterSpacing="0.18"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mis Vehículos"
+                        android:textColor="#FFFFFF"
+                        android:textSize="22sp"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/txtContadorVehiculos"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Cargando..."
+                        android:textColor="#CCFFFE"
+                        android:textSize="12sp"
+                        android:layout_marginTop="2dp"/>
+                </LinearLayout>
+
+                <FrameLayout
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/bg_icon_circle_white_alpha">
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_car"
+                        app:tint="#FFFFFF"
+                        android:contentDescription="Vehículos"/>
+                </FrameLayout>
+
             </LinearLayout>
-
-            <!-- Ícono decorativo morado suave -->
-            <ImageView
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:src="@drawable/ic_car"
-                android:padding="9dp"
-                android:background="@drawable/bg_icon_circle_purple"
-                android:contentDescription="Vehículos"/>
-        </LinearLayout>
+        </FrameLayout>
     </LinearLayout>
-
-    <!-- Borde inferior del header -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#F3F4F6"
-        android:layout_marginTop="112dp"/>
 
     <!-- LISTA -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerVehiculos"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="113dp"
+        android:layout_marginTop="130dp"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingTop="16dp"
-        android:paddingBottom="80dp"
+        android:paddingBottom="100dp"
         android:clipToPadding="false"
-        android:background="#F8F9FA"/>
+        android:background="#F0FAFA"/>
 
     <!-- EMPTY STATE -->
     <LinearLayout
@@ -95,36 +127,44 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:gravity="center"
-        android:layout_marginTop="113dp"
+        android:layout_marginTop="130dp"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp"
         android:visibility="gone"
-        android:background="#F8F9FA">
+        android:background="#F0FAFA">
 
         <ImageView
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:src="@drawable/ic_car"
+            android:layout_width="200dp"
+            android:layout_height="120dp"
+            android:src="@drawable/moviflesx"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:alpha="0.7"
+            android:layout_gravity="center"
+            android:layout_marginBottom="20dp"
             android:contentDescription="Sin vehículos"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Sin vehículos registrados"
-            android:textColor="#6B7280"
-            android:textSize="16sp"
+            android:textColor="#1A2F4A"
+            android:textSize="18sp"
             android:textStyle="bold"
-            android:layout_marginTop="16dp"/>
+            android:gravity="center"
+            android:layout_marginBottom="8dp"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Agrega tu vehículo para publicar viajes"
-            android:textColor="#9CA3AF"
+            android:text="Agrega tu vehículo para&#10;publicar viajes"
+            android:textColor="#7A9BAA"
             android:textSize="13sp"
             android:gravity="center"
-            android:layout_marginTop="6dp"/>
+            android:lineSpacingMultiplier="1.4"/>
     </LinearLayout>
 
-    <!-- FAB turquesa -->
+    <!-- FAB teal -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAgregarVehiculo"
         android:layout_width="wrap_content"
@@ -132,9 +172,9 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="20dp"
         android:src="@drawable/ic_add"
-        app:backgroundTint="#2EC4B6"
+        app:backgroundTint="#00CED1"
         app:tint="#FFFFFF"
-        app:elevation="6dp"
+        app:elevation="8dp"
         android:contentDescription="Agregar vehículo"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

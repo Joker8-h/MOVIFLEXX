@@ -9,6 +9,8 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+
+
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -51,9 +53,14 @@ public class HomeConductor extends BaseActivity {
     private TextView txtNombreConductor;
 
     // ── Acciones rápidas ──────────────────────────────────────────────────────
-    private MaterialButton   btnPublicarViaje;
+    private android.widget.FrameLayout btnPublicarViaje;
     private MaterialCardView btnMisRutas;
     private MaterialCardView btnMisVehiculos;
+
+    private Handler  pollingPagosHandler;
+    private Runnable pollingPagosRunnable;
+    private int      pollingViajeId = -1;
+
 
 
 
@@ -63,6 +70,8 @@ public class HomeConductor extends BaseActivity {
     private Chip                            chipCalificacionesPendientes;
     private RecyclerView                    rvCalificacionesPendientes;
     private CalificacionesPendientesAdapter adapterCalificaciones;
+
+    private int viajeActivoId = -1;
     private final List<PasajeroPendiente>   listaPendientes = new ArrayList<>();
 
     private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh;
@@ -158,6 +167,10 @@ public class HomeConductor extends BaseActivity {
             calificacionPendienteVerificada = true;
             new Handler(Looper.getMainLooper()).postDelayed(
                     this::verificarCalificacionesPendientes, 1500);
+
+            if (viajeActivoId > 0 && adapter != null) {
+                adapter.iniciarPollingPagosConductor(viajeActivoId);
+            }
         }
     }
 
@@ -165,6 +178,7 @@ public class HomeConductor extends BaseActivity {
     protected void onPause() {
         super.onPause();
         calificacionPendienteVerificada = false;
+        if (adapter != null) adapter.detenerPollingPagosConductor();
     }
 
     // =========================================================================
@@ -177,7 +191,7 @@ public class HomeConductor extends BaseActivity {
         chipTotal                      = findViewById(R.id.chip_total);
         txtBienvenida                  = findViewById(R.id.txt_bienvenida);
         txtNombreConductor             = findViewById(R.id.txt_nombre_conductor);
-        btnPublicarViaje               = findViewById(R.id.btn_publicar_viaje);
+        btnPublicarViaje = findViewById(R.id.btn_publicar_viaje);
         btnMisRutas                    = findViewById(R.id.btn_mis_rutas);
         btnMisVehiculos                = findViewById(R.id.btn_mis_vehiculos);
         layoutCalificacionesPendientes = findViewById(R.id.layout_calificaciones_pendientes);
@@ -203,6 +217,30 @@ public class HomeConductor extends BaseActivity {
             if (nombre != null && !nombre.isEmpty())
                 txtNombreConductor.setText(nombre);
         }
+
+        // ── Foto de perfil en el avatar del header ──
+        String fotoUrl = session.getFotoPerfil();
+        android.widget.ImageView ivAvatar = findViewById(R.id.iv_avatar_header);
+        android.widget.TextView  tvInicial = findViewById(R.id.tv_inicial_avatar);
+        com.google.android.material.card.MaterialCardView cardFoto =
+                findViewById(R.id.card_avatar_foto_header);
+        com.google.android.material.card.MaterialCardView cardInicial =
+                findViewById(R.id.card_avatar_inicial_header);
+
+        if (ivAvatar != null && !fotoUrl.isEmpty() && !fotoUrl.equals("null")) {
+            if (cardFoto    != null) cardFoto.setVisibility(View.VISIBLE);
+            if (cardInicial != null) cardInicial.setVisibility(View.GONE);
+            com.bumptech.glide.Glide.with(this)
+                    .load(fotoUrl)
+                    .circleCrop()
+                    .placeholder(R.drawable.logomo)
+                    .error(R.drawable.logomo)
+                    .into(ivAvatar);
+        } else {
+            if (cardFoto    != null) cardFoto.setVisibility(View.GONE);
+            if (cardInicial != null) cardInicial.setVisibility(View.VISIBLE);
+            // la inicial ya la muestra el XML con el logomo
+        }
     }
 
     private void configurarRecyclers() {
@@ -222,7 +260,7 @@ public class HomeConductor extends BaseActivity {
 
     private void configurarBotones() {
         if (btnPublicarViaje != null)
-            animateButton(btnPublicarViaje, () -> goTo(PublicarRuta.class, Transition.SLIDE));
+            btnPublicarViaje.setOnClickListener(v -> goTo(PublicarRuta.class, Transition.SLIDE));
         if (btnMisRutas != null)
             animateButton(btnMisRutas, () -> goTo(MisRutasActivity.class, Transition.SLIDE));
         if (btnMisVehiculos != null)
@@ -284,10 +322,10 @@ public class HomeConductor extends BaseActivity {
                     if (viajeActivo == null) {
                         runOnUiThread(() ->
                                 new android.app.AlertDialog.Builder(this)
-                                        .setTitle("🚗 Sin viaje activo")
+                                        .setTitle("Sin viaje activo")
                                         .setMessage("Primero debes publicar e iniciar un viaje para acceder al mapa.")
                                         .setCancelable(true)
-                                        .setPositiveButton("📋 Publicar viaje", (d, w) -> goTo(PublicarRuta.class, Transition.SLIDE))
+                                        .setPositiveButton("Publicar viaje", (d, w) -> goTo(PublicarRuta.class, Transition.SLIDE))
                                         .setNegativeButton("Cancelar", null)
                                         .show()
                         );
@@ -517,6 +555,10 @@ public class HomeConductor extends BaseActivity {
                                 || estado.equals("EN_CURSO")
                                 || estado.equals("INICIADO");
                         if (esActivo) viajes.add(viaje);
+                        if (viajeActivoId == -1 &&
+                                (estado.equals("EN_CURSO") || estado.equals("INICIADO"))) {
+                            viajeActivoId = viaje.optInt("idViajes", viaje.optInt("id", -1));
+                        }
                     }
                     adapter.notifyDataSetChanged();
                     actualizarContadorViajes();
@@ -525,6 +567,11 @@ public class HomeConductor extends BaseActivity {
                         layoutEmpty.setVisibility(vacio ? View.VISIBLE : View.GONE);
                     if (rvViajes != null)
                         rvViajes.setVisibility(vacio ? View.GONE : View.VISIBLE);
+                    if (viajeActivoId > 0) {
+                        adapter.iniciarPollingPagosConductor(viajeActivoId);
+                    } else {
+                        adapter.detenerPollingPagosConductor();
+                    }
                 },
                 error -> {
                     mostrarCargando(false);
@@ -543,6 +590,8 @@ public class HomeConductor extends BaseActivity {
         if (progress    != null) progress.setVisibility(cargando ? View.VISIBLE : View.GONE);
         if (layoutEmpty != null && cargando) layoutEmpty.setVisibility(View.GONE);
     }
+
+
 
     // =========================================================================
     //  CALIFICACIONES PENDIENTES

@@ -684,12 +684,12 @@ public class PublicarRuta extends BaseActivity {
         dibujarRutaEnMapa(ruta, true);
         rePinMarkers();
         map.invalidate();
-        String vehiculo = tipoTransporte.equals("motorcycle") ? "🏍 Moto" : "🚗 Carro";
+        String vehiculo = tipoTransporte.equals("motorcycle") ? "🏍 Moto" : " Carro";
         StringBuilder info = new StringBuilder();
         info.append(ruta.tipo).append("  ·  ").append(vehiculo).append("\n");
-        info.append(String.format("📏 %.1f km  ·  ⏱ %.0f min", ruta.distancia, ruta.duracion));
+        info.append(String.format(" %.1f km  ·  ⏱ %.0f min", ruta.distancia, ruta.duracion));
         if (ruta.fuelCostCop > 0)
-            info.append(String.format("  ·  ⛽ %.2f L  ·  💰 $%,.0f", ruta.fuelLiters, ruta.fuelCostCop));
+            info.append(String.format("  ·   %.2f L  ·   $%,.0f", ruta.fuelLiters, ruta.fuelCostCop));
         txtInfoRuta.setText(info.toString());
         ajustarVistaRuta(ruta);
     }

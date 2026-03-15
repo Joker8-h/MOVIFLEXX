@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/fondomoviflexx">
 
-    <!-- ─── Partículas burbuja de fondo (tu custom view) ─── -->
+    <!-- ─── Partículas burbuja de fondo ─── -->
     <com.arlys.moviflexx.views.BubbleView
         android:id="@+id/bubbleView"
         android:layout_width="match_parent"
@@ -15,7 +15,7 @@
         android:clickable="false"
         android:focusable="false"/>
 
-    <!-- ─── Capa de aura glow superior izquierda ─── -->
+    <!-- ─── Aura glow superior izquierda ─── -->
     <View
         android:layout_width="260dp"
         android:layout_height="260dp"
@@ -57,7 +57,36 @@
             android:scaleType="fitCenter"
             android:src="@drawable/logomo" />
 
-        <!-- ── VIEWPAGER2: carrusel de slides ── -->
+        <!-- ── NOMBRE DE LA APP ── -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="MOVIFLEX"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#2EC4B6"
+            android:fontFamily="sans-serif-black"
+            android:letterSpacing="0.15"
+            android:layout_marginTop="-8dp"
+            android:elevation="8dp"
+            android:shadowColor="#402EC4B6"
+            android:shadowDx="0"
+            android:shadowDy="4"
+            android:shadowRadius="12"/>
+
+        <!-- ── ILUSTRACIÓN FIJA DEL CARRO ── -->
+        <ImageView
+            android:id="@+id/imgIlustracion"
+            android:layout_width="match_parent"
+            android:layout_height="160dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginHorizontal="24dp"
+            android:src="@drawable/moviflesx"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:elevation="6dp"
+            android:contentDescription="MoviFlexx ilustración" />
+        <!-- ── VIEWPAGER2: carrusel solo con texto y pills ── -->
         <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/viewPagerOnboarding"
             android:layout_width="match_parent"
@@ -102,6 +131,7 @@
                     android:layout_height="7dp"
                     android:layout_marginHorizontal="4dp"
                     android:background="@drawable/dot_inactive"/>
+
             </LinearLayout>
 
             <!-- ══ BOTÓN SHIMMER PRINCIPAL ══ -->
@@ -161,6 +191,7 @@
                         android:textSize="28sp"
                         android:fontFamily="sans-serif-light"
                         android:clickable="false"/>
+
                 </LinearLayout>
             </FrameLayout>
 

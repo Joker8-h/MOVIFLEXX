@@ -41,6 +41,15 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".controller.ResumenViajeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".controller.VerificarOtp"
+            android:exported="false" />
+        <activity
+            android:name=".controller.EmailVerificacion"
+            android:exported="false" />
+        <activity
             android:name=".controller.PagoActivity"
             android:exported="false" />
         <activity
