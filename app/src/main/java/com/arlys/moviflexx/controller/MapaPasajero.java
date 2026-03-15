@@ -38,9 +38,14 @@ import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
 
+import io.socket.client.IO;
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -99,6 +104,10 @@ public class MapaPasajero extends AppCompatActivity {
 
     // ── Session ──────────────────────────────────────────────────────────────
     private SessionManager session;
+
+    // 🔥 Socket.io
+    private Socket mSocket;
+    private boolean isSocketConnected = false;
 
     // =========================================================================
     //  LIFECYCLE
@@ -176,6 +185,11 @@ public class MapaPasajero extends AppCompatActivity {
 
         // ── Polling GPS conductor ─────────────────────────────────────────────
         arrancarPollingConductor();
+
+        // 🔥 Conectar al socket
+        if (idViaje > 0) {
+            inicializarSocket();
+        }
     }
 
     @Override
@@ -190,12 +204,14 @@ public class MapaPasajero extends AppCompatActivity {
         super.onPause();
         map.onPause();
         if (rPoll != null) hPoll.removeCallbacks(rPoll);
+        desconectarSocket();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         if (rPoll != null) hPoll.removeCallbacks(rPoll);
+        desconectarSocket();
     }
 
     // =========================================================================
@@ -522,13 +538,16 @@ public class MapaPasajero extends AppCompatActivity {
     // =========================================================================
 
     private void arrancarPollingConductor() {
+        // Malla de seguridad: el polling solo actúa si el socket está desconectado
         rPoll = new Runnable() {
             @Override public void run() {
-                fetchUbicacionConductor();
-                hPoll.postDelayed(this, 2000);
+                if (!isSocketConnected) {
+                    fetchUbicacionConductor();
+                }
+                hPoll.postDelayed(this, 3000);
             }
         };
-        hPoll.postDelayed(rPoll, 800);
+        hPoll.postDelayed(rPoll, 2000);
     }
 
     private void fetchUbicacionConductor() {
@@ -798,6 +817,72 @@ public class MapaPasajero extends AppCompatActivity {
         } catch (Exception e) {
             Log.w(TAG, "osrmParsear: " + e.getMessage());
             return null;
+        }
+    }
+
+    // =========================================================================
+    //  SOCKET.IO LOGIC
+    // =========================================================================
+
+    private void inicializarSocket() {
+        try {
+            IO.Options options = new IO.Options();
+            options.query = "token=" + session.getToken();
+            
+            mSocket = IO.socket(Constantes.BASE_URL, options);
+            
+            mSocket.on(Socket.EVENT_CONNECT, args -> {
+                Log.d(TAG, "Socket Conectado");
+                isSocketConnected = true;
+                
+                // Unirse a la sala del viaje
+                JSONObject joinData = new JSONObject();
+                try {
+                    joinData.put("idViaje", idViaje);
+                    mSocket.emit("join_trip", joinData);
+                } catch (Exception e) { e.printStackTrace(); }
+            });
+
+            mSocket.on(Socket.EVENT_DISCONNECT, args -> {
+                Log.d(TAG, "Socket Desconectado");
+                isSocketConnected = false;
+            });
+
+            // Escuchar actualizaciones de la ubicación del conductor
+            mSocket.on("location_updated", args -> {
+                if (args.length > 0) {
+                    JSONObject data = (JSONObject) args[0];
+                    double lat = data.optDouble("lat");
+                    double lng = data.optDouble("lng");
+                    final GeoPoint nuevaPos = new GeoPoint(lat, lng);
+                    
+                    runOnUiThread(() -> {
+                        animarMarcadorConductor(nuevaPos);
+                        actualizarLineaNaranja(nuevaPos);
+                        verificarRecogidaPorConductor(nuevaPos);
+                    });
+                    calcularEtaConductor(nuevaPos);
+                }
+            });
+
+            mSocket.connect();
+            
+        } catch (URISyntaxException e) {
+            Log.e(TAG, "Error inicializando socket: " + e.getMessage());
+        }
+    }
+
+    private void desconectarSocket() {
+        if (mSocket != null) {
+            JSONObject leaveData = new JSONObject();
+            try {
+                leaveData.put("idViaje", idViaje);
+                mSocket.emit("leave_trip", leaveData);
+            } catch (Exception e) {}
+            
+            mSocket.disconnect();
+            mSocket.off();
+            mSocket = null;
         }
     }
 

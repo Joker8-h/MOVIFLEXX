@@ -1,12 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    item_conversacion.xml — Rediseño Moviflexx
-    ✓ Solo teal #1AB99F — CERO morados
-    ✓ Avatar: color único por inicial, paleta teal/verde/naranja
-    ✓ Nombre bold, preview gris, hora teal si no leídos
-    ✓ Badge teal vibrante
-    ✓ Divisor muy sutil
--->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -25,27 +17,55 @@
         android:paddingEnd="14dp"
         android:background="?attr/selectableItemBackground">
 
-        <!-- Avatar 50dp — color por inicial, NO morado -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardAvatar"
+        <!-- ════════════════════════════════════════
+             AVATAR — foto real o inicial de fallback
+        ════════════════════════════════════════ -->
+        <FrameLayout
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:layout_marginEnd="14dp"
-            app:cardCornerRadius="25dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#1AB99F"
-            app:strokeWidth="0dp">
+            android:layout_marginEnd="14dp">
 
-            <TextView
-                android:id="@+id/txtInicialAvatar"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:text="?"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:gravity="center"/>
-        </com.google.android.material.card.MaterialCardView>
+            <!-- Card con inicial (visible por defecto) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardAvatar"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                app:cardCornerRadius="25dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#1AB99F"
+                app:strokeWidth="0dp">
+
+                <TextView
+                    android:id="@+id/txtInicialAvatar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="?"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:gravity="center"/>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card con foto real de Cloudinary (oculta por defecto) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardAvatarFoto"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:visibility="gone"
+                app:cardCornerRadius="25dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#E0F7FA"
+                app:strokeWidth="1.5dp">
+
+                <ImageView
+                    android:id="@+id/ivAvatarFoto"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="Foto de perfil"/>
+            </com.google.android.material.card.MaterialCardView>
+
+        </FrameLayout>
 
         <!-- Nombre + preview -->
         <LinearLayout
@@ -72,7 +92,6 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
 
-                <!-- Ticks para mensajes propios -->
                 <TextView
                     android:id="@+id/txtTicks"
                     android:layout_width="wrap_content"
@@ -118,7 +137,6 @@
                 android:layout_height="0dp"
                 android:layout_weight="1"/>
 
-            <!-- Badge no leídos — teal vibrante -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/badgeItem"
                 android:layout_width="wrap_content"
@@ -146,7 +164,7 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Divisor muy sutil -->
+    <!-- Divisor sutil -->
     <View
         android:layout_width="match_parent"
         android:layout_height="0.6dp"

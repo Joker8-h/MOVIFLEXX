@@ -4,57 +4,94 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#E8F8F8">
+    android:background="#F0FAFA">
 
-    <!-- HEADER -->
+    <!-- ══════════════════════════════════════════════════════
+         HEADER — mismo teal sólido
+    ══════════════════════════════════════════════════════ -->
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="#00897B"
-        android:paddingStart="20dp"
-        android:paddingEnd="20dp"
-        android:paddingTop="28dp"
-        android:paddingBottom="20dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        app:layout_constraintTop_toTopOf="parent"
+        android:background="#00CED1"
+        android:orientation="vertical"
+        android:paddingStart="22dp"
+        android:paddingTop="36dp"
+        android:paddingEnd="22dp"
+        android:paddingBottom="24dp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="parent">
 
-        <LinearLayout
-            android:layout_width="0dp"
+        <!-- Blob decorativo -->
+        <FrameLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:clipChildren="false">
 
-            <TextView
-                android:text="Mis Reservas"
-                android:textColor="#FFFFFF"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+            <View
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="-40dp"
+                android:layout_marginEnd="-40dp"
+                android:alpha="0.15"
+                android:background="@drawable/bg_glow_circle_teal"
+                android:clickable="false"/>
 
-            <TextView
-                android:text="Historial de tus viajes reservados"
-                android:textColor="#B2DFDB"
-                android:textSize="13sp"
-                android:layout_marginTop="2dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-        </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-        <ProgressBar
-            android:id="@+id/loader_mis_reservas"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:visibility="gone"
-            android:indeterminateTint="#FFFFFF"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="MOVIFLEX"
+                        android:textColor="#CCFFFE"
+                        android:textSize="10sp"
+                        android:letterSpacing="0.18"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mis Reservas"
+                        android:textColor="#FFFFFF"
+                        android:textSize="26sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="-0.01"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Historial de tus viajes reservados"
+                        android:textColor="#CCFFFE"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+
+                <!-- Loader -->
+                <ProgressBar
+                    android:id="@+id/loader_mis_reservas"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:indeterminateTint="#FFFFFF"
+                    android:visibility="gone"/>
+            </LinearLayout>
+        </FrameLayout>
+
     </LinearLayout>
 
-    <!-- SCROLL PRINCIPAL -->
+    <!-- ══════════════════════════════════════════════════════
+         SCROLL PRINCIPAL
+    ══════════════════════════════════════════════════════ -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -67,88 +104,109 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!--
-            layout_root_mis_reservas → requerido por mostrarBannerBloqueo()
-            para insertar el banner dinámico al tope.
-        -->
         <LinearLayout
             android:id="@+id/layout_root_mis_reservas"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="14dp">
+            android:padding="16dp">
 
-            <!-- ══════════════════════════════════════════════════════════════
-                 BANNER DE BLOQUEO (visible cuando el pasajero ya tiene
-                 una reserva activa — lo gestiona actualizarEstadoBusqueda())
-                 ══════════════════════════════════════════════════════════════ -->
+            <!-- ══════════════════════════════════════════════
+                 BANNER BLOQUEO — naranja advertencia
+            ══════════════════════════════════════════════ -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/layout_bloqueo_busqueda"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
+                android:layout_marginBottom="14dp"
                 android:visibility="gone"
-                app:cardCornerRadius="14dp"
-                app:cardElevation="3dp"
-                app:cardBackgroundColor="#FFF3E0">
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#FFF3E0"
+                app:strokeColor="#FFB74D"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
                     android:padding="16dp">
 
-                    <TextView
-                        android:text="🔒 Búsqueda bloqueada"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="#E65100"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
+                    <!-- Ícono advertencia -->
+                    <FrameLayout
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="14dp"
+                        android:background="@drawable/bg_icon_circle_white_alpha">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:text="🔒"
+                            android:textSize="18sp"/>
+                    </FrameLayout>
 
-                    <TextView
-                        android:id="@+id/txt_bloqueo_busqueda"
-                        android:text="Ya tienes un viaje activo. Una vez que el conductor finalice el viaje podrás buscar uno nuevo."
-                        android:textSize="13sp"
-                        android:textColor="#BF360C"
-                        android:layout_marginTop="4dp"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"/>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:text="Búsqueda bloqueada"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="#E65100"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+
+                        <TextView
+                            android:id="@+id/txt_bloqueo_busqueda"
+                            android:text="Ya tienes un viaje activo. Una vez que el conductor finalice podrás buscar uno nuevo."
+                            android:textSize="12sp"
+                            android:textColor="#BF360C"
+                            android:layout_marginTop="3dp"
+                            android:lineSpacingMultiplier="1.3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"/>
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ══════════════════════════════════════════════════════════════
+            <!-- ══════════════════════════════════════════════
                  CARD: BUSCAR VIAJE
-                 ══════════════════════════════════════════════════════════════ -->
+            ══════════════════════════════════════════════ -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_publicar_ruta"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="14dp"
+                android:layout_marginBottom="16dp"
                 app:cardCornerRadius="20dp"
-                app:cardElevation="6dp"
-                app:cardBackgroundColor="#FFFFFF">
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="#FFFFFF"
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="18dp">
+                    android:padding="20dp">
 
-                    <!-- Título -->
+                    <!-- Título sección -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="14dp">
+                        android:layout_marginBottom="16dp">
 
-                        <TextView
-                            android:text="🔍"
-                            android:textSize="22sp"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="10dp"/>
+                        <!-- Barra acento teal -->
+                        <View
+                            android:layout_width="4dp"
+                            android:layout_height="28dp"
+                            android:layout_marginEnd="12dp"
+                            android:background="@drawable/bg_line_teal_rounded"/>
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -160,14 +218,14 @@
                                 android:text="Busca tu ruta"
                                 android:textSize="16sp"
                                 android:textStyle="bold"
-                                android:textColor="#004D40"
+                                android:textColor="#1A2F4A"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"/>
 
                             <TextView
-                                android:text="Te mostramos conductores que pasan cerca de ti"
+                                android:text="Conductores que pasan cerca de ti"
                                 android:textSize="12sp"
-                                android:textColor="#90A4AE"
+                                android:textColor="#7A9BAA"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"/>
                         </LinearLayout>
@@ -183,22 +241,21 @@
                         app:boxCornerRadiusTopEnd="12dp"
                         app:boxCornerRadiusBottomStart="12dp"
                         app:boxCornerRadiusBottomEnd="12dp"
-                        app:boxStrokeColor="#00897B"
-                        app:hintTextColor="#00897B"
-                        app:startIconDrawable="@null">
+                        app:boxStrokeColor="#00CED1"
+                        app:hintTextColor="#00CED1">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/edit_origen_pasajero"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="📍 ¿Desde dónde sales?"
+                            android:hint="¿Desde dónde sales?"
                             android:textSize="14sp"
-                            android:textColor="#004D40"
+                            android:textColor="#1A2F4A"
                             android:inputType="textPostalAddress"
                             android:imeOptions="actionNext"/>
                     </com.google.android.material.textfield.TextInputLayout>
 
-                    <!-- Indicador GPS -->
+                    <!-- GPS status -->
                     <LinearLayout
                         android:id="@+id/layout_gps_status"
                         android:layout_width="match_parent"
@@ -206,21 +263,20 @@
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:paddingStart="4dp"
-                        android:paddingBottom="8dp"
-                        android:visibility="visible">
+                        android:paddingBottom="8dp">
 
                         <ProgressBar
                             android:id="@+id/progress_gps"
                             android:layout_width="14dp"
                             android:layout_height="14dp"
-                            android:indeterminateTint="#00897B"
+                            android:indeterminateTint="#00CED1"
                             android:layout_marginEnd="6dp"/>
 
                         <TextView
                             android:id="@+id/txt_gps_status"
                             android:text="Obteniendo tu ubicación GPS..."
                             android:textSize="11sp"
-                            android:textColor="#80897B"
+                            android:textColor="#7A9BAA"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"/>
                     </LinearLayout>
@@ -234,7 +290,7 @@
                         <View
                             android:layout_width="2dp"
                             android:layout_height="14dp"
-                            android:background="#B2DFDB"/>
+                            android:background="#A0E0DC"/>
                     </LinearLayout>
 
                     <!-- Campo DESTINO -->
@@ -254,18 +310,14 @@
                             android:id="@+id/edit_destino_pasajero"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="🏁 ¿A dónde vas? "
+                            android:hint="¿A dónde vas?"
                             android:textSize="14sp"
-                            android:textColor="#004D40"
+                            android:textColor="#1A2F4A"
                             android:inputType="textPostalAddress"
                             android:imeOptions="actionSearch"/>
                     </com.google.android.material.textfield.TextInputLayout>
 
-                    <!-- ══════════════════════════════════════════════════════
-                         SUGERENCIAS AUTOCOMPLETE DESTINO
-                         (layout_sugerencias_destino → requerido por
-                          buscarSugerenciasNominatim / mostrarSugerencias)
-                         ══════════════════════════════════════════════════════ -->
+                    <!-- Sugerencias autocomplete -->
                     <LinearLayout
                         android:id="@+id/layout_sugerencias_destino"
                         android:layout_width="match_parent"
@@ -276,80 +328,107 @@
                         android:visibility="gone"
                         android:layout_marginBottom="8dp"/>
 
-                    <!-- Botón buscar -->
+                    <!-- Botón buscar — teal sólido igual a "GUARDAR CAMBIOS" web -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_buscar_viajes"
-                        android:text="🔍  Buscar viajes disponibles"
                         android:layout_width="match_parent"
                         android:layout_height="52dp"
+                        android:layout_marginTop="8dp"
+                        android:text="Buscar viajes disponibles"
                         android:textColor="#FFFFFF"
                         android:textStyle="bold"
                         android:textSize="14sp"
+                        android:letterSpacing="0.04"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        app:backgroundTint="#00CED1"
                         app:cornerRadius="14dp"
-                        app:backgroundTint="#00897B"/>
+                        app:icon="@drawable/ic_menu_compass"
+                        app:iconSize="18dp"
+                        app:iconPadding="8dp"
+                        app:iconTint="#FFFFFF"
+                        app:elevation="4dp"
+                        app:rippleColor="#40FFFFFF"/>
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ESTADO: BUSCANDO -->
+            <!-- ══════════════════════════════════════════════
+                 ESTADO: BUSCANDO
+            ══════════════════════════════════════════════ -->
             <LinearLayout
                 android:id="@+id/layout_buscando"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:padding="24dp"
+                android:padding="32dp"
                 android:visibility="gone">
 
-                <ProgressBar
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:indeterminateTint="#00897B"/>
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:layout_gravity="center"
+                    android:layout_marginBottom="16dp"
+                    app:cardCornerRadius="36dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="#E0FFFE"
+                    app:strokeWidth="0dp">
+
+                    <ProgressBar
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_gravity="center"
+                        android:indeterminateTint="#00CED1"/>
+                </com.google.android.material.card.MaterialCardView>
 
                 <TextView
                     android:text="Buscando conductores cerca de tu ruta..."
                     android:textSize="14sp"
-                    android:textColor="#546E7A"
+                    android:textColor="#7A9BAA"
                     android:gravity="center"
-                    android:layout_marginTop="12dp"
+                    android:lineSpacingMultiplier="1.3"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"/>
             </LinearLayout>
 
-            <!-- LABEL: VIAJES ENCONTRADOS -->
+            <!-- ══════════════════════════════════════════════
+                 LABEL: VIAJES ENCONTRADOS
+            ══════════════════════════════════════════════ -->
             <LinearLayout
                 android:id="@+id/layout_label_resultados"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="10dp"
+                android:layout_marginBottom="12dp"
                 android:visibility="gone">
 
                 <View
                     android:layout_width="4dp"
-                    android:layout_height="20dp"
-                    android:background="#00897B"
-                    android:layout_marginEnd="10dp"/>
+                    android:layout_height="22dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@drawable/bg_line_teal_rounded"/>
 
                 <TextView
                     android:id="@+id/txt_label_resultados"
                     android:text="Conductores que pasan cerca de ti"
                     android:textSize="15sp"
                     android:textStyle="bold"
-                    android:textColor="#004D40"
+                    android:textColor="#1A2F4A"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"/>
 
+                <!-- Chip contador — teal consistente -->
                 <TextView
                     android:id="@+id/txt_contador_resultados"
                     android:text="0"
-                    android:textSize="13sp"
+                    android:textSize="12sp"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
-                    android:paddingStart="10dp"
-                    android:paddingEnd="10dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp"
                     android:background="@drawable/bg_chip_teal"
@@ -357,55 +436,50 @@
                     android:layout_height="wrap_content"/>
             </LinearLayout>
 
-            <!-- MAPA -->
+            <!-- ══════════════════════════════════════════════
+                 MAPA
+            ══════════════════════════════════════════════ -->
             <LinearLayout
                 android:id="@+id/card_mapa_busqueda"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginBottom="14dp"
+                android:layout_marginBottom="16dp"
                 android:visibility="gone">
 
+                <!-- Encabezado mapa -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:paddingStart="4dp"
-                    android:paddingEnd="4dp"
-                    android:paddingBottom="8dp">
+                    android:layout_marginBottom="8dp">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="20dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/bg_line_teal_rounded"/>
 
                     <TextView
-                        android:text="🗺️"
-                        android:textSize="16sp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp"/>
-
-                    <TextView
-                        android:text="Rutas de los conductores disponibles"
-                        android:textSize="13sp"
+                        android:text="Rutas de conductores disponibles"
+                        android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="#004D40"
+                        android:textColor="#1A2F4A"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"/>
-
-                    <TextView
-                        android:text="📍 Tu ubicación"
-                        android:textSize="11sp"
-                        android:textColor="#00897B"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
                 </LinearLayout>
 
+                <!-- Card mapa con borde teal -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="16dp"
-                    app:cardElevation="4dp"
-                    app:strokeColor="#B2DFDB"
-                    app:strokeWidth="1dp">
+                    app:cardElevation="3dp"
+                    app:strokeColor="#A0E0DC"
+                    app:strokeWidth="1dp"
+                    app:cardBackgroundColor="#FFFFFF">
 
                     <org.osmdroid.views.MapView
                         android:id="@+id/map_busqueda"
@@ -414,6 +488,7 @@
 
                 </com.google.android.material.card.MaterialCardView>
 
+                <!-- Leyenda mapa -->
                 <LinearLayout
                     android:id="@+id/layout_leyenda_mapa"
                     android:layout_width="match_parent"
@@ -425,7 +500,7 @@
                     <TextView
                         android:text="Rutas: "
                         android:textSize="11sp"
-                        android:textColor="#546E7A"
+                        android:textColor="#7A9BAA"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"/>
 
@@ -451,20 +526,22 @@
                     <TextView
                         android:text="Toca una tarjeta para ver detalles"
                         android:textSize="11sp"
-                        android:textColor="#90A4AE"
+                        android:textColor="#7A9BAA"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"/>
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- RESULTADOS: VIAJES CONDUCTOR -->
+            <!-- Resultados viajes conductor -->
             <LinearLayout
                 android:id="@+id/layout_resultados_viajes"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"/>
 
-            <!-- ESTADO: SIN RESULTADOS DE BÚSQUEDA -->
+            <!-- ══════════════════════════════════════════════
+                 ESTADO: SIN RESULTADOS
+            ══════════════════════════════════════════════ -->
             <LinearLayout
                 android:id="@+id/layout_vacio"
                 android:layout_width="match_parent"
@@ -474,21 +551,26 @@
                 android:padding="32dp"
                 android:visibility="gone">
 
-                <TextView
-                    android:text="😔"
-                    android:textSize="56sp"
-                    android:gravity="center"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
+                <!-- Imagen del carro — aparece cuando no hay resultados -->
+                <ImageView
+                    android:layout_width="200dp"
+                    android:layout_height="120dp"
+                    android:src="@drawable/moviflesx"
+                    android:scaleType="fitCenter"
+                    android:adjustViewBounds="true"
+                    android:alpha="0.7"
+                    android:layout_gravity="center"
+                    android:layout_marginBottom="16dp"
+                    android:contentDescription="Sin viajes"/>
 
                 <TextView
                     android:id="@+id/txt_vacio"
                     android:text="No encontramos viajes"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    android:textColor="#004D40"
+                    android:textColor="#1A2F4A"
                     android:gravity="center"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="8dp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"/>
 
@@ -496,25 +578,25 @@
                     android:id="@+id/txt_vacio_sub"
                     android:text="No hay conductores que pasen cerca de tu zona"
                     android:textSize="14sp"
-                    android:textColor="#90A4AE"
+                    android:textColor="#7A9BAA"
                     android:gravity="center"
-                    android:layout_marginTop="8dp"
+                    android:lineSpacingMultiplier="1.4"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"/>
 
-                <!-- Requerido por el Java aunque no se muestre visualmente -->
+                <!-- Requerido por Java -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_buscar_desde_vacio"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:visibility="gone"
-                    app:backgroundTint="#00897B"/>
+                    app:backgroundTint="#00CED1"/>
 
             </LinearLayout>
 
-            <!-- ══════════════════════════════════════════════════════════════
+            <!-- ══════════════════════════════════════════════
                  MIS RESERVAS ACTIVAS
-                 ══════════════════════════════════════════════════════════════ -->
+            ══════════════════════════════════════════════ -->
             <LinearLayout
                 android:id="@+id/layout_label_mis_reservas"
                 android:layout_width="match_parent"
@@ -522,20 +604,20 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:layout_marginTop="8dp"
-                android:layout_marginBottom="8dp"
+                android:layout_marginBottom="10dp"
                 android:visibility="gone">
 
                 <View
                     android:layout_width="4dp"
-                    android:layout_height="20dp"
-                    android:background="#0097A7"
-                    android:layout_marginEnd="10dp"/>
+                    android:layout_height="22dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@drawable/bg_line_teal_rounded"/>
 
                 <TextView
                     android:text="Tus reservas activas"
                     android:textSize="15sp"
                     android:textStyle="bold"
-                    android:textColor="#004D40"
+                    android:textColor="#1A2F4A"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"/>
             </LinearLayout>

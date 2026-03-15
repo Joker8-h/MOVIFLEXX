@@ -74,10 +74,10 @@ public class RutasAdapter extends RecyclerView.Adapter<RutasAdapter.RutaViewHold
         }
 
         StringBuilder meta = new StringBuilder();
-        if (!distancia.isEmpty()) meta.append("📏 ").append(distancia);
+        if (!distancia.isEmpty()) meta.append(" ").append(distancia);
         if (!duracion.isEmpty())  meta.append(meta.length() > 0 ? "  ·  " : "").append("⏱ ").append(duracion);
-        if (!tipo.isEmpty())      meta.append(meta.length() > 0 ? "  ·  " : "").append("🚘 ").append(tipo);
-        h.txtMeta.setText(meta.length() > 0 ? meta.toString() : "📋 Ruta #" + idRuta);
+        if (!tipo.isEmpty())      meta.append(meta.length() > 0 ? "  ·  " : "").append(" ").append(tipo);
+        h.txtMeta.setText(meta.length() > 0 ? meta.toString() : " Ruta #" + idRuta);
 
         // ── CLICK: mostrar viajes de esta ruta ────────────────────────────────
         h.itemView.setOnClickListener(v ->
@@ -301,8 +301,8 @@ public class RutasAdapter extends RecyclerView.Adapter<RutasAdapter.RutaViewHold
 
         TextView txtPrecio = new TextView(context);
         txtPrecio.setText(precio > 0
-                ? String.format(Locale.getDefault(), "💰 $%,.0f", precio)
-                : "💰 Sin precio");
+                ? String.format(Locale.getDefault(), " $%,.0f", precio)
+                : " Sin precio");
         txtPrecio.setTextSize(13f);
         txtPrecio.setTypeface(null, Typeface.BOLD);
         txtPrecio.setTextColor(Color.parseColor("#1A2035"));
@@ -350,8 +350,8 @@ public class RutasAdapter extends RecyclerView.Adapter<RutasAdapter.RutaViewHold
             case "DISPONIBLE":  return "✅ Publicado";
             case "PROGRAMADO":  return "📅 Programado";
             case "EN_CURSO":
-            case "INICIADO":    return "🚗 En curso";
-            case "FINALIZADO":  return "🏁 Finalizado";
+            case "INICIADO":    return "En curso";
+            case "FINALIZADO":  return "Finalizado";
             case "CANCELADO":   return "❌ Cancelado";
             default:            return "📌 " + e;
         }

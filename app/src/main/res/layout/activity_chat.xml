@@ -33,17 +33,56 @@
             android:scaleType="center"
             android:src="@drawable/ic_arrow_back"/>
 
-        <TextView
-            android:id="@+id/tvAvatarHeader"
+        <!-- ════════════════════════════════════════════
+             AVATAR — foto real o inicial de fallback
+        ════════════════════════════════════════════ -->
+        <FrameLayout
             android:layout_width="42dp"
             android:layout_height="42dp"
-            android:layout_marginStart="10dp"
-            android:gravity="center"
-            android:text="C"
-            android:textSize="17sp"
-            android:textStyle="bold"
-            android:textColor="#1AB99F"
-            android:background="@drawable/bg_circle_teal_dark"/>
+            android:layout_marginStart="10dp">
+
+            <!-- Inicial (visible por defecto) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_mi_inicial_chat"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                app:cardBackgroundColor="@android:color/transparent"
+                app:cardCornerRadius="21dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
+
+                <TextView
+                    android:id="@+id/tvAvatarHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="C"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:textColor="#1AB99F"
+                    android:background="@drawable/bg_circle_teal_dark"/>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Foto real Cloudinary (oculta por defecto) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_mi_foto_chat"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:visibility="gone"
+                app:cardCornerRadius="21dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#FFFFFF"
+                app:strokeWidth="1.5dp">
+
+                <ImageView
+                    android:id="@+id/iv_mi_foto_chat"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="Mi foto de perfil"/>
+            </com.google.android.material.card.MaterialCardView>
+
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="0dp"
@@ -173,11 +212,7 @@
         </HorizontalScrollView>
     </LinearLayout>
 
-    <!-- ═══════════════════════════════════════════════════════════════════════
-         PANEL GRABACIÓN ESTILO WHATSAPP
-         Visible solo mientras se mantiene presionado el botón de audio.
-         Muestra: punto rojo | contador | "◀ Desliza para cancelar"
-         ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- PANEL GRABACIÓN ESTILO WHATSAPP -->
     <LinearLayout
         android:id="@+id/panelGrabacion"
         android:layout_width="match_parent"
@@ -190,7 +225,6 @@
         android:elevation="6dp"
         android:visibility="gone">
 
-        <!-- Punto rojo parpadeante -->
         <View
             android:id="@+id/dotGrabando"
             android:layout_width="10dp"
@@ -198,7 +232,6 @@
             android:background="@drawable/circle_offline"
             android:layout_marginEnd="10dp"/>
 
-        <!-- Contador: 0:00, 0:01... -->
         <TextView
             android:id="@+id/tvTiempoGrabacion"
             android:layout_width="wrap_content"
@@ -209,7 +242,6 @@
             android:textColor="#E53935"
             android:layout_marginEnd="20dp"/>
 
-        <!-- Hint deslizar para cancelar -->
         <TextView
             android:id="@+id/tvDeslizarCancelar"
             android:layout_width="0dp"
@@ -235,7 +267,6 @@
         android:paddingBottom="9dp"
         android:elevation="6dp">
 
-        <!-- Botón micrófono -->
         <ImageButton
             android:id="@+id/btnAudio"
             android:layout_width="44dp"
@@ -279,7 +310,6 @@
                 android:background="@null"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Botón enviar -->
         <ImageButton
             android:id="@+id/btnEnviar"
             android:layout_width="44dp"

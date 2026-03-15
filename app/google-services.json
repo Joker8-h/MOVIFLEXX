@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "790399875967-krnedplrj7elib17leak4qiq8ilvo7b2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.arlys.moviflexx",
+            "certificate_hash": "b30bbab8f59f59f41dac2b16783a964d37758153"
+          }
+        },
+        {
           "client_id": "790399875967-98gm9b7b68ij886jmj8qlmhjbbiv2rir.apps.googleusercontent.com",
           "client_type": 3
         }

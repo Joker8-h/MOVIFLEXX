@@ -8,17 +8,16 @@
     android:background="@drawable/bg_bottom_sheet_rounded"
     android:paddingBottom="16dp">
 
-    <!-- Handle bar -->
+    <!-- Handle -->
     <View
         android:layout_width="40dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="10dp"
         android:layout_marginBottom="6dp"
-        android:background="#DDDDDD"
-        android:backgroundTint="#CCCCCC"/>
+        android:background="@drawable/bg_handle_gray"/>
 
-    <!-- Header: avatar + texto de la notif -->
+    <!-- Header: avatar + texto -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -36,7 +35,7 @@
             android:layout_marginEnd="12dp"
             app:cardCornerRadius="24dp"
             app:cardElevation="0dp"
-            app:cardBackgroundColor="#12A89D"
+            app:cardBackgroundColor="#00CED1"
             app:strokeWidth="0dp">
             <TextView
                 android:id="@+id/bs_tv_inicial"
@@ -55,20 +54,19 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Carlos te envió un mensaje"
-            android:textColor="#1C1E21"
+            android:textColor="#1A2F4A"
             android:textSize="14sp"
             android:maxLines="2"
             android:ellipsize="end"/>
     </LinearLayout>
 
-    <!-- Divisor -->
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#E4E6EB"
+        android:background="#EEF5F5"
         android:layout_marginBottom="4dp"/>
 
-    <!-- Opción: Marcar como leída / no leída -->
+    <!-- Opción: Marcar leída -->
     <LinearLayout
         android:id="@+id/bs_opcion_leida"
         android:layout_width="match_parent"
@@ -81,33 +79,30 @@
         android:clickable="true"
         android:focusable="true">
 
-        <com.google.android.material.card.MaterialCardView
+        <FrameLayout
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginEnd="14dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#F0F2F5"
-            app:strokeWidth="0dp">
+            android:background="@drawable/bg_icon_circle_teal_light">
             <ImageView
                 android:id="@+id/bs_icon_leida"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:src="@drawable/ic_check_circle"
                 android:padding="10dp"
-                app:tint="#1C1E21"/>
-        </com.google.android.material.card.MaterialCardView>
+                app:tint="#00CED1"/>
+        </FrameLayout>
 
         <TextView
             android:id="@+id/bs_texto_leida"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Marcar como leída"
-            android:textColor="#1C1E21"
+            android:textColor="#1A2F4A"
             android:textSize="15sp"/>
     </LinearLayout>
 
-    <!-- Opción: Abrir destino (viaje/chat según tipo) -->
+    <!-- Opción: Abrir destino -->
     <LinearLayout
         android:id="@+id/bs_opcion_abrir"
         android:layout_width="match_parent"
@@ -120,33 +115,30 @@
         android:clickable="true"
         android:focusable="true">
 
-        <com.google.android.material.card.MaterialCardView
+        <FrameLayout
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginEnd="14dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#F0F2F5"
-            app:strokeWidth="0dp">
+            android:background="@drawable/bg_icon_circle_teal_light">
             <ImageView
                 android:id="@+id/bs_icon_abrir"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:src="@drawable/ic_directions_car"
                 android:padding="10dp"
-                app:tint="#1C1E21"/>
-        </com.google.android.material.card.MaterialCardView>
+                app:tint="#00CED1"/>
+        </FrameLayout>
 
         <TextView
             android:id="@+id/bs_texto_abrir"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Ver viaje"
-            android:textColor="#1C1E21"
+            android:textColor="#1A2F4A"
             android:textSize="15sp"/>
     </LinearLayout>
 
-    <!-- Opción: Eliminar notificación -->
+    <!-- Opción: Eliminar -->
     <LinearLayout
         android:id="@+id/bs_opcion_eliminar"
         android:layout_width="match_parent"
@@ -159,21 +151,18 @@
         android:clickable="true"
         android:focusable="true">
 
-        <com.google.android.material.card.MaterialCardView
+        <FrameLayout
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginEnd="14dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#FFF0F0"
-            app:strokeWidth="0dp">
+            android:background="@drawable/bg_icon_circle_red_light">
             <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:src="@drawable/ic_delete"
                 android:padding="10dp"
                 app:tint="#D32F2F"/>
-        </com.google.android.material.card.MaterialCardView>
+        </FrameLayout>
 
         <TextView
             android:layout_width="wrap_content"
@@ -183,7 +172,7 @@
             android:textSize="15sp"/>
     </LinearLayout>
 
-    <!-- Opción: Desactivar este tipo de notificaciones -->
+    <!-- Opción: Desactivar -->
     <LinearLayout
         android:id="@+id/bs_opcion_desactivar"
         android:layout_width="match_parent"
@@ -196,21 +185,18 @@
         android:clickable="true"
         android:focusable="true">
 
-        <com.google.android.material.card.MaterialCardView
+        <FrameLayout
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginEnd="14dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#F0F2F5"
-            app:strokeWidth="0dp">
+            android:background="@drawable/bg_icon_circle_teal_light">
             <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:src="@drawable/ic_notifications_off"
                 android:padding="10dp"
-                app:tint="#1C1E21"/>
-        </com.google.android.material.card.MaterialCardView>
+                app:tint="#00CED1"/>
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -221,14 +207,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Desactivar notificaciones de mensajes"
-                android:textColor="#1C1E21"
+                android:textColor="#1A2F4A"
                 android:textSize="15sp"/>
             <TextView
                 android:id="@+id/bs_subtexto_desactivar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Ya no recibirás avisos de este tipo"
-                android:textColor="#65676B"
+                android:textColor="#7A9BAA"
                 android:textSize="12sp"/>
         </LinearLayout>
     </LinearLayout>

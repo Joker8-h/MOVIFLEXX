@@ -43,10 +43,7 @@ public class MisVehiculosActivity extends AppCompatActivity {
         if (btnBack != null) btnBack.setOnClickListener(v -> onBackPressed());
 
         // FAB agregar vehículo
-        View fab = findViewById(R.id.fabAgregarVehiculo);
-        if (fab != null)
-            fab.setOnClickListener(v ->
-                    startActivity(new android.content.Intent(this, RegistrarVehiculo.class)));
+
 
         recycler.setLayoutManager(new LinearLayoutManager(this));
         adapter = new VehiculosAdapter(this, vehiculos);

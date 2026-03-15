@@ -1,11 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-╔══════════════════════════════════════════════════════════╗
-  bottom_sheet_calificar.xml  —  MoviFlexx Premium
-  Paleta: Azul oscuro #1A2035 · Turquesa #3DCFC7 · Blanco #FFFFFF · Gris #F4F6F9
-  Inspirado en la captura real (imagen 2): limpio, espacioso, profesional
-╚══════════════════════════════════════════════════════════╝
--->
 <androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -20,7 +13,7 @@
         android:background="@drawable/bg_sheet_white"
         android:paddingBottom="32dp">
 
-        <!-- HANDLE -->
+        <!-- Handle -->
         <View
             android:layout_width="40dp"
             android:layout_height="4dp"
@@ -29,9 +22,7 @@
             android:layout_marginBottom="4dp"
             android:background="@drawable/bg_handle_gray"/>
 
-        <!-- ════════════════════════════════════════
-             TÍTULO
-        ════════════════════════════════════════ -->
+        <!-- Título -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -42,13 +33,17 @@
             android:paddingTop="16dp"
             android:paddingBottom="4dp">
 
-            <TextView
+            <FrameLayout
                 android:layout_width="34dp"
                 android:layout_height="34dp"
-                android:gravity="center"
-                android:text="⭐"
-                android:textSize="18sp"
-                android:background="@drawable/bg_icon_circle_teal_sm"/>
+                android:background="@drawable/bg_icon_circle_teal_sm">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="⭐"
+                    android:textSize="16sp"/>
+            </FrameLayout>
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -63,33 +58,29 @@
                     android:layout_height="wrap_content"
                     android:text="Califica a tu pasajero"
                     android:textSize="17sp"
-                    android:textColor="#1A2035"
-                    android:textStyle="bold"
-                    android:fontFamily="sans-serif-medium"/>
+                    android:textColor="#1A2F4A"
+                    android:textStyle="bold"/>
 
                 <TextView
                     android:id="@+id/txtSubtituloSheet"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="¿Cómo fue tu experiencia con carlos?"
+                    android:text="¿Cómo fue tu experiencia?"
                     android:textSize="12sp"
-                    android:textColor="#9CA3AF"
-                    android:fontFamily="sans-serif"/>
+                    android:textColor="#7A9BAA"/>
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Línea divisora -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#F1F5F9"
+            android:background="#EEF5F5"
             android:layout_marginTop="16dp"
-            android:layout_marginHorizontal="22dp"/>
+            android:layout_marginStart="22dp"
+            android:layout_marginEnd="22dp"/>
 
-        <!-- ════════════════════════════════════════
-             ESTRELLAS
-        ════════════════════════════════════════ -->
+        <!-- Estrellas -->
         <LinearLayout
             android:id="@+id/layoutEstrellas"
             android:layout_width="wrap_content"
@@ -103,47 +94,27 @@
             android:padding="4dp">
 
             <ImageView android:id="@+id/star1"
-                android:layout_width="54dp" android:layout_height="54dp"
-                android:layout_margin="3dp"
-                android:src="@drawable/ic_star_empty_navy"
-                android:scaleType="centerInside"
-                android:contentDescription="1 estrella"
-                android:background="@android:color/transparent"/>
-
+                android:layout_width="54dp" android:layout_height="54dp" android:layout_margin="3dp"
+                android:src="@drawable/ic_star_empty_navy" android:scaleType="centerInside"
+                android:contentDescription="1 estrella" android:background="@android:color/transparent"/>
             <ImageView android:id="@+id/star2"
-                android:layout_width="54dp" android:layout_height="54dp"
-                android:layout_margin="3dp"
-                android:src="@drawable/ic_star_empty_navy"
-                android:scaleType="centerInside"
-                android:contentDescription="2 estrellas"
-                android:background="@android:color/transparent"/>
-
+                android:layout_width="54dp" android:layout_height="54dp" android:layout_margin="3dp"
+                android:src="@drawable/ic_star_empty_navy" android:scaleType="centerInside"
+                android:contentDescription="2 estrellas" android:background="@android:color/transparent"/>
             <ImageView android:id="@+id/star3"
-                android:layout_width="54dp" android:layout_height="54dp"
-                android:layout_margin="3dp"
-                android:src="@drawable/ic_star_empty_navy"
-                android:scaleType="centerInside"
-                android:contentDescription="3 estrellas"
-                android:background="@android:color/transparent"/>
-
+                android:layout_width="54dp" android:layout_height="54dp" android:layout_margin="3dp"
+                android:src="@drawable/ic_star_empty_navy" android:scaleType="centerInside"
+                android:contentDescription="3 estrellas" android:background="@android:color/transparent"/>
             <ImageView android:id="@+id/star4"
-                android:layout_width="54dp" android:layout_height="54dp"
-                android:layout_margin="3dp"
-                android:src="@drawable/ic_star_empty_navy"
-                android:scaleType="centerInside"
-                android:contentDescription="4 estrellas"
-                android:background="@android:color/transparent"/>
-
+                android:layout_width="54dp" android:layout_height="54dp" android:layout_margin="3dp"
+                android:src="@drawable/ic_star_empty_navy" android:scaleType="centerInside"
+                android:contentDescription="4 estrellas" android:background="@android:color/transparent"/>
             <ImageView android:id="@+id/star5"
-                android:layout_width="54dp" android:layout_height="54dp"
-                android:layout_margin="3dp"
-                android:src="@drawable/ic_star_empty_navy"
-                android:scaleType="centerInside"
-                android:contentDescription="5 estrellas"
-                android:background="@android:color/transparent"/>
+                android:layout_width="54dp" android:layout_height="54dp" android:layout_margin="3dp"
+                android:src="@drawable/ic_star_empty_navy" android:scaleType="centerInside"
+                android:contentDescription="5 estrellas" android:background="@android:color/transparent"/>
         </LinearLayout>
 
-        <!-- Etiqueta puntaje (ej: "😊 Bueno") -->
         <TextView
             android:id="@+id/txtEtiquetaPuntuacion"
             android:layout_width="wrap_content"
@@ -153,23 +124,20 @@
             android:layout_marginBottom="8dp"
             android:text=""
             android:textSize="14sp"
-            android:textColor="#3DCFC7"
+            android:textColor="#00CED1"
             android:textStyle="bold"
-            android:fontFamily="sans-serif-medium"
             android:gravity="center"
             android:minWidth="160dp"/>
 
-        <!-- Línea divisora suave -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#F1F5F9"
-            android:layout_marginHorizontal="22dp"
+            android:background="#EEF5F5"
+            android:layout_marginStart="22dp"
+            android:layout_marginEnd="22dp"
             android:layout_marginBottom="14dp"/>
 
-        <!-- ════════════════════════════════════════
-             SUGERENCIAS RÁPIDAS (chips)
-        ════════════════════════════════════════ -->
+        <!-- Sugerencias -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -177,9 +145,7 @@
             android:layout_marginBottom="8dp"
             android:text="💬  Sugerencias rápidas"
             android:textSize="12sp"
-            android:textColor="#9CA3AF"
-            android:fontFamily="sans-serif-medium"
-            android:visibility="visible"/>
+            android:textColor="#7A9BAA"/>
 
         <HorizontalScrollView
             android:id="@+id/scrollChips"
@@ -191,7 +157,6 @@
             android:scrollbars="none"
             android:visibility="gone"
             android:alpha="0">
-
             <LinearLayout
                 android:id="@+id/layoutChips"
                 android:layout_width="wrap_content"
@@ -200,9 +165,7 @@
                 android:gravity="center_vertical"/>
         </HorizontalScrollView>
 
-        <!-- ════════════════════════════════════════
-             COMENTARIO
-        ════════════════════════════════════════ -->
+        <!-- Comentario -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -210,56 +173,42 @@
             android:layout_marginBottom="6dp"
             android:text="Comentario (opcional)"
             android:textSize="12sp"
-            android:textColor="#6B7280"
-            android:fontFamily="sans-serif-medium"/>
+            android:textColor="#7A9BAA"/>
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilComentario"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
             android:hint="Escribe algo sobre tu experiencia..."
-            app:boxCornerRadiusTopStart="14dp"
-            app:boxCornerRadiusTopEnd="14dp"
-            app:boxCornerRadiusBottomStart="14dp"
-            app:boxCornerRadiusBottomEnd="14dp"
-            app:boxStrokeColor="#E5E7EB"
-            app:boxStrokeWidth="1.5dp"
-            app:boxBackgroundColor="#F9FAFB"
-            app:hintTextColor="#9CA3AF"
-            app:counterEnabled="true"
-            app:counterMaxLength="200">
-
+            app:boxCornerRadiusTopStart="14dp" app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp" app:boxCornerRadiusBottomEnd="14dp"
+            app:boxStrokeColor="#D0ECEC" app:boxStrokeWidth="1.5dp"
+            app:boxBackgroundColor="#F9FAFB" app:hintTextColor="#7A9BAA"
+            app:counterEnabled="true" app:counterMaxLength="200">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etComentario"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minLines="3"
-                android:maxLines="5"
-                android:maxLength="200"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:minLines="3" android:maxLines="5" android:maxLength="200"
                 android:inputType="textMultiLine|textCapSentences"
-                android:textSize="14sp"
-                android:textColor="#1A2035"
-                android:padding="14dp"
-                android:gravity="top"
-                android:fontFamily="sans-serif"
+                android:textSize="14sp" android:textColor="#1A2F4A"
+                android:padding="14dp" android:gravity="top"
                 android:background="@android:color/transparent"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- ════════════════════════════════════════
-             BOTÓN ENVIAR PRINCIPAL (ancho completo, teal)
-        ════════════════════════════════════════ -->
+        <!-- Botón enviar -->
         <Button
             android:id="@+id/btnEnviarCalificacion"
             android:layout_width="match_parent"
             android:layout_height="54dp"
-            android:layout_marginHorizontal="20dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
             android:layout_marginTop="20dp"
             android:text="⭐  ENVIAR CALIFICACIÓN"
             android:textSize="14sp"
             android:textColor="#FFFFFF"
-            android:fontFamily="sans-serif-medium"
             android:letterSpacing="0.04"
             android:enabled="false"
             android:alpha="0.4"
@@ -268,7 +217,6 @@
             android:insetTop="0dp"
             android:insetBottom="0dp"/>
 
-        <!-- Botón Ahora no (texto centrado, discreto) -->
         <TextView
             android:id="@+id/btnOmitir"
             android:layout_width="wrap_content"
@@ -277,18 +225,12 @@
             android:layout_marginTop="12dp"
             android:text="Ahora no"
             android:textSize="13sp"
-            android:textColor="#9CA3AF"
-            android:fontFamily="sans-serif"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:clickable="true"
-            android:focusable="true"/>
+            android:textColor="#7A9BAA"
+            android:paddingTop="6dp" android:paddingBottom="6dp"
+            android:paddingStart="16dp" android:paddingEnd="16dp"
+            android:clickable="true" android:focusable="true"/>
 
-        <!-- ════════════════════════════════════════
-             PANEL ÉXITO (oculto)
-        ════════════════════════════════════════ -->
+        <!-- Panel éxito -->
         <LinearLayout
             android:id="@+id/layoutExito"
             android:layout_width="match_parent"
@@ -298,26 +240,23 @@
             android:paddingTop="4dp"
             android:visibility="gone"
             android:alpha="0">
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="🎉  ¡Calificación enviada!"
                 android:textSize="17sp"
-                android:textColor="#3DCFC7"
-                android:fontFamily="sans-serif-medium"
+                android:textColor="#00CED1"
+                android:textStyle="bold"
                 android:gravity="center"/>
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="Gracias por mejorar la comunidad MoviFlexx"
+                android:text="Gracias por mejorar la comunidad MoviFlex"
                 android:textSize="12sp"
-                android:textColor="#9CA3AF"
+                android:textColor="#7A9BAA"
                 android:gravity="center"/>
         </LinearLayout>
 
     </LinearLayout>
-
 </androidx.core.widget.NestedScrollView>

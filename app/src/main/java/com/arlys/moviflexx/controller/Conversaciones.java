@@ -29,6 +29,8 @@ import com.arlys.moviflexx.model.Constantes;
 import com.arlys.moviflexx.model.Conversacion;
 import com.arlys.moviflexx.model.ConversacionAdapter;
 import com.arlys.moviflexx.model.SessionManager;
+import com.bumptech.glide.Glide;
+import com.google.android.material.card.MaterialCardView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -57,11 +59,14 @@ public class Conversaciones extends AppCompatActivity {
     private TextView chipNoLeidos;
     private TextView chipFavoritos;
 
-    // Header — notificaciones
-    private FrameLayout btnNotificaciones;
-    private View        dotNotificacion;
-    private FrameLayout badgeNoLeidos;
-    private TextView    txtNoLeidos;
+    // Header — notificaciones + avatar
+    private FrameLayout      btnNotificaciones;
+    private View             dotNotificacion;
+    private FrameLayout      badgeNoLeidos;
+    private TextView         txtNoLeidos;
+    private ImageView        ivAvatarHeader;
+    private MaterialCardView cardAvatarFotoHeader;
+    private MaterialCardView cardAvatarInicialHeader;
 
     // Buscador
     private EditText etBuscar;
@@ -86,13 +91,14 @@ public class Conversaciones extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_conversaciones); // ← ajusta si tu layout tiene otro nombre
+        setContentView(R.layout.activity_conversaciones);
 
         session   = new SessionManager(this);
         idUsuario = session.getIdUsuario();
         Log.d(TAG, "ID Usuario: " + idUsuario);
 
         bindViews();
+        cargarFotoPerfilHeader();
         configurarRecycler();
         configurarSwipe();
         configurarBuscador();
@@ -108,6 +114,7 @@ public class Conversaciones extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         cargarConversaciones();
+        cargarFotoPerfilHeader(); // por si cambió
         if (!pollingActivo) arrancarPolling();
     }
 
@@ -121,38 +128,63 @@ public class Conversaciones extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         detenerPolling();
-        pararAnimacionLoading(); // liberar animador
+        pararAnimacionLoading();
     }
 
     // ═════════════════════════════════════════════════════════════════════════
     //  BIND VIEWS
     // ═════════════════════════════════════════════════════════════════════════
     private void bindViews() {
-        rvConversaciones  = findViewById(R.id.rvConversaciones);
-        swipeRefresh      = findViewById(R.id.swipeRefresh);
-        tvSinResultados   = findViewById(R.id.tvSinResultados);
+        rvConversaciones        = findViewById(R.id.rvConversaciones);
+        swipeRefresh            = findViewById(R.id.swipeRefresh);
+        tvSinResultados         = findViewById(R.id.tvSinResultados);
 
-        loadingOverlay    = findViewById(R.id.loadingOverlay);
-        ivLoadingAnim     = findViewById(R.id.ivLoadingAnim);
+        loadingOverlay          = findViewById(R.id.loadingOverlay);
+        ivLoadingAnim           = findViewById(R.id.ivLoadingAnim);
 
-        chipTodos         = findViewById(R.id.chipTodos);
-        chipNoLeidos      = findViewById(R.id.chipNoLeidos);
-        chipFavoritos     = findViewById(R.id.chipFavoritos);
+        chipTodos               = findViewById(R.id.chipTodos);
+        chipNoLeidos            = findViewById(R.id.chipNoLeidos);
+        chipFavoritos           = findViewById(R.id.chipFavoritos);
 
-        btnNotificaciones = findViewById(R.id.btnNotificaciones);
-        dotNotificacion   = findViewById(R.id.dotNotificacion);
-        badgeNoLeidos     = findViewById(R.id.badgeNoLeidos);
-        txtNoLeidos       = findViewById(R.id.txtNoLeidos);
+        btnNotificaciones       = findViewById(R.id.btnNotificaciones);
+        dotNotificacion         = findViewById(R.id.dotNotificacion);
+        badgeNoLeidos           = findViewById(R.id.badgeNoLeidos);
+        txtNoLeidos             = findViewById(R.id.txtNoLeidos);
 
-        etBuscar          = findViewById(R.id.etBuscar);
+        etBuscar                = findViewById(R.id.etBuscar);
+
+        // Avatar del header
+        ivAvatarHeader          = findViewById(R.id.iv_avatar_header);
+        cardAvatarFotoHeader    = findViewById(R.id.card_avatar_foto_header);
+        cardAvatarInicialHeader = findViewById(R.id.card_avatar_inicial_header);
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    //  LOADING — animación Java pura (sin AnimatedVectorDrawable)
+    //  FOTO DE PERFIL EN EL HEADER
+    // ═════════════════════════════════════════════════════════════════════════
+    private void cargarFotoPerfilHeader() {
+        String fotoUrl = session.getFotoPerfil();
+
+        if (ivAvatarHeader != null && !fotoUrl.isEmpty() && !fotoUrl.equals("null")) {
+            if (cardAvatarFotoHeader    != null) cardAvatarFotoHeader.setVisibility(View.VISIBLE);
+            if (cardAvatarInicialHeader != null) cardAvatarInicialHeader.setVisibility(View.GONE);
+            Glide.with(this)
+                    .load(fotoUrl)
+                    .circleCrop()
+                    .placeholder(R.drawable.logomo)
+                    .error(R.drawable.logomo)
+                    .into(ivAvatarHeader);
+        } else {
+            if (cardAvatarFotoHeader    != null) cardAvatarFotoHeader.setVisibility(View.GONE);
+            if (cardAvatarInicialHeader != null) cardAvatarInicialHeader.setVisibility(View.VISIBLE);
+        }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    //  LOADING
     // ═════════════════════════════════════════════════════════════════════════
     private void mostrarLoading(boolean mostrar) {
         if (loadingOverlay == null) return;
-
         if (mostrar) {
             loadingOverlay.setVisibility(View.VISIBLE);
             loadingOverlay.setAlpha(1f);
@@ -173,7 +205,6 @@ public class Conversaciones extends AppCompatActivity {
     private void arrancarAnimacionLoading() {
         if (ivLoadingAnim == null) return;
         pararAnimacionLoading();
-        // Rota toda la imagen 0→360 infinito — compatible con cualquier minSdk
         loadingRotator = ObjectAnimator.ofFloat(ivLoadingAnim, View.ROTATION, 0f, 360f);
         loadingRotator.setDuration(900);
         loadingRotator.setInterpolator(new LinearInterpolator());
@@ -201,11 +232,9 @@ public class Conversaciones extends AppCompatActivity {
 
     private void seleccionarChip(int chip) {
         filtroActivo = chip;
-
         actualizarEstiloChip(chipTodos,     chip == 0);
         actualizarEstiloChip(chipNoLeidos,  chip == 1);
         actualizarEstiloChip(chipFavoritos, chip == 2);
-
         aplicarFiltro(etBuscar != null ? etBuscar.getText().toString() : "");
     }
 
@@ -240,11 +269,8 @@ public class Conversaciones extends AppCompatActivity {
         String q = query.toLowerCase().trim();
 
         for (Conversacion c : listaCompleta) {
-            // ── Filtro chip ──
             if (filtroActivo == 1 && c.getMensajesNoLeidos() == 0) continue;
-            // filtroActivo == 2 (Favoritos): puedes agregar tu lógica aquí
 
-            // ── Filtro texto ──
             if (!q.isEmpty()) {
                 String nombre = c.getNombreContacto() != null
                         ? c.getNombreContacto().toLowerCase() : "";
@@ -252,7 +278,6 @@ public class Conversaciones extends AppCompatActivity {
                         ? c.getUltimoMensaje().toLowerCase() : "";
                 if (!nombre.contains(q) && !ultimo.contains(q)) continue;
             }
-
             listaFiltrada.add(c);
         }
 
@@ -266,7 +291,7 @@ public class Conversaciones extends AppCompatActivity {
     private void configurarNotificaciones() {
         if (btnNotificaciones == null) return;
         btnNotificaciones.setOnClickListener(v -> {
-            // TODO: startActivity(new Intent(this, Notificaciones.class));
+            // startActivity(new Intent(this, Notificaciones.class));
         });
     }
 
@@ -347,7 +372,8 @@ public class Conversaciones extends AppCompatActivity {
                     if (c.getId() > 0) {
                         listaCompleta.add(c);
                         totalNoLeidos += c.getMensajesNoLeidos();
-                        Log.d(TAG, "Conv[" + i + "]: " + c.getNombreContacto());
+                        Log.d(TAG, "Conv[" + i + "]: " + c.getNombreContacto()
+                                + " foto=" + c.getFotoContacto());
                     }
                 }
             }
@@ -356,13 +382,10 @@ public class Conversaciones extends AppCompatActivity {
 
             runOnUiThread(() -> {
                 if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-
-                // Ocultar loading solo en la primera carga
                 if (primeraCarga) {
                     primeraCarga = false;
                     mostrarLoading(false);
                 }
-
                 aplicarFiltro(etBuscar != null ? etBuscar.getText().toString() : "");
                 actualizarBadgeNotificaciones(badge);
             });

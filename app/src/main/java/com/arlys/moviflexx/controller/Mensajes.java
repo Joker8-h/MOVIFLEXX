@@ -29,7 +29,7 @@ import com.arlys.moviflexx.model.Constantes;
 import com.arlys.moviflexx.model.Conversacion;
 import com.arlys.moviflexx.model.ConversacionAdapter;
 import com.arlys.moviflexx.model.Manager.FavoritosManager;
-import com.arlys.moviflexx.model.NotificacionesHelper;  // ← NUEVO IMPORT
+import com.arlys.moviflexx.model.NotificacionesHelper;
 import com.arlys.moviflexx.model.SessionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.card.MaterialCardView;
@@ -38,6 +38,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,8 +73,11 @@ public class Mensajes extends BaseActivity {
     private ObjectAnimator      loadingRotator;
 
     // ── Datos ──────────────────────────────────────────────────────
-    private final List<Conversacion> listaCompleta = new ArrayList<>();
-    private final List<Conversacion> listaFiltrada = new ArrayList<>();
+    private final List<Conversacion>     listaCompleta     = new ArrayList<>();
+    private final List<Conversacion>     listaFiltrada     = new ArrayList<>();
+    private final java.util.Set<Integer> idsConFotoFallida = new java.util.HashSet<>();
+    private final java.util.Set<Long>    idsMensajeCargado = new java.util.HashSet<>();
+
     private FavoritosManager favoritosManager;
     private int     idUsuarioActual;
     private boolean esConductor;
@@ -118,14 +122,9 @@ public class Mensajes extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        cargarConversaciones();
-
         BottomNavigationView nav = findViewById(R.id.bottom_navigation);
         if (nav != null) nav.setSelectedItemId(R.id.nav_mensajes);
-
         if (!pollingActivo) iniciarPolling();
-
-        // ── Notificaciones generales del sistema (reservas, alertas…) ──
         NotificacionesHelper.configurar(this);
     }
 
@@ -197,13 +196,51 @@ public class Mensajes extends BaseActivity {
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  CAMPANA (animación propia de esta pantalla)
+    //  CARGAR ÚLTIMO MENSAJE — solo una vez por conversación
+    // ═════════════════════════════════════════════════════════════
+    private void cargarUltimoMensaje(Conversacion conv) {
+        if (idsMensajeCargado.contains(conv.getId())) return;
+        idsMensajeCargado.add(conv.getId());
+
+        String url = Constantes.chatMensajesPorConversacion(conv.getId());
+        ConexionApi.getInstance(this).getArray(url,
+                arr -> {
+                    if (arr == null || arr.length() == 0) return;
+                    JSONObject ultimo = arr.optJSONObject(arr.length() - 1);
+                    if (ultimo == null) return;
+                    String contenido = ultimo.optString("mensaje",
+                            ultimo.optString("contenido",
+                                    ultimo.optString("message", "")));
+                    if (contenido.isEmpty()) return;
+                    if (contenido.equals(conv.getUltimoMensaje())) return;
+
+                    conv.setUltimoMensaje(contenido);
+
+                    // Actualizar timestamp de orden con la fecha del último mensaje
+                    String fechaMensaje = ultimo.optString("fechaEnvio",
+                            ultimo.optString("createdAt", ""));
+                    if (!fechaMensaje.isEmpty()) {
+                        long ts = parsearTimestamp(fechaMensaje);
+                        if (ts > 0) conv.setTimestampOrden(ts);
+                    }
+
+                    idsMensajeCargado.remove(conv.getId());
+                    runOnUiThread(() -> {
+                        // Reordenar y redibujar
+                        ordenarYActualizar();
+                    });
+                },
+                error -> idsMensajeCargado.remove(conv.getId())
+        );
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    //  CAMPANA
     // ═════════════════════════════════════════════════════════════
     private void configurarNotificaciones() {
         if (btnNotificaciones == null) return;
         btnNotificaciones.post(this::arrancarAnimacionCampana);
         btnNotificaciones.setOnClickListener(v -> {
-            // Animar la campana y luego abrir la pantalla de notificaciones
             ImageView campana = obtenerImageViewCampana();
             if (campana != null) animarCampanaToque(campana);
             startActivity(new Intent(this, Notificaciones.class));
@@ -213,10 +250,7 @@ public class Mensajes extends BaseActivity {
     private void arrancarAnimacionCampana() {
         ImageView campana = obtenerImageViewCampana();
         if (campana == null) return;
-        campana.post(() -> {
-            campana.setPivotX(campana.getWidth() / 2f);
-            campana.setPivotY(0f);
-        });
+        campana.post(() -> { campana.setPivotX(campana.getWidth() / 2f); campana.setPivotY(0f); });
         campanada = new Runnable() {
             @Override public void run() {
                 if (isFinishing() || isDestroyed()) return;
@@ -235,13 +269,13 @@ public class Mensajes extends BaseActivity {
         handler.postDelayed(campanada, 1_500L);
     }
 
-    private void animarCampanaToque(ImageView campana) {
-        campana.animate().rotation(28f).setDuration(65)
-                .withEndAction(() -> campana.animate().rotation(-28f).setDuration(65)
-                        .withEndAction(() -> campana.animate().rotation(18f).setDuration(55)
-                                .withEndAction(() -> campana.animate().rotation(-18f).setDuration(55)
-                                        .withEndAction(() -> campana.animate().rotation(8f).setDuration(45)
-                                                .withEndAction(() -> campana.animate().rotation(0f).setDuration(45)
+    private void animarCampanaToque(ImageView c) {
+        c.animate().rotation(28f).setDuration(65)
+                .withEndAction(() -> c.animate().rotation(-28f).setDuration(65)
+                        .withEndAction(() -> c.animate().rotation(18f).setDuration(55)
+                                .withEndAction(() -> c.animate().rotation(-18f).setDuration(55)
+                                        .withEndAction(() -> c.animate().rotation(8f).setDuration(45)
+                                                .withEndAction(() -> c.animate().rotation(0f).setDuration(45)
                                                         .start()).start()).start()).start()).start()).start();
     }
 
@@ -255,7 +289,7 @@ public class Mensajes extends BaseActivity {
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  BADGE (mensajes no leídos de esta pantalla)
+    //  BADGE
     // ═════════════════════════════════════════════════════════════
     private void actualizarBadgeYCampana(int totalNoLeidos) {
         runOnUiThread(() -> {
@@ -308,8 +342,7 @@ public class Mensajes extends BaseActivity {
                     android.graphics.Paint paint = new android.graphics.Paint();
                     paint.setColor(0xFFFFC107);
                     c.drawRect(item.getLeft(), item.getTop(), item.getLeft() + dX, item.getBottom(), paint);
-                    paint.setColor(0xFFFFFFFF);
-                    paint.setTextSize(48f);
+                    paint.setColor(0xFFFFFFFF); paint.setTextSize(48f);
                     paint.setTextAlign(android.graphics.Paint.Align.LEFT);
                     c.drawText("⭐", item.getLeft() + 32f,
                             item.getTop() + (item.getHeight() / 2f) + 16f, paint);
@@ -366,6 +399,9 @@ public class Mensajes extends BaseActivity {
         swipeRefresh.setProgressBackgroundColorSchemeColor(0xFFFFFFFF);
         swipeRefresh.setOnRefreshListener(() -> {
             intentosFallidos = 0;
+            idsConFotoFallida.clear();
+            idsMensajeCargado.clear();
+            listaCompleta.clear();
             adapter.resetAnimations();
             cargarConversaciones();
         });
@@ -402,7 +438,6 @@ public class Mensajes extends BaseActivity {
     // ═════════════════════════════════════════════════════════════
     private void cargarConversaciones() {
         String url = Constantes.chatConversacionesPorUsuario(idUsuarioActual);
-
         ConexionApi.getInstance(this).getArray(
                 url,
                 arr -> { intentosFallidos = 0; procesarArray(arr); },
@@ -423,49 +458,63 @@ public class Mensajes extends BaseActivity {
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  PROCESAR ARRAY — con deduplicación por ID
+    //  PROCESAR ARRAY
     // ═════════════════════════════════════════════════════════════
-    @SuppressLint("NotifyDataSetChanged")
     private void procesarArray(JSONArray arr) {
         try {
             Map<Long, Conversacion> mapaConversaciones = new LinkedHashMap<>();
             int totalNoLeidos = 0;
 
             if (arr != null) {
-                Log.d(TAG, "Total items recibidos del backend: " + arr.length());
-
                 for (int i = 0; i < arr.length(); i++) {
                     JSONObject obj = arr.optJSONObject(i);
                     if (obj == null) continue;
-
                     Conversacion c = Conversacion.fromJson(obj, idUsuarioActual);
-
-                    if (c.getId() <= 0) {
-                        Log.w(TAG, "Conversacion sin ID válido, ignorada: " + obj.toString());
-                        continue;
-                    }
-
+                    if (c.getId() <= 0) continue;
                     if (mapaConversaciones.containsKey(c.getId())) {
                         Conversacion existente = mapaConversaciones.get(c.getId());
-                        if (existente != null
-                                && (existente.getUltimoMensaje().isEmpty())
+                        if (existente != null && existente.getUltimoMensaje().isEmpty()
                                 && !c.getUltimoMensaje().isEmpty()) {
                             mapaConversaciones.put(c.getId(), c);
                         }
-                        Log.w(TAG, "Conversacion duplicada id=" + c.getId() + " — conservando la mejor");
                     } else {
                         mapaConversaciones.put(c.getId(), c);
                     }
                 }
             }
 
-            listaCompleta.clear();
-            for (Conversacion c : mapaConversaciones.values()) {
-                listaCompleta.add(c);
-                totalNoLeidos += c.getMensajesNoLeidos();
+            List<Conversacion> nuevaCompleta = new ArrayList<>(mapaConversaciones.values());
+            for (Conversacion c : nuevaCompleta) totalNoLeidos += c.getMensajesNoLeidos();
+
+            for (Conversacion c : nuevaCompleta) {
+                boolean esNueva = true;
+                for (Conversacion existente : listaCompleta) {
+                    if (existente.getId() == c.getId()) {
+                        esNueva = false;
+                        // Propagar foto ya cargada
+                        if (existente.getFotoContacto() != null
+                                && !existente.getFotoContacto().isEmpty()) {
+                            c.setFotoContacto(existente.getFotoContacto());
+                        }
+                        // Propagar último mensaje ya cargado si el nuevo está vacío
+                        if (!existente.getUltimoMensaje().isEmpty()
+                                && c.getUltimoMensaje().isEmpty()) {
+                            c.setUltimoMensaje(existente.getUltimoMensaje());
+                        }
+                        // Propagar timestamp si el nuevo no tiene
+                        if (c.getTimestampOrden() == 0 && existente.getTimestampOrden() > 0) {
+                            c.setTimestampOrden(existente.getTimestampOrden());
+                        }
+                        break;
+                    }
+                }
+                if (esNueva) cargarFotoContacto(c);
+                // Cargar mensaje solo si está vacío
+                if (c.getUltimoMensaje().isEmpty()) cargarUltimoMensaje(c);
             }
 
-            Log.d(TAG, "Conversaciones únicas: " + listaCompleta.size() + " | No leídos total: " + totalNoLeidos);
+            listaCompleta.clear();
+            listaCompleta.addAll(nuevaCompleta);
 
             final int badge = totalNoLeidos;
             runOnUiThread(() -> {
@@ -479,19 +528,27 @@ public class Mensajes extends BaseActivity {
         } catch (Exception e) {
             Log.e(TAG, "procesarArray error", e);
             runOnUiThread(() -> {
-                stopRefresh();
-                mostrarLoading(false);
+                stopRefresh(); mostrarLoading(false);
                 if (listaCompleta.isEmpty()) mostrarVacio("Error al cargar datos.");
             });
         }
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  FILTRO COMBINADO
+    //  ORDENAR Y ACTUALIZAR — más reciente primero (igual WhatsApp)
+    // ═════════════════════════════════════════════════════════════
+    @SuppressLint("NotifyDataSetChanged")
+    private void ordenarYActualizar() {
+        String query = etBuscar != null ? etBuscar.getText().toString().toLowerCase().trim() : "";
+        aplicarFiltroCompleto(query);
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    //  FILTRO — más reciente primero + no redibujar si no cambió
     // ═════════════════════════════════════════════════════════════
     @SuppressLint("NotifyDataSetChanged")
     private void aplicarFiltroCompleto(String query) {
-        listaFiltrada.clear();
+        List<Conversacion> nuevaLista = new ArrayList<>();
         for (Conversacion c : listaCompleta) {
             if (filtroActivo == FILTRO_NO_LEIDOS && c.getMensajesNoLeidos() == 0) continue;
             if (filtroActivo == FILTRO_FAVORITOS && !favoritosManager.esFavorito(c.getId())) continue;
@@ -500,10 +557,40 @@ public class Mensajes extends BaseActivity {
                 String ultimo = c.getUltimoMensaje()  != null ? c.getUltimoMensaje().toLowerCase()  : "";
                 if (!nombre.contains(query) && !ultimo.contains(query)) continue;
             }
-            listaFiltrada.add(c);
+            nuevaLista.add(c);
         }
+
+        // ── ORDENAR: más reciente primero (igual que WhatsApp) ──
+        Collections.sort(nuevaLista, (a, b) -> {
+            long tsA = a.getTimestampOrden();
+            long tsB = b.getTimestampOrden();
+            return Long.compare(tsB, tsA); // descendente
+        });
+
+        // No redibujar si los datos son idénticos
+        if (!listaCambio(listaFiltrada, nuevaLista)) {
+            actualizarEstadoVacio(query);
+            return;
+        }
+
+        listaFiltrada.clear();
+        listaFiltrada.addAll(nuevaLista);
         adapter.notifyDataSetChanged();
         actualizarEstadoVacio(query);
+    }
+
+    private boolean listaCambio(List<Conversacion> vieja, List<Conversacion> nueva) {
+        if (vieja.size() != nueva.size()) return true;
+        for (int i = 0; i < vieja.size(); i++) {
+            Conversacion v = vieja.get(i);
+            Conversacion n = nueva.get(i);
+            if (v.getId() != n.getId()) return true;
+            if (v.getMensajesNoLeidos() != n.getMensajesNoLeidos()) return true;
+            if (!v.getUltimoMensaje().equals(n.getUltimoMensaje())) return true;
+            if (!v.getNombreContacto().equals(n.getNombreContacto())) return true;
+            if (v.getTimestampOrden() != n.getTimestampOrden()) return true;
+        }
+        return false;
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -518,6 +605,52 @@ public class Mensajes extends BaseActivity {
                 aplicarFiltroCompleto(s.toString().toLowerCase().trim());
             }
         });
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    //  FOTO CONTACTO
+    // ═════════════════════════════════════════════════════════════
+    private void cargarFotoContacto(Conversacion conv) {
+        if (conv.getIdContacto() <= 0) return;
+        if (conv.getFotoContacto() != null && !conv.getFotoContacto().isEmpty()) return;
+        if (idsConFotoFallida.contains(conv.getIdContacto())) return;
+
+        String url = Constantes.authPorId((long) conv.getIdContacto());
+        ConexionApi.getInstance(this).getObject(url,
+                perfil -> {
+                    String foto = extraerFotoDeJson(perfil);
+                    if (!foto.isEmpty()) {
+                        conv.setFotoContacto(foto);
+                        runOnUiThread(() -> {
+                            int idx = listaFiltrada.indexOf(conv);
+                            if (idx >= 0) adapter.notifyItemChanged(idx);
+                        });
+                    } else {
+                        idsConFotoFallida.add(conv.getIdContacto());
+                    }
+                },
+                error -> {
+                    idsConFotoFallida.add(conv.getIdContacto());
+                    Log.w(TAG, "cargarFotoContacto → sin foto id=" + conv.getIdContacto());
+                }
+        );
+    }
+
+    private String extraerFotoDeJson(JSONObject perfil) {
+        if (perfil == null) return "";
+        for (String campo : new String[]{"fotoPerfi","fotoPerfil","foto",
+                "photoUrl","profilePicture","avatar","imagenPerfil","urlFoto"}) {
+            String v = perfil.optString(campo, "");
+            if (!v.isEmpty() && !v.equals("null")) return v;
+        }
+        JSONObject nested = perfil.optJSONObject("usuario");
+        if (nested != null) {
+            for (String campo : new String[]{"fotoPerfi","fotoPerfil","foto","photoUrl","avatar"}) {
+                String v = nested.optString(campo, "");
+                if (!v.isEmpty() && !v.equals("null")) return v;
+            }
+        }
+        return "";
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -604,5 +737,21 @@ public class Mensajes extends BaseActivity {
             if (response.toString().startsWith("[")) return new JSONArray(response.toString());
         } catch (Exception ignored) {}
         return null;
+    }
+
+    private long parsearTimestamp(String fecha) {
+        if (fecha == null || fecha.isEmpty()) return 0L;
+        try { long n = Long.parseLong(fecha); return n < 10_000_000_000L ? n * 1000L : n; }
+        catch (NumberFormatException ignored) {}
+        for (String f : new String[]{
+                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                "yyyy-MM-dd'T'HH:mm:ss",
+                "yyyy-MM-dd HH:mm:ss"}) {
+            try {
+                java.util.Date d = new java.text.SimpleDateFormat(f, java.util.Locale.getDefault()).parse(fecha);
+                if (d != null) return d.getTime();
+            } catch (Exception ignored) {}
+        }
+        return 0L;
     }
 }

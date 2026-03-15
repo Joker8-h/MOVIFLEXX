@@ -1,24 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-╔══════════════════════════════════════════════════════════╗
-  item_viaje.xml  —  MoviFlexx Premium
-  Paleta: Azul oscuro #1A2035 · Turquesa #3DCFC7 · Blanco #FFFFFF · Gris pálido #F4F6F9
-  NUEVO: Sección pasajeros reservados (conductor) visible siempre
-╚══════════════════════════════════════════════════════════╝
--->
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="14dp"
-    android:layout_marginEnd="14dp"
+    android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
     android:layout_marginTop="10dp"
     android:layout_marginBottom="6dp"
-    app:cardCornerRadius="18dp"
-    app:cardElevation="5dp"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="3dp"
     app:cardBackgroundColor="#FFFFFF"
-    app:strokeWidth="0dp">
+    app:strokeColor="#D0ECEC"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -26,64 +20,95 @@
         android:orientation="vertical">
 
         <!-- ════════════════════════════════════════
-             CABECERA  —  Azul oscuro + turquesa
+             CABECERA — teal sólido consistente
         ════════════════════════════════════════ -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="105dp"
-            android:background="@drawable/fondomoviflexx"
+            android:layout_height="wrap_content"
+            android:background="#00CED1"
             android:orientation="vertical"
             android:paddingStart="18dp"
             android:paddingTop="16dp"
             android:paddingEnd="18dp"
             android:paddingBottom="16dp">
 
-            <LinearLayout
+            <!-- Blob decorativo pequeño -->
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:clipChildren="false">
 
-                <TextView
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_marginEnd="12dp"
-                    android:background="@drawable/bg_icon_circle_teal"
-                    android:gravity="center"
-                    android:text="📍"
-                    android:textSize="18sp" />
+                <View
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="-20dp"
+                    android:layout_marginEnd="-20dp"
+                    android:alpha="0.15"
+                    android:background="@drawable/bg_glow_circle_teal"
+                    android:clickable="false"/>
 
-                <TextView
-                    android:id="@+id/txtRuta"
-                    android:layout_width="0dp"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:lineSpacingExtra="3dp"
-                    android:text="Ruta no disponible"
-                    android:textColor="#00CED1"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
+                    android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/txtEstado"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="48dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_estado_pill"
-                android:fontFamily="sans-serif-medium"
-                android:paddingStart="12dp"
-                android:paddingTop="4dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="4dp"
-                android:text="Publicado"
-                android:textColor="#3DCFC7"
-                android:textSize="11sp" />
+                    <!-- Fila ruta -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="10dp">
+
+                        <!-- Ícono ruta -->
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:layout_marginEnd="12dp"
+                            android:background="@drawable/bg_icon_circle_white_alpha">
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_menu_compass"
+                                app:tint="#FFFFFF"
+                                android:contentDescription="Ruta"/>
+                        </FrameLayout>
+
+                        <TextView
+                            android:id="@+id/txtRuta"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:lineSpacingExtra="3dp"
+                            android:text="Ruta no disponible"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+
+                    <!-- Badge estado -->
+                    <TextView
+                        android:id="@+id/txtEstado"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="48dp"
+                        android:background="@drawable/bg_icon_circle_white_alpha"
+                        android:paddingStart="12dp"
+                        android:paddingTop="4dp"
+                        android:paddingEnd="12dp"
+                        android:paddingBottom="4dp"
+                        android:text="Publicado"
+                        android:textColor="#FFFFFF"
+                        android:textSize="11sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+            </FrameLayout>
         </LinearLayout>
 
         <!-- ════════════════════════════════════════
-             CUERPO  —  Blanco con filas limpias
+             CUERPO — blanco limpio
         ════════════════════════════════════════ -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -95,7 +120,7 @@
             android:paddingTop="14dp"
             android:paddingBottom="8dp">
 
-            <!-- ── FILA: Fecha + Precio ── -->
+            <!-- Fecha + Precio -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -103,72 +128,70 @@
                 android:gravity="center_vertical"
                 android:layout_marginBottom="10dp">
 
+                <!-- Chip fecha -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="@drawable/bg_info_chip"
+                    android:background="@drawable/bg_card_teal_subtle"
                     android:paddingStart="10dp"
                     android:paddingEnd="10dp"
-                    android:paddingTop="7dp"
-                    android:paddingBottom="7dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
                     android:layout_marginEnd="8dp">
 
                     <TextView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:gravity="center"
-                        android:text="🕒"
-                        android:textSize="12sp"/>
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        android:textSize="12sp"
+                        android:layout_marginEnd="6dp"/>
 
                     <TextView
                         android:id="@+id/txtFecha"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:layout_marginStart="6dp"
-                        android:textColor="#374151"
+                        android:textColor="#1A2F4A"
                         android:textSize="12sp"
-                        android:fontFamily="sans-serif"
                         android:text="--"/>
                 </LinearLayout>
 
+                <!-- Chip precio -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="@drawable/bg_price_chip"
+                    android:background="@drawable/bg_card_teal_subtle"
                     android:paddingStart="10dp"
                     android:paddingEnd="10dp"
-                    android:paddingTop="7dp"
-                    android:paddingBottom="7dp">
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp">
 
                     <TextView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:gravity="center"
-                        android:text="💰"
-                        android:textSize="12sp"/>
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="$"
+                        android:textSize="12sp"
+                        android:layout_marginEnd="6dp"/>
 
                     <TextView
                         android:id="@+id/txtPrecio"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:layout_marginStart="6dp"
-                        android:textColor="#1A2035"
+                        android:textColor="#00868A"
                         android:textSize="12sp"
                         android:textStyle="bold"
-                        android:fontFamily="sans-serif-medium"
                         android:text="--"/>
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- ── FILA: Cupos ── -->
+            <!-- Cupos -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -181,45 +204,43 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="@drawable/bg_info_chip"
+                    android:background="@drawable/bg_card_teal_subtle"
                     android:paddingStart="10dp"
                     android:paddingEnd="14dp"
-                    android:paddingTop="7dp"
-                    android:paddingBottom="7dp">
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp">
 
                     <TextView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:gravity="center"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
                         android:text="👥"
-                        android:textSize="12sp"/>
+                        android:textSize="12sp"
+                        android:layout_marginEnd="6dp"/>
 
                     <TextView
                         android:id="@+id/txtCupos"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp"
-                        android:textColor="#374151"
+                        android:textColor="#1A2F4A"
                         android:textSize="12sp"
-                        android:fontFamily="sans-serif"
                         android:text="0 / 0 cupos"/>
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Línea divisora -->
+            <!-- Divisor -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="#EAECF0"
+                android:background="#EEF5F5"
                 android:layout_marginBottom="12dp"/>
 
-            <!-- ── Conductor ── -->
+            <!-- Conductor -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="8dp">
+                android:layout_marginBottom="10dp">
 
                 <TextView
                     android:id="@+id/txtAvatarInicialCard"
@@ -230,7 +251,7 @@
                     android:textSize="16sp"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
-                    android:background="@drawable/bg_avatar_navy"
+                    android:background="@drawable/bg_avatar_ring_white"
                     android:layout_marginEnd="12dp"/>
 
                 <LinearLayout
@@ -243,47 +264,49 @@
                         android:id="@+id/txtConductor"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="#1A2035"
+                        android:textColor="#1A2F4A"
                         android:textSize="13sp"
                         android:textStyle="bold"
-                        android:fontFamily="sans-serif-medium"
                         android:text="Conductor"/>
 
                     <TextView
                         android:id="@+id/txtTelefono"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="#9CA3AF"
+                        android:textColor="#7A9BAA"
                         android:textSize="11sp"
-                        android:fontFamily="sans-serif"
                         android:text=""/>
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- ── Vehículo ── -->
+            <!-- Vehículo -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
 
-                <TextView
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:gravity="center"
-                    android:text="🚘"
-                    android:textSize="18sp"
-                    android:background="@drawable/bg_icon_circle_gray"
-                    android:layout_marginEnd="12dp"/>
+                <FrameLayout
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginEnd="12dp"
+                    android:background="@drawable/bg_icon_circle_teal_light">
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_car"
+                        app:tint="#00CED1"
+                        android:contentDescription="Vehículo"/>
+                </FrameLayout>
 
                 <TextView
                     android:id="@+id/txtVehiculo"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textColor="#6B7280"
+                    android:textColor="#7A9BAA"
                     android:textSize="12sp"
-                    android:fontFamily="sans-serif"
                     android:text="Vehículo no asignado"/>
             </LinearLayout>
 
@@ -291,7 +314,6 @@
 
         <!-- ════════════════════════════════════════
              SECCIÓN PASAJEROS — Solo visible al conductor
-             El adapter la muestra/oculta con setVisibility
         ════════════════════════════════════════ -->
         <LinearLayout
             android:id="@+id/layoutSeccionPasajeros"
@@ -299,13 +321,12 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:visibility="gone"
-            android:background="#F8FFFE"
+            android:background="#F0FAFA"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:paddingTop="12dp"
             android:paddingBottom="4dp">
 
-            <!-- Divisor superior con título -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -314,24 +335,21 @@
                 android:layout_marginBottom="10dp">
 
                 <View
-                    android:layout_width="3dp"
-                    android:layout_height="16dp"
-                    android:background="#3DCFC7"
+                    android:layout_width="4dp"
+                    android:layout_height="18dp"
+                    android:background="@drawable/bg_line_teal_rounded"
                     android:layout_marginEnd="8dp"/>
 
-                <!-- ✅ ID agregado para que el adapter pueda actualizar el título -->
                 <TextView
                     android:id="@+id/txtTituloPasajeros"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Pasajeros a bordo"
-                    android:textColor="#1A2035"
+                    android:textColor="#1A2F4A"
                     android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:fontFamily="sans-serif-medium"/>
+                    android:textStyle="bold"/>
 
-                <!-- Badge con cantidad -->
                 <TextView
                     android:id="@+id/txtContadorPasajeros"
                     android:layout_width="wrap_content"
@@ -340,38 +358,34 @@
                     android:textColor="#FFFFFF"
                     android:textSize="10sp"
                     android:textStyle="bold"
-                    android:paddingStart="7dp"
-                    android:paddingEnd="7dp"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:background="@drawable/bg_badge_red"/>
-
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingBottom="3dp"
+                    android:background="@drawable/bg_chip_teal"/>
             </LinearLayout>
 
-            <!-- Loader mientras carga los pasajeros -->
             <ProgressBar
                 android:id="@+id/loaderPasajeros"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="8dp"
-                android:indeterminateTint="#3DCFC7"
+                android:indeterminateTint="#00CED1"
                 android:visibility="gone"/>
 
-            <!-- Contenedor dinámico — el adapter infla una fila por pasajero -->
             <LinearLayout
                 android:id="@+id/layoutPasajerosLista"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"/>
 
-            <!-- Mensaje cuando no hay pasajeros -->
             <TextView
                 android:id="@+id/txtSinPasajeros"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Sin reservas activas aún"
-                android:textColor="#9CA3AF"
+                android:textColor="#7A9BAA"
                 android:textSize="12sp"
                 android:gravity="center"
                 android:paddingTop="8dp"
@@ -381,20 +395,21 @@
         </LinearLayout>
 
         <!-- ════════════════════════════════════════
-             ZONA BOTONES
+             ZONA BOTONES — fondo muy suave
         ════════════════════════════════════════ -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="end|center_vertical"
-            android:background="@drawable/bg_btn_zone"
+            android:background="#F8FFFE"
             android:paddingStart="12dp"
             android:paddingEnd="14dp"
             android:paddingTop="10dp"
             android:paddingBottom="12dp">
 
-            <Button
+            <!-- Reservar -->
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAceptar"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
@@ -402,15 +417,16 @@
                 android:text="Reservar"
                 android:textSize="12sp"
                 android:textColor="#FFFFFF"
-                android:fontFamily="sans-serif-medium"
-                android:background="@drawable/bg_btn_primary"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:visibility="gone"
+                android:textStyle="bold"
                 android:insetTop="0dp"
-                android:insetBottom="0dp"/>
+                android:insetBottom="0dp"
+                android:visibility="gone"
+                app:backgroundTint="#00CED1"
+                app:cornerRadius="18dp"
+                app:rippleColor="#40FFFFFF"/>
 
-            <Button
+            <!-- Iniciar -->
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnIniciar"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
@@ -418,15 +434,16 @@
                 android:text="▶  Iniciar"
                 android:textSize="12sp"
                 android:textColor="#FFFFFF"
-                android:fontFamily="sans-serif-medium"
-                android:background="@drawable/bg_btn_primary"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:visibility="gone"
+                android:textStyle="bold"
                 android:insetTop="0dp"
-                android:insetBottom="0dp"/>
+                android:insetBottom="0dp"
+                android:visibility="gone"
+                app:backgroundTint="#00CED1"
+                app:cornerRadius="18dp"
+                app:rippleColor="#40FFFFFF"/>
 
-            <Button
+            <!-- Finalizar -->
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnFinalizar"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
@@ -434,60 +451,86 @@
                 android:text="✔  Finalizar"
                 android:textSize="12sp"
                 android:textColor="#FFFFFF"
-                android:fontFamily="sans-serif-medium"
-                android:background="@drawable/bg_btn_primary"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:visibility="gone"
+                android:textStyle="bold"
                 android:insetTop="0dp"
-                android:insetBottom="0dp"/>
+                android:insetBottom="0dp"
+                android:visibility="gone"
+                app:backgroundTint="#00CED1"
+                app:cornerRadius="18dp"
+                app:rippleColor="#40FFFFFF"/>
 
-            <Button
+            <!-- Cancelar -->
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnCancelar"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
                 android:layout_marginEnd="6dp"
                 android:text="Cancelar"
                 android:textSize="12sp"
                 android:textColor="#EF4444"
-                android:fontFamily="sans-serif-medium"
-                android:background="@drawable/bg_btn_danger_outline"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:visibility="gone"
+                android:textStyle="bold"
                 android:insetTop="0dp"
-                android:insetBottom="0dp"/>
+                android:insetBottom="0dp"
+                android:visibility="gone"
+                app:strokeColor="#EF4444"
+                app:strokeWidth="1.5dp"
+                app:cornerRadius="18dp"
+                app:rippleColor="#20EF4444"/>
 
-            <Button
+            <!-- Calificar -->
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnCalificar"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
                 android:layout_marginEnd="6dp"
-                android:text="⭐  Calificar"
+                android:text="⭐ Calificar"
                 android:textSize="12sp"
-                android:textColor="#1A2035"
-                android:fontFamily="sans-serif-medium"
-                android:background="@drawable/bg_btn_calificar"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:visibility="gone"
+                android:textColor="#1A2F4A"
+                android:textStyle="bold"
                 android:insetTop="0dp"
-                android:insetBottom="0dp"/>
+                android:insetBottom="0dp"
+                android:visibility="gone"
+                app:backgroundTint="#FFF3E0"
+                app:strokeColor="#FF9800"
+                app:strokeWidth="1dp"
+                app:cornerRadius="18dp"
+                app:rippleColor="#20FF9800"/>
 
-            <Button
+            <!-- Resumen — conductor en FINALIZADO -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnResumen"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="6dp"
+                android:text="Resumen"
+                android:textSize="12sp"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:visibility="gone"
+                app:backgroundTint="#00CED1"
+                app:cornerRadius="18dp"
+                app:rippleColor="#40FFFFFF"/>
+
+            <!-- Ver detalle -->
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDetalle"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
                 android:text="Ver detalle"
                 android:textSize="12sp"
-                android:textColor="#6B7280"
-                android:fontFamily="sans-serif-medium"
-                android:background="@drawable/bg_btn_ghost"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:visibility="gone"
+                android:textColor="#7A9BAA"
+                android:textStyle="bold"
                 android:insetTop="0dp"
-                android:insetBottom="0dp"/>
+                android:insetBottom="0dp"
+                android:visibility="gone"
+                app:strokeColor="#D0ECEC"
+                app:strokeWidth="1dp"
+                app:cornerRadius="18dp"
+                app:rippleColor="#10000000"/>
 
         </LinearLayout>
 

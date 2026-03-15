@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/fondomoviflexx">
+
+    <!-- FONDO ANIMADO -->
+    <com.arlys.moviflexx.views.BubbleView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:focusable="false" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:background="@android:color/transparent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="32dp"
+            android:gravity="center_horizontal">
+
+            <!-- LOGO -->
+            <ImageView
+                android:layout_width="136dp"
+                android:layout_height="92dp"
+                android:layout_gravity="center"
+                android:layout_marginTop="48dp"
+                android:layout_marginBottom="24dp"
+                android:src="@drawable/logomo" />
+
+            <!-- TÍTULO -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Verificar correo"
+                android:textColor="#00CED1"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <!-- ÍCONO -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="✉️"
+                android:textSize="52sp"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- DESCRIPCIÓN -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Enviamos un código a:"
+                android:textColor="#666666"
+                android:textSize="14sp"
+                android:layout_marginBottom="4dp"/>
+
+            <!-- EMAIL ENMASCARADO -->
+            <TextView
+                android:id="@+id/tv_email_mostrado"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="gi***@gmail.com"
+                android:textColor="#2EC4B6"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="28dp"/>
+
+            <!-- CAMPO OTP -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_otp"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Código de 6 dígitos"
+                app:errorEnabled="true"
+                app:boxBackgroundColor="#FAFAFC"
+                app:boxStrokeColor="#2EC4B6"
+                app:strokeColor="#00E5D4"
+                app:boxStrokeWidth="1.5dp"
+                app:boxStrokeWidthFocused="2dp"
+                app:hintTextColor="#6FAFB0"
+                app:boxCornerRadiusTopStart="16dp"
+                app:boxCornerRadiusTopEnd="16dp"
+                app:boxCornerRadiusBottomStart="16dp"
+                app:boxCornerRadiusBottomEnd="16dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edt_otp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:maxLength="6"
+                    android:textColor="#2B2B2B"
+                    android:textSize="22sp"
+                    android:textAlignment="center"
+                    android:letterSpacing="0.3"
+                    android:padding="16dp"/>
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- TIMER -->
+            <TextView
+                android:id="@+id/tv_timer_otp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="12dp"
+                android:text="⏱ El código expira en 10:00"
+                android:textColor="#4ACFBD"
+                android:textSize="13sp"
+                android:visibility="gone"/>
+
+            <!-- BOTÓN VERIFICAR -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_verificar_otp"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="24dp"
+                android:text="Verificar código"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_btn_login"
+                app:cornerRadius="22dp"
+                app:elevation="6dp"
+                app:backgroundTint="@null"
+                app:rippleColor="#80FFFFFF"
+                android:stateListAnimator="@null"/>
+
+            <!-- BOTÓN REENVIAR -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_reenviar_otp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                android:layout_marginTop="12dp"
+                android:text="Reenviar código"
+                android:textColor="#2EC4B6"
+                android:textStyle="bold"
+                style="@style/Widget.Material3.Button.TextButton"
+                app:strokeColor="#00E5D4"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+</FrameLayout>

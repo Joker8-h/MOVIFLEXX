@@ -126,32 +126,57 @@ public class Constantes {
     public static final String PAGOS =
             BASE_URL + "/api/pagos";
 
-    /** GET /api/pagos/{idPago} — consulta estado / confirmaciones de un pago */
+    /**
+     * GET /api/pagos/{idPago}
+     * Consulta estado y confirmaciones de un pago específico.
+     * Usado en el polling de PagoActivity cada 5 segundos.
+     */
     public static String pagoPorId(long idPago) {
         return BASE_URL + "/api/pagos/" + idPago;
     }
 
     /**
      * GET /api/pagos/viaje/{idViaje}/usuario/{idUsuario}
-     * Verifica si el usuario ya tiene un pago activo para ese viaje.
-     * ⚠️ En Express esta ruta DEBE declararse ANTES de /api/pagos/:idPago
-     *    para que Express no confunda "viaje" con un id numérico.
+     * Verifica si el pasajero ya tiene un pago activo para ese viaje.
+     * Retorna 404 si no existe — PagoActivity lo interpreta como "no hay pago aún".
+     * ⚠️ En Express esta ruta DEBE declararse ANTES de /api/pagos/:id
      */
     public static String pagoDeUsuarioEnViaje(long idViaje, long idUsuario) {
         return BASE_URL + "/api/pagos/viaje/" + idViaje + "/usuario/" + idUsuario;
     }
 
-    /** GET /api/pagos/viaje/{idViaje} — todos los pagos del viaje (para el conductor) */
+    /**
+     * GET /api/pagos/viaje/{idViaje}
+     * Devuelve TODOS los pagos de un viaje para que el conductor
+     * los vea en ResumenViajeActivity.
+     * Respuesta: { pagos: [...], totalConfirmado: 0.0 }
+     */
     public static String pagosPorViaje(long idViaje) {
         return BASE_URL + "/api/pagos/viaje/" + idViaje;
     }
 
-    /** PUT /api/pagos/confirmarPasajero/{idPago} */
+    /**
+     * Alias de pagosPorViaje — mismo endpoint, nombre alternativo.
+     * Usar cualquiera de los dos es equivalente.
+     */
+    public static String pagosDeViaje(long idViaje) {
+        return pagosPorViaje(idViaje);
+    }
+
+    /**
+     * PUT /api/pagos/confirmarPasajero/{idPago}
+     * El pasajero confirma que ya realizó el pago.
+     * Cambia estado a "confirmado_pasajero" o "completado" si el conductor ya confirmó.
+     */
     public static String pagoConfirmarPasajero(long idPago) {
         return BASE_URL + "/api/pagos/confirmarPasajero/" + idPago;
     }
 
-    /** PUT /api/pagos/confirmarConductor/{idPago} */
+    /**
+     * PUT /api/pagos/confirmarConductor/{idPago}
+     * El conductor confirma que recibió el pago.
+     * Cambia estado a "confirmado_conductor" o "completado" si el pasajero ya confirmó.
+     */
     public static String pagoConfirmarConductor(long idPago) {
         return BASE_URL + "/api/pagos/confirmarConductor/" + idPago;
     }
@@ -172,6 +197,10 @@ public class Constantes {
     public static final String CHAT_MENSAJES =
             BASE_URL + "/api/chat/mensajes";
 
+    public static String chatMarcarLeido(Long idMensaje) {
+        return BASE_URL + "/api/chat/mensajes/" + idMensaje + "/leido";
+    }
+
     public static String chatMensajesPorConversacion(Long idConversacion) {
         return BASE_URL + "/api/chat/conversaciones/" + idConversacion + "/mensajes";
     }
@@ -184,6 +213,21 @@ public class Constantes {
     public static String calificacionPromedio(Long idUsuario) {
         return BASE_URL + "/api/calificaciones/" + idUsuario + "/promedio";
     }
+
+    // ← NUEVAS
+    public static String calificacionesPorUsuario(Long idUsuario) {
+        return BASE_URL + "/api/calificaciones/" + idUsuario;
+    }
+
+    public static String calificacionPorId(Long idCalificacion) {
+        return BASE_URL + "/api/calificaciones/" + idCalificacion;
+    }
+
+    public static final String CALIFICACIONES_TOP_CONDUCTORES =
+            BASE_URL + "/api/calificaciones/top-conductores";
+
+    public static final String CALIFICACIONES_TOP_VIAJEROS =
+            BASE_URL + "/api/calificaciones/top-viajeros";
 
 
     // ================= SUSCRIPCIONES =================
@@ -255,6 +299,10 @@ public class Constantes {
 
     public static String notificacionesMarcarTodas(int idUsuario) {
         return BASE_URL + "/api/notificaciones/usuario/" + idUsuario + "/leer-todas";
+    }
+
+    public static String pagoConfirmacion(long idPago) {
+        return PAGOS + "/" + idPago + "/confirmacion";
     }
 
     @Deprecated
