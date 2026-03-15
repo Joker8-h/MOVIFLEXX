@@ -508,7 +508,7 @@ public class VerRutaPasajero extends AppCompatActivity {
                     },
                     error -> {
                         Log.e(TAG, "Error paradas: " + error.toString());
-                        // Intentar con RESERVAS como fallback
+                        // Intentar con RESERVAS como fallback alineado a segment-fares
                         solicitarViajeConReservas();
                     }
             );
@@ -519,21 +519,131 @@ public class VerRutaPasajero extends AppCompatActivity {
         }
     }
 
-    /** Fallback: POST /api/reservas si el endpoint de paradas no existe */
+    /** Fallback: POST /api/reservas si el endpoint de paradas no existe.
+     *  Aquí intentamos también enviar idParadaSubida / idParadaBajada
+     *  para que el backend pueda usar segment-fares.
+     */
     private void solicitarViajeConReservas() {
+        // 1) Traer paradas reales de la ruta para mapear origen/bajada a idParada*
+        String urlParadas = Constantes.paradasPorRuta((long) idRuta);
+
+        ConexionApi.getInstance(this).getArrayNoCache(
+                urlParadas,
+                arr -> {
+                    int idParadaSubida = 0;
+                    int idParadaBajada = 0;
+
+                    try {
+                        // Buscar origen como parada de inicio (por nombre o tipo)
+                        if (origenPoint != null) {
+                            double bestDist = Double.MAX_VALUE;
+                            for (int i = 0; i < arr.length(); i++) {
+                                JSONObject p = arr.optJSONObject(i);
+                                if (p == null) continue;
+                                int idP = p.optInt("idParada", p.optInt("id", 0));
+                                if (idP <= 0) continue;
+                                String nom = p.optString("nombre", "").trim();
+                                String tipo = p.optString("tipo", "");
+                                double lat = p.optDouble("lat", 0);
+                                double lng = p.optDouble("lng", 0);
+
+                                boolean esOrigenNombre = !nom.isEmpty() && nom.equalsIgnoreCase(origenRuta);
+                                boolean esOrigenTipo   = tipo != null && tipo.toUpperCase(Locale.ROOT).contains("ORIGEN");
+
+                                double dist = distanciaSimple(origenPoint.getLatitude(), origenPoint.getLongitude(), lat, lng);
+
+                                if ((esOrigenNombre || esOrigenTipo || dist < bestDist) && lat != 0) {
+                                    bestDist = dist;
+                                    idParadaSubida = idP;
+                                }
+                            }
+                        }
+
+                        // Buscar parada de bajada como la más cercana al punto de parada
+                        if (paradaPoint != null) {
+                            double bestDistB = Double.MAX_VALUE;
+                            for (int i = 0; i < arr.length(); i++) {
+                                JSONObject p = arr.optJSONObject(i);
+                                if (p == null) continue;
+                                int idP = p.optInt("idParada", p.optInt("id", 0));
+                                if (idP <= 0) continue;
+                                double lat = p.optDouble("lat", 0);
+                                double lng = p.optDouble("lng", 0);
+                                if (lat == 0) continue;
+                                double dist = distanciaSimple(paradaPoint.getLatitude(), paradaPoint.getLongitude(), lat, lng);
+                                if (dist < bestDistB) {
+                                    bestDistB = dist;
+                                    idParadaBajada = idP;
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error mapeando paradas a IDs: " + e.getMessage());
+                    }
+
+                    enviarReservaFallback(idParadaSubida, idParadaBajada);
+                },
+                error -> {
+                    Log.e(TAG, "Error obteniendo paradas para fallback: " + error.toString());
+                    // Enviar reserva sin IDs de paradas (backend usará Haversine)
+                    enviarReservaFallback(0, 0);
+                }
+        );
+    }
+
+    /** Construye y envía el body de reserva usando, si es posible, idParadaSubida/Bajada. */
+    private void enviarReservaFallback(int idParadaSubida, int idParadaBajada) {
         try {
             JSONObject body = new JSONObject();
-            body.put("idViaje",      idViaje);
-            body.put("idRuta",       idRuta);
-            body.put("paradaTexto",  paradaPasajero);
-            body.put("estado",       "PENDIENTE");
+            body.put("idViajes",      idViaje);
+            body.put("idViaje",       idViaje);
+            body.put("idRuta",        idRuta);
+            body.put("paradaTexto",   paradaPasajero);
+            body.put("estado",        "PENDIENTE");
+
+            // Subida: usamos el origen de la ruta del viaje como punto de inicio
+            if (origenPoint != null) {
+                body.put("latSubida",          origenPoint.getLatitude());
+                body.put("lngSubida",          origenPoint.getLongitude());
+                body.put("nombreParadaSubida", origenRuta != null ? origenRuta : "Origen");
+                body.put("latOrigen",          origenPoint.getLatitude());
+                body.put("lngOrigen",          origenPoint.getLongitude());
+                body.put("latInicio",          origenPoint.getLatitude());
+                body.put("lngInicio",          origenPoint.getLongitude());
+                body.put("nombreParadaInicio", origenRuta != null ? origenRuta : "Origen");
+                body.put("origenLat",          origenPoint.getLatitude());
+                body.put("origenLng",          origenPoint.getLongitude());
+            }
+
+            // Bajada: la parada que el pasajero escribió/geocodificó
             if (paradaPoint != null) {
-                body.put("latParada", paradaPoint.getLatitude());
-                body.put("lngParada", paradaPoint.getLongitude());
+                body.put("latBajada",          paradaPoint.getLatitude());
+                body.put("lngBajada",          paradaPoint.getLongitude());
+                body.put("nombreParadaBajada", paradaPasajero);
+                body.put("latParada",          paradaPoint.getLatitude());
+                body.put("lngParada",          paradaPoint.getLongitude());
+                body.put("nombreParada",       paradaPasajero);
+                body.put("latDestino",         paradaPoint.getLatitude());
+                body.put("lngDestino",         paradaPoint.getLongitude());
+            }
+
+            // IDs de paradas si los pudimos resolver
+            if (idParadaSubida > 0) {
+                body.put("idParadaSubida", idParadaSubida);
+                body.put("idParadaInicio", idParadaSubida);
+            }
+            if (idParadaBajada > 0) {
+                body.put("idParadaBajada", idParadaBajada);
+                body.put("idParadaFin",    idParadaBajada);
+                body.put("idParada",       idParadaBajada);
             }
 
             ConexionApi.getInstance(this).post(Constantes.RESERVAS, body,
-                    response -> mostrarDialogoExito(),
+                    response -> {
+                        mostrarDialogoExito();
+                        btnSolicitarViaje.setEnabled(true);
+                        btnSolicitarViaje.setText("SOLICITAR VIAJE");
+                    },
                     error -> {
                         Log.e(TAG, "Error reservas: " + error.toString());
                         btnSolicitarViaje.setEnabled(true);
@@ -546,6 +656,19 @@ public class VerRutaPasajero extends AppCompatActivity {
             btnSolicitarViaje.setText("SOLICITAR VIAJE");
             mostrarSnackbar("❌ Error inesperado", true);
         }
+    }
+
+    /** Distancia aproximada en metros entre dos puntos (Haversine simplificado). */
+    private double distanciaSimple(double lat1, double lng1, double lat2, double lng2) {
+        double R = 6371000.0;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
     }
 
     /* ═══════════════════════════════════════════════════════

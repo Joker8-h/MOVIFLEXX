@@ -56,9 +56,14 @@ import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
 
+import io.socket.client.IO;
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -121,6 +126,10 @@ public class Mapa extends AppCompatActivity {
     private SessionManager    session;
     private DatabaseReference refFirebase;
     private RouteManager      routeManager;
+
+    // 🔥 Socket.io
+    private Socket mSocket;
+    private boolean isSocketConnected = false;
 
     // =========================================================================
     //  LIFECYCLE
@@ -195,11 +204,13 @@ public class Mapa extends AppCompatActivity {
         if (fusedClient != null && locationCallback != null)
             fusedClient.removeLocationUpdates(locationCallback);
         if (rPoll != null) hPoll.removeCallbacks(rPoll);
+        desconectarSocket();
     }
 
     @Override protected void onDestroy() {
         super.onDestroy();
         if (rPoll != null) hPoll.removeCallbacks(rPoll);
+        desconectarSocket();
     }
 
     // =========================================================================
@@ -280,6 +291,11 @@ public class Mapa extends AppCompatActivity {
         } else {
             Log.w(TAG, "Sin coordenadas suficientes para dibujar ruta");
             agregarMarcadores(esConductor);
+        }
+
+        // Conectar al socket si es un viaje activo
+        if (idViaje > 0) {
+            inicializarSocket();
         }
     }
 
@@ -1660,13 +1676,16 @@ public class Mapa extends AppCompatActivity {
     // =========================================================================
 
     private void arrancarPollingConductor() {
+        // El polling se mantiene como "malla de seguridad" si el socket falla
         rPoll = new Runnable() {
             @Override public void run() {
-                fetchUbicacionConductor();
-                hPoll.postDelayed(this, 2000);
+                if (!isSocketConnected) {
+                    fetchUbicacionConductor();
+                }
+                hPoll.postDelayed(this, 3000); // 3s en lugar de 2s para dar prioridad al socket
             }
         };
-        hPoll.postDelayed(rPoll, 800);
+        hPoll.postDelayed(rPoll, 2000);
     }
 
     private void fetchUbicacionConductor() {
@@ -1948,6 +1967,21 @@ public class Mapa extends AppCompatActivity {
     }
 
     private void enviarUbicacionAlBackend(double lat, double lon) {
+        // 1. Emitir por Socket (Tiempo real y eficiente)
+        if (mSocket != null && mSocket.connected()) {
+            try {
+                JSONObject data = new JSONObject();
+                data.put("idViaje", idViaje);
+                data.put("lat", lat);
+                data.put("lng", lon);
+                data.put("rumbo", posAnteriorConductor != null ? calcularRumbo(posAnteriorConductor, new GeoPoint(lat, lon)) : 0);
+                mSocket.emit("driver_location_update", data);
+            } catch (Exception e) {
+                Log.e(TAG, "Error emitiendo socket: " + e.getMessage());
+            }
+        }
+
+        // 2. Mantener POST HTTP como respaldo (Seguridad)
         try {
             JSONObject body = new JSONObject();
             body.put("lat",      lat);
@@ -1960,6 +1994,74 @@ public class Mapa extends AppCompatActivity {
                     err -> Log.w(TAG, "enviarUbicacion: " + err));
         } catch (Exception e) {
             Log.w(TAG, "enviarUbicacion ex: " + e.getMessage());
+        }
+    }
+
+    // =========================================================================
+    //  SOCKET.IO LOGIC
+    // =========================================================================
+
+    private void inicializarSocket() {
+        try {
+            IO.Options options = new IO.Options();
+            options.query = "token=" + session.getToken();
+            
+            mSocket = IO.socket(Constantes.BASE_URL, options);
+            
+            mSocket.on(Socket.EVENT_CONNECT, args -> {
+                Log.d(TAG, "Socket Conectado");
+                isSocketConnected = true;
+                
+                // Unirse a la sala del viaje
+                JSONObject joinData = new JSONObject();
+                try {
+                    joinData.put("idViaje", idViaje);
+                    mSocket.emit("join_trip", joinData);
+                } catch (Exception e) { e.printStackTrace(); }
+            });
+
+            mSocket.on(Socket.EVENT_DISCONNECT, args -> {
+                Log.d(TAG, "Socket Desconectado");
+                isSocketConnected = false;
+            });
+
+            // Escuchar actualizaciones (para el pasajero)
+            mSocket.on("location_updated", args -> {
+                if (session.isConductor()) return; // El conductor no necesita escucharse a sí mismo
+                
+                if (args.length > 0) {
+                    JSONObject data = (JSONObject) args[0];
+                    double lat = data.optDouble("lat");
+                    double lng = data.optDouble("lng");
+                    final GeoPoint nuevaPos = new GeoPoint(lat, lng);
+                    
+                    runOnUiThread(() -> {
+                        animarMarcadorConductor(nuevaPos);
+                        actualizarLineaNaranja(nuevaPos);
+                    });
+                    calcularEtaConductor(nuevaPos);
+                }
+            });
+
+            mSocket.connect();
+            
+        } catch (URISyntaxException e) {
+            Log.e(TAG, "Error inicializando socket: " + e.getMessage());
+        }
+    }
+
+    private void desconectarSocket() {
+        if (mSocket != null) {
+            // Salir de la sala antes de desconectar
+            JSONObject leaveData = new JSONObject();
+            try {
+                leaveData.put("idViaje", idViaje);
+                mSocket.emit("leave_trip", leaveData);
+            } catch (Exception e) {}
+            
+            mSocket.disconnect();
+            mSocket.off();
+            mSocket = null;
         }
     }
 
