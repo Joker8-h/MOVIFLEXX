@@ -19,11 +19,14 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.arlys.moviflexx.R;
+import com.arlys.moviflexx.model.VoiceAssistantManager;
 import com.arlys.moviflexx.model.ConexionApi;
 import com.arlys.moviflexx.model.Constantes;
 import com.arlys.moviflexx.model.Manager.CalificacionesManager;
@@ -42,7 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class HomePasajero extends AppCompatActivity {
+public class HomePasajero extends BaseActivity {
 
     private static final String TAG = "HomePasajero";
 
@@ -98,6 +101,8 @@ public class HomePasajero extends AppCompatActivity {
         sectionPagosPendientes = findViewById(R.id.section_pagos_pendientes);
         layoutPagosPendientes  = findViewById(R.id.layout_pagos_pendientes);
         dividerPagos           = findViewById(R.id.divider_pagos);
+
+        // 🔥 Asistente de Voz (Iniciado automáticamente por BaseActivity)
     }
 
     @Override
@@ -162,8 +167,14 @@ public class HomePasajero extends AppCompatActivity {
         super.onPause();
         detenerAutoScrollCarrusel();
         calificacionPendienteVerificada = false;
-        pagosPendientesYaVerificados = false; // ← añade esta línea
+        pagosPendientesYaVerificados = false; 
     }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
+
 
     // ═══════════════════════════════════════════════════════════════════════════
     //  BIND

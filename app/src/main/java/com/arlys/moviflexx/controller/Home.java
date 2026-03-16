@@ -21,7 +21,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.model.OnboardingAdapter;
 
-public class Home extends AppCompatActivity {
+public class Home extends BaseActivity {
 
     private ImageView  logoHome;
     private ViewPager2 viewPager;

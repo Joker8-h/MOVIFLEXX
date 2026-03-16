@@ -35,7 +35,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 
-public class BuscarViajesPasajeros extends AppCompatActivity {
+public class BuscarViajesPasajeros extends BaseActivity {
 
     private static final String TAG         = "BuscarViajes";
     private static final double RADIO_KM    = 1.0; // radio de búsqueda en km

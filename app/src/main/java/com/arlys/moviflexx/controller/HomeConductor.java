@@ -9,6 +9,10 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 
 
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -17,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.adapter.CalificacionesPendientesAdapter;
 import com.arlys.moviflexx.adapter.ViajesAdapter;
+import com.arlys.moviflexx.model.VoiceAssistantManager;
 import com.arlys.moviflexx.model.ConexionApi;
 import com.arlys.moviflexx.model.Constantes;
 import com.arlys.moviflexx.model.Manager.CalificacionesManager;
@@ -181,6 +186,7 @@ public class HomeConductor extends BaseActivity {
         if (adapter != null) adapter.detenerPollingPagosConductor();
     }
 
+
     // =========================================================================
     //  ENLAZAR VISTAS
     // =========================================================================
@@ -276,7 +282,12 @@ public class HomeConductor extends BaseActivity {
         BottomNavigationView nav = findViewById(R.id.bottom_navigation);
         if (nav == null) return;
 
-        nav.setSelectedItemId(R.id.nav_inicio);
+        if (nav != null) {
+            nav.setSelectedItemId(R.id.nav_inicio);
+        }
+
+        // 🔥 Asistente de Voz (Iniciado automáticamente por BaseActivity)
+
         nav.getMenu().findItem(R.id.nav_mapa).setEnabled(false); // deshabilitado por defecto
 
         nav.setOnItemSelectedListener(item -> {

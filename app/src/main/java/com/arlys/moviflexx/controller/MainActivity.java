@@ -38,7 +38,7 @@ import com.arlys.moviflexx.R;
  * 7. Puntos de destino flotantes
  * 8. Fade-out suave hacia Home
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity {
 
     // Duración total del splash
     private static final int SPLASH_DURATION = 4500;

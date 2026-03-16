@@ -60,7 +60,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class Register extends AppCompatActivity {
+public class Register extends BaseActivity {
 
     private static final String TAG               = "REGISTER_DEBUG";
     private static final int    REQUEST_CAMERA_PERM = 200;
@@ -121,6 +121,11 @@ public class Register extends AppCompatActivity {
     // ══════════════════════════════════════════════════════════════════════════
     //  LIFECYCLE
     // ══════════════════════════════════════════════════════════════════════════
+
+    @Override
+    protected void iniciarAsistenteVozSiPermite() {
+        // No iniciar el asistente de voz en la pantalla de Registro
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

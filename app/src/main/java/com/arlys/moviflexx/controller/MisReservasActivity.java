@@ -59,7 +59,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class MisReservasActivity extends AppCompatActivity {
+public class MisReservasActivity extends BaseActivity {
 
     private static final String TAG          = "MisReservas";
     // ✅ FIX: Radio aumentado de 5 a 15 km para no excluir viajes válidos

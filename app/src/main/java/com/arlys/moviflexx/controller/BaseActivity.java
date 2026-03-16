@@ -7,9 +7,16 @@ import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.arlys.moviflexx.R;
+import com.arlys.moviflexx.model.SessionManager;
+import com.arlys.moviflexx.model.VoiceAssistantManager;
 
 /**
  * BaseActivity — Clase base para todas las Activities.
@@ -19,9 +26,59 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     public enum Transition { SLIDE, FADE, NONE }
 
+    protected VoiceAssistantManager voiceAssistant;
+    protected static final int REQ_AUDIO_GLOBAL = 2299;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        voiceAssistant = VoiceAssistantManager.getInstance(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        iniciarAsistenteVozSiPermite();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (voiceAssistant != null) voiceAssistant.stop();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_AUDIO_GLOBAL) {
+            iniciarAsistenteVozSiPermite();
+        }
+    }
+
+    protected void iniciarAsistenteVozSiPermite() {
+        if (voiceAssistant == null) return;
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.RECORD_AUDIO}, REQ_AUDIO_GLOBAL);
+            return;
+        }
+        voiceAssistant.escuchar();
+        verificarSaludoPendiente();
+    }
+
+    private void verificarSaludoPendiente() {
+        SessionManager session = new SessionManager(this);
+        if (session.isPendingWelcome()) {
+            session.setPendingWelcome(false);
+            String nombre = session.getNombre();
+            // Pequeño delay para asegurar que el TTS está listo
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                if (voiceAssistant != null) {
+                    voiceAssistant.saludarConDatoCurioso(nombre);
+                }
+            }, 1000);
+        }
     }
 
     // ─── NAVEGACIÓN CON ANIMACIÓN ─────────────────────────────────────────────

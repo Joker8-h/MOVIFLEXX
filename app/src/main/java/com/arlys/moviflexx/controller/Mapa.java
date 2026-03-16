@@ -45,20 +45,28 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.arlys.moviflexx.model.VoiceAssistantManager;
+import com.arlys.moviflexx.controller.BaseActivity;
+import com.arlys.moviflexx.model.ConexionApi;
+import com.arlys.moviflexx.model.Constantes;
+import com.arlys.moviflexx.model.Manager.CalificacionesManager;
+import com.arlys.moviflexx.model.SessionManager;
+import com.arlys.moviflexx.model.NotificacionesHelper;
 
+import io.socket.client.IO;
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
-
-import io.socket.client.IO;
-import io.socket.client.Socket;
-import io.socket.emitter.Emitter;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -68,7 +76,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Mapa extends AppCompatActivity {
+public class Mapa extends BaseActivity {
 
     private static final String TAG           = "Mapa";
     private static final int    LOCATION_PERM = 1;
@@ -130,6 +138,12 @@ public class Mapa extends AppCompatActivity {
     // 🔥 Socket.io
     private Socket mSocket;
     private boolean isSocketConnected = false;
+
+    // 🔥 Guía de Voz
+    private VoiceAssistantManager voiceAssistant;
+    private JSONArray currentSteps;
+    private int nextStepIndex = 0;
+    private long lastVoiceTime = 0;
 
     // =========================================================================
     //  LIFECYCLE
@@ -297,6 +311,9 @@ public class Mapa extends AppCompatActivity {
         if (idViaje > 0) {
             inicializarSocket();
         }
+
+        // 🔥 Asistente de Voz
+        voiceAssistant = VoiceAssistantManager.getInstance(this);
     }
 
     /**
@@ -655,15 +672,15 @@ public class Mapa extends AppCompatActivity {
             coords.append(";").append(wp.getLongitude()).append(",").append(wp.getLatitude());
         coords.append(";").append(hasta.getLongitude()).append(",").append(hasta.getLatitude());
 
-        String params    = "?overview=full&geometries=geojson";
+        String params    = "?overview=full&geometries=geojson&steps=true"; // 🔥 Pedir steps también con waypoints
         String urlPropio = OSRM_PROPIO  + "/route/v1/driving/" + coords + params;
         String urlPubl   = OSRM_PUBLICO + "/route/v1/driving/" + coords + params;
 
         ArrayList<GeoPoint> pts = null;
-        try { pts = osrmParsear(http(urlPropio)); }
+        try { pts = parsearRutaYPasos(http(urlPropio)); }
         catch (Exception e) { Log.w(TAG, "OSRM propio waypoints: " + e.getMessage()); }
         if (pts == null || pts.size() < 2) {
-            try { pts = osrmParsear(http(urlPubl)); }
+            try { pts = parsearRutaYPasos(http(urlPubl)); }
             catch (Exception e) { Log.w(TAG, "OSRM publico waypoints: " + e.getMessage()); }
         }
         if (pts == null || pts.size() < 2) return osrmRuta(desde, hasta);
@@ -673,15 +690,91 @@ public class Mapa extends AppCompatActivity {
     private ArrayList<GeoPoint> osrmRuta(GeoPoint desde, GeoPoint hasta) {
         String coords = desde.getLongitude() + "," + desde.getLatitude() + ";"
                 + hasta.getLongitude() + "," + hasta.getLatitude()
-                + "?overview=full&geometries=geojson";
+                + "?overview=full&geometries=geojson&steps=true"; // 🔥 Pedir steps
         ArrayList<GeoPoint> pts = null;
-        try { pts = osrmParsear(http(OSRM_PROPIO  + "/route/v1/driving/" + coords)); }
+        try { 
+            String json = http(OSRM_PROPIO  + "/route/v1/driving/" + coords);
+            pts = parsearRutaYPasos(json); 
+        }
         catch (Exception e) { Log.w(TAG, "OSRM propio: " + e.getMessage()); }
+        
         if (pts == null || pts.size() < 2) {
-            try { pts = osrmParsear(http(OSRM_PUBLICO + "/route/v1/driving/" + coords)); }
+            try { 
+                String json = http(OSRM_PUBLICO + "/route/v1/driving/" + coords);
+                pts = parsearRutaYPasos(json); 
+            }
             catch (Exception e) { Log.w(TAG, "OSRM publico: " + e.getMessage()); }
         }
         return (pts != null && pts.size() >= 2) ? pts : null;
+    }
+
+    private ArrayList<GeoPoint> parsearRutaYPasos(String json) {
+        if (json == null || json.isEmpty()) return null;
+        try {
+            JSONObject obj = new JSONObject(json);
+            if (!"Ok".equals(obj.optString("code"))) return null;
+            JSONArray routes = obj.optJSONArray("routes");
+            if (routes == null || routes.length() == 0) return null;
+            
+            JSONObject route = routes.getJSONObject(0);
+            
+            // 🔥 Guardar steps para el conductor
+            if (session.isConductor()) {
+                JSONArray legs = route.optJSONArray("legs");
+                if (legs != null && legs.length() > 0) {
+                    currentSteps = legs.getJSONObject(0).optJSONArray("steps");
+                    nextStepIndex = 0;
+                }
+            }
+
+            JSONArray coords = route.getJSONObject("geometry").getJSONArray("coordinates");
+            ArrayList<GeoPoint> pts = new ArrayList<>();
+            for (int i = 0; i < coords.length(); i++) {
+                JSONArray par = coords.getJSONArray(i);
+                pts.add(new GeoPoint(par.getDouble(1), par.getDouble(0)));
+            }
+            return pts;
+        } catch (Exception e) {
+            Log.e(TAG, "parsearRutaYPasos: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private void verificarPasosNavegacion(GeoPoint miPos) {
+        if (!session.isConductor() || currentSteps == null || nextStepIndex >= currentSteps.length()) return;
+
+        try {
+            JSONObject step = currentSteps.getJSONObject(nextStepIndex);
+            JSONObject maneuver = step.getJSONObject("maneuver");
+            JSONArray locArr = maneuver.getJSONArray("location");
+            GeoPoint pPaso = new GeoPoint(locArr.getDouble(1), locArr.getDouble(0));
+
+            double dist = calcularDistanciaMetros(miPos, pPaso);
+            
+            // Si estamos a menos de 70 metros y no hemos hablado recientemente para este paso
+            if (dist < 70 && System.currentTimeMillis() - lastVoiceTime > 15000) {
+                String instruction = step.optString("navigation_instruction", "");
+                if (instruction.isEmpty()) {
+                    String type = maneuver.optString("type");
+                    String modifier = maneuver.optString("modifier", "");
+                    String name = step.optString("name", "");
+                    
+                    instruction = "En " + (int)dist + " metros ";
+                    if (modifier.contains("right")) instruction += "gira a la derecha";
+                    else if (modifier.contains("left")) instruction += "gira a la izquierda";
+                    else if (type.contains("arrive")) instruction += "llegarás a tu destino";
+                    else instruction += "continúa";
+                    
+                    if (!name.isEmpty()) instruction += " por " + name;
+                }
+                
+                voiceAssistant.hablar(instruction);
+                lastVoiceTime = System.currentTimeMillis();
+                nextStepIndex++; // Pasar al siguiente paso
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error guía de voz: " + e.getMessage());
+        }
     }
 
     private ArrayList<GeoPoint> osrmParsear(String json) {
@@ -1903,6 +1996,8 @@ public class Mapa extends AppCompatActivity {
                     if (session.isConductor()) {
                         verificarRecogidaPasajero(pos);
                         verificarLlegadaAlDestino(pos);
+                        // 🔊 Guía de voz: giros y maniobras (OSRM steps)
+                        verificarPasosNavegacion(pos);
                     }
                 });
 

@@ -56,7 +56,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-public class Chat extends AppCompatActivity {
+public class Chat extends BaseActivity {
 
     private static final String TAG                    = "CHAT";
     private static final long   POLL_INTERVAL          = 2500L;

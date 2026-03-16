@@ -66,7 +66,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class Login extends AppCompatActivity {
+public class Login extends BaseActivity {
 
     private static final String TAG = "LOGIN_DEBUG";
     private static final int REQUEST_CAMERA_PERM = 100;
@@ -121,6 +121,11 @@ public class Login extends AppCompatActivity {
     // ══════════════════════════════════════════════════════════════════════════
     //  LIFECYCLE
     // ══════════════════════════════════════════════════════════════════════════
+
+    @Override
+    protected void iniciarAsistenteVozSiPermite() {
+        // No iniciar el asistente de voz en la pantalla de Login
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -334,6 +339,7 @@ public class Login extends AppCompatActivity {
                 Log.d(TAG, "Foto de perfil guardada: " + fotoPerfil);
             }
 
+            sessionManager.setPendingWelcome(true);
             guardarSesionYNavegar(token, nombre, email, telefono, idRol, idUsuario);
 
         } catch (JSONException e) {
@@ -785,6 +791,7 @@ public class Login extends AppCompatActivity {
 
             txtEstado.setText("✅ ¡Bienvenido " + nombre + "!");
             MoviAlert.toast(this, "¡Bienvenido, " + nombre + "!", MoviAlert.SUCCESS);
+            sessionManager.setPendingWelcome(true);
             guardarSesionYNavegar(token, nombre, email, telefono, idRol, idUsuario);
 
         } catch (JSONException e) {

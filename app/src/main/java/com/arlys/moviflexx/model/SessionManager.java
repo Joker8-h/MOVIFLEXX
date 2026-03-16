@@ -19,7 +19,8 @@ public class SessionManager {
     private static final String KEY_ID_USUARIO            = "id_usuario";
     private static final String KEY_CALIFICACION_PROMEDIO = "calificacion_promedio";
     private static final String KEY_CALIFICACION_TOTAL    = "calificacion_total";
-    private static final String KEY_FOTO_PERFIL           = "foto_perfil"; // ← NUEVO
+    private static final String KEY_FOTO_PERFIL           = "foto_perfil"; 
+    private static final String KEY_PENDING_WELCOME       = "pending_welcome"; 
 
     private SharedPreferences        prefs;
     private SharedPreferences.Editor editor;
@@ -122,6 +123,17 @@ public class SessionManager {
 
     public String getFotoPerfil() {
         return prefs.getString(KEY_FOTO_PERFIL, "");
+    }
+
+    // ================= BIENVENIDA (Asistente) =================
+
+    public void setPendingWelcome(boolean pending) {
+        editor.putBoolean(KEY_PENDING_WELCOME, pending);
+        editor.apply();
+    }
+
+    public boolean isPendingWelcome() {
+        return prefs.getBoolean(KEY_PENDING_WELCOME, false);
     }
 
     // ================= VEHÍCULO POR USUARIO =================
