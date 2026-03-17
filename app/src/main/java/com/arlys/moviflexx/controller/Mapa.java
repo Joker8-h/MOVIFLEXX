@@ -55,35 +55,20 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.arlys.moviflexx.model.VoiceAssistantManager;
-import com.arlys.moviflexx.controller.BaseActivity;
-import com.arlys.moviflexx.model.ConexionApi;
-import com.arlys.moviflexx.model.Constantes;
-import com.arlys.moviflexx.model.Manager.CalificacionesManager;
-import com.arlys.moviflexx.model.SessionManager;
-import com.arlys.moviflexx.model.NotificacionesHelper;
 
-import io.socket.client.IO;
-import io.socket.client.Socket;
-import io.socket.emitter.Emitter;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
 
-<<<<<<< HEAD
-=======
 import io.socket.client.IO;
 import io.socket.client.Socket;
 
->>>>>>> d015b10 (actualizacion)
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -92,11 +77,24 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-<<<<<<< HEAD
-public class Mapa extends BaseActivity {
-=======
->>>>>>> d015b10 (actualizacion)
-
+/**
+ * Mapa.java — versión fusionada (BASE antiguo + FIX #1‥#8)
+ *
+ * Mejoras incluidas:
+ *  FIX #1 — GPS sin saltos (umbral delta 0.000010)
+ *  FIX #2 — Monto del pasajero en HUD (tvMontoHud)
+ *  FIX #3 — Ruta base siempre visible (lineasPintadas ≠ lineasEta)
+ *  FIX #4 — Estado persistente al reanudar (sincronizarEstadoDesdeServidor)
+ *  FIX #5 — Sincronización conductor↔pasajero (Firebase + Socket trip_event)
+ *  FIX #6 — Múltiples pasajeros (PasajeroInfo, procesarUsuariosMultipasajero)
+ *  FIX #7 — Conductor va a ResumenViajeActivity al finalizar
+ *  FIX #8 — Pasajero abre PagoActivity al llegar a su bajada
+ *
+ * Base: extiende BaseActivity, mantiene VoiceAssistantManager, guía de voz OSRM,
+ *       crearChipsEta(), inflarBannerConMonto(), verificarPasosNavegacion(),
+ *       cargarCoordsDesdeApi() con 4 estrategias + geocodificación Nominatim,
+ *       verificarAccesoAlMapa(), mostrarMapaBloqueado(), irACalificarConductorDesdeMapa().
+ */
 public class Mapa extends BaseActivity {
 
     // ── Interfaz interna ──────────────────────────────────────────────────────
@@ -146,7 +144,10 @@ public class Mapa extends BaseActivity {
     private GeoPoint                    miUltimaPosicion = null;
 
     // ── Polilíneas ────────────────────────────────────────────────────────────
-
+    /**
+     * FIX #3 — Ruta base del conductor: NUNCA se limpia durante el viaje.
+     * Solo se borra en paso2FinalizarMapa() al terminar.
+     */
     private final List<Polyline> lineasPintadas = new ArrayList<>();
     /** Tramo naranja dinámico conductor→próximo punto (se actualiza en cada tick GPS) */
     private final List<Polyline> lineasEta      = new ArrayList<>();
@@ -226,19 +227,11 @@ public class Mapa extends BaseActivity {
     private Socket  mSocket;
     private boolean isSocketConnected = false;
 
-<<<<<<< HEAD
-    // 🔥 Guía de Voz
-    private VoiceAssistantManager voiceAssistant;
-    private JSONArray currentSteps;
-    private int nextStepIndex = 0;
-    private long lastVoiceTime = 0;
-=======
     // ── Guía de Voz (del antiguo) ─────────────────────────────────────────────
     private VoiceAssistantManager voiceAssistant;
     private JSONArray currentSteps   = null;
     private int       nextStepIndex  = 0;
     private long      lastVoiceTime  = 0;
->>>>>>> d015b10 (actualizacion)
 
     // =========================================================================
     //  LIFECYCLE
@@ -318,7 +311,7 @@ public class Mapa extends BaseActivity {
         if (fusedClient != null && locationCallback != null)
             fusedClient.removeLocationUpdates(locationCallback);
         if (rPoll != null) hPoll.removeCallbacks(rPoll);
-        // ← QUITAR desconectarSocket() de aquí
+        // Socket se desconecta solo en onDestroy para mantener updates en background
     }
 
     @Override
@@ -326,7 +319,7 @@ public class Mapa extends BaseActivity {
         super.onDestroy();
         if (pulsoAnimator != null) { pulsoAnimator.cancel(); pulsoAnimator = null; }
         if (rPoll != null) hPoll.removeCallbacks(rPoll);
-        desconectarSocket(); // ← solo aquí
+        desconectarSocket();
         if (refEstadoViaje != null && listenerEstadoViaje != null)
             refEstadoViaje.removeEventListener(listenerEstadoViaje);
     }
@@ -449,17 +442,7 @@ public class Mapa extends BaseActivity {
         else
             agregarMarcadores(esConductor);
 
-<<<<<<< HEAD
-        // Conectar al socket si es un viaje activo
-        if (idViaje > 0) {
-            inicializarSocket();
-        }
-
-        // 🔥 Asistente de Voz
-        voiceAssistant = VoiceAssistantManager.getInstance(this);
-=======
         if (idViaje > 0) inicializarSocket();
->>>>>>> d015b10 (actualizacion)
     }
 
     // =========================================================================
@@ -559,7 +542,10 @@ public class Mapa extends BaseActivity {
         if (todosRec && !pasajeros.isEmpty() && estadoViaje != EstadoViaje.VIAJE_FINALIZADO)
             estadoViaje = EstadoViaje.EN_CAMINO_A_DESTINO;
 
-        runOnUiThread(() -> pintarMarcadoresPasajeros());
+        runOnUiThread(() -> {
+            pintarMarcadoresPasajeros();
+            actualizarTextoRutaHud(); // actualizar HUD con nombres reales del pasajero
+        });
     }
 
     @Nullable
@@ -713,8 +699,8 @@ public class Mapa extends BaseActivity {
         tvRuta.setLayoutParams(lpR);
         banner.addView(tvRuta);
 
-        if (!esConductor) {
-            // Leyenda
+        // ── Leyenda de colores — igual para conductor Y pasajero ────────────
+        {
             LinearLayout ley = new LinearLayout(this);
             ley.setOrientation(LinearLayout.HORIZONTAL);
             ley.setGravity(Gravity.CENTER_VERTICAL);
@@ -722,16 +708,24 @@ public class Mapa extends BaseActivity {
                     LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             lpL.topMargin = px(5);
             ley.setLayoutParams(lpL);
-            ley.addView(chipLeyenda("━━ Ruta",       0xFF4DD0E1));
-            ley.addView(chipLeyenda("━━ Conductor",  0xFFFFB74D));
-            ley.addView(chipLeyenda("🙋 Subida",     0xFF4CAF50));
-            ley.addView(chipLeyenda("🚏 Bajada",     0xFFFF7043));
+            ley.addView(chipLeyenda("━━ Ruta",      0xFF4DD0E1));
+            // El pasajero ve "━━ Conductor"; el conductor ve "🚗 Mi posición"
+            if (!esConductor) ley.addView(chipLeyenda("━━ Conductor", 0xFFFFB74D));
+            else              ley.addView(chipLeyenda("🚗 Mi pos.",    0xFF1976D2));
+            ley.addView(chipLeyenda("🙋 Subida",    0xFF4CAF50));
+            ley.addView(chipLeyenda("🚏 Bajada",    0xFFFF7043));
             banner.addView(ley);
+        }
 
-            // Info paradas pasajero
+        // ── Fila subida / bajada (dinámica, se actualiza con actualizarTextoRutaHud) ──
+        {
             TextView tvP = new TextView(this);
-            tvP.setText("🙋 " + (nomSubida.isEmpty() ? "—" : nomSubida)
-                    + "   🚏 " + (nomBajada.isEmpty() ? "—" : nomBajada));
+            tvP.setTag("tv_paradas_hud");
+            // Para el conductor: al inicio nomSubida/nomBajada pueden estar vacíos;
+            // se actualizan en actualizarTextoRutaHud() y procesarUsuariosMultipasajero()
+            String lblSub = nomSubida.isEmpty() ? "Cargando…" : nomSubida;
+            String lblBaj = nomBajada.isEmpty() ? "Cargando…" : nomBajada;
+            tvP.setText("🙋 " + lblSub + "   🚏 " + lblBaj);
             tvP.setTextColor(Color.parseColor("#E0F7FA"));
             tvP.setTextSize(11f);
             tvP.setMaxLines(1);
@@ -797,17 +791,36 @@ public class Mapa extends BaseActivity {
         });
     }
 
-    /** Actualiza el texto de ruta en el HUD */
+    /** Actualiza el texto de ruta Y la fila de paradas en el HUD con los nombres reales */
     private void actualizarTextoRutaHud() {
         FrameLayout root = findViewById(android.R.id.content);
         View hud = root.findViewWithTag("hud_banner");
         if (hud == null) return;
+
+        // Línea principal: Origen → Destino
         TextView tvRuta = hud.findViewWithTag("tv_ruta_hud");
-        if (tvRuta == null) return;
-        String origenText  = nomSubida.isEmpty() ? "Origen" : nomSubida;
-        String destinoText = !nomDestinoRuta.isEmpty() ? nomDestinoRuta
-                : (nomBajada.isEmpty() ? "Destino" : nomBajada);
-        runOnUiThread(() -> tvRuta.setText("📍 " + origenText + "  →  " + destinoText));
+        if (tvRuta != null) {
+            String origenText  = nomSubida.isEmpty() ? "Origen" : nomSubida;
+            String destinoText = !nomDestinoRuta.isEmpty() ? nomDestinoRuta
+                    : (nomBajada.isEmpty() ? "Destino" : nomBajada);
+            runOnUiThread(() -> tvRuta.setText("📍 " + origenText + "  →  " + destinoText));
+        }
+
+        // Fila subida/bajada — toma el primer pasajero si hay lista multipasajero
+        TextView tvParadas = hud.findViewWithTag("tv_paradas_hud");
+        if (tvParadas != null) {
+            String lblSub, lblBaj;
+            if (!pasajeros.isEmpty()) {
+                PasajeroInfo pri = pasajeros.get(0);
+                lblSub = pri.nomSubida != null && !pri.nomSubida.isEmpty() ? pri.nomSubida : nomSubida;
+                lblBaj = pri.nomBajada != null && !pri.nomBajada.isEmpty() ? pri.nomBajada : nomBajada;
+            } else {
+                lblSub = nomSubida.isEmpty() ? "—" : nomSubida;
+                lblBaj = nomBajada.isEmpty() ? "—" : nomBajada;
+            }
+            final String fSub = lblSub, fBaj = lblBaj;
+            runOnUiThread(() -> tvParadas.setText("🙋 " + fSub + "   🚏 " + fBaj));
+        }
     }
 
     private void actualizarEstadoHud() {
@@ -927,19 +940,6 @@ public class Mapa extends BaseActivity {
         for (GeoPoint wp : waypoints)
             coords.append(";").append(wp.getLongitude()).append(",").append(wp.getLatitude());
         coords.append(";").append(hasta.getLongitude()).append(",").append(hasta.getLatitude());
-<<<<<<< HEAD
-
-        String params    = "?overview=full&geometries=geojson&steps=true"; // 🔥 Pedir steps también con waypoints
-        String urlPropio = OSRM_PROPIO  + "/route/v1/driving/" + coords + params;
-        String urlPubl   = OSRM_PUBLICO + "/route/v1/driving/" + coords + params;
-
-        ArrayList<GeoPoint> pts = null;
-        try { pts = parsearRutaYPasos(http(urlPropio)); }
-        catch (Exception e) { Log.w(TAG, "OSRM propio waypoints: " + e.getMessage()); }
-        if (pts == null || pts.size() < 2) {
-            try { pts = parsearRutaYPasos(http(urlPubl)); }
-            catch (Exception e) { Log.w(TAG, "OSRM publico waypoints: " + e.getMessage()); }
-=======
         String params = "?overview=full&geometries=geojson&steps=true";
         ArrayList<GeoPoint> pts = null;
         try { pts = parsearRutaYPasos(http(OSRM_PROPIO + "/route/v1/driving/" + coords + params)); }
@@ -947,30 +947,11 @@ public class Mapa extends BaseActivity {
         if (pts == null || pts.size() < 2) {
             try { pts = parsearRutaYPasos(http(OSRM_PUBLICO+"/route/v1/driving/"+coords+params)); }
             catch (Exception e) { Log.w(TAG,"OSRM pub wp: "+e.getMessage()); }
->>>>>>> d015b10 (actualizacion)
         }
         return (pts != null && pts.size() >= 2) ? pts : osrmRuta(desde, hasta);
     }
 
     private ArrayList<GeoPoint> osrmRuta(GeoPoint desde, GeoPoint hasta) {
-<<<<<<< HEAD
-        String coords = desde.getLongitude() + "," + desde.getLatitude() + ";"
-                + hasta.getLongitude() + "," + hasta.getLatitude()
-                + "?overview=full&geometries=geojson&steps=true"; // 🔥 Pedir steps
-        ArrayList<GeoPoint> pts = null;
-        try { 
-            String json = http(OSRM_PROPIO  + "/route/v1/driving/" + coords);
-            pts = parsearRutaYPasos(json); 
-        }
-        catch (Exception e) { Log.w(TAG, "OSRM propio: " + e.getMessage()); }
-        
-        if (pts == null || pts.size() < 2) {
-            try { 
-                String json = http(OSRM_PUBLICO + "/route/v1/driving/" + coords);
-                pts = parsearRutaYPasos(json); 
-            }
-            catch (Exception e) { Log.w(TAG, "OSRM publico: " + e.getMessage()); }
-=======
         String coords = desde.getLongitude()+","+desde.getLatitude()+";"
                 +hasta.getLongitude()+","+hasta.getLatitude()
                 +"?overview=full&geometries=geojson&steps=true";
@@ -980,86 +961,12 @@ public class Mapa extends BaseActivity {
         if (pts == null || pts.size() < 2) {
             try { pts = parsearRutaYPasos(http(OSRM_PUBLICO+"/route/v1/driving/"+coords)); }
             catch (Exception e) { Log.w(TAG,"OSRM pub: "+e.getMessage()); }
->>>>>>> d015b10 (actualizacion)
         }
         return (pts != null && pts.size() >= 2) ? pts : null;
     }
 
-<<<<<<< HEAD
-    private ArrayList<GeoPoint> parsearRutaYPasos(String json) {
-        if (json == null || json.isEmpty()) return null;
-        try {
-            JSONObject obj = new JSONObject(json);
-            if (!"Ok".equals(obj.optString("code"))) return null;
-            JSONArray routes = obj.optJSONArray("routes");
-            if (routes == null || routes.length() == 0) return null;
-            
-            JSONObject route = routes.getJSONObject(0);
-            
-            // 🔥 Guardar steps para el conductor
-            if (session.isConductor()) {
-                JSONArray legs = route.optJSONArray("legs");
-                if (legs != null && legs.length() > 0) {
-                    currentSteps = legs.getJSONObject(0).optJSONArray("steps");
-                    nextStepIndex = 0;
-                }
-            }
-
-            JSONArray coords = route.getJSONObject("geometry").getJSONArray("coordinates");
-            ArrayList<GeoPoint> pts = new ArrayList<>();
-            for (int i = 0; i < coords.length(); i++) {
-                JSONArray par = coords.getJSONArray(i);
-                pts.add(new GeoPoint(par.getDouble(1), par.getDouble(0)));
-            }
-            return pts;
-        } catch (Exception e) {
-            Log.e(TAG, "parsearRutaYPasos: " + e.getMessage());
-            return null;
-        }
-    }
-
-    private void verificarPasosNavegacion(GeoPoint miPos) {
-        if (!session.isConductor() || currentSteps == null || nextStepIndex >= currentSteps.length()) return;
-
-        try {
-            JSONObject step = currentSteps.getJSONObject(nextStepIndex);
-            JSONObject maneuver = step.getJSONObject("maneuver");
-            JSONArray locArr = maneuver.getJSONArray("location");
-            GeoPoint pPaso = new GeoPoint(locArr.getDouble(1), locArr.getDouble(0));
-
-            double dist = calcularDistanciaMetros(miPos, pPaso);
-            
-            // Si estamos a menos de 70 metros y no hemos hablado recientemente para este paso
-            if (dist < 70 && System.currentTimeMillis() - lastVoiceTime > 15000) {
-                String instruction = step.optString("navigation_instruction", "");
-                if (instruction.isEmpty()) {
-                    String type = maneuver.optString("type");
-                    String modifier = maneuver.optString("modifier", "");
-                    String name = step.optString("name", "");
-                    
-                    instruction = "En " + (int)dist + " metros ";
-                    if (modifier.contains("right")) instruction += "gira a la derecha";
-                    else if (modifier.contains("left")) instruction += "gira a la izquierda";
-                    else if (type.contains("arrive")) instruction += "llegarás a tu destino";
-                    else instruction += "continúa";
-                    
-                    if (!name.isEmpty()) instruction += " por " + name;
-                }
-                
-                voiceAssistant.hablar(instruction);
-                lastVoiceTime = System.currentTimeMillis();
-                nextStepIndex++; // Pasar al siguiente paso
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error guía de voz: " + e.getMessage());
-        }
-    }
-
-    private ArrayList<GeoPoint> osrmParsear(String json) {
-=======
     /** Parsea la respuesta OSRM y extrae steps de voz para el conductor */
     private ArrayList<GeoPoint> parsearRutaYPasos(String json) {
->>>>>>> d015b10 (actualizacion)
         if (json == null || json.isEmpty()) return null;
         try {
             JSONObject obj = new JSONObject(json);
@@ -1132,19 +1039,33 @@ public class Mapa extends BaseActivity {
 
     private void agregarMarcadores(boolean esConductor) {
         if (esConductor) {
-            if (pOrigen != null)
-                agregarPin(pOrigen, "🏁 Inicio: " + (nomSubida.isEmpty() ? "Origen" : nomSubida),
-                        0xFF4CAF50, "A");
-            // Pin B = destino REAL del conductor.
-            // Si pDestino == pBajada (bajada del pasajero) no pintar B aquí;
-            // el pin de bajada ya lo pinta pintarMarcadoresPasajeros().
-            boolean destinoEsBajadaPasajero = pBajada != null && pDestino != null
-                    && coordsIguales(pDestino.getLatitude(), pDestino.getLongitude(),
-                    pBajada.getLatitude(),  pBajada.getLongitude());
-            if (pDestino != null && !destinoEsBajadaPasajero) {
-                String nomDest = !nomDestinoRuta.isEmpty() ? nomDestinoRuta
-                        : (nomBajada.isEmpty() ? "Destino" : nomBajada);
-                agregarPin(pDestino, "🏁 Destino: " + nomDest, 0xFFEF5350, "B");
+            // Pin A = inicio de la ruta del conductor
+            if (pOrigen != null) {
+                String nomOrig = nomSubida.isEmpty() ? "Inicio de ruta" : nomSubida;
+                agregarPin(pOrigen, "🏁 " + nomOrig, 0xFF43A047, "A");
+            }
+            // Pin B = destino FINAL de la ruta del conductor.
+            // SOLO se pinta si pDestino existe Y NO es la misma posición que pBajada del pasajero
+            // (para evitar el doble pin B que se veía antes).
+            if (pDestino != null) {
+                boolean esBajadaPasajero = pBajada != null
+                        && coordsIguales(pDestino.getLatitude(), pDestino.getLongitude(),
+                        pBajada.getLatitude(),  pBajada.getLongitude());
+                if (!esBajadaPasajero) {
+                    // Tampoco pinto si algún pasajero tiene pBajada en ese punto
+                    boolean coincideConBajadaMulti = false;
+                    for (PasajeroInfo pp : pasajeros) {
+                        if (pp.pBajada != null && coordsIguales(
+                                pDestino.getLatitude(), pDestino.getLongitude(),
+                                pp.pBajada.getLatitude(), pp.pBajada.getLongitude())) {
+                            coincideConBajadaMulti = true; break;
+                        }
+                    }
+                    if (!coincideConBajadaMulti) {
+                        String nomDest = !nomDestinoRuta.isEmpty() ? nomDestinoRuta : "Destino final";
+                        agregarPin(pDestino, "🏁 " + nomDest, 0xFFE53935, "B");
+                    }
+                }
             }
         } else {
             if (pOrigen  != null) agregarPin(pOrigen, "🏁 Inicio de ruta", 0xFF4CAF50,"A");
@@ -1822,11 +1743,6 @@ public class Mapa extends BaseActivity {
                 runOnUiThread(() -> {
                     actualizarMarcadorPropio(pos, fRumbo);
                     if (session.isConductor()) {
-<<<<<<< HEAD
-                        verificarRecogidaPasajero(pos);
-                        verificarLlegadaAlDestino(pos);
-                        // 🔊 Guía de voz: giros y maniobras (OSRM steps)
-=======
                         // Máquina de estados multipasajero (FIX #6)
                         actualizarEstadoViaje(pos);
                         // Fallback para modo sin pasajeros (antiguo)
@@ -1835,7 +1751,6 @@ public class Mapa extends BaseActivity {
                             verificarLlegadaAlDestino(pos);
                         }
                         // Guía de voz (del antiguo)
->>>>>>> d015b10 (actualizacion)
                         verificarPasosNavegacion(pos);
                     }
                 });
@@ -2863,11 +2778,9 @@ public class Mapa extends BaseActivity {
         try {
             JSONArray arr = new JSONArray(json);
             if (arr.length() == 0) return null;
-
             // Buscar la parada con mayor orden que NO sea tipo BAJADA
             JSONObject mejorDestino = null;
             int maxOrden = -1;
-
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject p = arr.optJSONObject(i);
                 if (p == null) continue;
@@ -2876,16 +2789,10 @@ public class Mapa extends BaseActivity {
                 double lat = p.optDouble("lat", p.optDouble("latitud", 0));
                 if (lat == 0) continue;
                 int orden = p.optInt("orden", i);
-                if (orden > maxOrden) {
-                    maxOrden = orden;
-                    mejorDestino = p;
-                }
+                if (orden > maxOrden) { maxOrden = orden; mejorDestino = p; }
             }
-
             // Fallback: si todas son BAJADA o no hay tipo, tomar la última
-            if (mejorDestino == null)
-                mejorDestino = arr.getJSONObject(arr.length() - 1);
-
+            if (mejorDestino == null) mejorDestino = arr.getJSONObject(arr.length() - 1);
             double lat = mejorDestino.optDouble("lat", mejorDestino.optDouble("latitud", 0));
             double lng = mejorDestino.optDouble("lng", mejorDestino.optDouble("longitud", 0));
             if (lat != 0 && lng != 0) {
@@ -2897,17 +2804,17 @@ public class Mapa extends BaseActivity {
         } catch (Exception e) { Log.w(TAG, "extraerDestino: " + e.getMessage()); }
         return null;
     }
+
     private void leerWaypointsDelIntent() {
         waypointsRuta.clear();
         String json = getIntent().getStringExtra("PARADAS_JSON");
         if (json == null || json.isEmpty()) return;
         try {
             JSONArray arr = new JSONArray(json);
-            // Encontrar índice del origen real (menor orden, no-BAJADA)
+            // Encontrar orden mínimo y máximo (origen y destino) excluyendo BAJADA
             int minOrden = Integer.MAX_VALUE, maxOrden = -1;
             for (int i = 0; i < arr.length(); i++) {
-                JSONObject p = arr.optJSONObject(i);
-                if (p == null) continue;
+                JSONObject p = arr.optJSONObject(i); if (p == null) continue;
                 String tipo = p.optString("tipo", "").toUpperCase().trim();
                 if ("BAJADA".equals(tipo)) continue;
                 double lat = p.optDouble("lat", p.optDouble("latitud", 0));
@@ -2916,17 +2823,16 @@ public class Mapa extends BaseActivity {
                 if (orden < minOrden) minOrden = orden;
                 if (orden > maxOrden) maxOrden = orden;
             }
-            // Solo agregar waypoints intermedios (ni origen ni destino, ni bajadas)
+            // Solo agregar waypoints intermedios (ni origen ni destino, ni BAJADA/SUBIDA)
             for (int i = 0; i < arr.length(); i++) {
-                JSONObject p = arr.optJSONObject(i);
-                if (p == null) continue;
+                JSONObject p = arr.optJSONObject(i); if (p == null) continue;
                 String tipo = p.optString("tipo", "").toUpperCase().trim();
                 if ("BAJADA".equals(tipo) || "SUBIDA".equals(tipo)) continue;
                 double lat = p.optDouble("lat", p.optDouble("latitud", 0));
                 double lng = p.optDouble("lng", p.optDouble("longitud", 0));
                 if (lat == 0) continue;
                 int orden = p.optInt("orden", i);
-                if (orden == minOrden || orden == maxOrden) continue; // saltar origen y destino
+                if (orden == minOrden || orden == maxOrden) continue;
                 waypointsRuta.add(new GeoPoint(lat, lng));
             }
         } catch (Exception e) { Log.w(TAG, "leerWaypoints: " + e.getMessage()); }

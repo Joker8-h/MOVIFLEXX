@@ -9,15 +9,10 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-<<<<<<< HEAD
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-
-
-=======
->>>>>>> d015b10 (actualizacion)
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -280,7 +275,7 @@ public class HomeConductor extends BaseActivity {
         BottomNavigationView nav = findViewById(R.id.bottom_navigation);
         if (nav == null) return;
 
-<<<<<<< HEAD
+
         if (nav != null) {
             nav.setSelectedItemId(R.id.nav_inicio);
         }
@@ -288,10 +283,10 @@ public class HomeConductor extends BaseActivity {
         // 🔥 Asistente de Voz (Iniciado automáticamente por BaseActivity)
 
         nav.getMenu().findItem(R.id.nav_mapa).setEnabled(false); // deshabilitado por defecto
-=======
+
         nav.setSelectedItemId(R.id.nav_inicio);
         nav.getMenu().findItem(R.id.nav_mapa).setEnabled(false);
->>>>>>> d015b10 (actualizacion)
+
 
         nav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
