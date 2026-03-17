@@ -159,15 +159,15 @@ public class PublicarViaje extends BaseActivity {
     /* ─── CONFIGURAR UI ──────────────────────────────────────────────────────── */
 
     private void configurarUI() {
-        txtDestinoInfo.setText("🏁 " + destinoRuta);
-        txtOrigenInfo.setText("📍 " + origenRuta);
+        txtDestinoInfo.setText(" " + destinoRuta);
+        txtOrigenInfo.setText(" " + origenRuta);
 
         String vehiculoNombre = limpiarTexto(session.getVehiculoNombre(), "Vehículo");
         String vehiculoPlaca  = limpiarTexto(session.getVehiculoPlaca(),  "Sin placa");
-        txtVehiculoInfo.setText("🚘 " + vehiculoNombre + " • " + vehiculoPlaca);
+        txtVehiculoInfo.setText(" " + vehiculoNombre + " • " + vehiculoPlaca);
 
         String nombreConductor = limpiarTexto(session.getNombre(), "Conductor");
-        txtConductorInfo.setText("🚗 Conductor: " + nombreConductor);
+        txtConductorInfo.setText(" Conductor: " + nombreConductor);
 
         configurarSpinnerConCapacidad();
         calcularYMostrarPrecio();      // calcula precioCalculado, lo muestra y bloquea el campo
@@ -240,13 +240,13 @@ public class PublicarViaje extends BaseActivity {
                             "⛽ $%,d COP combustible", (int) Math.round(costoCombustible)));
                     break;
                 case "km":
-                    detalle.append("💡 Estimado: $700/km");
+                    detalle.append(" Estimado: $700/km");
                     break;
                 default:
                     detalle.append("💡 Precio mínimo base");
             }
             if (distanciaKm > 0)
-                detalle.append(String.format(Locale.getDefault(), "  ·  📏 %.1f km", distanciaKm));
+                detalle.append(String.format(Locale.getDefault(), "  ·   %.1f km", distanciaKm));
             if (duracionMin > 0)
                 detalle.append(String.format(Locale.getDefault(), "  ·  ⏱ %.0f min", duracionMin));
 
@@ -315,13 +315,13 @@ public class PublicarViaje extends BaseActivity {
         if (!fechaSeleccionada) {
             editFechaHora.setError("Selecciona fecha y hora de salida");
             animarError(mainCard);
-            Toast.makeText(this, "📅 Selecciona la fecha y hora de salida", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, " Selecciona la fecha y hora de salida", Toast.LENGTH_SHORT).show();
             return false;
         }
         if (calendarioSalida.getTimeInMillis() <= System.currentTimeMillis()) {
             editFechaHora.setError("La hora de salida debe ser futura");
             animarError(mainCard);
-            Toast.makeText(this, "⏰ La hora de salida debe ser futura", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "La hora de salida debe ser futura", Toast.LENGTH_SHORT).show();
             return false;
         }
         Calendar maxFecha = Calendar.getInstance();
@@ -330,7 +330,7 @@ public class PublicarViaje extends BaseActivity {
             editFechaHora.setError("La salida no puede ser en más de " + MAX_DIAS_ADELANTE + " días");
             animarError(mainCard);
             Toast.makeText(this,
-                    "📅 La fecha no puede estar a más de " + MAX_DIAS_ADELANTE + " días",
+                    " La fecha no puede estar a más de " + MAX_DIAS_ADELANTE + " días",
                     Toast.LENGTH_SHORT).show();
             return false;
         }

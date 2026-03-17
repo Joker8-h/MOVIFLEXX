@@ -35,7 +35,7 @@
             android:paddingTop="36dp"
             android:paddingEnd="22dp"
             android:paddingBottom="24dp"
-            android:background="#00CED1">
+            android:background="#1ABC9C">
 
             <FrameLayout
                 android:layout_width="match_parent"
@@ -73,10 +73,6 @@
                             android:layout_height="54dp"
                             android:layout_marginEnd="14dp">
 
-                            <View
-                                android:layout_width="54dp"
-                                android:layout_height="54dp"
-                                android:background="@drawable/bg_avatar_ring_white"/>
 
                             <!-- Card inicial (logo, visible por defecto) -->
                             <com.google.android.material.card.MaterialCardView
@@ -117,13 +113,7 @@
                                     android:contentDescription="Foto de perfil"/>
                             </com.google.android.material.card.MaterialCardView>
 
-                            <View
-                                android:layout_width="13dp"
-                                android:layout_height="13dp"
-                                android:layout_gravity="bottom|end"
-                                android:layout_marginEnd="1dp"
-                                android:layout_marginBottom="1dp"
-                                android:background="@drawable/bg_dot_online"/>
+
                         </FrameLayout>
 
                         <!-- Saludo -->

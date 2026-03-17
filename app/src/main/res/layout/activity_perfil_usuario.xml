@@ -74,7 +74,8 @@
                             android:layout_height="42dp"
                             android:background="@drawable/bg_icon_circle_white_alpha"
                             android:clickable="true"
-                            android:focusable="true">
+                            android:focusable="true"
+                            app:strokeColor="#A0E0DC">
                             <ImageView
                                 android:layout_width="20dp"
                                 android:layout_height="20dp"
@@ -125,10 +126,6 @@
                             android:layout_marginEnd="16dp">
 
                             <!-- Anillo decorativo blanco exterior -->
-                            <View
-                                android:layout_width="82dp"
-                                android:layout_height="82dp"
-                                android:background="@drawable/bg_avatar_ring_white"/>
 
                             <!-- Card circular que contiene la inicial (fallback) -->
                             <com.google.android.material.card.MaterialCardView
@@ -174,13 +171,7 @@
                             </com.google.android.material.card.MaterialCardView>
 
                             <!-- Punto online — siempre visible encima -->
-                            <View
-                                android:layout_width="16dp"
-                                android:layout_height="16dp"
-                                android:layout_gravity="bottom|end"
-                                android:layout_marginEnd="4dp"
-                                android:layout_marginBottom="4dp"
-                                android:background="@drawable/bg_dot_online"/>
+
                         </FrameLayout>
 
                         <!-- Nombre + chip rol -->
@@ -718,10 +709,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
-                    app:cardBackgroundColor="#FFF8E1"
+                    app:cardBackgroundColor="#E0FFFE"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="0dp"
-                    app:strokeColor="#FFE082"
+                    app:strokeColor="#A0E0DC"
                     app:strokeWidth="1dp">
 
                     <LinearLayout
@@ -742,7 +733,7 @@
                                 android:layout_gravity="center"
                                 android:contentDescription="Info"
                                 android:src="@drawable/ic_notifications"
-                                app:tint="#F57F17" />
+                                app:tint="#00CED1" />
                         </FrameLayout>
 
                         <LinearLayout
@@ -754,7 +745,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Edición solo en la web"
-                                android:textColor="#E65100"
+                                android:textColor="#1A2F4A"
                                 android:textSize="13sp"
                                 android:textStyle="bold"
                                 android:layout_marginBottom="3dp"/>

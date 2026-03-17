@@ -21,6 +21,7 @@ import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.*;
+import android.view.MotionEvent;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;                    // ← quitado AppCompatActivity import
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -57,6 +58,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+
 // ════════════════════════════════════════════════════════
 // CAMBIO 1/3: extends BaseActivity (antes AppCompatActivity)
 // ════════════════════════════════════════════════════════
@@ -71,6 +73,8 @@ public class PublicarRuta extends BaseActivity {
     private static final double MAX_DISTANCIA_KM = 1000;
     private static final int    AUTOCOMPLETADO_DELAY_MS = 600;
     private static final int    MAX_RUTAS = 5;
+
+
 
     // ── UI ──────────────────────────────────────────────────────────────────
     private TextInputEditText    editOrigen, editDestino;
@@ -198,7 +202,24 @@ public class PublicarRuta extends BaseActivity {
                 new File(getCacheDir(), "osmdroid_tiles"));
         Configuration.getInstance().setTileFileSystemCacheMaxBytes(100L * 1024 * 1024);
         Configuration.getInstance().setTileFileSystemCacheTrimBytes(80L * 1024 * 1024);
+
+        map.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_MOVE:
+                    // Le dice al ScrollView que no intercepte mientras el dedo está en el mapa
+                    v.getParent().requestDisallowInterceptTouchEvent(true);
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    // Restaura el scroll normal cuando el dedo sale del mapa
+                    v.getParent().requestDisallowInterceptTouchEvent(false);
+                    break;
+            }
+            return false; // false = el MapView sigue procesando el evento normalmente
+        });
     }
+
 
     /* ═══════════ ZOOM ═══════════ */
 

@@ -94,12 +94,27 @@ dependencies {
     implementation("io.socket:socket.io-client:2.1.0")
 
 
-    // ✅ JavaMail — envío de OTP por Gmail
-    implementation("com.sun.mail:android-mail:1.6.7")
-    implementation("com.sun.mail:android-activation:1.6.7")
+    // Pruebas Unitarias
+    implementation ("androidx.appcompat:appcompat:1.6.1")
+    implementation ("com.google.android.material:material:1.11.0")
 
-    implementation ("com.github.bumptech.glide:glide:4.16.0")
-    annotationProcessor ("com.github.bumptech.glide:compiler:4.16.0")
+    // ── Retrofit (para la prueba de API) ──────────────────────────────────
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // ── PRUEBAS UNITARIAS (carpeta test) ──────────────────────────────────
+    testImplementation ("junit:junit:4.13.2")
+    testImplementation ("org.mockito:mockito-core:5.4.0")
+    testImplementation ("com.squareup.okhttp3:mockwebserver:4.11.0")
+
+    // ── PRUEBAS DE UI Espresso (carpeta androidTest) ──────────────────────
+    androidTestImplementation ("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation ("androidx.test.espresso:espresso-core:3.5.1")
+    androidTestImplementation ("androidx.test:rules:1.5.0")
+
+    // 🖼️ Glide — carga de imágenes
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
 }
 
 

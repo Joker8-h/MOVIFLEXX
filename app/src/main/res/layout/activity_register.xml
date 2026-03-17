@@ -1,140 +1,209 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    MOVIFLEXX — activity_register.xml
-    Flujo por pasos igual a la web:
-      PASO 1 → Ingresa correo → "Enviar Código"
-      PASO 2 → OTP 6 dígitos → "Verificar Email"
-      PASO 3 → Formulario completo (nombre, tel, contraseña, términos)
-      PASO 4 → Cámara facial (ConstraintLayout superpuesto)
-
-    IDs Java que deben existir (Register.java los usa):
+    MOVIFLEXX — activity_register.xml (REDISEÑO CLARO)
+    Colores: fondo #F2FBFA, teal #1ABC9C, blobs decorativos
+    Todos los IDs originales intactos para Register.java:
       layoutFormulario, scrollFormulario, layoutFace,
       previewView, txtEstado,
       til_nombre, til_email, til_telefono, til_password,
       edt_nombre, edt_email, edt_telefono, edt_password,
       btn_register, btn_verificar_email,
       layoutEmailNoVerificado, layoutEmailVerificado,
-      cbTerminos, tvLinkTerminos
-
-    IDs NUEVOS para el flujo por pasos:
+      cbTerminos, tvLinkTerminos,
       stepEmail, stepOtp,
-      edt_email_paso1        ← campo email del paso 1
-      btn_enviar_codigo      ← enviar OTP
-      tv_email_destino       ← muestra "código enviado a X"
-      otp1..otp6             ← 6 campos de un dígito
-      btn_verificar_otp      ← verificar el código
-      tv_reenviar_codigo     ← "Reenviar Código"
-      tv_cambiar_correo      ← "Cambiar Correo"
-      progress_paso1/2/3     ← barra de progreso visual
+      edt_email_paso1, btn_enviar_codigo, tv_email_destino,
+      otp1..otp6, btn_verificar_otp,
+      tv_reenviar_codigo, tv_cambiar_correo,
+      progress_paso1, progress_paso2, progress_paso3
 -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/fondomoviflexxx">
+    android:background="#F2FBFA">
 
-    <!-- ══════════════════════════════════════════════════════════ -->
-    <!--  PASO 1 — INGRESAR CORREO                                 -->
-    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- ═══ BLOB superior derecho ═══ -->
+    <View
+        android:layout_width="220dp"
+        android:layout_height="220dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="-70dp"
+        android:layout_marginEnd="-70dp"
+        android:background="@drawable/bg_blob_login"
+        android:alpha="0.16"
+        android:clickable="false"/>
+
+    <!-- ═══ BLOB inferior izquierdo ═══ -->
+    <View
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="-50dp"
+        android:layout_marginBottom="80dp"
+        android:background="@drawable/bg_blob_login"
+        android:alpha="0.12"
+        android:clickable="false"/>
+
+    <!-- ════════════════════════════════════════════════════
+         PASO 1 — INGRESAR CORREO
+    ════════════════════════════════════════════════════ -->
     <ScrollView
         android:id="@+id/stepEmail"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/transparent"
         android:fillViewport="true"
+        android:overScrollMode="never"
         android:visibility="visible">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:gravity="center_horizontal"
             android:paddingStart="28dp"
+            android:paddingTop="20dp"
             android:paddingEnd="28dp"
-            android:paddingBottom="36dp">
+            android:background="@drawable/fondomoviflex"
+            android:paddingBottom="40dp">
 
-            <!-- Logo -->
+            <!-- ── Ilustración van MoviFlex (Paso 1) ── -->
             <ImageView
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:layout_gravity="center"
-                android:layout_marginTop="40dp"
-                android:layout_marginBottom="4dp"
-                android:src="@drawable/logomo"
-                android:contentDescription="Logo" />
+                android:layout_width="260dp"
+                android:layout_height="165dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="18dp"
+                android:adjustViewBounds="true"
+                android:contentDescription="MoviFlex ilustración"
+                android:scaleType="fitCenter"
+                android:src="@drawable/moviflesx"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="MOVIFLEX"
-                android:textSize="17sp"
-                android:textStyle="bold"
-                android:textColor="#2EC4B6"
-                android:letterSpacing="0.08"
-                android:layout_marginBottom="6dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="Crea tu cuenta"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#2B2B2B"
-                android:layout_marginBottom="20dp" />
-
-            <!-- Barra de progreso paso 1/3 -->
+            <!-- Logo + nombre -->
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="24dp">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
 
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="4dp"
-                    android:background="#E8E8E8">
-                    <View
-                        android:id="@+id/progress_paso1"
-                        android:layout_width="0dp"
-                        android:layout_height="4dp"
-                        android:background="#2EC4B6" />
-                </FrameLayout>
+                <ImageView
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="8dp"
+                    android:src="@drawable/logomo"
+                    android:scaleType="fitCenter"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="Logo"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="6dp"
-                    android:text="Paso 1 de 3"
-                    android:textSize="12sp"
-                    android:textColor="#AAAAAA" />
+                    android:text="MOVI"
+                    android:textColor="#2C3E50"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.04"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="FLEX"
+                    android:textColor="#1ABC9C"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.04"/>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Crea tu cuenta"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#2C3E50"
+                android:layout_marginBottom="28dp"/>
+
+            <!-- ── Barra progreso 1/3 ── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="28dp">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="5dp"
+                    android:background="@drawable/bg_progress_track">
+
+                    <View
+                        android:id="@+id/progress_paso1"
+                        android:layout_width="110dp"
+                        android:layout_height="5dp"
+                        android:background="@drawable/bg_progress_fill"/>
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="① Correo"
+                        android:textColor="#1ABC9C"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="② Código"
+                        android:textColor="#BDBDBD"
+                        android:textSize="11sp"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="③ Datos"
+                        android:textColor="#BDBDBD"
+                        android:textSize="11sp"
+                        android:gravity="center"/>
+                </LinearLayout>
             </LinearLayout>
 
             <!-- Instrucción -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Ingresa tu correo para recibir un código de verificación."
+                android:text="Ingresa tu correo para recibir\nun código de verificación."
                 android:textSize="14sp"
-                android:textColor="#555555"
+                android:textColor="#7F8C8D"
                 android:textAlignment="center"
-                android:layout_marginBottom="24dp" />
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginBottom="24dp"/>
 
             <!-- Campo email paso 1 -->
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="20dp"
                 android:hint="Correo Electrónico"
                 app:startIconDrawable="@drawable/ic_email"
-                app:startIconTint="#888888"
+                app:startIconTint="#9E9E9E"
                 app:boxBackgroundColor="#FFFFFF"
-                app:boxStrokeColor="#CCCCCC"
-                app:boxStrokeWidth="1dp"
+                app:boxStrokeColor="@color/selector_input_stroke_light"
+                app:boxStrokeWidth="1.5dp"
                 app:boxStrokeWidthFocused="2dp"
-                app:hintTextColor="#999999"
+                app:hintTextColor="@color/selector_input_hint_light"
                 app:boxCornerRadiusTopStart="12dp"
                 app:boxCornerRadiusTopEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
@@ -145,10 +214,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textEmailAddress"
-                    android:textColor="#2B2B2B"
+                    android:textColor="#2C3E50"
                     android:textSize="15sp"
-                    android:padding="14dp" />
-
+                    android:padding="14dp"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Botón enviar código -->
@@ -160,14 +228,14 @@
                 android:textColor="#FFFFFF"
                 android:textSize="15sp"
                 android:textStyle="bold"
-                android:background="@drawable/bg_btn_primary"
+                android:letterSpacing="0.04"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:stateListAnimator="@null"
-                app:backgroundTint="@null"
+                app:backgroundTint="#1ABC9C"
                 app:cornerRadius="14dp"
                 app:elevation="4dp"
-                app:rippleColor="#80FFFFFF" />
+                app:rippleColor="#40FFFFFF"/>
 
             <!-- ¿Ya tienes cuenta? -->
             <LinearLayout
@@ -175,130 +243,191 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center"
-                android:layout_marginTop="24dp">
+                android:layout_marginTop="28dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="¿Ya tienes cuenta? "
+                    android:text="¿Ya tienes cuenta?  "
                     android:textSize="13sp"
-                    android:textColor="#999999" />
+                    android:textColor="#9E9E9E"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Inicia Sesión"
                     android:textSize="13sp"
-                    android:textColor="#2EC4B6"
+                    android:textColor="#1ABC9C"
                     android:textStyle="bold"
                     android:clickable="true"
                     android:focusable="true"
-                    android:onClick="irLoginView" />
+                    android:onClick="irLoginView"/>
             </LinearLayout>
 
         </LinearLayout>
     </ScrollView>
 
-    <!-- ══════════════════════════════════════════════════════════ -->
-    <!--  PASO 2 — INGRESAR CÓDIGO OTP                             -->
-    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- ════════════════════════════════════════════════════
+         PASO 2 — CÓDIGO OTP
+    ════════════════════════════════════════════════════ -->
     <ScrollView
         android:id="@+id/stepOtp"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/transparent"
         android:fillViewport="true"
+        android:overScrollMode="never"
         android:visibility="gone">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:gravity="center_horizontal"
             android:paddingStart="28dp"
+            android:paddingTop="52dp"
             android:paddingEnd="28dp"
-            android:paddingBottom="36dp">
+            android:paddingBottom="40dp">
 
-            <!-- Logo -->
-            <ImageView
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:layout_gravity="center"
-                android:layout_marginTop="40dp"
-                android:layout_marginBottom="4dp"
-                android:src="@drawable/logomo"
-                android:contentDescription="Logo" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="MOVIFLEX"
-                android:textSize="17sp"
-                android:textStyle="bold"
-                android:textColor="#2EC4B6"
-                android:letterSpacing="0.08"
-                android:layout_marginBottom="6dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="Crea tu cuenta"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#2B2B2B"
-                android:layout_marginBottom="20dp" />
-
-            <!-- Barra de progreso paso 2/3 -->
+            <!-- Logo + nombre -->
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="24dp">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
 
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="4dp"
-                    android:background="#E8E8E8">
-                    <View
-                        android:id="@+id/progress_paso2"
-                        android:layout_width="0dp"
-                        android:layout_height="4dp"
-                        android:background="#2EC4B6" />
-                </FrameLayout>
+                <ImageView
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="8dp"
+                    android:src="@drawable/logomo"
+                    android:scaleType="fitCenter"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="Logo"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="6dp"
-                    android:text="Paso 2 de 3"
-                    android:textSize="12sp"
-                    android:textColor="#AAAAAA" />
+                    android:text="MOVI"
+                    android:textColor="#2C3E50"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.04"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="FLEX"
+                    android:textColor="#1ABC9C"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.04"/>
             </LinearLayout>
 
-            <!-- Instrucción con el email destino -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Crea tu cuenta"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#2C3E50"
+                android:layout_marginBottom="28dp"/>
+
+            <!-- ── Barra progreso 2/3 ── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="28dp">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="5dp"
+                    android:background="@drawable/bg_progress_track">
+
+                    <View
+                        android:id="@+id/progress_paso2"
+                        android:layout_width="220dp"
+                        android:layout_height="5dp"
+                        android:background="@drawable/bg_progress_fill"/>
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="① Correo"
+                        android:textColor="#1ABC9C"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="② Código"
+                        android:textColor="#1ABC9C"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="③ Datos"
+                        android:textColor="#BDBDBD"
+                        android:textSize="11sp"
+                        android:gravity="center"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Ícono email enviado -->
+            <FrameLayout
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_circle_teal_light">
+
+                <ImageView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_email"
+                    app:tint="#1ABC9C"
+                    android:contentDescription="Email enviado"/>
+            </FrameLayout>
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Ingresa el código enviado a"
+                android:text="Código enviado a"
                 android:textSize="14sp"
-                android:textColor="#555555"
+                android:textColor="#7F8C8D"
                 android:textAlignment="center"
-                android:layout_marginBottom="4dp" />
+                android:layout_marginBottom="4dp"/>
 
             <TextView
                 android:id="@+id/tv_email_destino"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="tucorreo@gmail.com"
-                android:textSize="14sp"
+                android:textSize="15sp"
                 android:textStyle="bold"
-                android:textColor="#2B2B2B"
+                android:textColor="#2C3E50"
                 android:textAlignment="center"
-                android:layout_marginBottom="28dp" />
+                android:layout_marginBottom="32dp"/>
 
-            <!-- 6 campos OTP -->
+            <!-- ── 6 campos OTP ── -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -316,9 +445,9 @@
                     android:maxLength="1"
                     android:textSize="22sp"
                     android:textStyle="bold"
-                    android:textColor="#2B2B2B"
+                    android:textColor="#2C3E50"
                     android:background="@drawable/otp_field_background"
-                    android:padding="0dp" />
+                    android:padding="0dp"/>
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/otp2"
@@ -330,9 +459,9 @@
                     android:maxLength="1"
                     android:textSize="22sp"
                     android:textStyle="bold"
-                    android:textColor="#2B2B2B"
+                    android:textColor="#2C3E50"
                     android:background="@drawable/otp_field_background"
-                    android:padding="0dp" />
+                    android:padding="0dp"/>
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/otp3"
@@ -344,9 +473,9 @@
                     android:maxLength="1"
                     android:textSize="22sp"
                     android:textStyle="bold"
-                    android:textColor="#2B2B2B"
+                    android:textColor="#2C3E50"
                     android:background="@drawable/otp_field_background"
-                    android:padding="0dp" />
+                    android:padding="0dp"/>
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/otp4"
@@ -358,9 +487,9 @@
                     android:maxLength="1"
                     android:textSize="22sp"
                     android:textStyle="bold"
-                    android:textColor="#2B2B2B"
+                    android:textColor="#2C3E50"
                     android:background="@drawable/otp_field_background"
-                    android:padding="0dp" />
+                    android:padding="0dp"/>
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/otp5"
@@ -372,9 +501,9 @@
                     android:maxLength="1"
                     android:textSize="22sp"
                     android:textStyle="bold"
-                    android:textColor="#2B2B2B"
+                    android:textColor="#2C3E50"
                     android:background="@drawable/otp_field_background"
-                    android:padding="0dp" />
+                    android:padding="0dp"/>
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/otp6"
@@ -385,10 +514,9 @@
                     android:maxLength="1"
                     android:textSize="22sp"
                     android:textStyle="bold"
-                    android:textColor="#2B2B2B"
+                    android:textColor="#2C3E50"
                     android:background="@drawable/otp_field_background"
-                    android:padding="0dp" />
-
+                    android:padding="0dp"/>
             </LinearLayout>
 
             <!-- Botón verificar OTP -->
@@ -400,33 +528,36 @@
                 android:textColor="#FFFFFF"
                 android:textSize="15sp"
                 android:textStyle="bold"
-                android:background="@drawable/bg_btn_primary"
+                android:letterSpacing="0.04"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:stateListAnimator="@null"
                 android:enabled="false"
-                app:backgroundTint="@null"
+                app:backgroundTint="#1ABC9C"
                 app:cornerRadius="14dp"
                 app:elevation="4dp"
-                app:rippleColor="#80FFFFFF" />
+                app:rippleColor="#40FFFFFF"/>
 
-            <!-- Cambiar correo / Reenviar código -->
+            <!-- Cambiar correo / Reenviar -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="16dp">
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp">
 
                 <TextView
                     android:id="@+id/tv_cambiar_correo"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Cambiar Correo"
+                    android:text="← Cambiar Correo"
                     android:textSize="13sp"
-                    android:textColor="#888888"
+                    android:textColor="#7F8C8D"
                     android:clickable="true"
-                    android:focusable="true" />
+                    android:focusable="true"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"/>
 
                 <TextView
                     android:id="@+id/tv_reenviar_codigo"
@@ -434,10 +565,12 @@
                     android:layout_height="wrap_content"
                     android:text="Reenviar Código"
                     android:textSize="13sp"
-                    android:textColor="#2EC4B6"
+                    android:textColor="#1ABC9C"
                     android:textStyle="bold"
                     android:clickable="true"
-                    android:focusable="true" />
+                    android:focusable="true"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"/>
             </LinearLayout>
 
             <!-- ¿Ya tienes cuenta? -->
@@ -446,33 +579,33 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center"
-                android:layout_marginTop="20dp">
+                android:layout_marginTop="12dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="¿Ya tienes cuenta? "
+                    android:text="¿Ya tienes cuenta?  "
                     android:textSize="13sp"
-                    android:textColor="#999999" />
+                    android:textColor="#9E9E9E"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Inicia Sesión"
                     android:textSize="13sp"
-                    android:textColor="#2EC4B6"
+                    android:textColor="#1ABC9C"
                     android:textStyle="bold"
                     android:clickable="true"
                     android:focusable="true"
-                    android:onClick="irLoginView" />
+                    android:onClick="irLoginView"/>
             </LinearLayout>
 
         </LinearLayout>
     </ScrollView>
 
-    <!-- ══════════════════════════════════════════════════════════ -->
-    <!--  PASO 3 — FORMULARIO COMPLETO                             -->
-    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- ════════════════════════════════════════════════════
+         PASO 3 — FORMULARIO COMPLETO
+    ════════════════════════════════════════════════════ -->
 
     <!-- layoutFormulario: referenciado en Register.java -->
     <LinearLayout
@@ -480,7 +613,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:visibility="gone" />
+        android:visibility="gone"/>
 
     <ScrollView
         android:id="@+id/scrollFormulario"
@@ -488,73 +621,119 @@
         android:layout_height="match_parent"
         android:background="@android:color/transparent"
         android:fillViewport="true"
+        android:overScrollMode="never"
         android:visibility="gone">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:gravity="center_horizontal"
             android:paddingStart="28dp"
+            android:paddingTop="52dp"
             android:paddingEnd="28dp"
-            android:paddingBottom="36dp">
+            android:paddingBottom="40dp">
 
-            <!-- Logo -->
-            <ImageView
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:layout_gravity="center"
-                android:layout_marginTop="36dp"
-                android:layout_marginBottom="4dp"
-                android:src="@drawable/logomo"
-                android:contentDescription="Logo" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="MOVIFLEX"
-                android:textSize="17sp"
-                android:textStyle="bold"
-                android:textColor="#2EC4B6"
-                android:letterSpacing="0.08"
-                android:layout_marginBottom="6dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="Crea tu cuenta"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#2B2B2B"
-                android:layout_marginBottom="20dp" />
-
-            <!-- Barra de progreso paso 3/3 -->
+            <!-- Logo + nombre -->
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="24dp">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
 
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="4dp"
-                    android:background="#E8E8E8">
-                    <View
-                        android:id="@+id/progress_paso3"
-                        android:layout_width="0dp"
-                        android:layout_height="4dp"
-                        android:background="#2EC4B6" />
-                </FrameLayout>
+                <ImageView
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="8dp"
+                    android:src="@drawable/logomo"
+                    android:scaleType="fitCenter"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="Logo"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="6dp"
-                    android:text="Paso 3 de 3"
-                    android:textSize="12sp"
-                    android:textColor="#AAAAAA" />
+                    android:text="MOVI"
+                    android:textColor="#2C3E50"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.04"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="FLEX"
+                    android:textColor="#1ABC9C"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.04"/>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Crea tu cuenta"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#2C3E50"
+                android:layout_marginBottom="28dp"/>
+
+            <!-- ── Barra progreso 3/3 ── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="28dp">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="5dp"
+                    android:background="@drawable/bg_progress_track">
+
+                    <View
+                        android:id="@+id/progress_paso3"
+                        android:layout_width="match_parent"
+                        android:layout_height="5dp"
+                        android:background="@drawable/bg_progress_fill"/>
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="① Correo"
+                        android:textColor="#1ABC9C"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="② Código"
+                        android:textColor="#1ABC9C"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="③ Datos"
+                        android:textColor="#1ABC9C"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:gravity="center"/>
+                </LinearLayout>
             </LinearLayout>
 
             <!-- CAMPO NOMBRE -->
@@ -567,12 +746,12 @@
                 android:hint="Nombre completo"
                 app:errorEnabled="true"
                 app:startIconDrawable="@drawable/ic_person"
-                app:startIconTint="#888888"
+                app:startIconTint="#9E9E9E"
                 app:boxBackgroundColor="#FFFFFF"
-                app:boxStrokeColor="#CCCCCC"
-                app:boxStrokeWidth="1dp"
+                app:boxStrokeColor="@color/selector_input_stroke_light"
+                app:boxStrokeWidth="1.5dp"
                 app:boxStrokeWidthFocused="2dp"
-                app:hintTextColor="#999999"
+                app:hintTextColor="@color/selector_input_hint_light"
                 app:boxCornerRadiusTopStart="12dp"
                 app:boxCornerRadiusTopEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
@@ -583,26 +762,26 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPersonName|textCapWords"
-                    android:textColor="#2B2B2B"
+                    android:textColor="#2C3E50"
                     android:textSize="15sp"
-                    android:padding="14dp" />
+                    android:padding="14dp"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- CAMPO EMAIL (rellenado y bloqueado desde el OTP verificado) -->
+            <!-- CAMPO EMAIL (verificado, solo lectura) -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/til_email"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
+                android:layout_marginBottom="4dp"
                 android:hint="Correo electrónico"
                 app:errorEnabled="true"
                 app:startIconDrawable="@drawable/ic_email"
-                app:startIconTint="#2EC4B6"
-                app:boxBackgroundColor="#F5FFFE"
-                app:boxStrokeColor="#2EC4B6"
-                app:boxStrokeWidth="1dp"
-                app:hintTextColor="#2EC4B6"
+                app:startIconTint="#1ABC9C"
+                app:boxBackgroundColor="#F0FDF9"
+                app:boxStrokeColor="#1ABC9C"
+                app:boxStrokeWidth="1.5dp"
+                app:hintTextColor="#1ABC9C"
                 app:boxCornerRadiusTopStart="12dp"
                 app:boxCornerRadiusTopEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
@@ -613,46 +792,48 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textEmailAddress"
-                    android:textColor="#2EC4B6"
+                    android:textColor="#1ABC9C"
                     android:textSize="15sp"
                     android:padding="14dp"
                     android:enabled="false"
-                    android:alpha="0.9" />
+                    android:alpha="0.9"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Indicador email verificado -->
+            <!-- Indicador email verificado ✅ -->
             <LinearLayout
                 android:id="@+id/layoutEmailVerificado"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="14dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:paddingStart="4dp">
+                android:paddingStart="4dp"
+                android:paddingTop="4dp"
+                android:layout_marginBottom="14dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="✅"
-                    android:textSize="14sp"
-                    android:layout_marginEnd="6dp" />
+                    android:textSize="13sp"
+                    android:layout_marginEnd="5dp"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Correo verificado"
-                    android:textColor="#2EC4B6"
+                    android:textColor="#1ABC9C"
                     android:textSize="12sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"/>
             </LinearLayout>
 
-            <!-- Bloque oculto para compatibilidad con Register.java -->
+            <!-- Bloque oculto compatibilidad Register.java -->
             <LinearLayout
                 android:id="@+id/layoutEmailNoVerificado"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:visibility="gone"
                 android:orientation="horizontal">
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_verificar_email"
                     android:layout_width="wrap_content"
@@ -662,7 +843,7 @@
                     android:textColor="#FFFFFF"
                     android:visibility="gone"
                     app:cornerRadius="10dp"
-                    app:backgroundTint="#2EC4B6" />
+                    app:backgroundTint="#1ABC9C"/>
             </LinearLayout>
 
             <!-- CAMPO TELÉFONO -->
@@ -675,12 +856,12 @@
                 android:hint="Teléfono"
                 app:errorEnabled="true"
                 app:startIconDrawable="@drawable/ic_phone"
-                app:startIconTint="#888888"
+                app:startIconTint="#9E9E9E"
                 app:boxBackgroundColor="#FFFFFF"
-                app:boxStrokeColor="#CCCCCC"
-                app:boxStrokeWidth="1dp"
+                app:boxStrokeColor="@color/selector_input_stroke_light"
+                app:boxStrokeWidth="1.5dp"
                 app:boxStrokeWidthFocused="2dp"
-                app:hintTextColor="#999999"
+                app:hintTextColor="@color/selector_input_hint_light"
                 app:boxCornerRadiusTopStart="12dp"
                 app:boxCornerRadiusTopEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
@@ -691,9 +872,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="phone"
-                    android:textColor="#2B2B2B"
+                    android:textColor="#2C3E50"
                     android:textSize="15sp"
-                    android:padding="14dp" />
+                    android:padding="14dp"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- CAMPO CONTRASEÑA -->
@@ -702,18 +883,18 @@
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="20dp"
                 android:hint="Contraseña"
                 app:endIconMode="password_toggle"
-                app:endIconTint="#AAAAAA"
+                app:endIconTint="#9E9E9E"
                 app:errorEnabled="true"
                 app:startIconDrawable="@drawable/ic_lock"
-                app:startIconTint="#888888"
+                app:startIconTint="#9E9E9E"
                 app:boxBackgroundColor="#FFFFFF"
-                app:boxStrokeColor="#CCCCCC"
-                app:boxStrokeWidth="1dp"
+                app:boxStrokeColor="@color/selector_input_stroke_light"
+                app:boxStrokeWidth="1.5dp"
                 app:boxStrokeWidthFocused="2dp"
-                app:hintTextColor="#999999"
+                app:hintTextColor="@color/selector_input_hint_light"
                 app:boxCornerRadiusTopStart="12dp"
                 app:boxCornerRadiusTopEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
@@ -724,32 +905,32 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPassword"
-                    android:textColor="#2B2B2B"
+                    android:textColor="#2C3E50"
                     android:textSize="15sp"
-                    android:padding="14dp" />
+                    android:padding="14dp"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- TÉRMINOS Y CONDICIONES -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:background="@drawable/info_box_background"
-                android:padding="12dp">
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_info_box_light"
+                android:padding="14dp">
 
                 <CheckBox
                     android:id="@+id/cbTerminos"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:buttonTint="#2EC4B6" />
+                    android:buttonTint="#1ABC9C"
+                    android:layout_marginEnd="4dp"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginStart="8dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
@@ -757,20 +938,20 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="He leído y acepto los "
-                        android:textColor="#555555"
-                        android:textSize="13sp" />
+                        android:textColor="#7F8C8D"
+                        android:textSize="13sp"/>
 
                     <TextView
                         android:id="@+id/tvLinkTerminos"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Términos y Condiciones"
-                        android:textColor="#2EC4B6"
+                        android:textColor="#1ABC9C"
                         android:textSize="13sp"
                         android:textStyle="bold"
                         android:clickable="true"
                         android:focusable="true"
-                        android:background="?attr/selectableItemBackground" />
+                        android:background="?attr/selectableItemBackground"/>
                 </LinearLayout>
             </LinearLayout>
 
@@ -778,17 +959,18 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                android:background="@drawable/info_box_background"
                 android:orientation="horizontal"
-                android:padding="14dp">
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_info_box_light"
+                android:padding="14dp"
+                android:layout_marginBottom="24dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="📸"
                     android:textSize="20sp"
-                    android:layout_marginEnd="12dp" />
+                    android:layout_marginEnd="12dp"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -801,16 +983,17 @@
                         android:layout_height="wrap_content"
                         android:text="Reconocimiento facial"
                         android:textStyle="bold"
-                        android:textColor="#2B2B2B"
-                        android:textSize="13sp" />
+                        android:textColor="#2C3E50"
+                        android:textSize="13sp"/>
 
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
-                        android:text="Después de registrarte, escanearemos tu rostro para futuros inicios de sesión"
-                        android:textColor="#777777"
-                        android:textSize="12sp" />
+                        android:text="Escaneamos tu rostro para futuros inicios de sesión seguros."
+                        android:textColor="#7F8C8D"
+                        android:textSize="12sp"
+                        android:lineSpacingMultiplier="1.35"/>
                 </LinearLayout>
             </LinearLayout>
 
@@ -823,48 +1006,48 @@
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"
-                android:background="@drawable/bg_btn_primary"
+                android:letterSpacing="0.04"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:stateListAnimator="@null"
-                app:backgroundTint="@null"
+                app:backgroundTint="#1ABC9C"
                 app:cornerRadius="14dp"
                 app:elevation="4dp"
-                app:rippleColor="#80FFFFFF" />
+                app:rippleColor="#40FFFFFF"/>
 
-            <!-- Ya tienes cuenta -->
+            <!-- ¿Ya tienes cuenta? -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center"
-                android:layout_marginTop="20dp">
+                android:layout_marginTop="24dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="¿Ya tienes una cuenta? "
+                    android:text="¿Ya tienes una cuenta?  "
                     android:textSize="13sp"
-                    android:textColor="#999999" />
+                    android:textColor="#9E9E9E"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Inicia Sesión"
                     android:textSize="13sp"
-                    android:textColor="#2EC4B6"
+                    android:textColor="#1ABC9C"
                     android:textStyle="bold"
                     android:clickable="true"
                     android:focusable="true"
-                    android:onClick="irLoginView" />
+                    android:onClick="irLoginView"/>
             </LinearLayout>
 
         </LinearLayout>
     </ScrollView>
 
-    <!-- ══════════════════════════════════════════════════════════ -->
-    <!--  PASO 4 — ESCANEO FACIAL (gone al inicio)                 -->
-    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- ════════════════════════════════════════════════════
+         PASO 4 — ESCANEO FACIAL (gone al inicio)
+    ════════════════════════════════════════════════════ -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layoutFace"
         android:layout_width="match_parent"
@@ -880,7 +1063,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:scaleType="fillCenter" />
+            app:scaleType="fillCenter"/>
 
         <View
             android:layout_width="250dp"
@@ -889,7 +1072,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -903,7 +1086,7 @@
             android:background="#80000000"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"/>
 
         <TextView
             android:id="@+id/txtEstado"
@@ -920,7 +1103,7 @@
             android:background="#80000000"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

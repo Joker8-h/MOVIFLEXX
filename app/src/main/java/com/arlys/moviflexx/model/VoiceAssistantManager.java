@@ -1,5 +1,6 @@
 package com.arlys.moviflexx.model;
 
+<<<<<<< HEAD
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -139,10 +140,62 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
             public void onError(String utteranceId) {
                 isSpeaking = false;
                 Log.e(TAG, "TTS Error: " + utteranceId);
+=======
+import android.content.Context;
+import android.speech.tts.TextToSpeech;
+import android.util.Log;
+
+import java.util.Locale;
+
+/**
+ * VoiceAssistantManager — Guía de voz para el conductor.
+ * Usa TextToSpeech de Android para anunciar instrucciones de navegación
+ * generadas a partir de los steps de OSRM.
+ *
+ * Uso:
+ *   VoiceAssistantManager va = VoiceAssistantManager.getInstance(context);
+ *   va.hablar("Gira a la derecha por Calle 5");
+ *   va.liberar(); // en onDestroy()
+ */
+public class VoiceAssistantManager {
+
+    private static final String TAG = "VoiceAssistant";
+
+    // Singleton por contexto de aplicación
+    private static VoiceAssistantManager instance;
+
+    private TextToSpeech tts;
+    private boolean      listo = false;
+
+    // -------------------------------------------------------------------------
+    //  Constructor privado
+    // -------------------------------------------------------------------------
+
+    private VoiceAssistantManager(Context context) {
+        tts = new TextToSpeech(context.getApplicationContext(), status -> {
+            if (status == TextToSpeech.SUCCESS) {
+                // Preferir español colombiano, luego español genérico
+                int result = tts.setLanguage(new Locale("es", "CO"));
+                if (result == TextToSpeech.LANG_MISSING_DATA
+                        || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    result = tts.setLanguage(new Locale("es"));
+                }
+                if (result == TextToSpeech.LANG_MISSING_DATA
+                        || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    tts.setLanguage(Locale.getDefault());
+                }
+                tts.setSpeechRate(0.95f);   // ligeramente más lento para claridad
+                tts.setPitch(1.0f);
+                listo = true;
+                Log.d(TAG, "TextToSpeech inicializado correctamente");
+            } else {
+                Log.e(TAG, "Error inicializando TextToSpeech: status=" + status);
+>>>>>>> d015b10 (actualizacion)
             }
         });
     }
 
+<<<<<<< HEAD
     public void saludarConDatoCurioso(String nombre) {
         String[] datosCuriosos = {
             "¿Sabías que el primer auto del mundo solo alcanzaba los 16 kilómetros por hora?",
@@ -562,3 +615,90 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
                 .replace("mobi", "");
     }
 }
+=======
+    // -------------------------------------------------------------------------
+    //  Singleton
+    // -------------------------------------------------------------------------
+
+    /**
+     * Obtiene la instancia única. Llama esto en onCreate() o cuando necesites
+     * la guía de voz por primera vez.
+     */
+    public static synchronized VoiceAssistantManager getInstance(Context context) {
+        if (instance == null) {
+            instance = new VoiceAssistantManager(context);
+        }
+        return instance;
+    }
+
+    /**
+     * Destruye la instancia singleton y libera recursos de TTS.
+     * Llama esto si quieres forzar una reinicialización (raro).
+     */
+    public static synchronized void destruirInstancia() {
+        if (instance != null) {
+            instance.liberar();
+            instance = null;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    //  API pública
+    // -------------------------------------------------------------------------
+
+    /**
+     * Pronuncia el texto dado. Si el TTS aún no está listo o el texto es vacío,
+     * no hace nada (falla silenciosamente).
+     *
+     * @param texto Instrucción de navegación a pronunciar.
+     */
+    public void hablar(String texto) {
+        if (!listo || tts == null) {
+            Log.w(TAG, "hablar() llamado antes de que TTS esté listo");
+            return;
+        }
+        if (texto == null || texto.trim().isEmpty()) return;
+
+        // QUEUE_FLUSH interrumpe cualquier locución en curso
+        tts.speak(texto, TextToSpeech.QUEUE_FLUSH, null, "nav_" + System.currentTimeMillis());
+        Log.d(TAG, "TTS → " + texto);
+    }
+
+    /**
+     * Pronuncia el texto en cola (no interrumpe la locución actual).
+     */
+    public void hablarEnCola(String texto) {
+        if (!listo || tts == null || texto == null || texto.trim().isEmpty()) return;
+        tts.speak(texto, TextToSpeech.QUEUE_ADD, null, "nav_q_" + System.currentTimeMillis());
+    }
+
+    /**
+     * Detiene cualquier locución en curso.
+     */
+    public void detener() {
+        if (tts != null && listo) tts.stop();
+    }
+
+    /**
+     * Devuelve true si el motor TTS ya está inicializado y listo para hablar.
+     */
+    public boolean isListo() {
+        return listo;
+    }
+
+    /**
+     * Libera los recursos del TextToSpeech.
+     * Llama esto en onDestroy() de la Activity/Fragment que usa este manager.
+     * Después de llamar liberar(), debes obtener una nueva instancia con getInstance().
+     */
+    public void liberar() {
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+            tts = null;
+        }
+        listo = false;
+        Log.d(TAG, "TextToSpeech liberado");
+    }
+}
+>>>>>>> d015b10 (actualizacion)

@@ -6,9 +6,7 @@
     android:layout_height="match_parent"
     android:background="#F0FAFA">
 
-    <!-- ══════════════════════════════════════════════════════
-         HEADER — mismo teal sólido
-    ══════════════════════════════════════════════════════ -->
+    <!-- HEADER -->
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="0dp"
@@ -23,7 +21,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <!-- Blob decorativo -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -77,7 +74,6 @@
                         android:textSize="12sp"/>
                 </LinearLayout>
 
-                <!-- Loader -->
                 <ProgressBar
                     android:id="@+id/loader_mis_reservas"
                     android:layout_width="28dp"
@@ -86,12 +82,9 @@
                     android:visibility="gone"/>
             </LinearLayout>
         </FrameLayout>
-
     </LinearLayout>
 
-    <!-- ══════════════════════════════════════════════════════
-         SCROLL PRINCIPAL
-    ══════════════════════════════════════════════════════ -->
+    <!-- SCROLL PRINCIPAL -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -111,9 +104,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- ══════════════════════════════════════════════
-                 BANNER BLOQUEO — naranja advertencia
-            ══════════════════════════════════════════════ -->
+            <!-- BANNER BLOQUEO -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/layout_bloqueo_busqueda"
                 android:layout_width="match_parent"
@@ -133,7 +124,6 @@
                     android:gravity="center_vertical"
                     android:padding="16dp">
 
-                    <!-- Ícono advertencia -->
                     <FrameLayout
                         android:layout_width="40dp"
                         android:layout_height="40dp"
@@ -174,9 +164,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ══════════════════════════════════════════════
-                 CARD: BUSCAR VIAJE
-            ══════════════════════════════════════════════ -->
+            <!-- CARD BUSCAR VIAJE -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_publicar_ruta"
                 android:layout_width="match_parent"
@@ -193,7 +181,6 @@
                     android:orientation="vertical"
                     android:padding="20dp">
 
-                    <!-- Título sección -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -201,7 +188,6 @@
                         android:gravity="center_vertical"
                         android:layout_marginBottom="16dp">
 
-                        <!-- Barra acento teal -->
                         <View
                             android:layout_width="4dp"
                             android:layout_height="28dp"
@@ -328,7 +314,7 @@
                         android:visibility="gone"
                         android:layout_marginBottom="8dp"/>
 
-                    <!-- Botón buscar — teal sólido igual a "GUARDAR CAMBIOS" web -->
+                    <!-- Botón buscar -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_buscar_viajes"
                         android:layout_width="match_parent"
@@ -353,9 +339,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ══════════════════════════════════════════════
-                 ESTADO: BUSCANDO
-            ══════════════════════════════════════════════ -->
+            <!-- ESTADO: BUSCANDO -->
             <LinearLayout
                 android:id="@+id/layout_buscando"
                 android:layout_width="match_parent"
@@ -374,7 +358,6 @@
                     app:cardElevation="0dp"
                     app:cardBackgroundColor="#E0FFFE"
                     app:strokeWidth="0dp">
-
                     <ProgressBar
                         android:layout_width="36dp"
                         android:layout_height="36dp"
@@ -392,9 +375,7 @@
                     android:layout_height="wrap_content"/>
             </LinearLayout>
 
-            <!-- ══════════════════════════════════════════════
-                 LABEL: VIAJES ENCONTRADOS
-            ══════════════════════════════════════════════ -->
+            <!-- LABEL RESULTADOS -->
             <LinearLayout
                 android:id="@+id/layout_label_resultados"
                 android:layout_width="match_parent"
@@ -420,7 +401,6 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"/>
 
-                <!-- Chip contador — teal consistente -->
                 <TextView
                     android:id="@+id/txt_contador_resultados"
                     android:text="0"
@@ -436,112 +416,14 @@
                     android:layout_height="wrap_content"/>
             </LinearLayout>
 
-            <!-- ══════════════════════════════════════════════
-                 MAPA
-            ══════════════════════════════════════════════ -->
-            <LinearLayout
-                android:id="@+id/card_mapa_busqueda"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="16dp"
-                android:visibility="gone">
-
-                <!-- Encabezado mapa -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
-
-                    <View
-                        android:layout_width="4dp"
-                        android:layout_height="20dp"
-                        android:layout_marginEnd="10dp"
-                        android:background="@drawable/bg_line_teal_rounded"/>
-
-                    <TextView
-                        android:text="Rutas de conductores disponibles"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="#1A2F4A"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"/>
-                </LinearLayout>
-
-                <!-- Card mapa con borde teal -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="3dp"
-                    app:strokeColor="#A0E0DC"
-                    app:strokeWidth="1dp"
-                    app:cardBackgroundColor="#FFFFFF">
-
-                    <org.osmdroid.views.MapView
-                        android:id="@+id/map_busqueda"
-                        android:layout_width="match_parent"
-                        android:layout_height="260dp"/>
-
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Leyenda mapa -->
-                <LinearLayout
-                    android:id="@+id/layout_leyenda_mapa"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:text="Rutas: "
-                        android:textSize="11sp"
-                        android:textColor="#7A9BAA"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
-
-                    <View android:layout_width="10dp" android:layout_height="10dp"
-                        android:layout_marginStart="4dp"
-                        android:background="@drawable/dot_teal"/>
-                    <View android:layout_width="10dp" android:layout_height="10dp"
-                        android:layout_marginStart="6dp"
-                        android:background="@drawable/dot_orange"/>
-                    <View android:layout_width="10dp" android:layout_height="10dp"
-                        android:layout_marginStart="6dp"
-                        android:background="@drawable/dot_red"/>
-                    <View android:layout_width="10dp" android:layout_height="10dp"
-                        android:layout_marginStart="6dp"
-                        android:background="@drawable/dot_blue"/>
-                    <View android:layout_width="10dp" android:layout_height="10dp"
-                        android:layout_marginStart="6dp"
-                        android:background="@drawable/dot_green"/>
-
-                    <View android:layout_width="0dp" android:layout_height="0dp"
-                        android:layout_weight="1"/>
-
-                    <TextView
-                        android:text="Toca una tarjeta para ver detalles"
-                        android:textSize="11sp"
-                        android:textColor="#7A9BAA"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- Resultados viajes conductor -->
+            <!-- RESULTADOS VIAJES -->
             <LinearLayout
                 android:id="@+id/layout_resultados_viajes"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"/>
 
-            <!-- ══════════════════════════════════════════════
-                 ESTADO: SIN RESULTADOS
-            ══════════════════════════════════════════════ -->
+            <!-- ESTADO: SIN RESULTADOS -->
             <LinearLayout
                 android:id="@+id/layout_vacio"
                 android:layout_width="match_parent"
@@ -551,7 +433,6 @@
                 android:padding="32dp"
                 android:visibility="gone">
 
-                <!-- Imagen del carro — aparece cuando no hay resultados -->
                 <ImageView
                     android:layout_width="200dp"
                     android:layout_height="120dp"
@@ -584,19 +465,15 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"/>
 
-                <!-- Requerido por Java -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_buscar_desde_vacio"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:visibility="gone"
                     app:backgroundTint="#00CED1"/>
-
             </LinearLayout>
 
-            <!-- ══════════════════════════════════════════════
-                 MIS RESERVAS ACTIVAS
-            ══════════════════════════════════════════════ -->
+            <!-- MIS RESERVAS ACTIVAS -->
             <LinearLayout
                 android:id="@+id/layout_label_mis_reservas"
                 android:layout_width="match_parent"

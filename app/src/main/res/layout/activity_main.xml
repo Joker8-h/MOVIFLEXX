@@ -1,17 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    activity_main.xml
-    MOVIFLEX — Splash Screen Premium · App de Viajes
-    ─────────────────────────────────────────────────
-    Sin confeti. Sin emojis. Sin colores neón.
-    Paleta: negro grafito · azul noche · blanco puro
-    Efectos: radar waves · puntos de destino · letra por letra
--->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/fondomoviflexx"
+    android:background="@drawable/fondomoviflex"
     android:clipChildren="false"
     android:clipToPadding="false">
 
@@ -298,7 +290,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/splash_slogan"
                     android:textSize="15sp"
-                    android:textColor="#CCFFFFFF"
+                    android:textColor="#1ABC9C"
                     android:alpha="0.0"
                     android:fontFamily="sans-serif-light"
                     android:letterSpacing="0.18"

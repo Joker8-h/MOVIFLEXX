@@ -9,12 +9,15 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+<<<<<<< HEAD
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 
 
+=======
+>>>>>>> d015b10 (actualizacion)
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -65,9 +68,6 @@ public class HomeConductor extends BaseActivity {
     private Handler  pollingPagosHandler;
     private Runnable pollingPagosRunnable;
     private int      pollingViajeId = -1;
-
-
-
 
     // ── Calificaciones pendientes ─────────────────────────────────────────────
     private LinearLayout                    layoutCalificacionesPendientes;
@@ -165,7 +165,7 @@ public class HomeConductor extends BaseActivity {
                         if (n != null) n.getMenu().findItem(R.id.nav_mapa).setEnabled(fActivo);
                     });
                 },
-                err -> {} // si falla, queda deshabilitado
+                err -> {}
         );
 
         if (!calificacionPendienteVerificada) {
@@ -197,14 +197,14 @@ public class HomeConductor extends BaseActivity {
         chipTotal                      = findViewById(R.id.chip_total);
         txtBienvenida                  = findViewById(R.id.txt_bienvenida);
         txtNombreConductor             = findViewById(R.id.txt_nombre_conductor);
-        btnPublicarViaje = findViewById(R.id.btn_publicar_viaje);
+        btnPublicarViaje               = findViewById(R.id.btn_publicar_viaje);
         btnMisRutas                    = findViewById(R.id.btn_mis_rutas);
         btnMisVehiculos                = findViewById(R.id.btn_mis_vehiculos);
         layoutCalificacionesPendientes = findViewById(R.id.layout_calificaciones_pendientes);
         dividerCalificaciones          = findViewById(R.id.divider_calificaciones);
         chipCalificacionesPendientes   = findViewById(R.id.chip_calificaciones_pendientes);
         rvCalificacionesPendientes     = findViewById(R.id.rv_calificaciones_pendientes);
-        swipeRefresh = findViewById(R.id.swipe_refresh);
+        swipeRefresh                   = findViewById(R.id.swipe_refresh);
     }
 
     // =========================================================================
@@ -224,7 +224,6 @@ public class HomeConductor extends BaseActivity {
                 txtNombreConductor.setText(nombre);
         }
 
-        // ── Foto de perfil en el avatar del header ──
         String fotoUrl = session.getFotoPerfil();
         android.widget.ImageView ivAvatar = findViewById(R.id.iv_avatar_header);
         android.widget.TextView  tvInicial = findViewById(R.id.tv_inicial_avatar);
@@ -245,7 +244,6 @@ public class HomeConductor extends BaseActivity {
         } else {
             if (cardFoto    != null) cardFoto.setVisibility(View.GONE);
             if (cardInicial != null) cardInicial.setVisibility(View.VISIBLE);
-            // la inicial ya la muestra el XML con el logomo
         }
     }
 
@@ -282,6 +280,7 @@ public class HomeConductor extends BaseActivity {
         BottomNavigationView nav = findViewById(R.id.bottom_navigation);
         if (nav == null) return;
 
+<<<<<<< HEAD
         if (nav != null) {
             nav.setSelectedItemId(R.id.nav_inicio);
         }
@@ -289,6 +288,10 @@ public class HomeConductor extends BaseActivity {
         // 🔥 Asistente de Voz (Iniciado automáticamente por BaseActivity)
 
         nav.getMenu().findItem(R.id.nav_mapa).setEnabled(false); // deshabilitado por defecto
+=======
+        nav.setSelectedItemId(R.id.nav_inicio);
+        nav.getMenu().findItem(R.id.nav_mapa).setEnabled(false);
+>>>>>>> d015b10 (actualizacion)
 
         nav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
@@ -309,8 +312,6 @@ public class HomeConductor extends BaseActivity {
         if (layoutEmpty      != null) animateViewEntrance(layoutEmpty,      160);
     }
 
-
-
     // =========================================================================
     //  MAPA — verificar viaje activo antes de abrir
     // =========================================================================
@@ -327,7 +328,6 @@ public class HomeConductor extends BaseActivity {
                             viajeActivo = v;
                             break;
                         }
-
                     }
 
                     if (viajeActivo == null) {
@@ -343,12 +343,10 @@ public class HomeConductor extends BaseActivity {
                         return;
                     }
 
-                    // ── Extraer ID del viaje (varios nombres posibles) ──────────
                     final int idViaje = viajeActivo.optInt("idViajes",
                             viajeActivo.optInt("idViaje",
                                     viajeActivo.optInt("id", 0)));
 
-                    // ── Extraer coords: directo > ruta > paradas ────────────────
                     double latO = viajeActivo.optDouble("latOrigen",  0);
                     double lngO = viajeActivo.optDouble("lngOrigen",  0);
                     double latD = viajeActivo.optDouble("latDestino", 0);
@@ -356,7 +354,6 @@ public class HomeConductor extends BaseActivity {
                     String origen  = viajeActivo.optString("origen",  "");
                     String destino = viajeActivo.optString("destino", "");
 
-                    // Nivel 2: desde objeto "ruta"
                     JSONObject ruta = viajeActivo.optJSONObject("ruta");
                     if (ruta != null) {
                         if (latO == 0) latO = ruta.optDouble("latOrigen",
@@ -372,7 +369,6 @@ public class HomeConductor extends BaseActivity {
                         if (origen.isEmpty())  origen  = ruta.optString("nombre",  "");
                     }
 
-                    // ── Extraer paradas intermedias para waypoints OSRM ─────────
                     JSONArray paradasArr = null;
                     if (ruta != null) paradasArr = ruta.optJSONArray("paradas");
                     if (paradasArr == null) paradasArr = viajeActivo.optJSONArray("paradas");
@@ -382,53 +378,71 @@ public class HomeConductor extends BaseActivity {
                         paradasJson = paradasArr.toString();
                     }
 
-                    // Nivel 3: desde paradas (la primera = origen, la última = destino)
+                    // ── Nivel 3: desde paradas filtrando tipo BAJADA ────────────
                     if (latO == 0 || latD == 0) {
                         try {
                             JSONArray paradas = paradasArr;
                             if (paradas != null && paradas.length() >= 2) {
-                                JSONObject p0 = paradas.getJSONObject(0);
-                                JSONObject pN = paradas.getJSONObject(paradas.length() - 1);
 
-                                if (latO == 0) {
-                                    latO = p0.optDouble("lat", p0.optDouble("latitud", 0));
-                                    lngO = p0.optDouble("lng", p0.optDouble("longitud", 0));
+                                JSONObject pOrigen  = null;
+                                JSONObject pDestino = null;
+                                int maxOrden = -1;
+
+                                for (int j = 0; j < paradas.length(); j++) {
+                                    JSONObject p = paradas.optJSONObject(j);
+                                    if (p == null) continue;
+                                    String tipo = p.optString("tipo", "").toUpperCase().trim();
+                                    double pLat = p.optDouble("lat", p.optDouble("latitud", 0));
+                                    if (pLat == 0) continue;
+                                    // Saltar paradas de bajada de pasajero
+                                    if ("BAJADA".equals(tipo)) continue;
+                                    int orden = p.optInt("orden", j);
+                                    if (pOrigen == null) pOrigen = p;
+                                    if (orden > maxOrden) {
+                                        maxOrden = orden;
+                                        pDestino = p;
+                                    }
                                 }
-                                if (latD == 0) {
-                                    latD = pN.optDouble("lat", pN.optDouble("latitud", 0));
-                                    lngD = pN.optDouble("lng", pN.optDouble("longitud", 0));
+
+                                // Fallback si todo era BAJADA
+                                if (pOrigen  == null) pOrigen  = paradas.getJSONObject(0);
+                                if (pDestino == null || pDestino == pOrigen)
+                                    pDestino = paradas.getJSONObject(paradas.length() - 1);
+
+                                if (latO == 0 && pOrigen != null) {
+                                    latO = pOrigen.optDouble("lat", pOrigen.optDouble("latitud", 0));
+                                    lngO = pOrigen.optDouble("lng", pOrigen.optDouble("longitud", 0));
+                                    if (origen.isEmpty()) origen = pOrigen.optString("nombre", "");
                                 }
-                                if (origen.isEmpty())
-                                    origen  = p0.optString("nombre", "");
-                                if (destino.isEmpty())
-                                    destino = pN.optString("nombre", "");
+                                if (latD == 0 && pDestino != null) {
+                                    latD = pDestino.optDouble("lat", pDestino.optDouble("latitud", 0));
+                                    lngD = pDestino.optDouble("lng", pDestino.optDouble("longitud", 0));
+                                    if (destino.isEmpty()) destino = pDestino.optString("nombre", "");
+                                }
                             }
                         } catch (Exception e) {
                             Log.w(TAG, "Error leyendo paradas: " + e.getMessage());
                         }
                     }
 
-                    // ── LOG para verificar en Logcat ────────────────────────────
                     Log.d(TAG, "Viaje activo → id=" + idViaje
                             + " latO=" + latO + " lngO=" + lngO
                             + " latD=" + latD + " lngD=" + lngD
                             + " origen=" + origen + " destino=" + destino
                             + " paradas=" + paradasJson.length() + " chars");
 
-                    // ── Si aún no hay coords, cargar el viaje completo por ID ───
                     if ((latO == 0 || latD == 0) && idViaje > 0) {
                         cargarViajeCompletoYAbrirMapa(idViaje);
                         return;
                     }
 
-                    final double fLatO = latO, fLngO = lngO;
-                    final double fLatD = latD, fLngD = lngD;
-                    final String fOrig = origen.isEmpty() ? "Origen"  : origen;
-                    final String fDest = destino.isEmpty() ? "Destino" : destino;
+                    final double fLatO    = latO, fLngO = lngO;
+                    final double fLatD    = latD, fLngD = lngD;
+                    final String fOrig    = origen.isEmpty()  ? "Origen"  : origen;
+                    final String fDest    = destino.isEmpty() ? "Destino" : destino;
                     final String fParadas = paradasJson;
 
                     runOnUiThread(() -> {
-                        // ── CRÍTICO: construir intent con PARADAS_JSON ANTES de startActivity ──
                         Intent intent = new Intent(this, Mapa.class);
                         intent.putExtra("ID_VIAJE",      idViaje);
                         intent.putExtra("DESDE_VIAJE",   true);
@@ -439,7 +453,7 @@ public class HomeConductor extends BaseActivity {
                         intent.putExtra("NOM_SUBIDA",    fOrig);
                         intent.putExtra("NOM_BAJADA",    fDest);
                         intent.putExtra("NOM_CONDUCTOR", session.getNombre());
-                        intent.putExtra("PARADAS_JSON",  fParadas);   // ← ANTES de startActivity
+                        intent.putExtra("PARADAS_JSON",  fParadas);
                         startActivity(intent);
                     });
                 },
@@ -448,6 +462,9 @@ public class HomeConductor extends BaseActivity {
         );
     }
 
+    // =========================================================================
+    //  FIX — cargarViajeCompletoYAbrirMapa con filtro tipo BAJADA
+    // =========================================================================
     private void cargarViajeCompletoYAbrirMapa(int idViaje) {
         Log.d(TAG, "Cargando viaje completo id=" + idViaje);
         ConexionApi.getInstance(this).getObject(
@@ -456,15 +473,15 @@ public class HomeConductor extends BaseActivity {
                     double latO = 0, lngO = 0, latD = 0, lngD = 0;
                     String origen = "", destino = "";
 
-                    // Desde raíz
-                    latO = viajeCompleto.optDouble("latOrigen",  0);
-                    lngO = viajeCompleto.optDouble("lngOrigen",  0);
-                    latD = viajeCompleto.optDouble("latDestino", 0);
-                    lngD = viajeCompleto.optDouble("lngDestino", 0);
+                    // Nivel 1: desde raíz
+                    latO    = viajeCompleto.optDouble("latOrigen",  0);
+                    lngO    = viajeCompleto.optDouble("lngOrigen",  0);
+                    latD    = viajeCompleto.optDouble("latDestino", 0);
+                    lngD    = viajeCompleto.optDouble("lngDestino", 0);
                     origen  = viajeCompleto.optString("origen",  "");
                     destino = viajeCompleto.optString("destino", "");
 
-                    // Desde "ruta"
+                    // Nivel 2: desde objeto "ruta"
                     JSONObject ruta = viajeCompleto.optJSONObject("ruta");
                     if (ruta != null) {
                         if (latO == 0) latO = ruta.optDouble("latOrigen",
@@ -481,7 +498,7 @@ public class HomeConductor extends BaseActivity {
                             destino = ruta.optString("destino", "");
                     }
 
-                    // ── Extraer paradas para waypoints ──────────────────────────
+                    // Nivel 3: paradas
                     JSONArray paradasArr = null;
                     if (ruta != null) paradasArr = ruta.optJSONArray("paradas");
                     if (paradasArr == null) paradasArr = viajeCompleto.optJSONArray("paradas");
@@ -491,22 +508,46 @@ public class HomeConductor extends BaseActivity {
                         paradasJson = paradasArr.toString();
                     }
 
-                    // Desde paradas (más confiable)
+                    // ── FIX: filtrar tipo BAJADA al buscar destino ──────────────
                     try {
                         JSONArray paradas = paradasArr;
                         if (paradas != null && paradas.length() >= 2) {
-                            JSONObject p0 = paradas.getJSONObject(0);
-                            JSONObject pN = paradas.getJSONObject(paradas.length() - 1);
-                            if (latO == 0) {
-                                latO = p0.optDouble("lat", p0.optDouble("latitud", 0));
-                                lngO = p0.optDouble("lng", p0.optDouble("longitud", 0));
+
+                            JSONObject pOrigen  = null;
+                            JSONObject pDestino = null;
+                            int maxOrden = -1;
+
+                            for (int j = 0; j < paradas.length(); j++) {
+                                JSONObject p = paradas.optJSONObject(j);
+                                if (p == null) continue;
+                                String tipo = p.optString("tipo", "").toUpperCase().trim();
+                                double pLat = p.optDouble("lat", p.optDouble("latitud", 0));
+                                if (pLat == 0) continue;
+                                // Saltar paradas de bajada de pasajero
+                                if ("BAJADA".equals(tipo)) continue;
+                                int orden = p.optInt("orden", j);
+                                if (pOrigen == null) pOrigen = p;
+                                if (orden > maxOrden) {
+                                    maxOrden = orden;
+                                    pDestino = p;
+                                }
                             }
-                            if (latD == 0) {
-                                latD = pN.optDouble("lat", pN.optDouble("latitud", 0));
-                                lngD = pN.optDouble("lng", pN.optDouble("longitud", 0));
+
+                            // Fallback si todo era BAJADA
+                            if (pOrigen  == null) pOrigen  = paradas.getJSONObject(0);
+                            if (pDestino == null || pDestino == pOrigen)
+                                pDestino = paradas.getJSONObject(paradas.length() - 1);
+
+                            if (latO == 0 && pOrigen != null) {
+                                latO = pOrigen.optDouble("lat", pOrigen.optDouble("latitud", 0));
+                                lngO = pOrigen.optDouble("lng", pOrigen.optDouble("longitud", 0));
+                                if (origen.isEmpty()) origen = pOrigen.optString("nombre", "");
                             }
-                            if (origen.isEmpty())  origen  = p0.optString("nombre", "");
-                            if (destino.isEmpty()) destino = pN.optString("nombre", "");
+                            if (latD == 0 && pDestino != null) {
+                                latD = pDestino.optDouble("lat", pDestino.optDouble("latitud", 0));
+                                lngD = pDestino.optDouble("lng", pDestino.optDouble("longitud", 0));
+                                if (destino.isEmpty()) destino = pDestino.optString("nombre", "");
+                            }
                         }
                     } catch (Exception e) {
                         Log.w(TAG, "cargarViajeCompleto paradas: " + e.getMessage());
@@ -515,10 +556,10 @@ public class HomeConductor extends BaseActivity {
                     Log.d(TAG, "Viaje completo → latO=" + latO + " latD=" + latD
                             + " paradas=" + paradasJson.length() + " chars");
 
-                    final double fLatO = latO, fLngO = lngO;
-                    final double fLatD = latD, fLngD = lngD;
-                    final String fOrig = origen.isEmpty()  ? "Origen"  : origen;
-                    final String fDest = destino.isEmpty() ? "Destino" : destino;
+                    final double fLatO    = latO, fLngO = lngO;
+                    final double fLatD    = latD, fLngD = lngD;
+                    final String fOrig    = origen.isEmpty()  ? "Origen"  : origen;
+                    final String fDest    = destino.isEmpty() ? "Destino" : destino;
                     final String fParadas = paradasJson;
 
                     runOnUiThread(() -> {
@@ -532,7 +573,7 @@ public class HomeConductor extends BaseActivity {
                         intent.putExtra("NOM_SUBIDA",    fOrig);
                         intent.putExtra("NOM_BAJADA",    fDest);
                         intent.putExtra("NOM_CONDUCTOR", session.getNombre());
-                        intent.putExtra("PARADAS_JSON",  fParadas);   // ← waypoints
+                        intent.putExtra("PARADAS_JSON",  fParadas);
                         startActivity(intent);
                     });
                 },
@@ -543,6 +584,9 @@ public class HomeConductor extends BaseActivity {
         );
     }
 
+    // =========================================================================
+    //  CARGAR MIS VIAJES
+    // =========================================================================
     private void cargarMisViajes() {
         if (conductorId == -1) {
             Toast.makeText(this, "Error de sesión. Vuelve a iniciar sesión.", Toast.LENGTH_LONG).show();
@@ -554,7 +598,7 @@ public class HomeConductor extends BaseActivity {
                 Constantes.MIS_VIAJES,
                 response -> {
                     mostrarCargando(false);
-                    if (swipeRefresh != null) swipeRefresh.setRefreshing(false); // ← AQUÍ
+                    if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
                     viajes.clear();
                     for (int i = 0; i < response.length(); i++) {
                         JSONObject viaje = response.optJSONObject(i);
@@ -586,11 +630,12 @@ public class HomeConductor extends BaseActivity {
                 },
                 error -> {
                     mostrarCargando(false);
-                    if (swipeRefresh != null) swipeRefresh.setRefreshing(false); // ← Y AQUÍ
+                    if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
                     Toast.makeText(this, "Error cargando viajes.", Toast.LENGTH_LONG).show();
                 }
         );
     }
+
     private void actualizarContadorViajes() {
         int total = viajes.size();
         if (chipTotal != null)
@@ -601,8 +646,6 @@ public class HomeConductor extends BaseActivity {
         if (progress    != null) progress.setVisibility(cargando ? View.VISIBLE : View.GONE);
         if (layoutEmpty != null && cargando) layoutEmpty.setVisibility(View.GONE);
     }
-
-
 
     // =========================================================================
     //  CALIFICACIONES PENDIENTES
