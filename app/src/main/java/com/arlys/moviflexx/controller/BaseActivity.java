@@ -17,14 +17,12 @@ import androidx.core.content.ContextCompat;
 import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.model.SessionManager;
 import com.arlys.moviflexx.model.VoiceAssistantManager;
-import com.arlys.moviflexx.model.voice.ScreenDescriptor;
 
 /**
  * BaseActivity — Clase base para todas las Activities.
- * Proporciona transiciones, animaciones de botones, entrada de vistas
- * y soporte completo de asistente de voz Movi con ScreenDescriptor.
+ * Proporciona transiciones, animaciones de botones y entrada de vistas.
  */
-public abstract class BaseActivity extends AppCompatActivity implements ScreenDescriptor {
+public abstract class BaseActivity extends AppCompatActivity {
 
     public enum Transition { SLIDE, FADE, NONE }
 
@@ -36,7 +34,6 @@ public abstract class BaseActivity extends AppCompatActivity implements ScreenDe
         super.onCreate(savedInstanceState);
         voiceAssistant = VoiceAssistantManager.getInstance(this);
     }
-
 
     @Override
     protected void onResume() {
@@ -176,21 +173,4 @@ public abstract class BaseActivity extends AppCompatActivity implements ScreenDe
                 .setInterpolator(new DecelerateInterpolator())
                 .start();
     }
-
-    // ─── SCREEN DESCRIPTOR (defaults — subclases deben sobreescribir) ────────
-
-    @Override
-    public String getNombrePantalla() {
-        return getClass().getSimpleName();
-    }
-
-    @Override
-    public String getDescripcionPantalla() {
-        return "Estás en la pantalla " + getNombrePantalla() + ".";
-    }
-
-    @Override
-    public String getOpcionesPantalla() {
-        return "Puedes decir: ir atrás, ir al inicio, buscar viaje, mis reservas, perfil, mensajes, o ayuda.";
-    }
-}
+}

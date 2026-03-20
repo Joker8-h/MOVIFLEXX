@@ -21,6 +21,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -32,6 +33,7 @@ import com.arlys.moviflexx.model.ConexionApi;
 import com.arlys.moviflexx.model.Constantes;
 import com.arlys.moviflexx.model.Manager.CalificacionesManager;
 import com.arlys.moviflexx.model.SessionManager;
+import com.arlys.moviflexx.model.ViajeAlertaManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -335,8 +337,12 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
         h.itemView.setOnClickListener(irDetalle);
         h.btnAceptar.setOnClickListener(irDetalle);
         h.btnDetalle.setOnClickListener(irDetalle);
-        h.btnIniciar.setOnClickListener(vw -> cambiarEstado(fViajeId, Constantes.viajeIniciar((long) fViajeId), "iniciado"));
-        h.btnCancelar.setOnClickListener(vw -> confirmarCancelar(fViajeId));
+        h.btnIniciar.setOnClickListener(vw -> {
+            // Cancela los jobs de alerta pendientes (ya no son necesarios)
+            ViajeAlertaManager.cancelarAlertas(fViajeId);
+            // Inicia el viaje manualmente
+            cambiarEstado(fViajeId, Constantes.viajeIniciar((long) fViajeId), "iniciado");
+        });        h.btnCancelar.setOnClickListener(vw -> confirmarCancelar(fViajeId));
         h.btnFinalizar.setOnClickListener(vw -> confirmarYFinalizar(fViajeId));
 
         // ── btnCalificar: SOLO abre el bottom-sheet de calificación ──
@@ -1102,6 +1108,7 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
         root.setPadding(p16, p12, p16, (int) (32 * d));
         sv.addView(root);
 
+        // Tirón
         View tiron = new View(activity);
         LinearLayout.LayoutParams lpT = new LinearLayout.LayoutParams((int) (40 * d), (int) (4 * d));
         lpT.gravity     = android.view.Gravity.CENTER_HORIZONTAL;
@@ -1114,6 +1121,7 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
         tiron.setBackground(tBg);
         root.addView(tiron);
 
+        // Título
         TextView tvTitulo = new TextView(activity);
         tvTitulo.setText("Cobro del viaje");
         tvTitulo.setTextSize(20f);
@@ -1125,6 +1133,7 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
         tvTitulo.setLayoutParams(lpTit);
         root.addView(tvTitulo);
 
+        // Subtítulo
         TextView tvSub = new TextView(activity);
         tvSub.setText("Confirma el pago de cada pasajero antes de calificar");
         tvSub.setTextSize(13f);
@@ -1135,6 +1144,7 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
         tvSub.setLayoutParams(lpSub);
         root.addView(tvSub);
 
+        // Separador
         View sep0 = new View(activity);
         LinearLayout.LayoutParams lpS0 = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, (int) (1 * d));
@@ -1161,10 +1171,10 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
         btnContinuar.setCornerRadius((int) (14 * d));
 
         for (int i = 0; i < pasajeros.size(); i++) {
-            JSONObject u         = pasajeros.get(i);
+            JSONObject u          = pasajeros.get(i);
             int        idPasajero = -1;
             String     nomPasajero = "Pasajero";
-            JSONObject usuObj    = u.optJSONObject("usuario");
+            JSONObject usuObj     = u.optJSONObject("usuario");
             if (usuObj != null) {
                 for (String k : new String[]{"idUsuarios", "id", "idUsuario"}) {
                     int id = usuObj.optInt(k, -1);
@@ -1181,15 +1191,44 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
                     if (id > 0) { idPasajero = id; break; }
                 }
 
-            final int    fIdPas   = idPasajero;
-            final String fNomPas  = nomPasajero;
-            JSONObject   pagoExistente    = mapaPagos.get(idPasajero);
+            final int    fIdPas      = idPasajero;
+            final String fNomPas     = nomPasajero;
+            JSONObject   pagoExistente     = mapaPagos.get(idPasajero);
             boolean      confirmoPasajero  = pagoExistente != null && pagoExistente.optBoolean("confirmacionPasajero", false);
             boolean      confirmoConductor = pagoExistente != null && pagoExistente.optBoolean("confirmacionConductor", false);
             boolean      yaPagado          = confirmoConductor;
             String       tipoPagoExistente = pagoExistente != null ? pagoExistente.optString("tipoPago", "") : "";
             if (yaPagado) pagosConfirmados[0]++;
 
+            // ── PRECIO: pago registrado → reserva → calcular tramo → fallback ──
+            double montoFinal = 0;
+
+// 1. Monto del pago ya registrado por el pasajero (más confiable)
+            if (pagoExistente != null && pagoExistente.optDouble("monto", 0) > 0) {
+                montoFinal = pagoExistente.optDouble("monto", 0);
+            }
+
+// 2. Precio del tramo guardado en la reserva (precioFinal lo guarda el backend)
+            if (montoFinal <= 0) {
+                montoFinal = u.optDouble("precioFinal",
+                        u.optDouble("precioTramo",
+                                u.optDouble("costoPorPasajero", 0)));
+            }
+
+// 3. Precio guardado en campo "precio" del usuario-viaje
+            if (montoFinal <= 0) {
+                montoFinal = u.optDouble("precio", 0);
+            }
+
+// 4. Fallback: precio base del viaje
+            if (montoFinal <= 0) {
+                montoFinal = montoBase;
+            }
+
+            java.text.NumberFormat nf = java.text.NumberFormat.getNumberInstance(new java.util.Locale("es", "CO"));
+            final double fMontoFinal = montoFinal;
+
+            // ── Card del pasajero ─────────────────────────────────────────────
             com.google.android.material.card.MaterialCardView cardPas =
                     new com.google.android.material.card.MaterialCardView(activity);
             LinearLayout.LayoutParams lpCard = new LinearLayout.LayoutParams(
@@ -1206,6 +1245,7 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
             innerCard.setOrientation(LinearLayout.VERTICAL);
             innerCard.setPadding(p12, p12, p12, p12);
 
+            // Fila: avatar + nombre + monto + badge
             LinearLayout filaNom = new LinearLayout(activity);
             filaNom.setOrientation(LinearLayout.HORIZONTAL);
             filaNom.setGravity(android.view.Gravity.CENTER_VERTICAL);
@@ -1214,6 +1254,7 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
             lpFN.bottomMargin = p8;
             filaNom.setLayoutParams(lpFN);
 
+            // Avatar
             TextView tvAv = new TextView(activity);
             LinearLayout.LayoutParams lpAv = new LinearLayout.LayoutParams((int) (36 * d), (int) (36 * d));
             lpAv.rightMargin = p8;
@@ -1230,6 +1271,7 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
             tvAv.setBackground(avBg);
             filaNom.addView(tvAv);
 
+            // Columna nombre + monto
             LinearLayout colInfo = new LinearLayout(activity);
             colInfo.setOrientation(LinearLayout.VERTICAL);
             colInfo.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
@@ -1241,17 +1283,15 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
             tvNom.setTextColor(Color.parseColor("#1A2035"));
             colInfo.addView(tvNom);
 
-            double montoFinal = (pagoExistente != null && pagoExistente.optDouble("monto", 0) > 0)
-                    ? pagoExistente.optDouble("monto", 0) : montoBase;
-            java.text.NumberFormat nf = java.text.NumberFormat.getNumberInstance(new java.util.Locale("es", "CO"));
             TextView tvMonto = new TextView(activity);
-            tvMonto.setText("$" + nf.format(montoFinal) + " COP");
+            tvMonto.setText("$" + nf.format(fMontoFinal) + " COP");
             tvMonto.setTextSize(12f);
             tvMonto.setTextColor(Color.parseColor("#00897B"));
             tvMonto.setTypeface(null, Typeface.BOLD);
             colInfo.addView(tvMonto);
             filaNom.addView(colInfo);
 
+            // Badge estado
             TextView tvEstPago = new TextView(activity);
             tvEstPago.setTextSize(10f);
             tvEstPago.setTextColor(Color.WHITE);
@@ -1349,7 +1389,7 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
                 btnTransferencia.setOnClickListener(vw -> { metodoElegido[0] = "transferencia"; actualizarSeleccion.run(); });
                 if (!metodoElegido[0].isEmpty()) actualizarSeleccion.run();
 
-                final com.google.android.material.card.MaterialCardView fCard      = cardPas;
+                final com.google.android.material.card.MaterialCardView fCard   = cardPas;
                 final TextView fTvEstPago = tvEstPago;
                 final long[]   fIdPago    = {pagoExistente != null
                         ? pagoExistente.optLong("idPago", pagoExistente.optLong("id", -1)) : -1};
@@ -1359,15 +1399,17 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
                     btnConfirmar.setEnabled(false);
                     btnConfirmar.setText("Verificando pago...");
 
+                    // ── Verificar si el pasajero ya confirmó ──────────────────
                     ConexionApi.getInstance(context).getObjectNoCache(
                             Constantes.pagoDeUsuarioEnViaje(viajeId, fIdPas),
                             pagoFound -> {
-                                long    idPagoFound       = pagoFound.optLong("idPago", pagoFound.optLong("id", -1));
+                                long    idPagoFound        = pagoFound.optLong("idPago", pagoFound.optLong("id", -1));
                                 boolean pasajeroYaConfirmo = pagoFound.optBoolean("confirmacionPasajero", false);
                                 fIdPago[0] = idPagoFound;
 
                                 if (idPagoFound > 0 && pasajeroYaConfirmo) {
-                                    new Handler(Looper.getMainLooper()).post(() -> btnConfirmar.setText("Confirmando..."));
+                                    new Handler(Looper.getMainLooper()).post(() ->
+                                            btnConfirmar.setText("Confirmando..."));
                                     JSONObject bodyConfirm = new JSONObject();
                                     try { bodyConfirm.put("confirmacionConductor", true); } catch (Exception ignored) {}
                                     ConexionApi.getInstance(context).put(
@@ -1393,6 +1435,7 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
                                             })
                                     );
                                 } else if (idPagoFound > 0) {
+                                    // Pago existe pero pasajero no confirmó
                                     new Handler(Looper.getMainLooper()).post(() -> {
                                         btnConfirmar.setEnabled(true);
                                         btnConfirmar.setText("CONFIRMAR PAGO RECIBIDO");
@@ -1404,17 +1447,66 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
                                                 Toast.LENGTH_LONG).show();
                                     });
                                 } else {
-                                    crearPagoDesdeCondutor(viajeId, fIdPas, montoBase,
+                                    // No hay pago registrado
+                                    crearPagoDesdeCondutor(viajeId, fIdPas, fMontoFinal,
                                             metodoElegido[0], fIdPago, fTvEstPago, badgeBg, btnConfirmar);
                                 }
                             },
-                            errorVerif -> crearPagoDesdeCondutor(viajeId, fIdPas, montoBase,
-                                    metodoElegido[0], fIdPago, fTvEstPago, badgeBg, btnConfirmar)
+                            // Si falla la verificación → intentar con el array de pagos
+                            errorVerif -> {
+                                ConexionApi.getInstance(context).getArrayNoCache(
+                                        Constantes.pagosPorViaje(viajeId),
+                                        pagosArr -> {
+                                            long idPagoFound = -1;
+                                            boolean pasajeroConfirmo = false;
+                                            for (int j = 0; j < pagosArr.length(); j++) {
+                                                JSONObject p = pagosArr.optJSONObject(j);
+                                                if (p == null) continue;
+                                                int idU = -1;
+                                                for (String k : new String[]{"idUsuario","idPasajero","usuarioId"}) {
+                                                    int id = p.optInt(k, -1);
+                                                    if (id > 0) { idU = id; break; }
+                                                }
+                                                if (idU == fIdPas) {
+                                                    idPagoFound = p.optLong("idPago", p.optLong("id", -1));
+                                                    pasajeroConfirmo = p.optBoolean("confirmacionPasajero", false);
+                                                    break;
+                                                }
+                                            }
+                                            final long fIdPagoFound = idPagoFound;
+                                            final boolean fConfirmo = pasajeroConfirmo;
+                                            if (fIdPagoFound > 0 && fConfirmo) {
+                                                fIdPago[0] = fIdPagoFound;
+                                                new Handler(Looper.getMainLooper()).post(() ->
+                                                        btnConfirmar.setText("Confirmando..."));
+                                                JSONObject bodyConfirm = new JSONObject();
+                                                try { bodyConfirm.put("confirmacionConductor", true); } catch (Exception ignored) {}
+                                                ConexionApi.getInstance(context).put(
+                                                        Constantes.pagoConfirmarConductor(fIdPagoFound), bodyConfirm,
+                                                        resp -> new Handler(Looper.getMainLooper()).post(() ->
+                                                                marcarCardComoPagado(fCard, fTvEstPago, tvAv, tvMetodoLabel,
+                                                                        btnEfectivo, btnTransferencia, btnConfirmar,
+                                                                        badgeBg, avBg, pagosConfirmados, totalPasajeros, btnContinuar)),
+                                                        err -> new Handler(Looper.getMainLooper()).post(() -> {
+                                                            btnConfirmar.setEnabled(true);
+                                                            btnConfirmar.setText("CONFIRMAR PAGO RECIBIDO");
+                                                        })
+                                                );
+                                            } else {
+                                                crearPagoDesdeCondutor(viajeId, fIdPas, fMontoFinal,
+                                                        metodoElegido[0], fIdPago, fTvEstPago, badgeBg, btnConfirmar);
+                                            }
+                                        },
+                                        err2 -> crearPagoDesdeCondutor(viajeId, fIdPas, fMontoFinal,
+                                                metodoElegido[0], fIdPago, fTvEstPago, badgeBg, btnConfirmar)
+                                );
+                            }
                     );
                 });
                 innerCard.addView(btnConfirmar);
 
             } else {
+                // Ya pagado: mostrar método usado
                 if (!tipoPagoExistente.isEmpty()) {
                     TextView tvMetodoUsado = new TextView(activity);
                     tvMetodoUsado.setText("Pagó con " + tipoPagoExistente.toLowerCase());
@@ -1460,24 +1552,23 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
         final com.google.android.material.bottomsheet.BottomSheetDialog fSheet = sheet;
         final int fViajeId = viajeId;
 
-        // "Continuar a calificar" — cierra el sheet de pagos y abre solo los sheets de calificación
         btnContinuar.setOnClickListener(vw -> {
             fSheet.dismiss();
             new Handler(Looper.getMainLooper()).postDelayed(() ->
-                    iniciarSoloCalificacionConductor(fViajeId, new SessionManager(context).getIdUsuario()), 400);
+                    iniciarSoloCalificacionConductor(fViajeId,
+                            new SessionManager(context).getIdUsuario()), 400);
         });
-        // "Saltar" — igual que Continuar, sin abrir Resumen
         btnSaltar.setOnClickListener(vw -> {
             fSheet.dismiss();
             new Handler(Looper.getMainLooper()).postDelayed(() ->
-                    iniciarSoloCalificacionConductor(fViajeId, new SessionManager(context).getIdUsuario()), 400);
+                    iniciarSoloCalificacionConductor(fViajeId,
+                            new SessionManager(context).getIdUsuario()), 400);
         });
 
         root.addView(btnSaltar);
         sheet.setContentView(sv);
         sheet.show();
     }
-
     // ── Helper: crear pago desde el lado del conductor ────────────────────────
     private void crearPagoDesdeCondutor(int viajeId, int idPasajero, double montoBase,
                                         String metodo, long[] fIdPago,
@@ -1584,23 +1675,164 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
     private void mostrarSheetPagoPasajero(int viajeId, int idConductor) {
         Activity activity = resolveActivity(context);
         if (activity == null || activity.isFinishing() || activity.isDestroyed()) return;
-        SessionManager session    = new SessionManager(context);
-        int            idPasajero = session.getIdUsuario();
+        SessionManager session     = new SessionManager(context);
+        int            idPasajero  = session.getIdUsuario();
         String         nomPasajero = session.getNombre();
+
         ConexionApi.getInstance(context).getObjectNoCache(Constantes.viajePorId((long) viajeId),
                 viajeObj -> {
-                    double monto = viajeObj.optDouble("precio", 0);
-                    if (monto <= 0) {
+                    // ── Distancia total de la ruta ────────────────────────────
+                    double distKm = viajeObj.optDouble("distanciaKm",
+                            viajeObj.optDouble("distancia", 0));
+                    if (distKm <= 0) {
+                        JSONObject ruta = viajeObj.optJSONObject("ruta");
+                        if (ruta != null) {
+                            distKm = ruta.optDouble("distanciaKm",
+                                    ruta.optDouble("distancia", 0));
+                            // Intentar extraer de descripcion
+                            if (distKm <= 0) {
+                                String desc = ruta.optString("descripcion", "");
+                                try {
+                                    java.util.regex.Matcher m = java.util.regex.Pattern
+                                            .compile("([\\d.]+)\\s*km").matcher(desc);
+                                    if (m.find()) distKm = Double.parseDouble(m.group(1));
+                                } catch (Exception ignored) {}
+                            }
+                        }
+                    }
+
+                    // ── Precio total del viaje (fallback) ─────────────────────
+                    double precioTotal = viajeObj.optDouble("precio", 0);
+                    if (precioTotal <= 0) {
                         JSONObject ruta = viajeObj.optJSONObject("ruta");
                         if (ruta != null)
-                            monto = ruta.optDouble("precio", ruta.optDouble("costoCombustible", 0));
+                            precioTotal = ruta.optDouble("precio",
+                                    ruta.optDouble("costoCombustible", 0));
                     }
-                    final double fMonto = monto;
-                    new Handler(Looper.getMainLooper()).post(() ->
-                            construirSheetPagoPasajero(activity, viajeId, idPasajero, nomPasajero, idConductor, fMonto));
+
+                    final double fDistKm     = distKm;
+                    final double fPrecioTotal = precioTotal;
+
+                    // ── Buscar coords subida/bajada y precio guardado del pasajero ──
+                    double latS = 0, lngS = 0, latB = 0, lngB = 0;
+                    double precioGuardado = 0;
+                    double latOrigenViaje = 0, lngOrigenViaje = 0;
+
+                    // Extraer origen del viaje
+                    JSONArray paradas = viajeObj.optJSONArray("paradas");
+                    if (paradas == null) {
+                        JSONObject ruta = viajeObj.optJSONObject("ruta");
+                        if (ruta != null) paradas = ruta.optJSONArray("paradas");
+                    }
+                    if (paradas != null && paradas.length() > 0) {
+                        JSONObject p0 = paradas.optJSONObject(0);
+                        if (p0 != null) {
+                            latOrigenViaje = p0.optDouble("lat", 0);
+                            lngOrigenViaje = p0.optDouble("lng", 0);
+                        }
+                    }
+                    if (latOrigenViaje == 0) {
+                        latOrigenViaje = viajeObj.optDouble("latOrigen",
+                                viajeObj.optDouble("latitudOrigen", 0));
+                        lngOrigenViaje = viajeObj.optDouble("lngOrigen",
+                                viajeObj.optDouble("longitudOrigen", 0));
+                    }
+
+                    JSONArray usuarios = viajeObj.optJSONArray("usuarios");
+                    if (usuarios != null) {
+                        for (int i = 0; i < usuarios.length(); i++) {
+                            JSONObject u = usuarios.optJSONObject(i);
+                            if (u == null) continue;
+
+                            int idU = -1;
+                            JSONObject usuObj = u.optJSONObject("usuario");
+                            if (usuObj != null) {
+                                for (String k : new String[]{"idUsuarios","id","idUsuario"}) {
+                                    int id = usuObj.optInt(k, -1);
+                                    if (id > 0) { idU = id; break; }
+                                }
+                            }
+                            if (idU <= 0) {
+                                for (String k : new String[]{"idUsuarios","idUsuario","idPasajero"}) {
+                                    int id = u.optInt(k, -1);
+                                    if (id > 0) { idU = id; break; }
+                                }
+                            }
+                            if (idU != idPasajero) continue;
+
+                            // Precio guardado en la reserva
+                            precioGuardado = u.optDouble("precioFinal",
+                                    u.optDouble("precio",
+                                            u.optDouble("costoPorPasajero", 0)));
+
+                            // Subida
+                            latS = u.optDouble("latSubida",
+                                    u.optDouble("latOrigen",
+                                            u.optDouble("latInicio", 0)));
+                            lngS = u.optDouble("lngSubida",
+                                    u.optDouble("lngOrigen",
+                                            u.optDouble("lngInicio", 0)));
+
+                            // Bajada
+                            latB = u.optDouble("latBajada",
+                                    u.optDouble("latParada", 0));
+                            lngB = u.optDouble("lngBajada",
+                                    u.optDouble("lngParada", 0));
+                            if (latB == 0 || lngB == 0) {
+                                JSONObject paradaObj = u.optJSONObject("parada");
+                                if (paradaObj != null) {
+                                    latB = paradaObj.optDouble("lat",
+                                            paradaObj.optDouble("latitud", 0));
+                                    lngB = paradaObj.optDouble("lng",
+                                            paradaObj.optDouble("longitud", 0));
+                                }
+                            }
+                            break;
+                        }
+                    }
+
+                    final double fLatS = latS != 0 ? latS : latOrigenViaje;
+                    final double fLngS = lngS != 0 ? lngS : lngOrigenViaje;
+                    final double fLatB = latB;
+                    final double fLngB = lngB;
+                    final double fPrecioGuardado = precioGuardado;
+
+                    // ── 1. Precio guardado en la reserva → usar directo ───────
+                    if (fPrecioGuardado > 0) {
+                        new Handler(Looper.getMainLooper()).post(() ->
+                                construirSheetPagoPasajero(activity, viajeId, idPasajero,
+                                        nomPasajero, idConductor, fPrecioGuardado));
+                        return;
+                    }
+
+                    // ── 2. Calcular precio del tramo con PrecioTramoPasajeroManager ──
+                    if (fLatB != 0 && fLngB != 0 && fDistKm > 0 && fPrecioTotal > 0) {
+                        com.arlys.moviflexx.model.Manager.PrecioTramoPasajeroManager.calcular(
+                                fLatS, fLngS,
+                                fLatB, fLngB,
+                                fDistKm,
+                                fPrecioTotal,
+                                resultado -> {
+                                    Log.d("PRECIO_TRAMO", "Pasajero tramo calculado: "
+                                            + resultado.precioFinal
+                                            + " | distTramo=" + resultado.distanciaKm
+                                            + " | distTotal=" + fDistKm);
+                                    new Handler(Looper.getMainLooper()).post(() ->
+                                            construirSheetPagoPasajero(activity, viajeId,
+                                                    idPasajero, nomPasajero, idConductor,
+                                                    resultado.precioFinal));
+                                }
+                        );
+                    } else {
+                        // ── 3. Fallback: precio total ─────────────────────────
+                        new Handler(Looper.getMainLooper()).post(() ->
+                                construirSheetPagoPasajero(activity, viajeId, idPasajero,
+                                        nomPasajero, idConductor, fPrecioTotal));
+                    }
                 },
                 err -> new Handler(Looper.getMainLooper()).post(() ->
-                        construirSheetPagoPasajero(activity, viajeId, idPasajero, nomPasajero, idConductor, 0))
+                        construirSheetPagoPasajero(activity, viajeId, idPasajero,
+                                nomPasajero, idConductor, 0))
         );
     }
 

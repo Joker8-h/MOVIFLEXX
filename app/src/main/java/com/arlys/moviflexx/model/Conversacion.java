@@ -22,7 +22,7 @@ public class Conversacion {
     private boolean mio            = false;
     private boolean ultimoMensajeLeidoPorContacto = false;
     private String  fotoContacto   = "";
-    private long    timestampOrden = 0L; // ← para ordenar por más reciente
+    private long    timestampOrden = 0L;
 
     public Conversacion() {}
 
@@ -87,7 +87,6 @@ public class Conversacion {
                             ultimo.optString("contenido", ""),
                             ultimo.optString("message",   "")
                     );
-                    // Usar la fecha de este mensaje para ordenar
                     String fechaMensaje = primeraNoVacia(
                             ultimo.optString("fechaEnvio", ""),
                             ultimo.optString("createdAt",  ""),
@@ -97,7 +96,6 @@ public class Conversacion {
                         long ts = parsearTimestampStatic(fechaMensaje);
                         if (ts > 0) c.timestampOrden = ts;
                     }
-                    // También determinar si el último mensaje es mío
                     int idRemitente = ultimo.optInt("idRemitente",
                             ultimo.optInt("emisorId", -1));
                     c.mio = (idRemitente == idUsuarioActual && idUsuarioActual != -1);
@@ -122,7 +120,6 @@ public class Conversacion {
                 obj.optString("fechaEnvio",           "")
         );
 
-        // Calcular timestamp para ordenar
         if (c.timestampOrden == 0L && !c.fechaUltimo.isEmpty()) {
             long ts = parsearTimestampStatic(c.fechaUltimo);
             if (ts > 0) c.timestampOrden = ts;
@@ -137,7 +134,7 @@ public class Conversacion {
 
         Log.d(TAG, "noLeidos resuelto: " + c.noLeidos);
 
-        // ── EMISOR (si no se determinó desde mensajes[]) ──────────────
+        // ── EMISOR ────────────────────────────────────────────────────
         if (!c.mio) {
             int idEmisor = leerEnteroSeguro(obj,
                     "idEmisorUltimo", "lastSenderId", "emisorId", "idRemitente");
@@ -292,7 +289,6 @@ public class Conversacion {
         return -1;
     }
 
-    /** Parsear timestamp estático para uso en fromJson */
     private static long parsearTimestampStatic(String fecha) {
         if (fecha == null || fecha.isEmpty()) return 0L;
         try {
@@ -314,21 +310,24 @@ public class Conversacion {
         return 0L;
     }
 
-    // ── Getters / Setters ─────────────────────────────────────────────────────
-    public long    getId()                            { return id; }
-    public String  getNombreContacto()                { return nombreContacto; }
-    public String  getUltimoMensaje()                 { return ultimoMensaje; }
-    public String  getFechaUltimo()                   { return fechaUltimo; }
-    public int     getNoLeidos()                      { return noLeidos; }
-    public int     getIdContacto()                    { return idContacto; }
-    public String  getFechaUltimoMensaje()            { return fechaUltimo; }
-    public int     getMensajesNoLeidos()              { return noLeidos; }
-    public boolean isUltimoMensajeMio()               { return mio; }
-    public boolean isUltimoMensajeLeidoPorContacto()  { return ultimoMensajeLeidoPorContacto; }
-    public long    getTimestampOrden()                { return timestampOrden; } // ← nuevo
-    public String  getFotoContacto()                  { return fotoContacto != null ? fotoContacto : ""; }
+    // ── Getters ───────────────────────────────────────────────────────────────
+    public long    getId()                           { return id; }
+    public String  getNombreContacto()               { return nombreContacto; }
+    public String  getUltimoMensaje()                { return ultimoMensaje; }
+    public String  getFechaUltimo()                  { return fechaUltimo; }
+    public int     getNoLeidos()                     { return noLeidos; }
+    public int     getIdContacto()                   { return idContacto; }
+    public String  getFechaUltimoMensaje()           { return fechaUltimo; }
+    public int     getMensajesNoLeidos()             { return noLeidos; }
+    public boolean isUltimoMensajeMio()              { return mio; }
+    public boolean isUltimoMensajeLeidoPorContacto() { return ultimoMensajeLeidoPorContacto; }
+    public long    getTimestampOrden()               { return timestampOrden; }
+    public String  getFotoContacto()                 { return fotoContacto != null ? fotoContacto : ""; }
 
-    public void setFotoContacto(String url)           { this.fotoContacto = url != null ? url : ""; }
-    public void setUltimoMensaje(String ultimoMensaje){ this.ultimoMensaje = ultimoMensaje; }
-    public void setTimestampOrden(long ts)            { this.timestampOrden = ts; }
+    // ── Setters ───────────────────────────────────────────────────────────────
+    public void setFotoContacto(String url)            { this.fotoContacto  = url != null ? url : ""; }
+    public void setUltimoMensaje(String ultimoMensaje) { this.ultimoMensaje = ultimoMensaje; }
+    public void setTimestampOrden(long ts)             { this.timestampOrden = ts; }
+    // ← NUEVO: necesario para acumular no leídos al deduplicar por contacto
+    public void setMensajesNoLeidos(int cantidad)      { this.noLeidos = Math.max(0, cantidad); }
 }

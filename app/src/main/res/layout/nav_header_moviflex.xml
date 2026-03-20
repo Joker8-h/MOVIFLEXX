@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/layout/nav_header_moviflex.xml -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#00CED1"
+    android:orientation="vertical"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:paddingTop="40dp"
+    android:paddingBottom="20dp">
+
+    <!-- Avatar -->
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="14dp">
+
+        <!-- Inicial fallback -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/nav_card_avatar_inicial"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            app:cardBackgroundColor="#1EFFFFFF"
+            app:cardCornerRadius="36dp"
+            app:cardElevation="4dp"
+            app:strokeWidth="0dp">
+            <TextView
+                android:id="@+id/nav_tv_inicial"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="30sp"
+                android:textStyle="bold"
+                tools:text="C" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Foto real -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/nav_card_avatar_foto"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:visibility="gone"
+            app:cardCornerRadius="36dp"
+            app:cardElevation="4dp"
+            app:strokeColor="#FFFFFF"
+            app:strokeWidth="2dp">
+            <ImageView
+                android:id="@+id/nav_iv_avatar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:contentDescription="Foto de perfil" />
+        </com.google.android.material.card.MaterialCardView>
+
+    </FrameLayout>
+
+    <!-- Nombre -->
+    <TextView
+        android:id="@+id/nav_tv_nombre"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="6dp"
+        tools:text="Carlos López" />
+
+    <!-- Email -->
+    <TextView
+        android:id="@+id/nav_tv_email"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#CCFFFE"
+        android:textSize="12sp"
+        android:layout_marginBottom="10dp"
+        tools:text="carlos@email.com" />
+
+    <!-- Chip rol -->
+    <com.google.android.material.chip.Chip
+        android:id="@+id/nav_chip_rol"
+        android:layout_width="wrap_content"
+        android:layout_height="28dp"
+        android:textColor="#00CED1"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        app:chipBackgroundColor="#FFFFFF"
+        app:chipCornerRadius="14dp"
+        app:chipStrokeWidth="0dp"
+        android:clickable="false"
+        android:focusable="false"
+        tools:text="Conductor" />
+
+</LinearLayout>

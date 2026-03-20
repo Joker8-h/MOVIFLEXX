@@ -216,7 +216,6 @@ public class Mensajes extends BaseActivity {
 
                     conv.setUltimoMensaje(contenido);
 
-                    // Actualizar timestamp de orden con la fecha del último mensaje
                     String fechaMensaje = ultimo.optString("fechaEnvio",
                             ultimo.optString("createdAt", ""));
                     if (!fechaMensaje.isEmpty()) {
@@ -225,10 +224,7 @@ public class Mensajes extends BaseActivity {
                     }
 
                     idsMensajeCargado.remove(conv.getId());
-                    runOnUiThread(() -> {
-                        // Reordenar y redibujar
-                        ordenarYActualizar();
-                    });
+                    runOnUiThread(this::ordenarYActualizar);
                 },
                 error -> idsMensajeCargado.remove(conv.getId())
         );
@@ -458,12 +454,12 @@ public class Mensajes extends BaseActivity {
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  PROCESAR ARRAY
+    //  PROCESAR ARRAY — deduplicar por idContacto (fix duplicados)
     // ═════════════════════════════════════════════════════════════
     private void procesarArray(JSONArray arr) {
         try {
-            Map<Long, Conversacion> mapaConversaciones = new LinkedHashMap<>();
-            int totalNoLeidos = 0;
+            // ── Paso 1: parsear todas las conversaciones del backend ───────────
+            List<Conversacion> todasLasConversaciones = new ArrayList<>();
 
             if (arr != null) {
                 for (int i = 0; i < arr.length(); i++) {
@@ -471,47 +467,93 @@ public class Mensajes extends BaseActivity {
                     if (obj == null) continue;
                     Conversacion c = Conversacion.fromJson(obj, idUsuarioActual);
                     if (c.getId() <= 0) continue;
-                    if (mapaConversaciones.containsKey(c.getId())) {
-                        Conversacion existente = mapaConversaciones.get(c.getId());
-                        if (existente != null && existente.getUltimoMensaje().isEmpty()
-                                && !c.getUltimoMensaje().isEmpty()) {
-                            mapaConversaciones.put(c.getId(), c);
-                        }
-                    } else {
-                        mapaConversaciones.put(c.getId(), c);
-                    }
+                    todasLasConversaciones.add(c);
                 }
             }
 
-            List<Conversacion> nuevaCompleta = new ArrayList<>(mapaConversaciones.values());
-            for (Conversacion c : nuevaCompleta) totalNoLeidos += c.getMensajesNoLeidos();
+            // ── Paso 2: deduplicar por idContacto ────────────────────────────
+            // Clave = idContacto. Si el mismo usuario tiene múltiples
+            // conversaciones (un viaje distinto cada una), se fusionan en una sola
+            // mostrando siempre el mensaje más reciente y acumulando no leídos.
+            //
+            // Clave negativa = conversaciones sin contacto identificable
+            // (se conservan individualmente para no perder datos).
+            Map<Integer, Conversacion> mapaPorContacto = new LinkedHashMap<>();
 
-            for (Conversacion c : nuevaCompleta) {
-                boolean esNueva = true;
-                for (Conversacion existente : listaCompleta) {
-                    if (existente.getId() == c.getId()) {
-                        esNueva = false;
-                        // Propagar foto ya cargada
-                        if (existente.getFotoContacto() != null
-                                && !existente.getFotoContacto().isEmpty()) {
+            for (Conversacion c : todasLasConversaciones) {
+                int idContacto = c.getIdContacto();
+
+                if (idContacto <= 0) {
+                    // Sin contacto identificable → clave única basada en id de conversación
+                    mapaPorContacto.put(-(int) c.getId(), c);
+                    continue;
+                }
+
+                Conversacion existente = mapaPorContacto.get(idContacto);
+
+                if (existente == null) {
+                    // Primera vez que vemos este contacto
+                    mapaPorContacto.put(idContacto, c);
+                } else {
+                    // Ya teníamos una conversación con este contacto:
+                    // conservar la más reciente y acumular no leídos
+                    boolean cEsMasReciente =
+                            c.getTimestampOrden() > existente.getTimestampOrden();
+
+                    if (cEsMasReciente) {
+                        // La nueva es más reciente: usarla como principal
+                        // heredar foto si la existente ya la tenía cargada
+                        if (!existente.getFotoContacto().isEmpty()
+                                && c.getFotoContacto().isEmpty()) {
                             c.setFotoContacto(existente.getFotoContacto());
                         }
-                        // Propagar último mensaje ya cargado si el nuevo está vacío
-                        if (!existente.getUltimoMensaje().isEmpty()
-                                && c.getUltimoMensaje().isEmpty()) {
+                        // heredar mensaje si la nueva no tiene pero la existente sí
+                        if (c.getUltimoMensaje().isEmpty()
+                                && !existente.getUltimoMensaje().isEmpty()) {
                             c.setUltimoMensaje(existente.getUltimoMensaje());
                         }
-                        // Propagar timestamp si el nuevo no tiene
-                        if (c.getTimestampOrden() == 0 && existente.getTimestampOrden() > 0) {
-                            c.setTimestampOrden(existente.getTimestampOrden());
+                        // acumular no leídos de ambas conversaciones
+                        c.setMensajesNoLeidos(
+                                c.getMensajesNoLeidos() + existente.getMensajesNoLeidos());
+                        mapaPorContacto.put(idContacto, c);
+                    } else {
+                        // La existente sigue siendo más reciente: conservarla
+                        // acumular no leídos de la que descartamos
+                        existente.setMensajesNoLeidos(
+                                existente.getMensajesNoLeidos() + c.getMensajesNoLeidos());
+                        // si la existente no tiene mensaje pero la nueva sí, heredar
+                        if (existente.getUltimoMensaje().isEmpty()
+                                && !c.getUltimoMensaje().isEmpty()) {
+                            existente.setUltimoMensaje(c.getUltimoMensaje());
                         }
-                        break;
                     }
                 }
-                if (esNueva) cargarFotoContacto(c);
-                // Cargar mensaje solo si está vacío
-                if (c.getUltimoMensaje().isEmpty()) cargarUltimoMensaje(c);
             }
+
+            List<Conversacion> nuevaCompleta = new ArrayList<>(mapaPorContacto.values());
+
+            // ── Paso 3: propagar datos ya cargados (foto, mensaje, timestamp) ─
+            for (Conversacion c : nuevaCompleta) {
+                Conversacion anterior = buscarEnListaCompleta(c.getIdContacto());
+                if (anterior == null) {
+                    // Es nueva: lanzar cargas
+                    cargarFotoContacto(c);
+                    if (c.getUltimoMensaje().isEmpty()) cargarUltimoMensaje(c);
+                } else {
+                    // Ya la teníamos: propagar datos ya cargados
+                    if (!anterior.getFotoContacto().isEmpty() && c.getFotoContacto().isEmpty())
+                        c.setFotoContacto(anterior.getFotoContacto());
+                    if (!anterior.getUltimoMensaje().isEmpty() && c.getUltimoMensaje().isEmpty())
+                        c.setUltimoMensaje(anterior.getUltimoMensaje());
+                    if (anterior.getTimestampOrden() > c.getTimestampOrden())
+                        c.setTimestampOrden(anterior.getTimestampOrden());
+                    if (c.getUltimoMensaje().isEmpty()) cargarUltimoMensaje(c);
+                }
+            }
+
+            // ── Paso 4: calcular badge total ──────────────────────────────────
+            int totalNoLeidos = 0;
+            for (Conversacion c : nuevaCompleta) totalNoLeidos += c.getMensajesNoLeidos();
 
             listaCompleta.clear();
             listaCompleta.addAll(nuevaCompleta);
@@ -520,7 +562,8 @@ public class Mensajes extends BaseActivity {
             runOnUiThread(() -> {
                 stopRefresh();
                 if (primeraCarga) { primeraCarga = false; mostrarLoading(false); }
-                String query = etBuscar != null ? etBuscar.getText().toString().toLowerCase().trim() : "";
+                String query = etBuscar != null
+                        ? etBuscar.getText().toString().toLowerCase().trim() : "";
                 aplicarFiltroCompleto(query);
                 actualizarBadgeYCampana(badge);
             });
@@ -528,18 +571,28 @@ public class Mensajes extends BaseActivity {
         } catch (Exception e) {
             Log.e(TAG, "procesarArray error", e);
             runOnUiThread(() -> {
-                stopRefresh(); mostrarLoading(false);
+                stopRefresh();
+                mostrarLoading(false);
                 if (listaCompleta.isEmpty()) mostrarVacio("Error al cargar datos.");
             });
         }
     }
 
+    /** Busca en listaCompleta por idContacto (para propagar datos entre ciclos de polling) */
+    private Conversacion buscarEnListaCompleta(int idContacto) {
+        if (idContacto <= 0) return null;
+        for (Conversacion c : listaCompleta) {
+            if (c.getIdContacto() == idContacto) return c;
+        }
+        return null;
+    }
+
     // ═════════════════════════════════════════════════════════════
-    //  ORDENAR Y ACTUALIZAR — más reciente primero (igual WhatsApp)
+    //  ORDENAR Y ACTUALIZAR
     // ═════════════════════════════════════════════════════════════
-    @SuppressLint("NotifyDataSetChanged")
     private void ordenarYActualizar() {
-        String query = etBuscar != null ? etBuscar.getText().toString().toLowerCase().trim() : "";
+        String query = etBuscar != null
+                ? etBuscar.getText().toString().toLowerCase().trim() : "";
         aplicarFiltroCompleto(query);
     }
 
@@ -553,19 +606,18 @@ public class Mensajes extends BaseActivity {
             if (filtroActivo == FILTRO_NO_LEIDOS && c.getMensajesNoLeidos() == 0) continue;
             if (filtroActivo == FILTRO_FAVORITOS && !favoritosManager.esFavorito(c.getId())) continue;
             if (!query.isEmpty()) {
-                String nombre = c.getNombreContacto() != null ? c.getNombreContacto().toLowerCase() : "";
-                String ultimo = c.getUltimoMensaje()  != null ? c.getUltimoMensaje().toLowerCase()  : "";
+                String nombre = c.getNombreContacto() != null
+                        ? c.getNombreContacto().toLowerCase() : "";
+                String ultimo = c.getUltimoMensaje() != null
+                        ? c.getUltimoMensaje().toLowerCase() : "";
                 if (!nombre.contains(query) && !ultimo.contains(query)) continue;
             }
             nuevaLista.add(c);
         }
 
-        // ── ORDENAR: más reciente primero (igual que WhatsApp) ──
-        Collections.sort(nuevaLista, (a, b) -> {
-            long tsA = a.getTimestampOrden();
-            long tsB = b.getTimestampOrden();
-            return Long.compare(tsB, tsA); // descendente
-        });
+        // Ordenar más reciente primero (igual que WhatsApp)
+        Collections.sort(nuevaLista, (a, b) ->
+                Long.compare(b.getTimestampOrden(), a.getTimestampOrden()));
 
         // No redibujar si los datos son idénticos
         if (!listaCambio(listaFiltrada, nuevaLista)) {
@@ -741,14 +793,17 @@ public class Mensajes extends BaseActivity {
 
     private long parsearTimestamp(String fecha) {
         if (fecha == null || fecha.isEmpty()) return 0L;
-        try { long n = Long.parseLong(fecha); return n < 10_000_000_000L ? n * 1000L : n; }
-        catch (NumberFormatException ignored) {}
+        try {
+            long n = Long.parseLong(fecha);
+            return n < 10_000_000_000L ? n * 1000L : n;
+        } catch (NumberFormatException ignored) {}
         for (String f : new String[]{
                 "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
                 "yyyy-MM-dd'T'HH:mm:ss",
                 "yyyy-MM-dd HH:mm:ss"}) {
             try {
-                java.util.Date d = new java.text.SimpleDateFormat(f, java.util.Locale.getDefault()).parse(fecha);
+                java.util.Date d = new java.text.SimpleDateFormat(
+                        f, java.util.Locale.getDefault()).parse(fecha);
                 if (d != null) return d.getTime();
             } catch (Exception ignored) {}
         }

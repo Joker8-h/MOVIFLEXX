@@ -1,21 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    MOVIFLEXX — activity_register.xml (REDISEÑO CLARO)
-    Colores: fondo #F2FBFA, teal #1ABC9C, blobs decorativos
-    Todos los IDs originales intactos para Register.java:
-      layoutFormulario, scrollFormulario, layoutFace,
-      previewView, txtEstado,
-      til_nombre, til_email, til_telefono, til_password,
-      edt_nombre, edt_email, edt_telefono, edt_password,
-      btn_register, btn_verificar_email,
-      layoutEmailNoVerificado, layoutEmailVerificado,
-      cbTerminos, tvLinkTerminos,
-      stepEmail, stepOtp,
-      edt_email_paso1, btn_enviar_codigo, tv_email_destino,
-      otp1..otp6, btn_verificar_otp,
-      tv_reenviar_codigo, tv_cambiar_correo,
-      progress_paso1, progress_paso2, progress_paso3
--->
+
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"

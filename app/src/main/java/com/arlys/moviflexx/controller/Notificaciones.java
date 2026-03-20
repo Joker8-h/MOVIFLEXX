@@ -242,7 +242,11 @@ public class Notificaciones extends BaseActivity {
         final boolean hayNuevas = !idsNuevos.isEmpty();
         runOnUiThread(() -> {
             if (progressBar != null) progressBar.setVisibility(View.GONE);
-            if (lista.isEmpty()) { mostrarVacio(); return; }
+            if (lista.isEmpty()) {
+                // Aunque no haya notificaciones del backend, cargar pagos pendientes
+                cargarPagosPendientesComoNotificaciones();
+                return;
+            }
             if (layoutEmpty      != null) layoutEmpty.setVisibility(View.GONE);
             if (rvNotificaciones != null) rvNotificaciones.setVisibility(View.VISIBLE);
             adapter.notifyDataSetChanged();
@@ -254,7 +258,104 @@ public class Notificaciones extends BaseActivity {
 
             if (hayNuevas) reproducirSonido();
             primerasCargaCompleta = true;
+
+            // ── Cargar pagos pendientes como notificaciones al inicio ─────────
+            cargarPagosPendientesComoNotificaciones();
         });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  PAGOS PENDIENTES COMO NOTIFICACIONES
+    // ═══════════════════════════════════════════════════════
+
+    private void cargarPagosPendientesComoNotificaciones() {
+        ConexionApi.getInstance(this).getArrayNoCache(
+                Constantes.MIS_RESERVAS,
+                response -> {
+                    List<NotifItem> pagoItems = new ArrayList<>();
+                    for (int i = 0; i < response.length(); i++) {
+                        JSONObject reserva = response.optJSONObject(i);
+                        if (reserva == null) continue;
+                        JSONObject viaje = reserva.optJSONObject("viaje");
+                        if (viaje == null) continue;
+                        String estViaje = viaje.optString("estado", "").toUpperCase().trim();
+                        if (!"FINALIZADO".equals(estViaje) && !"COMPLETADO".equals(estViaje)) continue;
+
+                        int viajeId = reserva.optInt("idViajes", 0);
+                        if (viajeId == 0)
+                            viajeId = viaje.optInt("idViajes", viaje.optInt("id", 0));
+                        if (viajeId == 0) continue;
+
+                        double precio = viaje.optDouble("precio", 0);
+
+                        // Extraer destino
+                        String destino = "";
+                        JSONObject ruta = viaje.optJSONObject("ruta");
+                        if (ruta != null)
+                            destino = ruta.optString("destino", ruta.optString("nombre", ""));
+
+                        // Extraer nombre del conductor
+                        String nomConductor = "";
+                        JSONObject conductor = viaje.optJSONObject("conductor");
+                        if (conductor != null) {
+                            for (String k : new String[]{"nombre","nombreCompleto","name","nombres"}) {
+                                String val = conductor.optString(k, "");
+                                if (!val.isEmpty() && !val.equals("null")) {
+                                    nomConductor = val;
+                                    break;
+                                }
+                            }
+                        }
+
+                        NotifItem item    = new NotifItem();
+                        item.id           = -(long) viajeId; // negativo para distinguir de notifs reales
+                        item.tipo         = "PAGO";
+                        item.leido        = false;
+                        item.idReferencia = viajeId;
+
+                        // Título: "Pago pendiente a [conductor]" o solo "Pago pendiente"
+                        item.titulo = nomConductor.isEmpty()
+                                ? "Pago pendiente"
+                                : "Pago pendiente a " + nomConductor;
+
+                        // Mensaje: destino + precio
+                        StringBuilder msg = new StringBuilder();
+                        if (!destino.isEmpty()) msg.append("Destino: ").append(destino);
+                        if (precio > 0) {
+                            if (msg.length() > 0) msg.append("  •  ");
+                            msg.append("$").append(
+                                            String.format(Locale.getDefault(), "%,.0f", precio))
+                                    .append(" COP");
+                        }
+                        if (msg.length() == 0) msg.append("Tienes un viaje sin pagar");
+                        item.mensaje = msg.toString();
+
+                        item.fechaCreacion = viaje.optString("fechaHoraSalida",
+                                viaje.optString("fechaSalida", ""));
+
+                        // Evitar duplicados
+                        boolean yaTiene = false;
+                        for (NotifItem n : lista) if (n.id == item.id) { yaTiene = true; break; }
+                        if (!yaTiene) pagoItems.add(item);
+                    }
+
+                    if (!pagoItems.isEmpty()) {
+                        runOnUiThread(() -> {
+                            lista.addAll(0, pagoItems); // al inicio de la lista
+                            adapter.notifyDataSetChanged();
+                            if (layoutEmpty      != null) layoutEmpty.setVisibility(View.GONE);
+                            if (rvNotificaciones != null) rvNotificaciones.setVisibility(View.VISIBLE);
+                            if (btnMarcarTodas   != null) btnMarcarTodas.setVisibility(View.VISIBLE);
+                        });
+                    } else if (lista.isEmpty()) {
+                        runOnUiThread(this::mostrarVacio);
+                    }
+                },
+                error -> {
+                    Log.w(TAG, "cargarPagosPendientesComoNotificaciones error");
+                    if (lista.isEmpty()) runOnUiThread(this::mostrarVacio);
+                }
+        );
     }
 
     private void mostrarVacio() {
@@ -269,17 +370,15 @@ public class Notificaciones extends BaseActivity {
     // ═══════════════════════════════════════════════════════
 
     private void mostrarOpcionesBottomSheet(NotifItem item, int position) {
-        // DESPUÉS (usa tu estilo que ya existe):
         BottomSheetDialog dialog = new BottomSheetDialog(this, R.style.BottomSheetTheme);
         View sheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_notif_opciones, null);
         dialog.setContentView(sheetView);
 
-        // ── Header: avatar + título de la notif ──
         MaterialCardView bsCardAvatar = sheetView.findViewById(R.id.bs_card_avatar);
         TextView         bsTvInicial  = sheetView.findViewById(R.id.bs_tv_inicial);
         TextView         bsTvTitulo   = sheetView.findViewById(R.id.bs_tv_titulo);
 
-        String nombre = extraerNombreDelMensaje(item.mensaje);
+        String nombre   = extraerNombreDelMensaje(item.mensaje);
         String contenido = extraerContenidoMensaje(item.mensaje);
 
         String inicial = !nombre.isEmpty()
@@ -288,14 +387,13 @@ public class Notificaciones extends BaseActivity {
         bsTvInicial.setText(inicial);
         bsCardAvatar.setCardBackgroundColor(colorPorTipo(item.tipo));
 
-        // Título descriptivo en el header
         SpannableString headerSpan = construirTextoFacebook(item.tipo, nombre, contenido, item.titulo);
         bsTvTitulo.setText(headerSpan);
 
         // ── Opción 1: Marcar leída / no leída ──
-        LinearLayout opLeida      = sheetView.findViewById(R.id.bs_opcion_leida);
-        ImageView    iconLeida    = sheetView.findViewById(R.id.bs_icon_leida);
-        TextView     textoLeida   = sheetView.findViewById(R.id.bs_texto_leida);
+        LinearLayout opLeida   = sheetView.findViewById(R.id.bs_opcion_leida);
+        ImageView    iconLeida = sheetView.findViewById(R.id.bs_icon_leida);
+        TextView     textoLeida = sheetView.findViewById(R.id.bs_texto_leida);
 
         if (item.leido) {
             textoLeida.setText("Marcar como no leída");
@@ -308,7 +406,16 @@ public class Notificaciones extends BaseActivity {
         opLeida.setOnClickListener(v -> {
             dialog.dismiss();
             if (!item.leido) {
-                // Marcar como leída
+                // Los pagos (id negativo) no tienen endpoint real — solo actualizar local
+                if (item.id < 0) {
+                    item.leido = true;
+                    adapter.notifyItemChanged(position);
+                    long noLeidas = 0;
+                    for (NotifItem n : lista) if (!n.leido) noLeidas++;
+                    if (btnMarcarTodas != null && noLeidas == 0)
+                        btnMarcarTodas.setVisibility(View.GONE);
+                    return;
+                }
                 ConexionApi.getInstance(this).patch(
                         Constantes.notificacionMarcarLeida(item.id), new JSONObject(),
                         r -> runOnUiThread(() -> {
@@ -322,21 +429,18 @@ public class Notificaciones extends BaseActivity {
                         e -> Log.e(TAG, "Error al marcar leída")
                 );
             } else {
-                // Marcar como no leída — si tu backend lo soporta
-                // Por ahora solo actualizamos localmente
-                item.leido = false;
+                item.leido = true;
                 adapter.notifyItemChanged(position);
                 if (btnMarcarTodas != null)
                     btnMarcarTodas.setVisibility(View.VISIBLE);
             }
         });
 
-        // ── Opción 2: Abrir destino (chat / viaje / reserva) ──
-        LinearLayout opAbrir     = sheetView.findViewById(R.id.bs_opcion_abrir);
-        ImageView    iconAbrir   = sheetView.findViewById(R.id.bs_icon_abrir);
-        TextView     textoAbrir  = sheetView.findViewById(R.id.bs_texto_abrir);
+        // ── Opción 2: Abrir destino ──
+        LinearLayout opAbrir    = sheetView.findViewById(R.id.bs_opcion_abrir);
+        ImageView    iconAbrir  = sheetView.findViewById(R.id.bs_icon_abrir);
+        TextView     textoAbrir = sheetView.findViewById(R.id.bs_texto_abrir);
 
-        // Personalizar icono y texto según tipo
         switch (item.tipo) {
             case "MENSAJE":
             case "CHAT":
@@ -353,7 +457,7 @@ public class Notificaciones extends BaseActivity {
                 break;
             case "PAGO":
                 iconAbrir.setImageResource(R.drawable.ic_credit_card);
-                textoAbrir.setText("Ver pago");
+                textoAbrir.setText("Ir a pagar");
                 break;
             default:
                 iconAbrir.setImageResource(R.drawable.ic_info);
@@ -362,8 +466,7 @@ public class Notificaciones extends BaseActivity {
 
         opAbrir.setOnClickListener(v -> {
             dialog.dismiss();
-            // Marcar leída automáticamente al abrir
-            if (!item.leido) {
+            if (!item.leido && item.id > 0) {
                 ConexionApi.getInstance(this).patch(
                         Constantes.notificacionMarcarLeida(item.id), new JSONObject(),
                         r -> runOnUiThread(() -> {
@@ -372,6 +475,9 @@ public class Notificaciones extends BaseActivity {
                         }),
                         e -> { /* silencioso */ }
                 );
+            } else {
+                item.leido = true;
+                adapter.notifyItemChanged(position);
             }
             abrirDestino(item);
         });
@@ -384,8 +490,8 @@ public class Notificaciones extends BaseActivity {
         });
 
         // ── Opción 4: Desactivar este tipo ──
-        LinearLayout opDesactivar      = sheetView.findViewById(R.id.bs_opcion_desactivar);
-        TextView     textoDesactivar   = sheetView.findViewById(R.id.bs_texto_desactivar);
+        LinearLayout opDesactivar       = sheetView.findViewById(R.id.bs_opcion_desactivar);
+        TextView     textoDesactivar    = sheetView.findViewById(R.id.bs_texto_desactivar);
         TextView     subtextoDesactivar = sheetView.findViewById(R.id.bs_subtexto_desactivar);
 
         String tipoLabel = obtenerLabelTipo(item.tipo);
@@ -394,19 +500,14 @@ public class Notificaciones extends BaseActivity {
 
         opDesactivar.setOnClickListener(v -> {
             dialog.dismiss();
-            // Filtrar localmente: ocultar todas las notificaciones de este tipo
-            // (puedes guardar en SharedPreferences si quieres persistirlo)
-            int removidos = 0;
             for (int i2 = lista.size() - 1; i2 >= 0; i2--) {
                 if (lista.get(i2).tipo.equals(item.tipo)) {
                     lista.remove(i2);
                     adapter.notifyItemRemoved(i2);
-                    removidos++;
                 }
             }
             adapter.notifyItemRangeChanged(0, lista.size());
             if (lista.isEmpty()) mostrarVacio();
-
             android.widget.Toast.makeText(this,
                     "Notificaciones de " + tipoLabel + " ocultadas",
                     android.widget.Toast.LENGTH_SHORT).show();
@@ -426,14 +527,13 @@ public class Notificaciones extends BaseActivity {
         }
     }
 
-    // Métodos de colorPorTipo e inicialPorTipo accesibles desde mostrarOpcionesBottomSheet
     private int colorPorTipo(String tipo) {
         switch (tipo) {
             case "MENSAJE":
             case "CHAT":       return 0xFF0A7A72;
-            case "VIAJE":      return 0xFF1565C0;
+            case "VIAJE":      return 0xFF006064;
             case "RESERVA":    return 0xFFE65100;
-            case "PAGO":       return 0xFF2E7D32;
+            case "PAGO":       return 0xFFEF5350; // rojo para pagos pendientes
             case "BIENVENIDA": return 0xFF880E4F;
             default:           return 0xFF4A148C;
         }
@@ -461,6 +561,17 @@ public class Notificaciones extends BaseActivity {
                     abrirChatPorId(item.idReferencia, extraerNombreDelMensaje(item.mensaje));
                 } else {
                     buscarConversacionPorConductorYAbrir(extraerNombreDelMensaje(item.mensaje));
+                }
+                break;
+            }
+            case "PAGO": {
+                // Abrir DetalleViajeActivity del viaje pendiente de pago
+                if (item.idReferencia > 0) {
+                    Intent i = new Intent(this, DetalleViajeActivity.class);
+                    i.putExtra("ID_VIAJE", (int) item.idReferencia);
+                    startActivity(i);
+                } else {
+                    startActivity(new Intent(this, MisReservasActivity.class));
                 }
                 break;
             }
@@ -532,6 +643,10 @@ public class Notificaciones extends BaseActivity {
     // ═══════════════════════════════════════════════════════
 
     private void marcarTodasLeidas() {
+        // Marcar localmente los pagos (id negativo) y en backend los reales
+        for (NotifItem n : lista) {
+            if (n.id < 0) n.leido = true; // pagos: solo local
+        }
         ConexionApi.getInstance(this).patch(
                 Constantes.notificacionesMarcarTodas(idUsuario), new JSONObject(),
                 r -> runOnUiThread(() -> {
@@ -539,12 +654,31 @@ public class Notificaciones extends BaseActivity {
                     adapter.notifyDataSetChanged();
                     if (btnMarcarTodas != null) btnMarcarTodas.setVisibility(View.GONE);
                 }),
-                e -> Log.e(TAG, "Error marcar todas")
+                e -> {
+                    // Si falla el backend, al menos actualizar UI
+                    runOnUiThread(() -> {
+                        for (NotifItem n : lista) n.leido = true;
+                        adapter.notifyDataSetChanged();
+                        if (btnMarcarTodas != null) btnMarcarTodas.setVisibility(View.GONE);
+                    });
+                    Log.e(TAG, "Error marcar todas");
+                }
         );
     }
 
     private void marcarUnaLeida(NotifItem item, int position) {
         if (!item.leido) {
+            // Pagos pendientes (id negativo): solo actualizar localmente
+            if (item.id < 0) {
+                item.leido = true;
+                adapter.notifyItemChanged(position);
+                long noLeidas = 0;
+                for (NotifItem n : lista) if (!n.leido) noLeidas++;
+                if (btnMarcarTodas != null && noLeidas == 0)
+                    btnMarcarTodas.setVisibility(View.GONE);
+                abrirDestino(item);
+                return;
+            }
             ConexionApi.getInstance(this).patch(
                     Constantes.notificacionMarcarLeida(item.id), new JSONObject(),
                     r -> runOnUiThread(() -> {
@@ -564,6 +698,18 @@ public class Notificaciones extends BaseActivity {
     }
 
     private void eliminarNotificacion(NotifItem item, int position) {
+        // Pagos pendientes (id negativo): solo eliminar de la lista local
+        if (item.id < 0) {
+            runOnUiThread(() -> {
+                if (position < lista.size()) {
+                    lista.remove(position);
+                    adapter.notifyItemRemoved(position);
+                    adapter.notifyItemRangeChanged(position, lista.size());
+                    if (lista.isEmpty()) mostrarVacio();
+                }
+            });
+            return;
+        }
         ConexionApi.getInstance(this).delete(
                 Constantes.BASE_URL + "/api/notificaciones/" + item.id,
                 r -> runOnUiThread(() -> {
@@ -616,9 +762,10 @@ public class Notificaciones extends BaseActivity {
         public void onBindViewHolder(VH holder, int position) {
             NotifItem item = items.get(position);
 
-            String nombre = extraerNombreDelMensaje(item.mensaje);
+            String nombre       = extraerNombreDelMensaje(item.mensaje);
             String textoMensaje = extraerContenidoMensaje(item.mensaje);
-            SpannableString spannable = construirTextoFacebook(item.tipo, nombre, textoMensaje, item.titulo);
+            SpannableString spannable = construirTextoFacebook(
+                    item.tipo, nombre, textoMensaje, item.titulo);
             holder.tvTexto.setText(spannable);
 
             holder.tvFecha.setText(formatearFecha(item.fechaCreacion));
@@ -651,18 +798,17 @@ public class Notificaciones extends BaseActivity {
                     .setInterpolator(new android.view.animation.DecelerateInterpolator())
                     .start();
 
-            // Click en el item → marcar leída y abrir destino
             holder.itemRoot.setOnClickListener(v ->
                     marcarUnaLeida(item, holder.getAdapterPosition()));
 
-            // Click en ··· → bottom sheet con opciones
             holder.btnMore.setOnClickListener(v ->
                     mostrarOpcionesBottomSheet(item, holder.getAdapterPosition()));
         }
 
         @Override public int getItemCount() { return items.size(); }
 
-        private SpannableString construirTextoFacebook(String tipo, String nombre, String contenido, String tituloOriginal) {
+        private SpannableString construirTextoFacebook(String tipo, String nombre,
+                                                       String contenido, String tituloOriginal) {
             String texto;
             switch (tipo) {
                 case "MENSAJE":
@@ -681,7 +827,8 @@ public class Notificaciones extends BaseActivity {
                     texto = tituloOriginal.isEmpty() ? "Tu reserva fue actualizada." : tituloOriginal;
                     break;
                 case "PAGO":
-                    texto = tituloOriginal.isEmpty() ? "Se procesó un pago." : tituloOriginal;
+                    // Para pagos mostramos el título directamente (ya viene formateado)
+                    texto = tituloOriginal.isEmpty() ? "Tienes un pago pendiente." : tituloOriginal;
                     break;
                 case "BIENVENIDA":
                     texto = "¡Bienvenido a MoviFlexx! Encuentra tu próximo viaje.";
@@ -710,11 +857,11 @@ public class Notificaciones extends BaseActivity {
         }
 
         class VH extends RecyclerView.ViewHolder {
-            LinearLayout itemRoot;
-            com.google.android.material.card.MaterialCardView cardAvatar, cardBadge;
-            TextView tvInicial, tvTexto, tvFecha;
-            ImageView ivBadge, btnMore;
-            View viewDot;
+            LinearLayout     itemRoot;
+            MaterialCardView cardAvatar, cardBadge;
+            TextView         tvInicial, tvTexto, tvFecha;
+            ImageView        ivBadge, btnMore;
+            View             viewDot;
 
             VH(View v) {
                 super(v);
@@ -773,8 +920,8 @@ public class Notificaciones extends BaseActivity {
         return -1;
     }
 
-    // ── Construir SpannableString (accesible desde fuera del adapter) ──
-    private SpannableString construirTextoFacebook(String tipo, String nombre, String contenido, String tituloOriginal) {
+    private SpannableString construirTextoFacebook(String tipo, String nombre,
+                                                   String contenido, String tituloOriginal) {
         String texto;
         switch (tipo) {
             case "MENSAJE":
@@ -793,7 +940,7 @@ public class Notificaciones extends BaseActivity {
                 texto = tituloOriginal.isEmpty() ? "Tu reserva fue actualizada." : tituloOriginal;
                 break;
             case "PAGO":
-                texto = tituloOriginal.isEmpty() ? "Se procesó un pago." : tituloOriginal;
+                texto = tituloOriginal.isEmpty() ? "Tienes un pago pendiente." : tituloOriginal;
                 break;
             case "BIENVENIDA":
                 texto = "¡Bienvenido a MoviFlexx! Encuentra tu próximo viaje.";
@@ -842,7 +989,8 @@ public class Notificaciones extends BaseActivity {
         try { synchronized (SDF_ISO_Z) { return SDF_ISO_Z.parse(raw); } } catch (ParseException ignored) {}
         try { synchronized (SDF_ISO)   { return SDF_ISO.parse(raw);   } } catch (ParseException ignored) {}
         try { synchronized (SDF_MYSQL) { return SDF_MYSQL.parse(raw); } } catch (ParseException ignored) {}
-        try { return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault()).parse(raw); } catch (Exception ignored) {}
+        try { return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX",
+                Locale.getDefault()).parse(raw); } catch (Exception ignored) {}
         return null;
     }
 }
