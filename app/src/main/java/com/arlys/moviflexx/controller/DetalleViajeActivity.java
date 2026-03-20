@@ -2526,14 +2526,22 @@ public class DetalleViajeActivity extends BaseActivity {
         // Encontrar el índice más cercano a `hasta` en la ruta
         int idxHasta = indiceMasCercano(rutaActiva, hasta);
 
-        // Asegurarse que desde < hasta en la ruta
-        if (idxDesde >= idxHasta) return resultado;
+        // Si están invertidos u ocurren en el mismo punto, intentar forzarlos a avanzar
+        if (idxDesde >= idxHasta) {
+            // Buscamos un índice válido para "hasta" más adelante en la ruta
+            int newIdxHasta = indiceMasCercanoDespuesDe(rutaActiva, hasta, idxDesde);
+            if (newIdxHasta > idxDesde) {
+                idxHasta = newIdxHasta;
+            } else {
+                return resultado; // No hay forma lógica de avanzar
+            }
+        }
 
-        // Extraer hasta 4 waypoints intermedios equiespaciados
+        // Extraer hasta 8 waypoints intermedios equiespaciados para asegurar un calcado perfecto
         int rango = idxHasta - idxDesde;
         if (rango <= 2) return resultado; // muy cerca, no hace falta
 
-        int numWp = Math.min(4, rango - 1);
+        int numWp = Math.min(8, rango - 1); // Aumentado a 8 para mejor precisión
         double paso = (double) rango / (numWp + 1);
         for (int i = 1; i <= numWp; i++) {
             int idx = idxDesde + (int)(i * paso);
@@ -2542,6 +2550,19 @@ public class DetalleViajeActivity extends BaseActivity {
             }
         }
         return resultado;
+    }
+
+    private int indiceMasCercanoDespuesDe(List<GeoPoint> ruta, GeoPoint punto, int idxMinimo) {
+        int mejor = -1;
+        double menorDist = Double.MAX_VALUE;
+        for (int i = idxMinimo; i < ruta.size(); i++) {
+            GeoPoint p = ruta.get(i);
+            double dLat = p.getLatitude()  - punto.getLatitude();
+            double dLng = p.getLongitude() - punto.getLongitude();
+            double dist = dLat * dLat + dLng * dLng;
+            if (dist < menorDist) { menorDist = dist; mejor = i; }
+        }
+        return mejor;
     }
 
     private int indiceMasCercano(List<GeoPoint> ruta, GeoPoint punto) {
