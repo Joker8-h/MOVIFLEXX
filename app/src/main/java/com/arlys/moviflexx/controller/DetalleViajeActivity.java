@@ -258,6 +258,7 @@ public class DetalleViajeActivity extends BaseActivity {
     private GeoPoint                    gpConductorActual = null;
     private Marker marcadorConductor = null;
     private GeoPoint gpConductorAnterior = null;
+    private long     lastRenderId      = 0; // Para sincronizar hilos de dibujo asíncronos
 
     // =========================================================================
     //  GPS CONDUCTOR (envío de posición desde el dispositivo del conductor)
@@ -2275,6 +2276,9 @@ public class DetalleViajeActivity extends BaseActivity {
     //  MAPA — renderizado principal
     // =========================================================================
     private void renderizarMapa() {
+        lastRenderId++;
+        final long currentId = lastRenderId;
+
         limpiarOverlays();
         boolean viajeIniciado   = "INICIADO".equals(estadoViaje) || "EN_CURSO".equals(estadoViaje);
         boolean viajeFinalizado = "FINALIZADO".equals(estadoViaje) || "COMPLETADO".equals(estadoViaje);
@@ -2288,10 +2292,10 @@ public class DetalleViajeActivity extends BaseActivity {
         }
 
         if (!esConductor) {
-            renderizarMapaPasajero(viajeIniciado);
+            renderizarMapaPasajero(viajeIniciado, currentId);
         } else {
             if (viajeIniciado) {
-                renderizarMapaConductorIniciado();
+                renderizarMapaConductorIniciado(currentId);
             } else {
                 if (rutaActiva != null && rutaActiva.size() >= 2)
                     dibujarPolilinea(rutaActiva, COLOR_RUTA);
@@ -2315,7 +2319,7 @@ public class DetalleViajeActivity extends BaseActivity {
     // =========================================================================
 
 
-    private void renderizarMapaPasajero(boolean viajeIniciado) {
+    private void renderizarMapaPasajero(boolean viajeIniciado, long requestId) {
         boolean pasajeroRecogido = EST_RECOGIDO.equals(estadoReserva)
                 || EST_COMPLETADO.equals(estadoReserva);
 
@@ -2339,7 +2343,7 @@ public class DetalleViajeActivity extends BaseActivity {
             if (!puntosRutaWaypoint.isEmpty()) {
                 dibujarPolilineaWaypoint(puntosRutaWaypoint);
             } else {
-                pedirRutaConWaypoint();
+                pedirRutaConWaypoint(requestId);
             }
 
             // ── Conductor: mover suavemente, no recrear ──
@@ -2348,7 +2352,7 @@ public class DetalleViajeActivity extends BaseActivity {
                     actualizarMarcadorConductorSuave(gpConductorActual);
                 }
                 if (gpParada != null)
-                    pedirSegmentoConductorAParada(gpConductorActual, gpParada);
+                    pedirSegmentoConductorAParada(gpConductorActual, gpParada, requestId);
             }
             return;
         }
@@ -2390,13 +2394,42 @@ public class DetalleViajeActivity extends BaseActivity {
             if (marcadorConductor == null || !map.getOverlays().contains(marcadorConductor)) {
                 actualizarMarcadorConductorSuave(gpConductorActual);
             }
-            GeoPoint puntoSubida = gpSubida != null ? gpSubida : gpOrigen;
-            if (puntoSubida != null)
-                pedirSegmentoConductorAParada(gpConductorActual, puntoSubida);
+            if (gpSubida != null)
+                pedirSegmentoConductorAParada(gpConductorActual, gpSubida, requestId);
+            else if (gpParada != null)
+                pedirSegmentoConductorAParada(gpConductorActual, gpParada, requestId);
         }
     }
 
-    private void renderizarMapaConductorIniciado() {
+    private void pedirRutaConWaypoint(long requestId) {
+        if (gpOrigen == null || gpDestino == null) return;
+        new Thread(() -> {
+            try {
+                String seg = lngOrigen + "," + latOrigen + ";"
+                        + lngDestino + "," + latDestino
+                        + "?overview=full&geometries=geojson";
+                ArrayList<GeoPoint> pts = null;
+                try { pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL + "/route/v1/driving/" + seg)); }
+                catch (Exception ignored) {}
+                if (pts == null || pts.size() < 2)
+                    try { pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL_PUBLIC + "/route/v1/driving/" + seg)); }
+                    catch (Exception ignored) {}
+                if (pts != null && pts.size() >= 2) {
+                    if (lastRenderId != requestId) return; // Validación de hilo
+                    puntosRutaWaypoint = pts;
+                    final ArrayList<GeoPoint> fPts = pts;
+                    runOnUiThread(() -> {
+                        if (lastRenderId == requestId) {
+                            dibujarPolilineaWaypoint(fPts);
+                            map.invalidate();
+                        }
+                    });
+                }
+            } catch (Exception e) { Log.w(TAG, "pedirRutaConWaypoint: " + e.getMessage()); }
+        }).start();
+    }
+
+    private void renderizarMapaConductorIniciado(long requestId) {
         GeoPoint posConductor = (gpConductorActual != null) ? gpConductorActual : gpOrigen;
 
         if (rutaActiva != null && rutaActiva.size() >= 2)
@@ -2414,7 +2447,7 @@ public class DetalleViajeActivity extends BaseActivity {
                 || EST_COMPLETADO.equals(estadoReserva);
 
         if (algunRecogido) {
-            pedirSegmentoConductorADestino(posConductor);
+            pedirSegmentoConductorADestino(posConductor, requestId);
         } else if (!paradasPasajeros.isEmpty()) {
             GeoPoint primeraParada = null;
             for (int i = 0; i < paradasPasajeros.size(); i++) {
@@ -2427,10 +2460,10 @@ public class DetalleViajeActivity extends BaseActivity {
                 if (primeraParada == null) primeraParada = pp;
             }
             if (primeraParada != null)
-                pedirSegmentoConductorAParada(posConductor, primeraParada);
+                pedirSegmentoConductorAParada(posConductor, primeraParada, requestId);
         }
     }
-    private void pedirSegmentoConductorAParada(GeoPoint desde, GeoPoint hasta) {
+    private void pedirSegmentoConductorAParada(GeoPoint desde, GeoPoint hasta, long requestId) {
         if (desde == null || hasta == null) return;
 
         // Extraer waypoints intermedios de la ruta activa que estén
@@ -2470,8 +2503,14 @@ public class DetalleViajeActivity extends BaseActivity {
                 }
 
                 if (pts != null && pts.size() >= 2) {
+                    if (lastRenderId != requestId) return; // Validación de hilo
                     final ArrayList<GeoPoint> fPts = pts;
-                    runOnUiThread(() -> { dibujarPolilineaSegmento(fPts); map.invalidate(); });
+                    runOnUiThread(() -> {
+                        if (lastRenderId == requestId) {
+                            dibujarPolilineaSegmento(fPts);
+                            map.invalidate();
+                        }
+                    });
                 }
             } catch (Exception e) {
                 Log.w(TAG, "pedirSegmentoConductorAParada: " + e.getMessage());
@@ -2518,23 +2557,49 @@ public class DetalleViajeActivity extends BaseActivity {
         return mejor;
     }
 
-    private void pedirSegmentoConductorADestino(GeoPoint desde) {
+    private void pedirSegmentoConductorADestino(GeoPoint desde, long requestId) {
         if (desde == null || gpDestino == null) return;
+        
+        final ArrayList<GeoPoint> waypoints = extraerWaypointsEntrePuntos(desde, gpDestino);
+        
         new Thread(() -> {
             try {
-                String seg = desde.getLongitude() + "," + desde.getLatitude() + ";"
-                        + lngDestino + "," + latDestino
-                        + "?overview=full&geometries=geojson";
+                StringBuilder coordsB = new StringBuilder();
+                coordsB.append(desde.getLongitude()).append(",").append(desde.getLatitude());
+                for (GeoPoint wp : waypoints) {
+                    coordsB.append(";").append(wp.getLongitude()).append(",").append(wp.getLatitude());
+                }
+                coordsB.append(";").append(lngDestino).append(",").append(latDestino);
+                String params = "?overview=full&geometries=geojson";
+                
                 ArrayList<GeoPoint> pts = null;
-                try { pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL + "/route/v1/driving/" + seg)); }
-                catch (Exception ignored) {}
-                if (pts == null || pts.size() < 2)
-                    try { pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL_PUBLIC + "/route/v1/driving/" + seg)); }
-                    catch (Exception ignored) {}
+                
+                // Fallback directo si no hay waypoints
+                if (waypoints.isEmpty()) {
+                    String seg = desde.getLongitude() + "," + desde.getLatitude() + ";"
+                            + lngDestino + "," + latDestino + params;
+                    try { pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL + "/route/v1/driving/" + seg)); } catch (Exception ignored) {}
+                    if (pts == null || pts.size() < 2)
+                        try { pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL_PUBLIC + "/route/v1/driving/" + seg)); } catch (Exception ignored) {}
+                } else {
+                    String urlConWp = OSRM_URL + "/route/v1/driving/" + coordsB + params;
+                    try { pts = parsearRutaSimpleOSRM(peticionHttp(urlConWp)); } catch (Exception ignored) {}
+                    if (pts == null || pts.size() < 2) {
+                        String urlConWpPub = OSRM_URL_PUBLIC + "/route/v1/driving/" + coordsB + params;
+                        try { pts = parsearRutaSimpleOSRM(peticionHttp(urlConWpPub)); } catch (Exception ignored) {}
+                    }
+                }
+
                 if (pts != null && pts.size() >= 2) {
+                    if (lastRenderId != requestId) return; // Validación de hilo
                     puntosRutaWaypoint = pts;
                     final ArrayList<GeoPoint> fPts = pts;
-                    runOnUiThread(() -> { dibujarPolilineaSegmento(fPts); map.invalidate(); });
+                    runOnUiThread(() -> {
+                        if (lastRenderId == requestId) {
+                            dibujarPolilineaSegmento(fPts);
+                            map.invalidate();
+                        }
+                    });
                 }
             } catch (Exception e) { Log.w(TAG, "segmento conductor→destino: " + e.getMessage()); }
         }).start();
