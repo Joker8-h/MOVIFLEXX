@@ -60,7 +60,7 @@ import java.util.Locale;
  *       String addr = data.getStringExtra(RESULT_DIRECCION);
  *   }
  */
-public class SeleccionPuntoActivity extends AppCompatActivity {
+public class SeleccionPuntoActivity extends BaseActivity {
 
     // ── Claves de Intent ──────────────────────────────────────────────────────
     public static final String EXTRA_LAT_ORIGEN  = "lat_origen";

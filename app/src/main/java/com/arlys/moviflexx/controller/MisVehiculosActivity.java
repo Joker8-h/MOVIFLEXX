@@ -6,7 +6,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -20,7 +19,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MisVehiculosActivity extends AppCompatActivity {
+public class MisVehiculosActivity extends BaseActivity {
 
     private RecyclerView      recycler;
     private VehiculosAdapter  adapter;
@@ -74,5 +73,16 @@ public class MisVehiculosActivity extends AppCompatActivity {
                 },
                 error -> Toast.makeText(this, "Error cargando vehículos", Toast.LENGTH_SHORT).show()
         );
+    }
+
+    // ─── SCREEN DESCRIPTOR ────────────────────────────────────────────────────
+    @Override public String getNombrePantalla() { return "Mis Vehículos"; }
+    @Override public String getDescripcionPantalla() {
+        int total = vehiculos.size();
+        return total == 0 ? "No tienes vehículos registrados."
+                : "Tienes " + total + (total == 1 ? " vehículo registrado." : " vehículos registrados.");
+    }
+    @Override public String getOpcionesPantalla() {
+        return "Puedes decir: ir atrás, ir al inicio, o agregar vehículo.";
     }
 }

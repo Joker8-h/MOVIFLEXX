@@ -38,7 +38,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Conversaciones extends AppCompatActivity {
+public class Conversaciones extends BaseActivity {
 
     private static final String TAG           = "CONVERSACIONES";
     private static final long   POLL_INTERVAL = 4000;

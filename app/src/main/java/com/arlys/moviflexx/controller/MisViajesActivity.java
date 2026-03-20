@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class MisViajesActivity extends AppCompatActivity {
+public class MisViajesActivity extends BaseActivity {
 
     private static final String TAG = "MisViajesActivity";
 

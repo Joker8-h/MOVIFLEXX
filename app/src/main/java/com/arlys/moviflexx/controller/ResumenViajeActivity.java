@@ -30,7 +30,7 @@ import java.text.NumberFormat;
 import java.util.Locale;
 
 
-public class ResumenViajeActivity extends AppCompatActivity {
+public class ResumenViajeActivity extends BaseActivity {
 
     private static final String TAG        = "ResumenViaje";
     private static final int    POLLING_MS = 8_000;

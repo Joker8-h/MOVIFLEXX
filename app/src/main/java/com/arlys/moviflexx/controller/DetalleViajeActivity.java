@@ -25,7 +25,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+
 import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -73,7 +73,7 @@ import java.util.List;
 import java.util.Locale;
 
 
-public class DetalleViajeActivity extends AppCompatActivity {
+public class DetalleViajeActivity extends BaseActivity {
 
     // ── Constantes ────────────────────────────────────────────────────────────
     private static final String TAG        = "DetalleViaje";
@@ -4669,6 +4669,18 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
         // Siempre agregar destino al final
         paradasDin.add(new ParadaDinamica(destinoActual, latDestino, lngDestino, -1));
+
+        enviarParadasAlAsistente();
+    }
+
+    private void enviarParadasAlAsistente() {
+        if (voiceAssistant != null && voiceAssistant.getFlowManager() != null) {
+            ArrayList<String> nombres = new ArrayList<>();
+            for (ParadaDinamica pd : paradasDin) {
+                nombres.add(pd.nombre);
+            }
+            voiceAssistant.getFlowManager().setNombresParadas(nombres);
+        }
     }
 
     private void geocodificarEnBackground(List<Integer> indices, List<GeoPoint> base){
@@ -5191,6 +5203,57 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
         @Override public int getItemCount() { return items.size(); }
         static class VH extends RecyclerView.ViewHolder { final LinearLayout root; VH(View v){super(v);root=(LinearLayout)v;} }
+    }
+
+    // ─── SCREEN DESCRIPTOR ────────────────────────────────────────────────────
+    @Override public String getNombrePantalla() { return "Detalle del Viaje"; }
+    @Override public String getDescripcionPantalla() {
+        return "Estás en el detalle de un viaje. "
+             + "Puedes ver el mapa con la ruta, información del conductor, "
+             + "las paradas, el precio y los pasajeros reservados. "
+             + "Si es un viaje disponible puedes reservar.";
+    }
+    @Override public String getOpcionesPantalla() {
+        return "Puedes decir: reservar, confirmar, ir atrás, "
+             + "o preguntar: ¿cuánto cuesta?, ¿cuántos cupos hay?";
+    }
+
+    // ─── VOICE ASSISTANT BRIDGE ──────────────────────────────────────────────
+
+    /**
+     * Llamado por VoiceFlowManager cuando el usuario selecciona una parada por voz.
+     */
+    public void seleccionarParadaPorVoz(int index, boolean esSubida) {
+        if (index < 0 || index >= paradasDin.size()) return;
+        ParadaDinamica pd = paradasDin.get(index);
+        if (esSubida) {
+            gpSubida = pd.toGeoPoint();
+            nombreSubidaPasajero = pd.nombre;
+            subidaTemp = pd;
+        } else {
+            // Nota: en el flujo normal, gpParada es la bajada
+            gpParada = pd.toGeoPoint();
+            nombreParada = pd.nombre;
+        }
+    }
+
+    /**
+     * Llamado por VoiceFlowManager cuando el usuario confirma la reserva por voz.
+     */
+    public void confirmarReservaPorVoz() {
+        if (subidaTemp == null) {
+            subidaTemp = new ParadaDinamica(origenActual, latOrigen, lngOrigen, 0);
+        }
+        // Buscar la bajada seleccionada (gpParada/nombreParada)
+        ParadaDinamica bajadaElegida = null;
+        if (gpParada != null) {
+            bajadaElegida = new ParadaDinamica(nombreParada, gpParada.getLatitude(), gpParada.getLongitude(), -99);
+        } else {
+            // Fallback: usar el destino
+            bajadaElegida = paradasDin.get(paradasDin.size() - 1);
+        }
+
+        publicarParadaYReservarConSubida(subidaTemp, bajadaElegida);
     }
 
 } // ← Única llave de cierre de DetalleViajeActivity

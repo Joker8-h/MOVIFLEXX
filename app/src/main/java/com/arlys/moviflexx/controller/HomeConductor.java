@@ -894,4 +894,17 @@ public class HomeConductor extends BaseActivity {
     private void irAlLogin() {
         goTo(Login.class, Transition.FADE, true);
     }
+
+    // ─── SCREEN DESCRIPTOR ────────────────────────────────────────────────────
+    @Override public String getNombrePantalla() { return "Inicio del Conductor"; }
+    @Override public String getDescripcionPantalla() {
+        int total = viajes.size();
+        return "Estás en la pantalla principal de conductor. "
+             + "Tienes " + total + (total == 1 ? " viaje activo." : " viajes activos.")
+             + " Puedes publicar viajes, ver tus rutas y vehículos.";
+    }
+    @Override public String getOpcionesPantalla() {
+        return "Puedes decir: publicar viaje, mis rutas, mis vehículos, "
+             + "perfil, mensajes, mapa, o ayuda.";
+    }
 }

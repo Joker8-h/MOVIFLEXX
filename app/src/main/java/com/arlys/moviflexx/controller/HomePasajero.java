@@ -1940,4 +1940,16 @@ public class HomePasajero extends BaseActivity {
             VH(@NonNull View v) { super(v); }
         }
     }
+
+    // ─── SCREEN DESCRIPTOR ────────────────────────────────────────────────────
+    @Override public String getNombrePantalla() { return "Inicio del Pasajero"; }
+    @Override public String getDescripcionPantalla() {
+        return "Estás en la pantalla principal de pasajero. "
+             + "Puedes ver tu información, rutas frecuentes, y opciones de navegación. "
+             + "Abajo hay un menú con: Inicio, Mis Viajes, Mapa, Mensajes y Perfil.";
+    }
+    @Override public String getOpcionesPantalla() {
+        return "Puedes decir: buscar viaje, quiero ir al centro, mis reservas, "
+             + "perfil, mensajes, mapa, o ayuda.";
+    }
 }

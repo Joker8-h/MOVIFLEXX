@@ -30,7 +30,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class VerificarOtp extends AppCompatActivity {
+public class VerificarOtp extends BaseActivity {
 
     private TextInputLayout   tilOtp;
     private TextInputEditText edtOtp;
