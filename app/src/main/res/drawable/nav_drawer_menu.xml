@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/menu/nav_drawer_menu.xml -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ══════════════════════════════
+         PRINCIPAL
+    ══════════════════════════════ -->
+    <group
+        android:id="@+id/group_principal"
+        android:checkableBehavior="single">
+
+        <item
+            android:id="@+id/nav_inicio"
+            android:icon="@drawable/ic_home"
+            android:title="Inicio" />
+
+        <item
+            android:id="@+id/nav_viajes"
+            android:icon="@drawable/ic_car"
+            android:title="Mis Viajes" />
+
+        <item
+            android:id="@+id/nav_reservas"
+            android:icon="@drawable/ic_bookmark"
+            android:title="Mis Reservas" />
+
+        <item
+            android:id="@+id/nav_mapa"
+            android:icon="@drawable/ic_map"
+            android:title="Mapa" />
+
+        <item
+            android:id="@+id/nav_mensajes"
+            android:icon="@drawable/ic_chat"
+            android:title="Mensajes" />
+
+    </group>
+
+    <!-- ══════════════════════════════
+         CONDUCTOR (visible solo si es conductor)
+    ══════════════════════════════ -->
+    <group
+        android:id="@+id/group_conductor"
+        android:checkableBehavior="single">
+
+        <item
+            android:id="@+id/nav_group_conductor_header"
+            android:title="Conductor"
+            android:enabled="false" />
+
+        <item
+            android:id="@+id/nav_publicar_viaje"
+            android:icon="@drawable/ic_add"
+            android:title="Publicar Viaje" />
+
+        <item
+            android:id="@+id/nav_mis_rutas"
+            android:icon="@drawable/ic_route"
+            android:title="Mis Rutas" />
+
+        <item
+            android:id="@+id/nav_mis_vehiculos"
+            android:icon="@drawable/ic_car"
+            android:title="Mis Vehículos" />
+
+        <item
+            android:id="@+id/nav_qr_scanner"
+            android:icon="@drawable/ic_qr_scanner"
+            android:title="Escanear QR" />
+
+    </group>
+
+    <!-- ══════════════════════════════
+         CUENTA
+    ══════════════════════════════ -->
+    <group
+        android:id="@+id/group_cuenta"
+        android:checkableBehavior="single">
+
+        <item
+            android:id="@+id/nav_group_cuenta_header"
+            android:title="Cuenta"
+            android:enabled="false" />
+
+        <item
+            android:id="@+id/nav_notificaciones"
+            android:icon="@drawable/ic_notifications"
+            android:title="Notificaciones" />
+
+        <item
+            android:id="@+id/nav_perfil"
+            android:icon="@drawable/ic_person"
+            android:title="Mi Perfil" />
+
+        <item
+            android:id="@+id/nav_suscripcion"
+            android:icon="@drawable/ic_star"
+            android:title="Suscripción" />
+
+        <item
+            android:id="@+id/nav_documentos"
+            android:icon="@drawable/ic_document"
+            android:title="Mis Documentos" />
+
+    </group>
+
+    <!-- ══════════════════════════════
+         SOPORTE
+    ══════════════════════════════ -->
+    <group
+        android:id="@+id/group_soporte"
+        android:checkableBehavior="none">
+
+        <item
+            android:id="@+id/nav_configuraciones"
+            android:icon="@drawable/ic_settings"
+            android:title="Configuración" />
+
+        <item
+            android:id="@+id/nav_ayuda"
+            android:icon="@drawable/ic_info"
+            android:title="Ayuda y comentarios" />
+
+        <item
+            android:id="@+id/nav_cerrar_sesion"
+            android:icon="@drawable/ic_logout"
+            android:title="Cerrar sesión" />
+
+    </group>
+
+</menu>

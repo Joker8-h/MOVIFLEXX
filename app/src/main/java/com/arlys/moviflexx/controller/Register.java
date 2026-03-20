@@ -20,7 +20,6 @@ import android.widget.CheckBox;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageProxy;
@@ -35,6 +34,7 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.arlys.moviflexx.R;
+import com.arlys.moviflexx.model.AnimUtils;
 import com.arlys.moviflexx.model.Constantes;
 import com.arlys.moviflexx.model.FieldTooltip;
 import com.arlys.moviflexx.model.MoviAlert;
@@ -124,7 +124,7 @@ public class Register extends BaseActivity {
 
     @Override
     protected void iniciarAsistenteVozSiPermite() {
-        // No iniciar el asistente de voz en la pantalla de Registro
+        // No iniciar el asistente de voz en Registro
     }
 
     @Override
@@ -132,15 +132,18 @@ public class Register extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
+        // ── Pasos ─────────────────────────────────────────────────────────────
         stepEmail        = findViewById(R.id.stepEmail);
         stepOtp          = findViewById(R.id.stepOtp);
         layoutFormulario = findViewById(R.id.layoutFormulario);
         scrollFormulario = findViewById(R.id.scrollFormulario);
 
+        // ── Paso 1 ────────────────────────────────────────────────────────────
         edtEmailPaso1   = findViewById(R.id.edt_email_paso1);
         btnEnviarCodigo = findViewById(R.id.btn_enviar_codigo);
         progressPaso1   = findViewById(R.id.progress_paso1);
 
+        // ── Paso 2 ────────────────────────────────────────────────────────────
         tvEmailDestino   = findViewById(R.id.tv_email_destino);
         otp1 = findViewById(R.id.otp1); otp2 = findViewById(R.id.otp2);
         otp3 = findViewById(R.id.otp3); otp4 = findViewById(R.id.otp4);
@@ -150,6 +153,7 @@ public class Register extends BaseActivity {
         tvReenviarCodigo = findViewById(R.id.tv_reenviar_codigo);
         progressPaso2    = findViewById(R.id.progress_paso2);
 
+        // ── Paso 3 ────────────────────────────────────────────────────────────
         tilNombre    = findViewById(R.id.til_nombre);
         tilEmail     = findViewById(R.id.til_email);
         tilTelefono  = findViewById(R.id.til_telefono);
@@ -165,32 +169,41 @@ public class Register extends BaseActivity {
         TextView tvLinkTerminos = findViewById(R.id.tvLinkTerminos);
         progressPaso3 = findViewById(R.id.progress_paso3);
 
+        // ── Paso 4 ────────────────────────────────────────────────────────────
         layoutFace  = findViewById(R.id.layoutFace);
         previewView = findViewById(R.id.previewView);
         txtEstado   = findViewById(R.id.txtEstado);
 
         mostrarPaso1();
 
-        // ── Listeners paso 1 ──
-        btnEnviarCodigo.setOnClickListener(v -> enviarCodigo());
+        // ── Listeners paso 1 ──────────────────────────────────────────────────
+        animateButton(btnEnviarCodigo, this::enviarCodigo);
 
-        // ── Listeners paso 2 ──
+        // ── Listeners paso 2 ──────────────────────────────────────────────────
         configurarOtp();
-        btnVerificarOtp.setOnClickListener(v -> verificarCodigo());
+        animateButton(btnVerificarOtp, this::verificarCodigo);
         tvCambiarCorreo.setOnClickListener(v -> mostrarPaso1());
-        tvReenviarCodigo.setOnClickListener(v -> enviarCodigo());
+        tvReenviarCodigo.setOnClickListener(v -> {
+            AnimUtils.tapPulse(v);
+            v.postDelayed(this::enviarCodigo, 150);
+        });
 
-        // ── Listeners paso 3 ──
+        // ── Listeners paso 3 ──────────────────────────────────────────────────
         cbTerminos.setEnabled(false);
         cbTerminos.setAlpha(0.4f);
         cbTerminos.setOnClickListener(v -> {
             if (!terminosLeidos) {
                 cbTerminos.setChecked(false);
-                MoviAlert.toast(this, "Primero debes leer los Términos y Condiciones", MoviAlert.WARNING);
+                AnimUtils.shake(cbTerminos);
+                MoviAlert.toast(this,
+                        "Primero debes leer los Términos y Condiciones", MoviAlert.WARNING);
             }
         });
-        tvLinkTerminos.setOnClickListener(v -> mostrarTerminosYCondiciones());
-        btnRegistrar.setOnClickListener(v -> validarFormularioYEscanear());
+        tvLinkTerminos.setOnClickListener(v -> {
+            AnimUtils.tapPulse(v);
+            v.postDelayed(this::mostrarTerminosYCondiciones, 120);
+        });
+        animateButton(btnRegistrar, this::validarFormularioYEscanear);
 
         configurarValidacionesEnTiempoReal();
 
@@ -223,7 +236,7 @@ public class Register extends BaseActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  NAVEGACIÓN
+    //  NAVEGACIÓN ENTRE PASOS — con animaciones fade + slide
     // ══════════════════════════════════════════════════════════════════════════
 
     private void mostrarPaso1() {
@@ -232,19 +245,47 @@ public class Register extends BaseActivity {
         layoutFormulario.setVisibility(View.GONE);
         scrollFormulario.setVisibility(View.GONE);
         layoutFace.setVisibility(View.GONE);
+
+        // Animar entrada del paso 1
+        AnimUtils.fadeSlideIn(stepEmail, 0);
+
         stepEmail.post(() -> animarBarra(progressPaso1, 0.33f));
+
+        // Animar los elementos internos en cascada
+        stepEmail.post(() -> {
+            AnimUtils.fadeSlideIn(edtEmailPaso1, 120);
+            AnimUtils.fadeSlideIn(btnEnviarCodigo, 200);
+        });
     }
 
     private void mostrarPaso2(String email) {
         tvEmailDestino.setText(email);
-        stepEmail.setVisibility(View.GONE);
-        stepOtp.setVisibility(View.VISIBLE);
-        layoutFormulario.setVisibility(View.GONE);
-        scrollFormulario.setVisibility(View.GONE);
-        layoutFace.setVisibility(View.GONE);
-        limpiarOtp();
-        stepOtp.post(() -> animarBarra(progressPaso2, 0.66f));
-        otp1.requestFocus();
+
+        // Fade out del paso anterior → mostrar paso 2
+        AnimUtils.fadeOut(stepEmail, () -> {
+            stepEmail.setVisibility(View.GONE);
+            stepOtp.setVisibility(View.VISIBLE);
+            layoutFormulario.setVisibility(View.GONE);
+            scrollFormulario.setVisibility(View.GONE);
+            layoutFace.setVisibility(View.GONE);
+
+            // Animaciones de entrada del paso 2
+            AnimUtils.fadeSlideIn(stepOtp, 0);
+            stepOtp.post(() -> {
+                // Ícono email con bounce
+                View iconEmail = stepOtp.findViewWithTag("icon_email");
+                // Los campos OTP en cascada rápida
+                TextInputEditText[] otps = {otp1, otp2, otp3, otp4, otp5, otp6};
+                for (int i = 0; i < otps.length; i++) {
+                    AnimUtils.bounceIn(otps[i], 100 + i * 40);
+                }
+                AnimUtils.fadeSlideIn(btnVerificarOtp, 380);
+            });
+
+            limpiarOtp();
+            stepOtp.post(() -> animarBarra(progressPaso2, 0.66f));
+            otp1.requestFocus();
+        });
     }
 
     private void mostrarPaso2() {
@@ -253,26 +294,51 @@ public class Register extends BaseActivity {
     }
 
     private void mostrarPaso3() {
-        stepEmail.setVisibility(View.GONE);
-        stepOtp.setVisibility(View.GONE);
-        layoutFormulario.setVisibility(View.VISIBLE);
-        scrollFormulario.setVisibility(View.VISIBLE);
-        layoutFace.setVisibility(View.GONE);
-        scrollFormulario.post(() -> animarBarra(progressPaso3, 1.0f));
+        // Fade out de lo que estaba visible → mostrar paso 3
+        View vistaActual = stepOtp.getVisibility() == View.VISIBLE ? stepOtp : layoutFace;
+        AnimUtils.fadeOut(vistaActual, () -> {
+            stepEmail.setVisibility(View.GONE);
+            stepOtp.setVisibility(View.GONE);
+            layoutFormulario.setVisibility(View.VISIBLE);
+            scrollFormulario.setVisibility(View.VISIBLE);
+            layoutFace.setVisibility(View.GONE);
+
+            // Animar campos del formulario en cascada
+            scrollFormulario.post(() -> {
+                AnimUtils.fadeSlideIn(tilNombre,   80);
+                AnimUtils.fadeSlideIn(tilEmail,    160);
+                AnimUtils.fadeSlideIn(tilTelefono, 240);
+                AnimUtils.fadeSlideIn(tilPassword, 320);
+                AnimUtils.fadeSlideIn(cbTerminos,  400);
+                AnimUtils.fadeSlideIn(btnRegistrar, 480);
+            });
+
+            scrollFormulario.post(() -> animarBarra(progressPaso3, 1.0f));
+        });
+
         String emailVerificado = edtEmailPaso1.getText() != null
                 ? edtEmailPaso1.getText().toString().trim() : "";
         edtEmail.setText(emailVerificado);
         edtEmail.setEnabled(false);
         edtEmail.setAlpha(0.85f);
-        if (layoutEmailVerificado != null)   layoutEmailVerificado.setVisibility(View.VISIBLE);
-        if (layoutEmailNoVerificado != null) layoutEmailNoVerificado.setVisibility(View.GONE);
+        if (layoutEmailVerificado != null)
+            layoutEmailVerificado.setVisibility(View.VISIBLE);
+        if (layoutEmailNoVerificado != null)
+            layoutEmailNoVerificado.setVisibility(View.GONE);
         if (tilEmail != null) tilEmail.setError(null);
     }
 
     private void mostrarEscaneoFacial() {
-        layoutFormulario.setVisibility(View.GONE);
-        scrollFormulario.setVisibility(View.GONE);
-        layoutFace.setVisibility(View.VISIBLE);
+        // Fade out del formulario → mostrar cámara
+        AnimUtils.fadeOut(scrollFormulario, () -> {
+            layoutFormulario.setVisibility(View.GONE);
+            scrollFormulario.setVisibility(View.GONE);
+            layoutFace.setVisibility(View.VISIBLE);
+
+            // Animar entrada de la pantalla de cámara
+            AnimUtils.fadeSlideIn(layoutFace, 0);
+        });
+
         yaCapturado.set(false);
         cuentaRegresivaIniciada.set(false);
         txtEstado.setText("📷 Coloca tu rostro dentro del óvalo...");
@@ -290,13 +356,14 @@ public class Register extends BaseActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  PASO 1 — ENVIAR CÓDIGO (usa el backend igual que EmailVerificacion.java)
+    //  PASO 1 — ENVIAR CÓDIGO
     // ══════════════════════════════════════════════════════════════════════════
 
     private void enviarCodigo() {
         String email = edtEmailPaso1.getText() != null
                 ? edtEmailPaso1.getText().toString().trim() : "";
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            AnimUtils.shake(edtEmailPaso1);
             MoviAlert.toast(this, "Ingresa un correo válido", MoviAlert.WARNING);
             return;
         }
@@ -321,7 +388,6 @@ public class Register extends BaseActivity {
                                 "No se pudo enviar el código.\nVerifica tu internet.");
                     });
                 }
-
                 @Override public void onResponse(Call call, Response response) throws IOException {
                     String body = response.body() != null ? response.body().string() : "";
                     Log.d(TAG, "request-pre-otp: " + response.code() + " — " + body);
@@ -363,8 +429,11 @@ public class Register extends BaseActivity {
                 @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
                 @Override public void onTextChanged(CharSequence s, int st, int b, int c) {}
                 @Override public void afterTextChanged(Editable s) {
-                    if (s.length() == 1 && idx < campos.length - 1)
-                        campos[idx + 1].requestFocus();
+                    if (s.length() == 1) {
+                        // Pequeño bounce al rellenar cada campo
+                        AnimUtils.tapPulse(campos[idx]);
+                        if (idx < campos.length - 1) campos[idx + 1].requestFocus();
+                    }
                     actualizarBotonOtp(campos);
                 }
             });
@@ -392,6 +461,8 @@ public class Register extends BaseActivity {
         }
         btnVerificarOtp.setEnabled(llenos);
         btnVerificarOtp.setAlpha(llenos ? 1.0f : 0.5f);
+        // Bounce en el botón cuando todos los campos están llenos
+        if (llenos) AnimUtils.bounceIn(btnVerificarOtp, 0);
     }
 
     private void limpiarOtp() {
@@ -440,7 +511,6 @@ public class Register extends BaseActivity {
                                 "No se pudo verificar. Revisa tu internet.");
                     });
                 }
-
                 @Override public void onResponse(Call call, Response response) throws IOException {
                     String body = response.body() != null ? response.body().string() : "";
                     Log.d(TAG, "verify-pre-otp: " + response.code() + " — " + body);
@@ -453,6 +523,11 @@ public class Register extends BaseActivity {
                                     "✅ Correo verificado correctamente", MoviAlert.SUCCESS);
                             mostrarPaso3();
                         } else {
+                            // Shake en todos los campos OTP al error
+                            for (TextInputEditText otp :
+                                    new TextInputEditText[]{otp1,otp2,otp3,otp4,otp5,otp6}) {
+                                AnimUtils.shake(otp);
+                            }
                             limpiarOtp();
                             String msg = "Código incorrecto o expirado.";
                             try {
@@ -489,6 +564,7 @@ public class Register extends BaseActivity {
             return;
         }
         if (!terminosLeidos || !cbTerminos.isChecked()) {
+            AnimUtils.shake(cbTerminos);
             MoviAlert.warning(this, "Términos requeridos",
                     "Debes leer y aceptar los Términos y Condiciones para continuar.");
             return;
@@ -518,38 +594,80 @@ public class Register extends BaseActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  VALIDADORES
+    //  VALIDADORES — shake en cada error
     // ══════════════════════════════════════════════════════════════════════════
 
     private boolean validarNombre(String v) {
         v = v.trim();
-        if (v.isEmpty()) { tilNombre.setError("El nombre es obligatorio"); return false; }
-        if (v.length() < 3) { tilNombre.setError("Mínimo 3 caracteres"); return false; }
-        if (!Character.isUpperCase(v.charAt(0))) { tilNombre.setError("Debe comenzar con mayúscula"); return false; }
-        if (!v.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+")) { tilNombre.setError("Solo letras, sin números ni símbolos"); return false; }
+        if (v.isEmpty()) {
+            tilNombre.setError("El nombre es obligatorio");
+            AnimUtils.shake(tilNombre);
+            return false;
+        }
+        if (v.length() < 3) {
+            tilNombre.setError("Mínimo 3 caracteres");
+            AnimUtils.shake(tilNombre);
+            return false;
+        }
+        if (!Character.isUpperCase(v.charAt(0))) {
+            tilNombre.setError("Debe comenzar con mayúscula");
+            AnimUtils.shake(tilNombre);
+            return false;
+        }
+        if (!v.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+")) {
+            tilNombre.setError("Solo letras, sin números ni símbolos");
+            AnimUtils.shake(tilNombre);
+            return false;
+        }
         tilNombre.setError(null); tilNombre.setErrorEnabled(false); return true;
     }
 
     private boolean validarEmail(String v) {
         v = v.trim();
-        if (v.isEmpty()) { tilEmail.setError("El correo es obligatorio"); return false; }
+        if (v.isEmpty()) {
+            tilEmail.setError("El correo es obligatorio");
+            AnimUtils.shake(tilEmail);
+            return false;
+        }
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(v).matches()) {
-            tilEmail.setError("Formato inválido — debe ser: usuario@correo.com"); return false;
+            tilEmail.setError("Formato inválido — debe ser: usuario@correo.com");
+            AnimUtils.shake(tilEmail);
+            return false;
         }
         tilEmail.setError(null); tilEmail.setErrorEnabled(false); return true;
     }
 
     private boolean validarTelefono(String v) {
         v = v.trim();
-        if (v.isEmpty()) { tilTelefono.setError("El teléfono es obligatorio"); return false; }
-        if (!v.matches("[0-9]+")) { tilTelefono.setError("Solo números, sin espacios ni guiones"); return false; }
-        if (v.length() < 7)  { tilTelefono.setError("Mínimo 7 dígitos"); return false; }
-        if (v.length() > 15) { tilTelefono.setError("Máximo 15 dígitos"); return false; }
+        if (v.isEmpty()) {
+            tilTelefono.setError("El teléfono es obligatorio");
+            AnimUtils.shake(tilTelefono);
+            return false;
+        }
+        if (!v.matches("[0-9]+")) {
+            tilTelefono.setError("Solo números, sin espacios ni guiones");
+            AnimUtils.shake(tilTelefono);
+            return false;
+        }
+        if (v.length() < 7) {
+            tilTelefono.setError("Mínimo 7 dígitos");
+            AnimUtils.shake(tilTelefono);
+            return false;
+        }
+        if (v.length() > 15) {
+            tilTelefono.setError("Máximo 15 dígitos");
+            AnimUtils.shake(tilTelefono);
+            return false;
+        }
         tilTelefono.setError(null); tilTelefono.setErrorEnabled(false); return true;
     }
 
     private boolean validarPassword(String v) {
-        if (v.isEmpty()) { tilPassword.setError("La contraseña es obligatoria"); return false; }
+        if (v.isEmpty()) {
+            tilPassword.setError("La contraseña es obligatoria");
+            AnimUtils.shake(tilPassword);
+            return false;
+        }
         StringBuilder f = new StringBuilder();
         if (v.length() < 8)                    f.append("• Mínimo 8 caracteres\n");
         if (!v.matches(".*[A-Z].*"))            f.append("• Al menos una mayúscula (A-Z)\n");
@@ -557,11 +675,16 @@ public class Register extends BaseActivity {
         if (!v.matches(".*[0-9].*"))            f.append("• Al menos un número (0-9)\n");
         if (!v.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*"))
             f.append("• Al menos un carácter especial (!@#$...)\n");
-        if (f.length() > 0) { tilPassword.setError("Faltan requisitos:\n" + f.toString().trim()); return false; }
+        if (f.length() > 0) {
+            tilPassword.setError("Faltan requisitos:\n" + f.toString().trim());
+            AnimUtils.shake(tilPassword);
+            return false;
+        }
         tilPassword.setError(null); tilPassword.setErrorEnabled(false); return true;
     }
 
-    private boolean validarTodosLosCampos(String nombre, String email, String telefono, String password) {
+    private boolean validarTodosLosCampos(String nombre, String email,
+                                          String telefono, String password) {
         boolean ok = true;
         if (!validarNombre(nombre))     ok = false;
         if (!validarEmail(email))       ok = false;
@@ -592,6 +715,8 @@ public class Register extends BaseActivity {
             if (total - current <= 50 && !btnAceptar.isEnabled()) {
                 btnAceptar.setEnabled(true);
                 btnAceptar.getBackground().setTint(0xFF2EC4B6);
+                // Bounce en el botón aceptar cuando el usuario llega al final
+                AnimUtils.bounceIn(btnAceptar, 0);
                 tvProgreso.setText("✅  Ya puedes aceptar los Términos y Condiciones");
                 tvProgreso.setTextColor(0xFF2E7D32);
             }
@@ -603,8 +728,11 @@ public class Register extends BaseActivity {
             cbTerminos.setEnabled(true);
             cbTerminos.setAlpha(1.0f);
             cbTerminos.setChecked(true);
+            // Bounce en el checkbox al aceptar
+            AnimUtils.bounceIn(cbTerminos, 0);
             dialog.dismiss();
-            MoviAlert.toast(this, "Términos aceptados. ¡Ya puedes registrarte!", MoviAlert.SUCCESS);
+            MoviAlert.toast(this, "Términos aceptados. ¡Ya puedes registrarte!",
+                    MoviAlert.SUCCESS);
         });
         dialog.show();
     }
@@ -643,7 +771,8 @@ public class Register extends BaseActivity {
     // ══════════════════════════════════════════════════════════════════════════
 
     private void iniciarCamara() {
-        ListenableFuture<ProcessCameraProvider> future = ProcessCameraProvider.getInstance(this);
+        ListenableFuture<ProcessCameraProvider> future =
+                ProcessCameraProvider.getInstance(this);
         future.addListener(() -> {
             try { bindPreview(future.get()); }
             catch (Exception e) {
@@ -664,8 +793,11 @@ public class Register extends BaseActivity {
             cameraProvider.unbindAll();
             cameraProvider.bindToLifecycle(
                     this, CameraSelector.DEFAULT_FRONT_CAMERA, preview, analysis);
-            runOnUiThread(() -> txtEstado.setText("📷 Coloca tu rostro dentro del óvalo..."));
-        } catch (Exception e) { Log.e(TAG, "Error vinculando cámara: " + e.getMessage()); }
+            runOnUiThread(() ->
+                    txtEstado.setText("📷 Coloca tu rostro dentro del óvalo..."));
+        } catch (Exception e) {
+            Log.e(TAG, "Error vinculando cámara: " + e.getMessage());
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -690,7 +822,8 @@ public class Register extends BaseActivity {
                     } else {
                         runOnUiThread(() -> {
                             txtEstado.setText("❌ Error capturando");
-                            MoviAlert.error(this, "Error", "No se pudo capturar. Intenta de nuevo.");
+                            MoviAlert.error(this, "Error",
+                                    "No se pudo capturar. Intenta de nuevo.");
                             yaCapturado.set(false);
                             cuentaRegresivaIniciada.set(false);
                         });
@@ -702,14 +835,18 @@ public class Register extends BaseActivity {
 
     private void iniciarCuentaRegresiva(Runnable onComplete) {
         final int[] countdown = {3};
-        final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+        final android.os.Handler handler =
+                new android.os.Handler(android.os.Looper.getMainLooper());
         final Runnable r = new Runnable() {
             @Override public void run() {
                 if (countdown[0] > 0) {
                     txtEstado.setText("📸 Preparando... " + countdown[0]);
+                    AnimUtils.bounceIn(txtEstado, 0);   // bounce en cada número
                     countdown[0]--;
                     handler.postDelayed(this, 1000);
-                } else { onComplete.run(); }
+                } else {
+                    onComplete.run();
+                }
             }
         };
         handler.post(r);
@@ -729,13 +866,17 @@ public class Register extends BaseActivity {
             YuvImage yuv = new YuvImage(nv21, ImageFormat.NV21,
                     image.getWidth(), image.getHeight(), null);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            yuv.compressToJpeg(new Rect(0, 0, image.getWidth(), image.getHeight()), 90, out);
+            yuv.compressToJpeg(
+                    new Rect(0, 0, image.getWidth(), image.getHeight()), 90, out);
             byte[] bytes = out.toByteArray();
             Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
             android.graphics.Matrix m = new android.graphics.Matrix();
             m.postRotate(image.getImageInfo().getRotationDegrees());
             return Bitmap.createBitmap(bmp, 0, 0, bmp.getWidth(), bmp.getHeight(), m, true);
-        } catch (Exception e) { Log.e(TAG, "Error bitmap: " + e.getMessage()); return null; }
+        } catch (Exception e) {
+            Log.e(TAG, "Error bitmap: " + e.getMessage());
+            return null;
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -753,34 +894,43 @@ public class Register extends BaseActivity {
                     .addFormDataPart("file", "rostro_registro.jpg",
                             RequestBody.create(bytes, MediaType.parse("image/jpeg")))
                     .build();
-            client.newCall(new Request.Builder().url(CLOUDINARY_UPLOAD_URL).post(body).build())
+            client.newCall(new Request.Builder()
+                            .url(CLOUDINARY_UPLOAD_URL).post(body).build())
                     .enqueue(new Callback() {
                         @Override public void onFailure(Call call, IOException e) {
                             runOnUiThread(() -> {
                                 dismissLoading();
                                 txtEstado.setText("❌ Sin internet");
                                 MoviAlert.error(Register.this, "Sin conexión",
-                                        "No se pudo subir la imagen.", () -> mostrarBotonReintentar());
+                                        "No se pudo subir la imagen.",
+                                        () -> mostrarBotonReintentar());
                             });
                         }
-                        @Override public void onResponse(Call call, Response response) throws IOException {
-                            String resp = response.body() != null ? response.body().string() : "";
+                        @Override public void onResponse(Call call, Response response)
+                                throws IOException {
+                            String resp = response.body() != null
+                                    ? response.body().string() : "";
                             if (response.isSuccessful()) {
                                 try {
                                     String url = new JSONObject(resp).getString("secure_url");
                                     runOnUiThread(() -> {
                                         dismissLoading();
-                                        loadingDialog = MoviAlert.loading(Register.this, "Creando tu cuenta...");
+                                        loadingDialog = MoviAlert.loading(
+                                                Register.this, "Creando tu cuenta...");
                                     });
                                     registrarEnBackend(url);
                                 } catch (JSONException e) {
-                                    runOnUiThread(() -> { dismissLoading(); mostrarBotonReintentar(); });
+                                    runOnUiThread(() -> {
+                                        dismissLoading();
+                                        mostrarBotonReintentar();
+                                    });
                                 }
                             } else {
                                 runOnUiThread(() -> {
                                     dismissLoading();
                                     MoviAlert.error(Register.this, "Error al subir imagen",
-                                            "El servidor rechazó la imagen (código " + response.code() + ").",
+                                            "El servidor rechazó la imagen (código "
+                                                    + response.code() + ").",
                                             () -> mostrarBotonReintentar());
                                 });
                             }
@@ -818,22 +968,30 @@ public class Register extends BaseActivity {
                                 "No se pudo conectar.", () -> mostrarBotonReintentar());
                     });
                 }
-                @Override public void onResponse(Call call, Response response) throws IOException {
-                    String respBody = response.body() != null ? response.body().string() : "";
+                @Override public void onResponse(Call call, Response response)
+                        throws IOException {
+                    String respBody = response.body() != null
+                            ? response.body().string() : "";
                     runOnUiThread(() -> {
                         dismissLoading();
                         if (response.isSuccessful()) {
                             txtEstado.setText("✅ ¡Cuenta creada!");
+                            AnimUtils.bounceIn(txtEstado, 0);   // bounce en éxito
                             MoviAlert.success(Register.this, "¡Registro exitoso!",
                                     "Tu cuenta fue creada correctamente.\nYa puedes iniciar sesión.",
-                                    () -> { startActivity(new Intent(Register.this, Login.class)); finish(); });
+                                    () -> {
+                                        startActivity(new Intent(Register.this, Login.class));
+                                        overridePendingTransition(
+                                                R.anim.fade_in, R.anim.fade_out);
+                                        finish();
+                                    });
                         } else {
                             String msg;
                             switch (response.code()) {
                                 case 400: msg = "Los datos enviados son inválidos."; break;
-                                case 409: msg = "Este correo ya está registrado en la plataforma."; break;
+                                case 409: msg = "Este correo ya está registrado."; break;
                                 case 429: msg = "Demasiados intentos. Espera 5 minutos."; break;
-                                case 500: msg = "Error interno del servidor. Inténtalo más tarde."; break;
+                                case 500: msg = "Error interno del servidor."; break;
                                 default:  msg = "Error desconocido (código " + response.code() + ").";
                             }
                             try {
@@ -849,12 +1007,13 @@ public class Register extends BaseActivity {
                                 new android.os.Handler(android.os.Looper.getMainLooper())
                                         .postDelayed(Register.this::mostrarPaso1, 2500);
                             } else if (response.code() == 429) {
-                                MoviAlert.warning(Register.this, "Límite de intentos", mensajeFinal);
+                                MoviAlert.warning(Register.this,
+                                        "Límite de intentos", mensajeFinal);
                                 new android.os.Handler(android.os.Looper.getMainLooper())
                                         .postDelayed(Register.this::mostrarPaso3, 3000);
                             } else {
-                                MoviAlert.error(Register.this, "Error en el registro", mensajeFinal,
-                                        () -> mostrarBotonReintentar());
+                                MoviAlert.error(Register.this, "Error en el registro",
+                                        mensajeFinal, () -> mostrarBotonReintentar());
                             }
                         }
                     });
@@ -876,7 +1035,7 @@ public class Register extends BaseActivity {
             btn.setTag("btn_reintentar");
             btn.setText("🔄  Intentar de nuevo");
             btn.setTextColor(0xFFFFFFFF);
-            btn.setBackgroundColor(0xFF2EC4B6);
+            btn.setBackgroundColor(0xFF1ABC9C);
             btn.setPadding(40, 24, 40, 24);
             ConstraintLayout.LayoutParams p = new ConstraintLayout.LayoutParams(
                     ConstraintLayout.LayoutParams.WRAP_CONTENT,
@@ -890,11 +1049,16 @@ public class Register extends BaseActivity {
         }
         final android.widget.Button boton = btn;
         boton.setVisibility(View.VISIBLE);
+        AnimUtils.bounceIn(boton, 0);   // bounce al aparecer
+
         boton.setOnClickListener(v -> {
-            boton.setVisibility(View.GONE);
-            yaCapturado.set(false);
-            cuentaRegresivaIniciada.set(false);
-            txtEstado.setText("📷 Coloca tu rostro dentro del óvalo...");
+            AnimUtils.tapPulse(v);
+            v.postDelayed(() -> {
+                boton.setVisibility(View.GONE);
+                yaCapturado.set(false);
+                cuentaRegresivaIniciada.set(false);
+                txtEstado.setText("📷 Coloca tu rostro dentro del óvalo...");
+            }, 150);
         });
     }
 
@@ -911,6 +1075,7 @@ public class Register extends BaseActivity {
 
     public void irLoginView(View view) {
         startActivity(new Intent(this, Login.class));
+        overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
         finish();
     }
 }

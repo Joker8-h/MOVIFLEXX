@@ -17,7 +17,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageProxy;
@@ -29,6 +28,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.arlys.moviflexx.R;
+import com.arlys.moviflexx.model.AnimUtils;
 import com.arlys.moviflexx.model.Constantes;
 import com.arlys.moviflexx.model.FieldTooltip;
 import com.arlys.moviflexx.model.MoviAlert;
@@ -78,20 +78,26 @@ public class Login extends BaseActivity {
 
     private volatile Bitmap ultimoFrameBitmap = null;
 
-    private View              layoutLogin;
+    // ── Vistas del formulario (IDs exactos del XML) ───────────────────────────
+    private View              layoutLogin;       // ScrollView  @+id/layoutLogin
     private TextInputEditText edtEmail, edtPassword;
     private TextInputLayout   tilEmail, tilPassword;
+    private View              btnLogin;          // @+id/btnLogin
+    private View              btnGoogle;         // @+id/btnGoogle
+    private View              btnFaceLogin;      // @+id/btnFaceLogin
+    private View              btnQrLogin;        // @+id/btnQrLogin
+    private View              tvRegister;        // @+id/tvRegister
 
-    private ConstraintLayout layoutFace;
-    private PreviewView      previewView;
-    private TextView         txtEstado;
+    // ── Vistas de la cámara ───────────────────────────────────────────────────
+    private ConstraintLayout layoutFace;         // @+id/layoutFace
+    private PreviewView      previewView;        // @+id/previewView
+    private TextView         txtEstado;          // @+id/txtEstado
+
     private ExecutorService  cameraExecutor;
-
     private FirebaseAuth       mAuth;
     private GoogleSignInClient googleSignInClient;
     private SessionManager     sessionManager;
-
-    private Dialog loadingDialog = null;
+    private Dialog             loadingDialog = null;
 
     private final AtomicBoolean yaCapturado             = new AtomicBoolean(false);
     private final AtomicBoolean cuentaRegresivaIniciada = new AtomicBoolean(false);
@@ -112,8 +118,7 @@ public class Login extends BaseActivity {
                         if (task.isSuccessful()) {
                             firebaseAuthWithGoogle(task.getResult().getIdToken());
                         } else {
-                            MoviAlert.error(this,
-                                    "Error con Google",
+                            MoviAlert.error(this, "Error con Google",
                                     "No se pudo completar el inicio de sesión con Google.");
                         }
                     });
@@ -124,7 +129,7 @@ public class Login extends BaseActivity {
 
     @Override
     protected void iniciarAsistenteVozSiPermite() {
-        // No iniciar el asistente de voz en la pantalla de Login
+        // No iniciar el asistente de voz en Login
     }
 
     @Override
@@ -132,14 +137,22 @@ public class Login extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        layoutLogin = findViewById(R.id.layoutLogin);
-        tilEmail    = findViewById(R.id.til_email);
-        tilPassword = findViewById(R.id.til_password);
-        edtEmail    = findViewById(R.id.edtEmail);
-        edtPassword = findViewById(R.id.edtPassword);
-        layoutFace  = findViewById(R.id.layoutFace);
-        previewView = findViewById(R.id.previewView);
-        txtEstado   = findViewById(R.id.txtEstado);
+        // ── Enlazar vistas con IDs reales del XML ─────────────────────────────
+        layoutLogin  = findViewById(R.id.layoutLogin);
+        tilEmail     = findViewById(R.id.til_email);
+        tilPassword  = findViewById(R.id.til_password);
+        edtEmail     = findViewById(R.id.edtEmail);
+        edtPassword  = findViewById(R.id.edtPassword);
+        layoutFace   = findViewById(R.id.layoutFace);
+        previewView  = findViewById(R.id.previewView);
+        txtEstado    = findViewById(R.id.txtEstado);
+
+        // Botones — IDs exactos del XML
+        btnLogin     = findViewById(R.id.btnLogin);
+        btnGoogle    = findViewById(R.id.btnGoogle);
+        btnFaceLogin = findViewById(R.id.btnFaceLogin);
+        btnQrLogin   = findViewById(R.id.btnQrLogin);
+        tvRegister   = findViewById(R.id.tvRegister);
 
         layoutFace.setVisibility(View.GONE);
 
@@ -152,6 +165,11 @@ public class Login extends BaseActivity {
 
         configurarValidacionesEnTiempoReal();
         configurarGoogle();
+
+        // ══════════════════════════════════════════════════════════════════════
+        //  ANIMACIONES DE ENTRADA — siempre al final de onCreate
+        // ══════════════════════════════════════════════════════════════════════
+        animarEntradaLogin();
     }
 
     @Override
@@ -159,6 +177,33 @@ public class Login extends BaseActivity {
         super.onDestroy();
         if (cameraExecutor != null) cameraExecutor.shutdown();
         dismissLoading();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  ANIMACIONES DE ENTRADA
+    //  Cascada: ilustración → logo → campos → botones → registro
+    //  Delay acumulado de 80ms por elemento para efecto stagger natural
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private void animarEntradaLogin() {
+        // Ilustración del van (ImageView dentro del ScrollView, no tiene ID)
+        // La animamos via el contenedor del scroll con un delay mínimo
+        AnimUtils.fadeSlideIn(layoutLogin, 0);
+
+        // Campos de texto — entran ligeramente después
+        AnimUtils.fadeSlideIn(tilEmail,    180);
+        AnimUtils.fadeSlideIn(tilPassword, 260);
+
+        // Botón principal — el más importante, entra con ligero bounce
+        if (btnLogin != null)     AnimUtils.bounceIn(btnLogin,     340);
+
+        // Fila QR + Facial
+        if (btnQrLogin != null)   AnimUtils.fadeSlideIn(btnQrLogin,   420);
+        if (btnFaceLogin != null) AnimUtils.fadeSlideIn(btnFaceLogin, 420);
+
+        // Google y registro — últimos
+        if (btnGoogle != null)    AnimUtils.fadeSlideIn(btnGoogle,    500);
+        if (tvRegister != null)   AnimUtils.fadeSlideIn(tvRegister,   560);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -170,8 +215,8 @@ public class Login extends BaseActivity {
             if (!hasFocus) validarEmail(edtEmail.getText().toString());
         });
         edtPassword.addTextChangedListener(new android.text.TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {}
             @Override
             public void afterTextChanged(android.text.Editable s) {
                 if (s.length() > 0) validarPassword(s.toString());
@@ -181,20 +226,32 @@ public class Login extends BaseActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  VALIDADORES
+    //  VALIDADORES — shake cuando hay error
     // ══════════════════════════════════════════════════════════════════════════
 
     private boolean validarEmail(String valor) {
         valor = valor.trim();
-        if (valor.isEmpty()) { tilEmail.setError("El correo es obligatorio"); return false; }
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(valor).matches()) {
-            tilEmail.setError("Formato inválido — debe ser: usuario@correo.com"); return false;
+        if (valor.isEmpty()) {
+            tilEmail.setError("El correo es obligatorio");
+            AnimUtils.shake(tilEmail);
+            return false;
         }
-        tilEmail.setError(null); tilEmail.setErrorEnabled(false); return true;
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(valor).matches()) {
+            tilEmail.setError("Formato inválido — debe ser: usuario@correo.com");
+            AnimUtils.shake(tilEmail);
+            return false;
+        }
+        tilEmail.setError(null);
+        tilEmail.setErrorEnabled(false);
+        return true;
     }
 
     private boolean validarPassword(String valor) {
-        if (valor.isEmpty()) { tilPassword.setError("La contraseña es obligatoria"); return false; }
+        if (valor.isEmpty()) {
+            tilPassword.setError("La contraseña es obligatoria");
+            AnimUtils.shake(tilPassword);
+            return false;
+        }
         StringBuilder f = new StringBuilder();
         if (valor.length() < 8)
             f.append("• Mínimo 8 caracteres\n");
@@ -208,18 +265,26 @@ public class Login extends BaseActivity {
             f.append("• Al menos un carácter especial (!@#$%...)\n");
         if (f.length() > 0) {
             tilPassword.setError("Faltan requisitos:\n" + f.toString().trim());
+            AnimUtils.shake(tilPassword);
             return false;
         }
-        tilPassword.setError(null); tilPassword.setErrorEnabled(false); return true;
+        tilPassword.setError(null);
+        tilPassword.setErrorEnabled(false);
+        return true;
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  NAVEGACIÓN
+    //  NAVEGACIÓN — fade suave entre formulario y cámara
     // ══════════════════════════════════════════════════════════════════════════
 
     private void mostrarFaceLogin() {
-        layoutLogin.setVisibility(View.GONE);
-        layoutFace.setVisibility(View.VISIBLE);
+        // Fade out del formulario completo → mostrar cámara con fade in
+        AnimUtils.fadeOut(layoutLogin, () -> {
+            layoutLogin.setVisibility(View.GONE);
+            layoutFace.setVisibility(View.VISIBLE);
+            AnimUtils.fadeSlideIn(layoutFace, 0);
+        });
+
         yaCapturado.set(false);
         cuentaRegresivaIniciada.set(false);
         txtEstado.setText("📷 Coloca tu rostro dentro del óvalo...");
@@ -228,8 +293,20 @@ public class Login extends BaseActivity {
     }
 
     private void mostrarLoginNormal() {
-        layoutFace.setVisibility(View.GONE);
-        layoutLogin.setVisibility(View.VISIBLE);
+        // Fade out de la cámara → re-animar los elementos del formulario
+        AnimUtils.fadeOut(layoutFace, () -> {
+            layoutFace.setVisibility(View.GONE);
+            layoutLogin.setVisibility(View.VISIBLE);
+
+            // Re-animar en cascada al volver (delays más cortos)
+            AnimUtils.fadeSlideIn(tilEmail,    0);
+            AnimUtils.fadeSlideIn(tilPassword, 80);
+            if (btnLogin     != null) AnimUtils.bounceIn(btnLogin,     160);
+            if (btnQrLogin   != null) AnimUtils.fadeSlideIn(btnQrLogin,   220);
+            if (btnFaceLogin != null) AnimUtils.fadeSlideIn(btnFaceLogin, 220);
+            if (btnGoogle    != null) AnimUtils.fadeSlideIn(btnGoogle,    280);
+        });
+
         yaCapturado.set(false);
         cuentaRegresivaIniciada.set(false);
     }
@@ -244,7 +321,10 @@ public class Login extends BaseActivity {
         String password = edtPassword.getText() != null
                 ? edtPassword.getText().toString().trim() : "";
 
-        if (!validarEmail(email) | !validarPassword(password)) {
+        boolean emailOk    = validarEmail(email);
+        boolean passwordOk = validarPassword(password);
+
+        if (!emailOk || !passwordOk) {
             MoviAlert.toast(this, "Revisa los campos marcados en rojo", MoviAlert.WARNING);
             return;
         }
@@ -298,7 +378,7 @@ public class Login extends BaseActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  PROCESAR RESPUESTA LOGIN (email/password y facial comparten este método)
+    //  PROCESAR RESPUESTA LOGIN
     // ══════════════════════════════════════════════════════════════════════════
 
     private void procesarRespuestaLogin(String responseBody, String emailFallback) {
@@ -317,7 +397,6 @@ public class Login extends BaseActivity {
                 nombre     = u.optString("nombre",      "Usuario");
                 email      = u.optString("email",       emailFallback);
                 telefono   = u.optString("telefono",    "Sin teléfono");
-                // ── Foto de perfil (Cloudinary) ──
                 fotoPerfil = u.optString("fotoPerfil",
                         u.optString("fotoPerfi",
                                 u.optString("foto",
@@ -333,7 +412,6 @@ public class Login extends BaseActivity {
                 return;
             }
 
-            // Guardar foto si viene en la respuesta
             if (!fotoPerfil.isEmpty() && !fotoPerfil.equals("null")) {
                 sessionManager.saveFotoPerfil(fotoPerfil);
                 Log.d(TAG, "Foto de perfil guardada: " + fotoPerfil);
@@ -357,6 +435,7 @@ public class Login extends BaseActivity {
 
     public void irQrScanner(View view) {
         startActivity(new Intent(this, QrScanner.class));
+        overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -370,10 +449,13 @@ public class Login extends BaseActivity {
                 .requestEmail().build();
         googleSignInClient = GoogleSignIn.getClient(this, gso);
 
+        // tapPulse en el botón de Google antes de lanzar el intent
         findViewById(R.id.btnGoogle).setOnClickListener(v -> {
-            googleSignInClient.signOut().addOnCompleteListener(task -> {
-                googleLauncher.launch(googleSignInClient.getSignInIntent());
-            });
+            AnimUtils.tapPulse(v);
+            v.postDelayed(() ->
+                    googleSignInClient.signOut().addOnCompleteListener(task ->
+                            googleLauncher.launch(googleSignInClient.getSignInIntent())
+                    ), 150);
         });
     }
 
@@ -437,7 +519,9 @@ public class Login extends BaseActivity {
     }
 
     public void irRegister(View view) {
+        // slide desde abajo al ir al registro — sensación de "abrir" nueva pantalla
         startActivity(new Intent(this, Register.class));
+        overridePendingTransition(R.anim.slide_in_bottom, R.anim.fade_out);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -539,8 +623,7 @@ public class Login extends BaseActivity {
                                     () -> {
                                         yaCapturado.set(false);
                                         cuentaRegresivaIniciada.set(false);
-                                        txtEstado.setText(
-                                                "📷 Coloca tu rostro dentro del óvalo...");
+                                        txtEstado.setText("📷 Coloca tu rostro dentro del óvalo...");
                                     });
                         });
                     }
@@ -557,9 +640,12 @@ public class Login extends BaseActivity {
             @Override public void run() {
                 if (countdown[0] > 0) {
                     txtEstado.setText("📸 Preparando... " + countdown[0]);
+                    AnimUtils.bounceIn(txtEstado, 0);   // bounce en cada número
                     countdown[0]--;
                     handler.postDelayed(this, 1000);
-                } else { onComplete.run(); }
+                } else {
+                    onComplete.run();
+                }
             }
         };
         handler.post(r);
@@ -600,9 +686,7 @@ public class Login extends BaseActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  CLOUDINARY — sube el frame del login facial
-    //  La URL resultante se usa SOLO para verificación, NO se guarda como foto
-    //  de perfil (la foto de perfil viene de la respuesta del backend)
+    //  CLOUDINARY
     // ══════════════════════════════════════════════════════════════════════════
 
     private void subirACloudinary(Bitmap bitmap) {
@@ -615,8 +699,7 @@ public class Login extends BaseActivity {
                     .setType(MultipartBody.FORM)
                     .addFormDataPart("upload_preset", CLOUDINARY_UPLOAD_PRESET)
                     .addFormDataPart("file", "rostro_login.jpg",
-                            RequestBody.create(imageBytes,
-                                    MediaType.parse("image/jpeg")))
+                            RequestBody.create(imageBytes, MediaType.parse("image/jpeg")))
                     .build();
 
             client.newCall(new Request.Builder()
@@ -633,16 +716,12 @@ public class Login extends BaseActivity {
                                 () -> mostrarBotonReintentar());
                     });
                 }
-                @Override public void onResponse(Call call, Response response)
-                        throws IOException {
-                    String body = response.body() != null
-                            ? response.body().string() : "";
+                @Override public void onResponse(Call call, Response response) throws IOException {
+                    String body = response.body() != null ? response.body().string() : "";
                     if (response.isSuccessful()) {
                         try {
-                            String imageUrl = new JSONObject(body)
-                                    .getString("secure_url");
-                            runOnUiThread(() ->
-                                    txtEstado.setText("🔐 Verificando identidad..."));
+                            String imageUrl = new JSONObject(body).getString("secure_url");
+                            runOnUiThread(() -> txtEstado.setText("🔐 Verificando identidad..."));
                             verificarConBackend(imageUrl);
                         } catch (JSONException e) {
                             runOnUiThread(() -> {
@@ -658,8 +737,7 @@ public class Login extends BaseActivity {
                             dismissLoading();
                             txtEstado.setText("❌ Error subiendo imagen");
                             MoviAlert.error(Login.this, "Error al subir imagen",
-                                    "El servidor rechazó la imagen (código "
-                                            + response.code() + ").",
+                                    "El servidor rechazó la imagen (código " + response.code() + ").",
                                     () -> mostrarBotonReintentar());
                         });
                     }
@@ -700,42 +778,25 @@ public class Login extends BaseActivity {
                                 () -> mostrarBotonReintentar());
                     });
                 }
-                @Override public void onResponse(Call call, Response response)
-                        throws IOException {
-                    String responseBody = response.body() != null
-                            ? response.body().string() : "";
+                @Override public void onResponse(Call call, Response response) throws IOException {
+                    String responseBody = response.body() != null ? response.body().string() : "";
                     runOnUiThread(() -> {
                         dismissLoading();
                         if (response.isSuccessful()) {
-                            // procesarRespuestaLogin también guarda la foto de perfil
                             procesarLoginFacialExitoso(responseBody);
                         } else {
                             String errorMsg;
                             switch (response.code()) {
-                                case 404:
-                                    errorMsg = "Rostro no reconocido.\n"
-                                            + "¿Registraste tu cara al crear la cuenta?";
-                                    break;
-                                case 401:
-                                    errorMsg = "No tienes permiso para acceder.";
-                                    break;
-                                case 403:
-                                    errorMsg = "Tu cuenta está inactiva o suspendida.";
-                                    break;
-                                case 500:
-                                    errorMsg = "Error interno del servidor. "
-                                            + "Intenta más tarde.";
-                                    break;
-                                default:
-                                    errorMsg = "Error inesperado (código "
-                                            + response.code() + ").";
+                                case 404: errorMsg = "Rostro no reconocido.\n¿Registraste tu cara al crear la cuenta?"; break;
+                                case 401: errorMsg = "No tienes permiso para acceder."; break;
+                                case 403: errorMsg = "Tu cuenta está inactiva o suspendida."; break;
+                                case 500: errorMsg = "Error interno del servidor. Intenta más tarde."; break;
+                                default:  errorMsg = "Error inesperado (código " + response.code() + ").";
                             }
                             try {
                                 JSONObject err = new JSONObject(responseBody);
-                                if (err.has("message"))
-                                    errorMsg = err.getString("message");
-                                else if (err.has("error"))
-                                    errorMsg = err.getString("error");
+                                if (err.has("message"))    errorMsg = err.getString("message");
+                                else if (err.has("error")) errorMsg = err.getString("error");
                             } catch (Exception ignored) {}
 
                             txtEstado.setText("😕 No reconocido");
@@ -773,7 +834,6 @@ public class Login extends BaseActivity {
                 nombre     = u.optString("nombre",   "Usuario");
                 email      = u.optString("email",    "");
                 telefono   = u.optString("telefono", "");
-                // ── Foto de perfil guardada en Cloudinary durante el registro ──
                 fotoPerfil = u.optString("fotoPerfil",
                         u.optString("fotoPerfi",
                                 u.optString("foto",
@@ -783,13 +843,14 @@ public class Login extends BaseActivity {
                 else if (u.has("rol")) idRol = u.getJSONObject("rol").optInt("idRol", -1);
             }
 
-            // Guardar foto de perfil si viene en la respuesta del backend
             if (!fotoPerfil.isEmpty() && !fotoPerfil.equals("null")) {
                 sessionManager.saveFotoPerfil(fotoPerfil);
                 Log.d(TAG, "Foto de perfil (facial) guardada: " + fotoPerfil);
             }
 
             txtEstado.setText("✅ ¡Bienvenido " + nombre + "!");
+            AnimUtils.bounceIn(txtEstado, 0);   // bounce en el mensaje de éxito
+
             MoviAlert.toast(this, "¡Bienvenido, " + nombre + "!", MoviAlert.SUCCESS);
             sessionManager.setPendingWelcome(true);
             guardarSesionYNavegar(token, nombre, email, telefono, idRol, idUsuario);
@@ -799,6 +860,7 @@ public class Login extends BaseActivity {
             txtEstado.setText("✅ Login exitoso");
             MoviAlert.toast(this, "¡Login exitoso!", MoviAlert.SUCCESS);
             startActivity(new Intent(this, HomePasajero.class));
+            overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
             finish();
         }
     }
@@ -815,7 +877,7 @@ public class Login extends BaseActivity {
             btnReintentar.setTag("btn_reintentar");
             btnReintentar.setText("🔄  Intentar de nuevo");
             btnReintentar.setTextColor(0xFFFFFFFF);
-            btnReintentar.setBackgroundColor(0xFF2EC4B6);
+            btnReintentar.setBackgroundColor(0xFF1ABC9C);
             btnReintentar.setPadding(40, 24, 40, 24);
 
             ConstraintLayout.LayoutParams params =
@@ -829,18 +891,29 @@ public class Login extends BaseActivity {
             btnReintentar.setLayoutParams(params);
             layoutFace.addView(btnReintentar);
         }
+
         final android.widget.Button boton = btnReintentar;
         boton.setVisibility(View.VISIBLE);
+        AnimUtils.bounceIn(boton, 0);   // bounce al aparecer
+
         boton.setOnClickListener(v -> {
-            boton.setVisibility(View.GONE);
-            yaCapturado.set(false);
-            cuentaRegresivaIniciada.set(false);
-            txtEstado.setText("📷 Coloca tu rostro dentro del óvalo...");
+            AnimUtils.tapPulse(v);
+            v.postDelayed(() -> {
+                boton.setVisibility(View.GONE);
+                yaCapturado.set(false);
+                cuentaRegresivaIniciada.set(false);
+                txtEstado.setText("📷 Coloca tu rostro dentro del óvalo...");
+            }, 150);
         });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     //  GUARDAR SESIÓN Y NAVEGAR
+    // ══════════════════════════════════════════════════════════════════════════
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  GUARDAR SESIÓN Y NAVEGAR
+    //  ⚠️ Reemplaza el método guardarSesionYNavegar existente en Login.java
     // ══════════════════════════════════════════════════════════════════════════
 
     private void guardarSesionYNavegar(String token, String nombre, String email,
@@ -853,12 +926,37 @@ public class Login extends BaseActivity {
             SesionUsuario.setIdRol(idRol);
             sessionManager.setLoggedIn(true);
             sessionManager.loadSessionToMemory();
+
+            // 🔔 Enviar token FCM al backend para poder recibir notificaciones push
+            final int idUsuarioFinal = idUsuario;
+            com.google.firebase.messaging.FirebaseMessaging.getInstance().getToken()
+                    .addOnSuccessListener(fcmToken -> {
+                        try {
+                            org.json.JSONObject body = new org.json.JSONObject();
+                            body.put("token",     fcmToken);
+                            body.put("idUsuario", idUsuarioFinal);
+
+                            com.arlys.moviflexx.model.ConexionApi.getInstance(this).post(
+                                    com.arlys.moviflexx.model.Constantes.BASE_URL
+                                            + "/api/usuarios/" + idUsuarioFinal + "/fcm-token",
+                                    body,
+                                    response -> android.util.Log.d("FCM", "Token guardado OK"),
+                                    error    -> android.util.Log.w("FCM", "Error guardando token FCM")
+                            );
+                        } catch (Exception e) {
+                            android.util.Log.e("FCM", "Error preparando token: " + e.getMessage());
+                        }
+                    })
+                    .addOnFailureListener(e ->
+                            android.util.Log.w("FCM", "No se pudo obtener token FCM: " + e.getMessage())
+                    );
         }
+
         startActivity(new Intent(this,
                 idRol == 2 ? HomeConductor.class : HomePasajero.class));
+        overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
         finish();
     }
-
     // ══════════════════════════════════════════════════════════════════════════
     //  UTILIDADES
     // ══════════════════════════════════════════════════════════════════════════

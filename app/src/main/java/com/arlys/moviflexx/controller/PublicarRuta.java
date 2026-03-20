@@ -23,7 +23,8 @@ import android.view.animation.OvershootInterpolator;
 import android.widget.*;
 import android.view.MotionEvent;
 import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;                    // ← quitado AppCompatActivity import
+import androidx.core.app.ActivityCompat;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -58,10 +59,6 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-
-// ════════════════════════════════════════════════════════
-// CAMBIO 1/3: extends BaseActivity (antes AppCompatActivity)
-// ════════════════════════════════════════════════════════
 public class PublicarRuta extends BaseActivity {
 
     private static final String TAG          = "PublicarRuta";
@@ -73,8 +70,6 @@ public class PublicarRuta extends BaseActivity {
     private static final double MAX_DISTANCIA_KM = 1000;
     private static final int    AUTOCOMPLETADO_DELAY_MS = 600;
     private static final int    MAX_RUTAS = 5;
-
-
 
     // ── UI ──────────────────────────────────────────────────────────────────
     private TextInputEditText    editOrigen, editDestino;
@@ -89,6 +84,7 @@ public class PublicarRuta extends BaseActivity {
     private FloatingActionButton btnZoomIn, btnZoomOut, btnMiUbicacion;
     private View                 rootView;
     private View                 loaderContainer;
+    private BottomNavigationView bottomNav;
     private LinearLayout         cardContadorHeader;
     private TextView             txtContadorHeader;
 
@@ -139,24 +135,30 @@ public class PublicarRuta extends BaseActivity {
         configurarAutocompletado();
 
         routeManager = new RouteManager();
+        configurarBottomNav();
 
-        // ════════════════════════════════════════════════════════
-        // CAMBIO 2/3: animateButton reemplaza setOnClickListener
-        //   - da escala 0.95 al presionar (microinteracción)
-        //   - lanza la acción al soltar con rebote suave
-        // ════════════════════════════════════════════════════════
         animateButton(btnCalcular, this::buscarRutasMultiples);
         animateButton(btnPublicar, this::crearRuta);
     }
 
-    @Override protected void onResume()  { super.onResume();  if (map != null) map.onResume(); }
-    @Override protected void onPause()   { super.onPause();   if (map != null) map.onPause();  }
-    @Override protected void onDestroy() { super.onDestroy(); executor.shutdown();              }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (map != null) map.onResume();
+        if (bottomNav != null) bottomNav.setSelectedItemId(R.id.nav_mis_viajes);
+    }
 
-    // ════════════════════════════════════════════════════════
-    // CAMBIO 3/3: onBackPressed usa la animación slide de BaseActivity
-    //   (no hace falta override — BaseActivity ya lo maneja)
-    // ════════════════════════════════════════════════════════
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (map != null) map.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        executor.shutdown();
+    }
 
     /* ═══════════ INIT ═══════════ */
 
@@ -181,6 +183,40 @@ public class PublicarRuta extends BaseActivity {
         loaderContainer     = findViewById(R.id.loader_container);
         cardContadorHeader  = findViewById(R.id.card_contador_rutas);
         txtContadorHeader   = findViewById(R.id.txt_contador_header);
+        bottomNav           = findViewById(R.id.bottom_navigation);
+    }
+
+    /* ═══════════ BOTTOM NAV ═══════════ */
+
+    private void configurarBottomNav() {
+        if (bottomNav == null) return;
+
+        bottomNav.setSelectedItemId(R.id.nav_mis_viajes);
+
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_inicio) {
+                goTo(HomeConductor.class, Transition.NONE);
+                finish();
+                return true;
+            } else if (id == R.id.nav_mis_viajes) {
+                // Ya estamos aquí
+                return true;
+            } else if (id == R.id.nav_mapa) {
+                // Deshabilitado sin viaje activo
+                mostrarSnackbar("⚠️ Debes tener un viaje activo para acceder al mapa", true);
+                return false;
+            } else if (id == R.id.nav_mensajes) {
+                goTo(Mensajes.class, Transition.NONE);
+                finish();
+                return true;
+            } else if (id == R.id.nav_perfil) {
+                goTo(PerfilUsuario.class, Transition.NONE);
+                finish();
+                return true;
+            }
+            return false;
+        });
     }
 
     /* ═══════════ MAPA ═══════════ */
@@ -207,19 +243,16 @@ public class PublicarRuta extends BaseActivity {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                 case MotionEvent.ACTION_MOVE:
-                    // Le dice al ScrollView que no intercepte mientras el dedo está en el mapa
                     v.getParent().requestDisallowInterceptTouchEvent(true);
                     break;
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
-                    // Restaura el scroll normal cuando el dedo sale del mapa
                     v.getParent().requestDisallowInterceptTouchEvent(false);
                     break;
             }
-            return false; // false = el MapView sigue procesando el evento normalmente
+            return false;
         });
     }
-
 
     /* ═══════════ ZOOM ═══════════ */
 
@@ -877,7 +910,6 @@ public class PublicarRuta extends BaseActivity {
                             intent.putExtra("DISTANCIA_KM",      _distanciaKm);
                             intent.putExtra("DURACION_MIN",      _duracionMin);
                             intent.putExtra("INDICE_RUTA",       _indiceRuta);
-                            // ── usa animación slide de BaseActivity ──
                             startActivity(intent);
                             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
                             finish();
@@ -925,10 +957,9 @@ public class PublicarRuta extends BaseActivity {
         List<JSONObject> todasLasParadas = new ArrayList<>();
         try {
             JSONObject pOrig = new JSONObject();
-            pOrig.put("idRuta",0); pOrig.put("nombre",nombreOrigen);
-            pOrig.put("lat",pOrigen.getLatitude()); pOrig.put("lng",pOrigen.getLongitude());
-            pOrig.put("orden",0); pOrig.put("kmAcumulado",0.0); pOrig.put("tipo","SUBIDA");
-            pOrig.put("idRuta", idRuta);
+            pOrig.put("idRuta", idRuta); pOrig.put("nombre", nombreOrigen);
+            pOrig.put("lat", pOrigen.getLatitude()); pOrig.put("lng", pOrigen.getLongitude());
+            pOrig.put("orden", 0); pOrig.put("kmAcumulado", 0.0); pOrig.put("tipo", "SUBIDA");
             todasLasParadas.add(pOrig);
         } catch (Exception e) { Log.e(TAG, "Error creando parada origen", e); }
         for (int i = 0; i < intermedios.size(); i++) {
@@ -938,23 +969,22 @@ public class PublicarRuta extends BaseActivity {
                 for (int j = 0; j < i && j < intermedios.size()-1; j++)
                     kmAcum += distanciaEnMetros(intermedios.get(j), intermedios.get(j+1)) / 1000.0;
                 JSONObject pInt = new JSONObject();
-                pInt.put("idRuta",idRuta); pInt.put("nombre","Parada "+(i+1));
-                pInt.put("lat",p.getLatitude()); pInt.put("lng",p.getLongitude());
-                pInt.put("orden",i+1); pInt.put("kmAcumulado",Math.round(kmAcum*100.0)/100.0); pInt.put("tipo","AMBAS");
+                pInt.put("idRuta", idRuta); pInt.put("nombre", "Parada " + (i + 1));
+                pInt.put("lat", p.getLatitude()); pInt.put("lng", p.getLongitude());
+                pInt.put("orden", i + 1); pInt.put("kmAcumulado", Math.round(kmAcum * 100.0) / 100.0); pInt.put("tipo", "AMBAS");
                 todasLasParadas.add(pInt);
             } catch (Exception e) { Log.e(TAG, "Error parada intermedia", e); }
         }
         try {
             double distTotal = distanciaEnMetros(pOrigen, pDestino) / 1000.0;
             JSONObject pDest = new JSONObject();
-            pDest.put("idRuta",idRuta); pDest.put("nombre",nombreDestino);
-            pDest.put("lat",pDestino.getLatitude()); pDest.put("lng",pDestino.getLongitude());
-            pDest.put("orden",intermedios.size()+1); pDest.put("kmAcumulado",Math.round(distTotal*100.0)/100.0); pDest.put("tipo","BAJADA");
+            pDest.put("idRuta", idRuta); pDest.put("nombre", nombreDestino);
+            pDest.put("lat", pDestino.getLatitude()); pDest.put("lng", pDestino.getLongitude());
+            pDest.put("orden", intermedios.size() + 1); pDest.put("kmAcumulado", Math.round(distTotal * 100.0) / 100.0); pDest.put("tipo", "BAJADA");
             todasLasParadas.add(pDest);
         } catch (Exception e) { Log.e(TAG, "Error parada destino", e); }
         final int[] pendientes = {todasLasParadas.size()};
         for (int i = 0; i < todasLasParadas.size(); i++) {
-            final int orden = i;
             ConexionApi.getInstance(this).post(Constantes.PARADAS, todasLasParadas.get(i),
                     r -> { synchronized(pendientes) { if (--pendientes[0] <= 0) mainHandler.post(callback); } },
                     e -> { synchronized(pendientes) { if (--pendientes[0] <= 0) mainHandler.post(callback); } }
@@ -965,16 +995,16 @@ public class PublicarRuta extends BaseActivity {
     private void guardarParadaOrigen(int idRuta, String nombreOrigen, Runnable callback) {
         try {
             JSONObject body = new JSONObject();
-            body.put("idRuta",idRuta); body.put("nombre",nombreOrigen);
-            body.put("lat",origenPoint.getLatitude()); body.put("lng",origenPoint.getLongitude());
-            body.put("orden",0); body.put("kmAcumulado",0.0); body.put("tipo","SUBIDA");
+            body.put("idRuta", idRuta); body.put("nombre", nombreOrigen);
+            body.put("lat", origenPoint.getLatitude()); body.put("lng", origenPoint.getLongitude());
+            body.put("orden", 0); body.put("kmAcumulado", 0.0); body.put("tipo", "SUBIDA");
             ConexionApi.getInstance(this).post(Constantes.PARADAS, body,
                     r -> {
                         try {
                             JSONObject bodyD = new JSONObject();
-                            bodyD.put("idRuta",idRuta); bodyD.put("nombre",editDestino.getText().toString().trim());
-                            bodyD.put("lat",destinoPoint.getLatitude()); bodyD.put("lng",destinoPoint.getLongitude());
-                            bodyD.put("orden",1); bodyD.put("kmAcumulado",rutaSeleccionada!=null?rutaSeleccionada.distancia:0); bodyD.put("tipo","BAJADA");
+                            bodyD.put("idRuta", idRuta); bodyD.put("nombre", editDestino.getText().toString().trim());
+                            bodyD.put("lat", destinoPoint.getLatitude()); bodyD.put("lng", destinoPoint.getLongitude());
+                            bodyD.put("orden", 1); bodyD.put("kmAcumulado", rutaSeleccionada != null ? rutaSeleccionada.distancia : 0); bodyD.put("tipo", "BAJADA");
                             ConexionApi.getInstance(this).post(Constantes.PARADAS, bodyD,
                                     r2 -> mainHandler.post(callback), e2 -> mainHandler.post(callback));
                         } catch (Exception e) { mainHandler.post(callback); }

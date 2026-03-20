@@ -27,6 +27,7 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.chip.Chip;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.json.JSONArray;
@@ -71,7 +72,7 @@ public class PerfilUsuario extends BaseActivity {
     private final List<JSONObject> listaVehiculos = new ArrayList<>();
     private int vehiculoSeleccionadoIndex = 0;
 
-    // ── Datos de ranking cargados asincrónicamente ────────────────────────────
+    // ── Datos de ranking ──────────────────────────────────────────────────────
     private int       rankingPosicion     = -1;
     private int       rankingTotal        = 0;
     private double    promedioGlobal      = 0;
@@ -92,10 +93,23 @@ public class PerfilUsuario extends BaseActivity {
 
         session = new SessionManager(this);
 
+        // ══════════════════════════════════════════════════════
+        //  NUEVO: Inicializa el Navigation Drawer
+        //  (BaseActivity busca drawer_layout y nav_view en el XML)
+        // ══════════════════════════════════════════════════════
+        setupDrawer(R.id.nav_perfil);
+        sincronizarHeaderDrawer();
+
         enlazarVistas();
         configurarSwipeRefresh();
         configurarBotones();
         configurarBottomNav();
+
+        // ══════════════════════════════════════════════════════
+        //  NUEVO: El botón ⚙️ abre el drawer (antes no hacía nada útil)
+        // ══════════════════════════════════════════════════════
+        View btnConf = findViewById(R.id.btn_configuraciones);
+        if (btnConf != null) btnConf.setOnClickListener(v -> abrirDrawer());
     }
 
     @Override
@@ -117,7 +131,81 @@ public class PerfilUsuario extends BaseActivity {
     }
 
     // =========================================================================
-    //  ENLAZAR VISTAS
+    //  NUEVO: Sincroniza el header del drawer con SessionManager
+    //  Lee exactamente los mismos datos que rellenarDatos() usa para el perfil
+    // =========================================================================
+
+    // ─── REEMPLAZA el método sincronizarHeaderDrawer() en PerfilUsuario.java ───
+// El resto del archivo NO cambia.
+
+    private void sincronizarHeaderDrawer() {
+        if (navView == null) return;
+        View header = navView.getHeaderView(0);
+        if (header == null) return;
+
+        String nombre  = session.getNombre();
+        String email   = session.getEmail();
+        String rol     = session.isConductor() ? "Conductor" : "Pasajero";
+        String fotoUrl = session.getFotoPerfil();
+
+        // ── Textos ─────────────────────────────────────────────────────────────
+        TextView navNombre = header.findViewById(R.id.nav_tv_nombre);
+        if (navNombre != null) navNombre.setText(nombre);
+
+        TextView navEmail = header.findViewById(R.id.nav_tv_email);
+        if (navEmail != null) navEmail.setText(email.isEmpty() ? "Sin correo" : email);
+
+        Chip navChip = header.findViewById(R.id.nav_chip_rol);
+        if (navChip != null) navChip.setText(rol);
+
+        // ── Avatar ─────────────────────────────────────────────────────────────
+        MaterialCardView navCardFoto    = header.findViewById(R.id.nav_card_avatar_foto);
+        MaterialCardView navCardInicial = header.findViewById(R.id.nav_card_avatar_inicial);
+        ImageView        navIvFoto      = header.findViewById(R.id.nav_iv_avatar);
+        TextView         navTvInicial   = header.findViewById(R.id.nav_tv_inicial);
+
+        if (fotoUrl != null && !fotoUrl.isEmpty() && !fotoUrl.equals("null")) {
+            if (navCardFoto    != null) navCardFoto.setVisibility(View.VISIBLE);
+            if (navCardInicial != null) navCardInicial.setVisibility(View.GONE);
+            if (navIvFoto != null)
+                Glide.with(this)
+                        .load(fotoUrl)
+                        .circleCrop()
+                        .placeholder(R.drawable.logomo)
+                        .error(R.drawable.logomo)
+                        .into(navIvFoto);
+        } else {
+            if (navCardFoto    != null) navCardFoto.setVisibility(View.GONE);
+            if (navCardInicial != null) navCardInicial.setVisibility(View.VISIBLE);
+            if (navTvInicial != null && nombre != null && !nombre.isEmpty())
+                navTvInicial.setText(String.valueOf(nombre.charAt(0)).toUpperCase());
+        }
+
+        // ── Click en el header → cerrar drawer ────────────────────────────────
+        header.setOnClickListener(v -> {
+            if (drawerLayout != null)
+                drawerLayout.closeDrawer(androidx.core.view.GravityCompat.START);
+        });
+
+        // ══════════════════════════════════════════════════════════════════════
+        //  FIX: ocultar/mostrar grupo conductor DESPUÉS de que el drawer
+        //  termine de inflar su menú (post al hilo principal)
+        // ══════════════════════════════════════════════════════════════════════
+        navView.post(() -> {
+            if (navView.getMenu() == null) return;
+            boolean esConductor = session.isConductor();
+
+            // Grupo exclusivo de conductores
+            navView.getMenu().setGroupVisible(R.id.group_conductor, esConductor);
+
+            // "Mis Reservas" solo visible para pasajeros
+            android.view.MenuItem itemReservas = navView.getMenu().findItem(R.id.nav_reservas);
+            if (itemReservas != null) itemReservas.setVisible(!esConductor);
+        });
+    }
+
+    // =========================================================================
+    //  ENLAZAR VISTAS  (sin cambios)
     // =========================================================================
 
     private void enlazarVistas() {
@@ -127,7 +215,6 @@ public class PerfilUsuario extends BaseActivity {
         tvTipoUsuario   = findViewById(R.id.tv_tipo_usuario);
         tvInicialAvatar = findViewById(R.id.tv_inicial_avatar);
 
-        // Avatar con foto real
         ivAvatar         = findViewById(R.id.iv_avatar);
         cardAvatarFoto   = findViewById(R.id.card_avatar_foto);
         cardAvatarInicial = findViewById(R.id.card_avatar_inicial);
@@ -158,7 +245,7 @@ public class PerfilUsuario extends BaseActivity {
     }
 
     // =========================================================================
-    //  NAVEGACIÓN ATRÁS
+    //  NAVEGACIÓN ATRÁS  (sin cambios)
     // =========================================================================
 
     private void navegarAtras() {
@@ -172,7 +259,7 @@ public class PerfilUsuario extends BaseActivity {
     }
 
     // =========================================================================
-    //  SWIPE REFRESH
+    //  SWIPE REFRESH  — añade sincronizarHeaderDrawer al refrescar
     // =========================================================================
 
     private void configurarSwipeRefresh() {
@@ -180,6 +267,7 @@ public class PerfilUsuario extends BaseActivity {
         swipeRefresh.setColorSchemeResources(R.color.teal_500);
         swipeRefresh.setOnRefreshListener(() -> {
             rellenarDatos();
+            sincronizarHeaderDrawer(); // ← actualiza el drawer también
             cargarCalificaciones();
             if (session.isConductor()) cargarVehiculosDesdeApi();
             else                       swipeRefresh.setRefreshing(false);
@@ -187,7 +275,7 @@ public class PerfilUsuario extends BaseActivity {
     }
 
     // =========================================================================
-    //  RELLENAR DATOS DE SESIÓN (con foto de perfil Cloudinary)
+    //  RELLENAR DATOS  (sin cambios — usa SessionManager igual que antes)
     // =========================================================================
 
     private void rellenarDatos() {
@@ -201,14 +289,11 @@ public class PerfilUsuario extends BaseActivity {
         if (tvTipoUsuario != null)
             tvTipoUsuario.setText(session.isConductor() ? "Conductor" : "Pasajero");
 
-        // ── Foto de perfil (Cloudinary) vs inicial de fallback ──────────────
         String fotoUrl = session.getFotoPerfil();
 
         if (ivAvatar != null && !fotoUrl.isEmpty() && !fotoUrl.equals("null")) {
-            // Mostrar foto real, ocultar card de inicial
             if (cardAvatarFoto    != null) cardAvatarFoto.setVisibility(View.VISIBLE);
             if (cardAvatarInicial != null) cardAvatarInicial.setVisibility(View.GONE);
-
             Glide.with(this)
                     .load(fotoUrl)
                     .circleCrop()
@@ -216,17 +301,15 @@ public class PerfilUsuario extends BaseActivity {
                     .error(R.drawable.logomo)
                     .into(ivAvatar);
         } else {
-            // Fallback: mostrar inicial de nombre
             if (cardAvatarFoto    != null) cardAvatarFoto.setVisibility(View.GONE);
             if (cardAvatarInicial != null) cardAvatarInicial.setVisibility(View.VISIBLE);
-
             if (tvInicialAvatar != null && nombre != null && !nombre.isEmpty())
                 tvInicialAvatar.setText(String.valueOf(nombre.charAt(0)).toUpperCase());
         }
     }
 
     // =========================================================================
-    //  CALIFICACIONES — carga orquestada con ranking
+    //  CALIFICACIONES  (sin cambios)
     // =========================================================================
 
     private void cargarCalificaciones() {
@@ -252,7 +335,6 @@ public class PerfilUsuario extends BaseActivity {
             }
         };
 
-        // ── 1. Promedio ───────────────────────────────────────────────────────
         ConexionApi.getInstance(this).getObjectNoCache(
                 Constantes.calificacionPromedio((long) idUsuario),
                 promedioObj -> {
@@ -273,7 +355,6 @@ public class PerfilUsuario extends BaseActivity {
                 err -> intentarRenderizar.run()
         );
 
-        // ── 2. Lista de calificaciones ────────────────────────────────────────
         ConexionApi.getInstance(this).getArrayNoCache(
                 Constantes.calificacionesPorUsuario((long) idUsuario),
                 lista -> {
@@ -283,7 +364,6 @@ public class PerfilUsuario extends BaseActivity {
                 err -> intentarRenderizar.run()
         );
 
-        // ── 3. Ranking ────────────────────────────────────────────────────────
         String urlTop = session.isConductor()
                 ? Constantes.CALIFICACIONES_TOP_CONDUCTORES
                 : Constantes.CALIFICACIONES_TOP_VIAJEROS;
@@ -331,7 +411,7 @@ public class PerfilUsuario extends BaseActivity {
     }
 
     // =========================================================================
-    //  RENDERIZAR SECCIÓN CALIFICACIONES
+    //  RENDERIZAR CALIFICACIONES  (sin cambios)
     // =========================================================================
 
     private void renderizarSeccionCalificaciones(double promedio, int total,
@@ -370,7 +450,6 @@ public class PerfilUsuario extends BaseActivity {
         inner.setOrientation(LinearLayout.VERTICAL);
         inner.setPadding(p16, p16, p16, p16);
 
-        // Encabezado
         LinearLayout encabezado = new LinearLayout(this);
         encabezado.setOrientation(LinearLayout.HORIZONTAL);
         encabezado.setGravity(Gravity.CENTER_VERTICAL);
@@ -690,7 +769,7 @@ public class PerfilUsuario extends BaseActivity {
     }
 
     // =========================================================================
-    //  FILA INDIVIDUAL DE CALIFICACIÓN
+    //  FILA INDIVIDUAL DE CALIFICACIÓN  (sin cambios)
     // =========================================================================
 
     private View crearFilaCalificacion(JSONObject cal, float d,
@@ -813,7 +892,7 @@ public class PerfilUsuario extends BaseActivity {
     }
 
     // =========================================================================
-    //  DIÁLOGO TODAS LAS CALIFICACIONES
+    //  DIÁLOGO TODAS LAS CALIFICACIONES  (sin cambios)
     // =========================================================================
 
     private void mostrarTodasCalificaciones(JSONArray calificaciones, double promedio) {
@@ -844,22 +923,8 @@ public class PerfilUsuario extends BaseActivity {
     }
 
     // =========================================================================
-    //  HELPERS
+    //  HELPERS  (sin cambios)
     // =========================================================================
-
-    private String generarEstrellas(double promedio) {
-        if (promedio <= 0) return "☆☆☆☆☆";
-        StringBuilder sb = new StringBuilder();
-        int llenas = (int) Math.round(promedio);
-        for (int i = 1; i <= 5; i++) sb.append(i <= llenas ? "★" : "☆");
-        return sb.toString();
-    }
-
-    private String generarEstrellasPequenas(int puntuacion) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 1; i <= 5; i++) sb.append(i <= puntuacion ? "★" : "☆");
-        return sb.toString();
-    }
 
     private String extraerNombreCalificador(JSONObject cal) {
         for (String k : new String[]{"calificador", "usuario", "user", "pasajero", "conductor"}) {
@@ -879,7 +944,7 @@ public class PerfilUsuario extends BaseActivity {
     }
 
     // =========================================================================
-    //  VEHÍCULOS
+    //  VEHÍCULOS  (sin cambios)
     // =========================================================================
 
     private void cargarVehiculosDesdeApi() {
@@ -1020,7 +1085,7 @@ public class PerfilUsuario extends BaseActivity {
     }
 
     // =========================================================================
-    //  BOTONES
+    //  BOTONES  (sin cambios)
     // =========================================================================
 
     private void configurarBotones() {
@@ -1065,7 +1130,7 @@ public class PerfilUsuario extends BaseActivity {
     }
 
     // =========================================================================
-    //  BOTTOM NAV
+    //  BOTTOM NAV  (sin cambios)
     // =========================================================================
 
     private void configurarBottomNav() {

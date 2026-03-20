@@ -1,6 +1,5 @@
 package com.arlys.moviflexx.controller;
 
-import android.animation.ObjectAnimator;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
@@ -14,10 +13,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.arlys.moviflexx.R;
+import com.arlys.moviflexx.model.AnimUtils;
 import com.arlys.moviflexx.model.ConexionApi;
 import com.arlys.moviflexx.model.Constantes;
 import com.arlys.moviflexx.model.SessionManager;
 import com.arlys.moviflexx.model.SesionUsuario;
+import com.arlys.moviflexx.model.ViajeAlertaManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
@@ -37,7 +38,7 @@ public class PublicarViaje extends BaseActivity {
 
     // ─── VISTAS ───────────────────────────────────────────────────────────────
     private TextInputEditText    editFechaHora;
-    private TextInputEditText    editPrecio;          // solo lectura, no editable
+    private TextInputEditText    editPrecio;
     private Spinner              spinnerCupos;
     private MaterialCardView     mainCard;
     private MaterialCardView     loaderContainer;
@@ -45,12 +46,31 @@ public class PublicarViaje extends BaseActivity {
     private MaterialButton       btnPublicar;
     private BottomNavigationView bottomNavigation;
 
+    // Header
+    private TextView txtHeaderTitulo;
+    private View     chipEstadoHeader;
+
+    // Resumen ruta / vehículo
     private TextView         txtDestinoInfo;
     private TextView         txtOrigenInfo;
     private TextView         txtVehiculoInfo;
     private TextView         txtConductorInfo;
     private TextView         txtPrecioSugerido;
     private MaterialCardView txtPrecioSugeridoCard;
+
+    // Cards extra del XML
+    private MaterialCardView cardViajeActivo;
+    private MaterialCardView metadataCard;
+    private MaterialCardView statsCard;
+
+    // Viaje activo
+    private TextView       txtViajeActivoRuta;
+    private TextView       txtViajeActivoEstado;
+    private TextView       txtViajeActivoCupos;
+    private TextView       txtViajeActivoPrecio;
+    private TextView       txtViajeActivoHora;
+    private MaterialButton btnVerMapaViajeActivo;
+    private MaterialButton btnFinalizarViajeActivo;
 
     // ─── SESIÓN ───────────────────────────────────────────────────────────────
     private SessionManager session;
@@ -68,37 +88,47 @@ public class PublicarViaje extends BaseActivity {
     private String tipoTransporte    = "driving";
     private int    indiceRuta        = 0;
 
-    // ─── PRECIO CALCULADO (fijo, no editable) ─────────────────────────────────
+    // ─── PRECIO CALCULADO ────────────────────────────────────────────────────
     private int precioCalculado = 0;
 
-    // ─── FECHA ────────────────────────────────────────────────────────────────
+    // ─── FECHA ───────────────────────────────────────────────────────────────
     private final Calendar calendarioSalida = Calendar.getInstance();
     private boolean fechaSeleccionada = false;
 
-    /* ─── LIFECYCLE ─────────────────────────────────────────────────────────── */
+    // ─── FECHA COMO STRING (para ViajeAlertaManager) ─────────────────────────
+    private String fechaHoraFinal = "";
+
+    /* ════════════════════════════════════════════════════════════════════════
+       LIFECYCLE
+    ════════════════════════════════════════════════════════════════════════ */
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_publicar_viaje);
-
         session = new SessionManager(this);
-
         validarSesion();
         obtenerDatosIntent();
         enlazarVistas();
         configurarUI();
     }
 
-    /* ─── VALIDAR SESIÓN ────────────────────────────────────────────────────── */
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Si el usuario sale sin publicar, no hay jobs que cancelar todavía.
+        // Los jobs se crean solo al publicar exitosamente.
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       VALIDAR SESIÓN
+    ════════════════════════════════════════════════════════════════════════ */
 
     private void validarSesion() {
         SesionUsuario.init(this);
         if (!session.isLoggedIn()) { irAlLogin(); return; }
-
         conductorIdInt = session.getIdUsuario();
         vehiculoIdInt  = session.getVehiculoId();
-
         if (conductorIdInt <= 0 || vehiculoIdInt <= 0) {
             Toast.makeText(this,
                     "⚠️ Debes registrar un vehículo antes de publicar viajes.",
@@ -107,7 +137,9 @@ public class PublicarViaje extends BaseActivity {
         }
     }
 
-    /* ─── DATOS DEL INTENT ───────────────────────────────────────────────────── */
+    /* ════════════════════════════════════════════════════════════════════════
+       DATOS DEL INTENT
+    ════════════════════════════════════════════════════════════════════════ */
 
     private void obtenerDatosIntent() {
         Intent i = getIntent();
@@ -137,7 +169,9 @@ public class PublicarViaje extends BaseActivity {
         }
     }
 
-    /* ─── ENLAZAR VISTAS ─────────────────────────────────────────────────────── */
+    /* ════════════════════════════════════════════════════════════════════════
+       ENLAZAR VISTAS
+    ════════════════════════════════════════════════════════════════════════ */
 
     private void enlazarVistas() {
         editFechaHora         = findViewById(R.id.edit_fecha_hora);
@@ -148,15 +182,33 @@ public class PublicarViaje extends BaseActivity {
         overlayBackground     = findViewById(R.id.overlay_background);
         btnPublicar           = findViewById(R.id.btn_publicar_viaje);
         bottomNavigation      = findViewById(R.id.bottom_navigation);
+
+        txtHeaderTitulo  = findViewById(R.id.txt_header_titulo);
+        chipEstadoHeader = findViewById(R.id.chip_estado_header);
+
         txtDestinoInfo        = findViewById(R.id.txt_destino_info);
         txtOrigenInfo         = findViewById(R.id.txt_origen_info);
         txtVehiculoInfo       = findViewById(R.id.txt_vehiculo_info);
         txtConductorInfo      = findViewById(R.id.txt_conductor_info);
         txtPrecioSugerido     = findViewById(R.id.txt_precio_sugerido);
         txtPrecioSugeridoCard = findViewById(R.id.txt_precio_sugerido_card);
+
+        cardViajeActivo = findViewById(R.id.card_viaje_activo);
+        metadataCard    = findViewById(R.id.metadata_card);
+        statsCard       = findViewById(R.id.stats_card);
+
+        txtViajeActivoRuta      = findViewById(R.id.txt_viaje_activo_ruta);
+        txtViajeActivoEstado    = findViewById(R.id.txt_viaje_activo_estado);
+        txtViajeActivoCupos     = findViewById(R.id.txt_viaje_activo_cupos);
+        txtViajeActivoPrecio    = findViewById(R.id.txt_viaje_activo_precio);
+        txtViajeActivoHora      = findViewById(R.id.txt_viaje_activo_hora);
+        btnVerMapaViajeActivo   = findViewById(R.id.btn_ver_mapa_viaje_activo);
+        btnFinalizarViajeActivo = findViewById(R.id.btn_finalizar_viaje_activo);
     }
 
-    /* ─── CONFIGURAR UI ──────────────────────────────────────────────────────── */
+    /* ════════════════════════════════════════════════════════════════════════
+       CONFIGURAR UI
+    ════════════════════════════════════════════════════════════════════════ */
 
     private void configurarUI() {
         txtDestinoInfo.setText(" " + destinoRuta);
@@ -170,16 +222,25 @@ public class PublicarViaje extends BaseActivity {
         txtConductorInfo.setText(" Conductor: " + nombreConductor);
 
         configurarSpinnerConCapacidad();
-        calcularYMostrarPrecio();      // calcula precioCalculado, lo muestra y bloquea el campo
+        calcularYMostrarPrecio();
         configurarSelectorFechaHora();
+
         animateButton(btnPublicar, () -> {
             if (validarFormulario()) publicarViaje();
         });
+
+        if (btnVerMapaViajeActivo != null)
+            animateButton(btnVerMapaViajeActivo, () -> goTo(Mapa.class, Transition.SLIDE));
+        if (btnFinalizarViajeActivo != null)
+            animateButton(btnFinalizarViajeActivo, this::confirmarFinalizarViaje);
+
         configurarBottomNavigation();
-        animarEntradaMainCard();
+        animarEntradaPantalla();
     }
 
-    /* ─── SPINNER CUPOS ─────────────────────────────────────────────────────── */
+    /* ════════════════════════════════════════════════════════════════════════
+       SPINNER CUPOS
+    ════════════════════════════════════════════════════════════════════════ */
 
     private void configurarSpinnerConCapacidad() {
         String capacidadStr = session.getVCapacidad();
@@ -198,7 +259,9 @@ public class PublicarViaje extends BaseActivity {
         spinnerCupos.setSelection(maxCupos - 1);
     }
 
-    /* ─── CALCULAR Y MOSTRAR PRECIO (no editable) ───────────────────────────── */
+    /* ════════════════════════════════════════════════════════════════════════
+       CALCULAR Y MOSTRAR PRECIO
+    ════════════════════════════════════════════════════════════════════════ */
 
     private void calcularYMostrarPrecio() {
         double precioDouble;
@@ -218,9 +281,6 @@ public class PublicarViaje extends BaseActivity {
         precioDouble    = Math.ceil(precioDouble / 100.0) * 100.0;
         precioCalculado = Math.max((int) Math.round(precioDouble), 1);
 
-        Log.d(TAG, "Precio calculado automáticamente: $" + precioCalculado + " COP");
-
-        // ── Mostrar en el campo y bloquearlo completamente ──
         if (editPrecio != null) {
             editPrecio.setText(String.format(Locale.getDefault(), "%,d", precioCalculado));
             editPrecio.setFocusable(false);
@@ -228,10 +288,9 @@ public class PublicarViaje extends BaseActivity {
             editPrecio.setClickable(false);
             editPrecio.setLongClickable(false);
             editPrecio.setCursorVisible(false);
-            editPrecio.setKeyListener(null);   // elimina el teclado al tocar
+            editPrecio.setKeyListener(null);
         }
 
-        // ── Detalle informativo ──
         if (txtPrecioSugerido != null) {
             StringBuilder detalle = new StringBuilder();
             switch (origenPrecio) {
@@ -239,11 +298,8 @@ public class PublicarViaje extends BaseActivity {
                     detalle.append(String.format(Locale.getDefault(),
                             "⛽ $%,d COP combustible", (int) Math.round(costoCombustible)));
                     break;
-                case "km":
-                    detalle.append(" Estimado: $700/km");
-                    break;
-                default:
-                    detalle.append("💡 Precio mínimo base");
+                case "km":  detalle.append(" Estimado: $700/km"); break;
+                default:    detalle.append("💡 Precio mínimo base");
             }
             if (distanciaKm > 0)
                 detalle.append(String.format(Locale.getDefault(), "  ·   %.1f km", distanciaKm));
@@ -256,28 +312,30 @@ public class PublicarViaje extends BaseActivity {
         }
     }
 
-    /* ─── SELECTOR DE FECHA Y HORA ───────────────────────────────────────────── */
+    /* ════════════════════════════════════════════════════════════════════════
+       SELECTOR FECHA / HORA
+    ════════════════════════════════════════════════════════════════════════ */
 
     private void configurarSelectorFechaHora() {
         actualizarCampoFechaHora();
         editFechaHora.setFocusable(false);
         editFechaHora.setClickable(true);
-        editFechaHora.setOnClickListener(v -> mostrarDialogoFecha());
+        editFechaHora.setOnClickListener(v -> {
+            AnimUtils.tapPulse(v);
+            v.postDelayed(this::mostrarDialogoFecha, 120);
+        });
     }
 
     private void mostrarDialogoFecha() {
         Calendar hoy = Calendar.getInstance();
-        new DatePickerDialog(
-                this,
+        new DatePickerDialog(this,
                 (view, year, month, day) -> {
                     calendarioSalida.set(Calendar.YEAR,         year);
                     calendarioSalida.set(Calendar.MONTH,        month);
                     calendarioSalida.set(Calendar.DAY_OF_MONTH, day);
                     mostrarDialogoHora();
                 },
-                hoy.get(Calendar.YEAR),
-                hoy.get(Calendar.MONTH),
-                hoy.get(Calendar.DAY_OF_MONTH)
+                hoy.get(Calendar.YEAR), hoy.get(Calendar.MONTH), hoy.get(Calendar.DAY_OF_MONTH)
         ) {{
             getDatePicker().setMinDate(hoy.getTimeInMillis());
             Calendar maxFecha = Calendar.getInstance();
@@ -288,8 +346,7 @@ public class PublicarViaje extends BaseActivity {
 
     private void mostrarDialogoHora() {
         Calendar hoy = Calendar.getInstance();
-        new TimePickerDialog(
-                this,
+        new TimePickerDialog(this,
                 (view, hora, minuto) -> {
                     calendarioSalida.set(Calendar.HOUR_OF_DAY, hora);
                     calendarioSalida.set(Calendar.MINUTE,      minuto);
@@ -297,30 +354,32 @@ public class PublicarViaje extends BaseActivity {
                     fechaSeleccionada = true;
                     actualizarCampoFechaHora();
                     editFechaHora.setError(null);
+                    AnimUtils.bounceIn(editFechaHora, 0);
                 },
-                hoy.get(Calendar.HOUR_OF_DAY),
-                hoy.get(Calendar.MINUTE),
-                false
+                hoy.get(Calendar.HOUR_OF_DAY), hoy.get(Calendar.MINUTE), false
         ).show();
     }
 
     private void actualizarCampoFechaHora() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-        editFechaHora.setText(sdf.format(calendarioSalida.getTime()));
+        fechaHoraFinal = sdf.format(calendarioSalida.getTime());
+        editFechaHora.setText(fechaHoraFinal);
     }
 
-    /* ─── VALIDACIONES ────────────────────────────────────────────────────────── */
+    /* ════════════════════════════════════════════════════════════════════════
+       VALIDACIONES
+    ════════════════════════════════════════════════════════════════════════ */
 
     private boolean validarFormulario() {
         if (!fechaSeleccionada) {
             editFechaHora.setError("Selecciona fecha y hora de salida");
-            animarError(mainCard);
-            Toast.makeText(this, " Selecciona la fecha y hora de salida", Toast.LENGTH_SHORT).show();
+            AnimUtils.shake(editFechaHora);
+            Toast.makeText(this, "Selecciona la fecha y hora de salida", Toast.LENGTH_SHORT).show();
             return false;
         }
         if (calendarioSalida.getTimeInMillis() <= System.currentTimeMillis()) {
             editFechaHora.setError("La hora de salida debe ser futura");
-            animarError(mainCard);
+            AnimUtils.shake(editFechaHora);
             Toast.makeText(this, "La hora de salida debe ser futura", Toast.LENGTH_SHORT).show();
             return false;
         }
@@ -328,21 +387,23 @@ public class PublicarViaje extends BaseActivity {
         maxFecha.add(Calendar.DAY_OF_YEAR, MAX_DIAS_ADELANTE);
         if (calendarioSalida.after(maxFecha)) {
             editFechaHora.setError("La salida no puede ser en más de " + MAX_DIAS_ADELANTE + " días");
-            animarError(mainCard);
+            AnimUtils.shake(editFechaHora);
             Toast.makeText(this,
-                    " La fecha no puede estar a más de " + MAX_DIAS_ADELANTE + " días",
+                    "La fecha no puede estar a más de " + MAX_DIAS_ADELANTE + " días",
                     Toast.LENGTH_SHORT).show();
             return false;
         }
         if (precioCalculado <= 0) {
-            animarError(mainCard);
-            Toast.makeText(this, "❌ Error en el precio de la ruta", Toast.LENGTH_SHORT).show();
+            AnimUtils.shake(editPrecio);
+            Toast.makeText(this, "Error en el precio de la ruta", Toast.LENGTH_SHORT).show();
             return false;
         }
         return true;
     }
 
-    /* ─── PUBLICAR VIAJE ─────────────────────────────────────────────────────── */
+    /* ════════════════════════════════════════════════════════════════════════
+       PUBLICAR VIAJE  ←  AQUÍ ESTÁ LA INTEGRACIÓN CON ViajeAlertaManager
+    ════════════════════════════════════════════════════════════════════════ */
 
     private void publicarViaje() {
         String token = SesionUsuario.getToken();
@@ -352,15 +413,10 @@ public class PublicarViaje extends BaseActivity {
 
         try {
             int    cupos    = Integer.parseInt(spinnerCupos.getSelectedItem().toString());
-            String fechaHora = editFechaHora.getText().toString().trim();
+            String fechaHora = fechaHoraFinal.isEmpty()
+                    ? editFechaHora.getText().toString().trim()
+                    : fechaHoraFinal;
 
-            Log.d(TAG, "✅ Publicando → precio=" + precioCalculado
-                    + " | cupos=" + cupos
-                    + " | fecha=" + fechaHora
-                    + " | rutaId=" + rutaId
-                    + " | vehiculoId=" + vehiculoIdInt);
-
-            // precioCalculado viene de calcularYMostrarPrecio(), nunca del EditText
             JSONObject body = new JSONObject();
             body.put("idRuta",           rutaId);
             body.put("idVehiculos",      vehiculoIdInt);
@@ -368,21 +424,54 @@ public class PublicarViaje extends BaseActivity {
             body.put("cuposTotales",     cupos);
             body.put("cuposDisponibles", cupos);
             body.put("precio",           precioCalculado);
+            body.put("estado",           "DISPONIBLE");
 
-            Log.d(TAG, "POST /api/viajes → " + body.toString());
+            final String fechaHoraParaAlertas = fechaHora;
 
-            ConexionApi.getInstance(this).post(
-                    Constantes.VIAJES, body,
+            ConexionApi.getInstance(this).post(Constantes.VIAJES, body,
+
+                    // ── ÉXITO ──────────────────────────────────────────────
                     response -> {
                         mostrarLoader(false);
-                        Log.d(TAG, "✅ Viaje publicado: " + response.toString());
-                        Toast.makeText(this, "✅ ¡Viaje publicado correctamente!", Toast.LENGTH_LONG).show();
+
+                        // Extraer el id del viaje recién creado
+                        int idViajeCreado = response.optInt("idViajes",
+                                response.optInt("id",
+                                        response.optInt("idViaje", 0)));
+
+                        Log.d(TAG, "Viaje publicado. idViaje=" + idViajeCreado
+                                + " | fechaSalida=" + fechaHoraParaAlertas);
+
+                        // ── PROGRAMAR ALERTAS Y INICIO AUTOMÁTICO ──────────
+                        // Si el servidor devolvió el id del viaje, programamos:
+                        //   · alerta 5 min antes  → modal + notif local
+                        //   · alerta 1 min antes  → modal + notif local
+                        //   · inicio automático   → POST /viajes/{id}/iniciar
+                        //     + notificación push a los pasajeros
+                        if (idViajeCreado > 0) {
+                            ViajeAlertaManager.programarAlertas(
+                                    PublicarViaje.this,
+                                    idViajeCreado,
+                                    fechaHoraParaAlertas
+                            );
+                            Log.d(TAG, "Alertas programadas para viaje " + idViajeCreado);
+                        } else {
+                            // El servidor no devolvió id: las alertas no se pueden
+                            // programar en esta sesión, pero el viaje sí se creó.
+                            Log.w(TAG, "Viaje creado pero sin id en la respuesta. "
+                                    + "Alertas no programadas.");
+                        }
+
+                        Toast.makeText(PublicarViaje.this,
+                                "¡Viaje publicado correctamente!", Toast.LENGTH_LONG).show();
                         goTo(HomeConductor.class, Transition.SLIDE, true);
                     },
+
+                    // ── ERROR ──────────────────────────────────────────────
                     error -> {
                         mostrarLoader(false);
-                        animarError(mainCard);
-                        String msg = "❌ Error al publicar el viaje";
+                        AnimUtils.shake(mainCard);
+                        String msg = "Error al publicar el viaje";
                         if (error != null && error.networkResponse != null) {
                             int status = error.networkResponse.statusCode;
                             try {
@@ -390,17 +479,17 @@ public class PublicarViaje extends BaseActivity {
                                 Log.e(TAG, "Error HTTP " + status + " → " + errorBody);
                             } catch (Exception ignored) {}
                             switch (status) {
-                                case 400: msg = "❌ Datos inválidos (400)";                    break;
-                                case 401: msg = "❌ Sesión expirada (401)";                    break;
-                                case 403: msg = "❌ Sin permisos (403)";                       break;
-                                case 404: msg = "❌ Ruta no encontrada (404)";                 break;
-                                case 409: msg = "❌ Ya existe un viaje con estos datos (409)"; break;
-                                case 422: msg = "❌ Validación fallida (422)";                 break;
-                                case 429: msg = "❌ Demasiadas solicitudes (429)";             break;
-                                case 500: msg = "❌ Error en el servidor (500)";               break;
+                                case 400: msg = "Datos inválidos (400)";                    break;
+                                case 401: msg = "Sesión expirada (401)";                    break;
+                                case 403: msg = "Sin permisos (403)";                       break;
+                                case 404: msg = "Ruta no encontrada (404)";                 break;
+                                case 409: msg = "Ya existe un viaje con estos datos (409)"; break;
+                                case 422: msg = "Validación fallida (422)";                 break;
+                                case 429: msg = "Demasiadas solicitudes (429)";             break;
+                                case 500: msg = "Error en el servidor (500)";               break;
                             }
                         }
-                        Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+                        Toast.makeText(PublicarViaje.this, msg, Toast.LENGTH_LONG).show();
                     }
             );
 
@@ -411,32 +500,116 @@ public class PublicarViaje extends BaseActivity {
         }
     }
 
-    /* ─── LOADER ─────────────────────────────────────────────────────────────── */
+    /* ════════════════════════════════════════════════════════════════════════
+       VIAJE ACTIVO
+    ════════════════════════════════════════════════════════════════════════ */
+
+    /**
+     * Muestra card_viaje_activo y oculta el formulario.
+     * Llámalo cuando detectes que el conductor ya tiene un viaje en curso.
+     */
+    public void mostrarCardViajeActivo(String ruta, String estado,
+                                       String cupos, String precio, String hora) {
+        if (cardViajeActivo == null) return;
+        if (txtViajeActivoRuta   != null) txtViajeActivoRuta.setText(ruta);
+        if (txtViajeActivoEstado != null) txtViajeActivoEstado.setText("● " + estado.toUpperCase());
+        if (txtViajeActivoCupos  != null) txtViajeActivoCupos.setText(cupos);
+        if (txtViajeActivoPrecio != null) txtViajeActivoPrecio.setText(precio);
+        if (txtViajeActivoHora   != null) txtViajeActivoHora.setText(hora);
+
+        if (mainCard != null && mainCard.getVisibility() == View.VISIBLE)
+            AnimUtils.fadeOut(mainCard, () -> mainCard.setVisibility(View.GONE));
+
+        cardViajeActivo.setVisibility(View.VISIBLE);
+        AnimUtils.bounceIn(cardViajeActivo, 100);
+    }
+
+    private void confirmarFinalizarViaje() {
+        // Lógica de finalizar viaje aquí.
+        // Al terminar puedes restaurar el formulario así:
+        //   AnimUtils.fadeOut(cardViajeActivo, () -> cardViajeActivo.setVisibility(View.GONE));
+        //   mainCard.setVisibility(View.VISIBLE);
+        //   AnimUtils.fadeSlideIn(mainCard, 0);
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       LOADER
+    ════════════════════════════════════════════════════════════════════════ */
 
     private void mostrarLoader(boolean mostrar) {
-        overlayBackground.setVisibility(mostrar ? View.VISIBLE : View.GONE);
-        loaderContainer.setVisibility(mostrar   ? View.VISIBLE : View.GONE);
+        if (mostrar) {
+            overlayBackground.setVisibility(View.VISIBLE);
+            AnimUtils.fadeIn(overlayBackground, 0);
+            loaderContainer.setVisibility(View.VISIBLE);
+            AnimUtils.bounceIn(loaderContainer, 80);
+        } else {
+            AnimUtils.fadeOut(overlayBackground, () -> overlayBackground.setVisibility(View.GONE));
+            AnimUtils.fadeOut(loaderContainer,   () -> loaderContainer.setVisibility(View.GONE));
+        }
         btnPublicar.setEnabled(!mostrar);
         btnPublicar.setText(mostrar ? "Publicando..." : "PUBLICAR VIAJE EN POPAYÁN");
+        btnPublicar.setAlpha(mostrar ? 0.6f : 1.0f);
     }
 
-    /* ─── BOTTOM NAVIGATION ──────────────────────────────────────────────────── */
+    /* ════════════════════════════════════════════════════════════════════════
+       BOTTOM NAVIGATION
+    ════════════════════════════════════════════════════════════════════════ */
 
     private void configurarBottomNavigation() {
-        bottomNavigation.setOnItemSelectedListener(item -> {
-            goTo(HomeConductor.class, Transition.NONE, true);
-            return true;
-        });
+        setupNavBar(bottomNavigation, R.id.nav_mis_viajes);
     }
 
-    /* ─── NAVEGACIÓN ─────────────────────────────────────────────────────────── */
+    /* ════════════════════════════════════════════════════════════════════════
+       NAVEGACIÓN
+    ════════════════════════════════════════════════════════════════════════ */
 
     private void irAlLogin() {
         SesionUsuario.cerrarSesion();
         goTo(Login.class, Transition.FADE, true);
     }
 
-    /* ─── HELPERS DE TEXTO ───────────────────────────────────────────────────── */
+    /* ════════════════════════════════════════════════════════════════════════
+       ANIMACIONES DE ENTRADA
+    ════════════════════════════════════════════════════════════════════════ */
+
+    private void animarEntradaPantalla() {
+        if (txtHeaderTitulo != null) {
+            txtHeaderTitulo.setAlpha(0f);
+            txtHeaderTitulo.setTranslationY(-20f);
+            txtHeaderTitulo.animate()
+                    .alpha(1f).translationY(0f)
+                    .setDuration(350).setStartDelay(80)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .start();
+        }
+        if (chipEstadoHeader != null) AnimUtils.bounceIn(chipEstadoHeader, 200);
+
+        if (mainCard != null) {
+            mainCard.setAlpha(0f);
+            mainCard.setTranslationY(50f);
+            mainCard.animate()
+                    .alpha(1f).translationY(0f)
+                    .setDuration(420).setStartDelay(120)
+                    .setInterpolator(new DecelerateInterpolator(1.5f))
+                    .start();
+        }
+
+        AnimUtils.fadeSlideIn(txtVehiculoInfo,  220);
+        AnimUtils.fadeSlideIn(txtConductorInfo, 280);
+        AnimUtils.fadeSlideIn(txtOrigenInfo,    340);
+        AnimUtils.fadeSlideIn(txtDestinoInfo,   390);
+        AnimUtils.fadeSlideIn(editFechaHora,    440);
+
+        if (txtPrecioSugeridoCard != null) AnimUtils.bounceIn(txtPrecioSugeridoCard, 500);
+        if (metadataCard != null) AnimUtils.fadeSlideIn(metadataCard, 560);
+        if (statsCard    != null) AnimUtils.fadeSlideIn(statsCard,    640);
+
+        AnimUtils.fadeSlideIn(btnPublicar, 700);
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       HELPERS
+    ════════════════════════════════════════════════════════════════════════ */
 
     private String limpiarTexto(String valor, String fallback) {
         if (valor == null || valor.trim().isEmpty()) return fallback;
@@ -457,23 +630,5 @@ public class PublicarViaje extends BaseActivity {
             }
         }
         return sb.toString().trim();
-    }
-
-    /* ─── ANIMACIONES ────────────────────────────────────────────────────────── */
-
-    private void animarEntradaMainCard() {
-        if (mainCard == null) return;
-        mainCard.setAlpha(0f);
-        mainCard.setTranslationY(60f);
-        mainCard.animate().alpha(1f).translationY(0f)
-                .setDuration(500).setStartDelay(150)
-                .setInterpolator(new DecelerateInterpolator()).start();
-    }
-
-    private void animarError(View view) {
-        if (view == null) return;
-        ObjectAnimator.ofFloat(view, "translationX",
-                        0f, -14f, 14f, -10f, 10f, -6f, 6f, 0f)
-                .setDuration(450).start();
     }
 }

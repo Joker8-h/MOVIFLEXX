@@ -220,7 +220,7 @@ public class MisReservasActivity extends BaseActivity {
     private void ocultarSugerencias(){if(layoutSugerencias!=null)layoutSugerencias.setVisibility(View.GONE);}
 
     // =========================================================================
-    //  GPS (solo para obtener coordenadas, sin mapa)
+    //  GPS
     // =========================================================================
     private void verificarPermisosGPS(){
         if(ActivityCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED)
@@ -330,32 +330,374 @@ public class MisReservasActivity extends BaseActivity {
     }
 
     // =========================================================================
-    //  CARD MI RESERVA
+    //  CARD MI RESERVA — con carga robusta del nombre del conductor
     // =========================================================================
-    private void agregarCardMiReserva(JSONObject reserva){
-        float d=getResources().getDisplayMetrics().density;int p16=(int)(16*d),p12=(int)(12*d),p8=(int)(8*d),p4=(int)(4*d);
-        int idViaje=extraerIdViaje(reserva);String origen="Origen",destino="Destino",conductor="Conductor";double precio=0;String estado=reserva.optString("estado","ACTIVA");String fechaSal="";int asientos=reserva.optInt("numeroAsientos",reserva.optInt("asientos",1));String nombrePar=reserva.optString("nombreParada","");
-        JSONObject viajeObj=reserva.optJSONObject("viaje");
-        if(viajeObj!=null){if(idViaje==0)idViaje=extraerIdViaje(viajeObj);precio=viajeObj.optDouble("precio",0);fechaSal=viajeObj.optString("fechaHoraSalida","");JSONObject ruta=viajeObj.optJSONObject("ruta");if(ruta!=null){origen=extraerOrigenDeRuta(ruta);destino=extraerDestinoDeRuta(ruta);}JSONObject condObj = viajeObj.optJSONObject("conductor");
-            if (condObj != null) {
-                conductor = extractNombre(condObj);
-                if (conductor.isEmpty()) { JSONObject u = condObj.optJSONObject("usuario"); if (u != null) conductor = extractNombre(u); }
-                if (conductor.isEmpty()) { JSONObject p = condObj.optJSONObject("persona"); if (p == null) p = condObj.optJSONObject("perfil"); if (p != null) conductor = extractNombre(p); }
-                if (conductor.isEmpty()) { String n=condObj.optString("nombres",""); String a=condObj.optString("apellidos",""); if(!n.isEmpty()||!a.isEmpty()) conductor=(n+" "+a).trim(); }
+    private void agregarCardMiReserva(JSONObject reserva) {
+        float d = getResources().getDisplayMetrics().density;
+        int p16=(int)(16*d), p12=(int)(12*d), p8=(int)(8*d), p4=(int)(4*d);
+
+        int    idViaje   = extraerIdViaje(reserva);
+        String origen    = "Origen";
+        String destino   = "Destino";
+        String conductor = "";          // ← vacío al principio, se llena abajo
+        double precio    = 0;
+        String estado    = reserva.optString("estado", "ACTIVA");
+        String fechaSal  = "";
+        int    asientos  = reserva.optInt("numeroAsientos", reserva.optInt("asientos", 1));
+        String nombrePar = reserva.optString("nombreParada", "");
+        int    idConductorViaje = -1;   // ← para fallback por API
+
+        JSONObject viajeObj = reserva.optJSONObject("viaje");
+        if (viajeObj != null) {
+            if (idViaje == 0) idViaje = extraerIdViaje(viajeObj);
+            precio   = viajeObj.optDouble("precio", 0);
+            fechaSal = viajeObj.optString("fechaHoraSalida", "");
+
+            JSONObject ruta = viajeObj.optJSONObject("ruta");
+            if (ruta != null) {
+                origen  = extraerOrigenDeRuta(ruta);
+                destino = extraerDestinoDeRuta(ruta);
             }
-            if (conductor.isEmpty()) conductor = viajeObj.optString("nombreConductor", viajeObj.optString("conductorNombre", "Conductor"));}
-        MaterialCardView card=new MaterialCardView(this);LinearLayout.LayoutParams lpCard=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpCard.setMargins(0,0,0,p12);card.setLayoutParams(lpCard);card.setRadius(18*d);card.setCardElevation(5*d);card.setCardBackgroundColor(Color.WHITE);card.setClickable(true);card.setFocusable(true);int cb=badgeColorReserva(estado);card.setStrokeColor(cb);card.setStrokeWidth((int)(2*d));
-        LinearLayout inner=new LinearLayout(this);inner.setOrientation(LinearLayout.VERTICAL);inner.setPadding(p16,p16,p16,p16);
-        LinearLayout filaE=new LinearLayout(this);filaE.setOrientation(LinearLayout.HORIZONTAL);filaE.setGravity(android.view.Gravity.CENTER_VERTICAL);TextView tvE=new TextView(this);tvE.setText(etiquetaReserva(estado));tvE.setTextSize(11f);tvE.setTextColor(Color.WHITE);tvE.setTypeface(null,Typeface.BOLD);tvE.setPadding(p8,p4,p8,p4);GradientDrawable bgE=new GradientDrawable();bgE.setShape(GradientDrawable.RECTANGLE);bgE.setCornerRadius(20*d);bgE.setColor(cb);tvE.setBackground(bgE);filaE.addView(tvE);View esp=new View(this);esp.setLayoutParams(new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f));filaE.addView(esp);TextView tvA=new TextView(this);tvA.setText("💺 "+asientos+(asientos==1?" asiento":" asientos"));tvA.setTextSize(11f);tvA.setTextColor(Color.parseColor("#1565C0"));tvA.setTypeface(null,Typeface.BOLD);tvA.setPadding(p8,p4,p8,p4);GradientDrawable bgA=new GradientDrawable();bgA.setShape(GradientDrawable.RECTANGLE);bgA.setCornerRadius(20*d);bgA.setColor(Color.parseColor("#E3F2FD"));tvA.setBackground(bgA);filaE.addView(tvA);inner.addView(filaE);
-        View sep1=new View(this);LinearLayout.LayoutParams lps1=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,(int)(1*d));lps1.setMargins(0,p8,0,p8);sep1.setLayoutParams(lps1);sep1.setBackgroundColor(Color.parseColor("#E0F2F1"));inner.addView(sep1);
-        LinearLayout filaR=new LinearLayout(this);filaR.setOrientation(LinearLayout.HORIZONTAL);filaR.setGravity(android.view.Gravity.CENTER_VERTICAL);LinearLayout ind=new LinearLayout(this);ind.setOrientation(LinearLayout.VERTICAL);ind.setGravity(android.view.Gravity.CENTER_HORIZONTAL);LinearLayout.LayoutParams lpI=new LinearLayout.LayoutParams((int)(18*d),LinearLayout.LayoutParams.WRAP_CONTENT);lpI.setMargins(0,0,p12,0);ind.setLayoutParams(lpI);View cv=new View(this);cv.setLayoutParams(new LinearLayout.LayoutParams((int)(10*d),(int)(10*d)));GradientDrawable gv=new GradientDrawable();gv.setShape(GradientDrawable.OVAL);gv.setColor(Color.parseColor("#4CAF50"));cv.setBackground(gv);ind.addView(cv);View lv=new View(this);LinearLayout.LayoutParams lpLv=new LinearLayout.LayoutParams((int)(2*d),(int)(26*d));lpLv.setMargins((int)(4*d),(int)(2*d),(int)(4*d),(int)(2*d));lv.setLayoutParams(lpLv);lv.setBackgroundColor(Color.parseColor("#B2DFDB"));ind.addView(lv);View rv=new View(this);rv.setLayoutParams(new LinearLayout.LayoutParams((int)(10*d),(int)(10*d)));GradientDrawable gr=new GradientDrawable();gr.setShape(GradientDrawable.OVAL);gr.setColor(Color.parseColor("#EF5350"));rv.setBackground(gr);ind.addView(rv);filaR.addView(ind);
-        LinearLayout colR=new LinearLayout(this);colR.setOrientation(LinearLayout.VERTICAL);colR.setLayoutParams(new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f));TextView tvO=new TextView(this);tvO.setText(origen);tvO.setTextSize(14f);tvO.setTypeface(null,Typeface.BOLD);tvO.setTextColor(Color.parseColor("#004D40"));tvO.setMaxLines(2);tvO.setEllipsize(android.text.TextUtils.TruncateAt.END);colR.addView(tvO);if(!nombrePar.isEmpty()&&!nombrePar.equals(destino)){TextView tvP=new TextView(this);tvP.setText("🚏 Bajas en: "+nombrePar);tvP.setTextSize(12f);tvP.setTextColor(Color.parseColor("#0097A7"));LinearLayout.LayoutParams lpP=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpP.topMargin=(int)(10*d);tvP.setLayoutParams(lpP);colR.addView(tvP);}TextView tvDes=new TextView(this);tvDes.setText(destino);tvDes.setTextSize(13f);tvDes.setTextColor(Color.parseColor("#546E7A"));tvDes.setMaxLines(2);tvDes.setEllipsize(android.text.TextUtils.TruncateAt.END);LinearLayout.LayoutParams lpD=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpD.topMargin=p12;tvDes.setLayoutParams(lpD);colR.addView(tvDes);filaR.addView(colR);inner.addView(filaR);
-        View sep2=new View(this);LinearLayout.LayoutParams lps2=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,(int)(1*d));lps2.setMargins(0,p8,0,p8);sep2.setLayoutParams(lps2);sep2.setBackgroundColor(Color.parseColor("#E0F2F1"));inner.addView(sep2);
-        LinearLayout filaI=new LinearLayout(this);filaI.setOrientation(LinearLayout.HORIZONTAL);filaI.setGravity(android.view.Gravity.CENTER_VERTICAL);TextView tvC=new TextView(this);tvC.setText("🚗 "+(conductor.isEmpty()?"Conductor":conductor));tvC.setTextSize(12f);tvC.setTextColor(Color.parseColor("#00695C"));tvC.setLayoutParams(new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f));tvC.setMaxLines(1);tvC.setEllipsize(android.text.TextUtils.TruncateAt.END);filaI.addView(tvC);
-        if(precio>0){TextView tvP2=new TextView(this);tvP2.setText(" $"+String.format("%.0f",precio));tvP2.setTextSize(13f);tvP2.setTypeface(null,Typeface.BOLD);tvP2.setTextColor(Color.parseColor("#FF6F00"));LinearLayout.LayoutParams lpP2=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpP2.setMargins(p8,0,0,0);tvP2.setLayoutParams(lpP2);filaI.addView(tvP2);}inner.addView(filaI);
-        if(!fechaSal.isEmpty()){String fl=fechaSal.length()>10?fechaSal.substring(0,16).replace("T"," "):fechaSal;TextView tvF=new TextView(this);tvF.setText("🕐 "+fl);tvF.setTextSize(11f);tvF.setTextColor(Color.parseColor("#90A4AE"));LinearLayout.LayoutParams lpF=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpF.topMargin=p4;tvF.setLayoutParams(lpF);inner.addView(tvF);}
-        card.addView(inner);final int idF=idViaje;card.setOnClickListener(v->abrirDetalle(idF));
-        if(layoutMisReservas!=null)layoutMisReservas.addView(card);
+
+            // ── Extracción robusta del conductor ─────────────────────────────
+            // Intento 1: objeto "conductor" dentro del viaje
+            JSONObject condObj = viajeObj.optJSONObject("conductor");
+            if (condObj != null) {
+                conductor = extractNombreCompleto(condObj);
+                // Guardar id para fallback por API
+                idConductorViaje = condObj.optInt("id",
+                        condObj.optInt("idUsuarios",
+                                condObj.optInt("idUsuario", -1)));
+            }
+
+            // Intento 2: campo plano "nombreConductor" / "conductorNombre" en el viaje
+            if (conductor.isEmpty()) {
+                conductor = primeraNoVacia(
+                        viajeObj.optString("nombreConductor",   ""),
+                        viajeObj.optString("conductorNombre",   ""),
+                        viajeObj.optString("conductor",         ""),
+                        viajeObj.optString("nameConductor",     "")
+                );
+            }
+
+            // Intento 3: id del conductor en el viaje (para fallback por API)
+            if (idConductorViaje <= 0) {
+                idConductorViaje = viajeObj.optInt("idConductor",
+                        viajeObj.optInt("conductorId",
+                                viajeObj.optInt("idUsuarioConductor", -1)));
+            }
+        }
+
+        // Intento 4: campo plano directo en la reserva
+        if (conductor.isEmpty()) {
+            conductor = primeraNoVacia(
+                    reserva.optString("nombreConductor", ""),
+                    reserva.optString("conductorNombre",  ""),
+                    reserva.optString("conductor",        "")
+            );
+        }
+
+        // Intento 5: objeto "conductor" directamente en la reserva (sin viaje)
+        if (conductor.isEmpty()) {
+            JSONObject condReserva = reserva.optJSONObject("conductor");
+            if (condReserva != null) {
+                conductor = extractNombreCompleto(condReserva);
+                if (idConductorViaje <= 0)
+                    idConductorViaje = condReserva.optInt("id",
+                            condReserva.optInt("idUsuarios", -1));
+            }
+        }
+
+        // Placeholder mientras carga por API
+        final String conductorFinal  = conductor.isEmpty() ? "Cargando..." : conductor;
+        final int    idCondFinal     = idConductorViaje;
+        final int    idViajeFinal    = idViaje;
+
+        // ── Construir card ────────────────────────────────────────────────────
+        MaterialCardView card = new MaterialCardView(this);
+        LinearLayout.LayoutParams lpCard = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpCard.setMargins(0, 0, 0, p12);
+        card.setLayoutParams(lpCard);
+        card.setRadius(18 * d); card.setCardElevation(5 * d);
+        card.setCardBackgroundColor(Color.WHITE);
+        card.setClickable(true); card.setFocusable(true);
+        int cb = badgeColorReserva(estado);
+        card.setStrokeColor(cb); card.setStrokeWidth((int)(2 * d));
+
+        LinearLayout inner = new LinearLayout(this);
+        inner.setOrientation(LinearLayout.VERTICAL);
+        inner.setPadding(p16, p16, p16, p16);
+
+        // Fila estado + asientos
+        LinearLayout filaE = new LinearLayout(this);
+        filaE.setOrientation(LinearLayout.HORIZONTAL);
+        filaE.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        TextView tvE = new TextView(this);
+        tvE.setText(etiquetaReserva(estado)); tvE.setTextSize(11f);
+        tvE.setTextColor(Color.WHITE); tvE.setTypeface(null, Typeface.BOLD);
+        tvE.setPadding(p8, p4, p8, p4);
+        GradientDrawable bgE = new GradientDrawable();
+        bgE.setShape(GradientDrawable.RECTANGLE); bgE.setCornerRadius(20 * d); bgE.setColor(cb);
+        tvE.setBackground(bgE); filaE.addView(tvE);
+        View esp = new View(this);
+        esp.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        filaE.addView(esp);
+        TextView tvA = new TextView(this);
+        tvA.setText("💺 " + asientos + (asientos == 1 ? " asiento" : " asientos"));
+        tvA.setTextSize(11f); tvA.setTextColor(Color.parseColor("#1565C0"));
+        tvA.setTypeface(null, Typeface.BOLD); tvA.setPadding(p8, p4, p8, p4);
+        GradientDrawable bgA = new GradientDrawable();
+        bgA.setShape(GradientDrawable.RECTANGLE); bgA.setCornerRadius(20 * d);
+        bgA.setColor(Color.parseColor("#E3F2FD")); tvA.setBackground(bgA);
+        filaE.addView(tvA); inner.addView(filaE);
+
+        // Separador
+        View sep1 = new View(this);
+        LinearLayout.LayoutParams lps1 = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, (int)(1 * d));
+        lps1.setMargins(0, p8, 0, p8); sep1.setLayoutParams(lps1);
+        sep1.setBackgroundColor(Color.parseColor("#E0F2F1")); inner.addView(sep1);
+
+        // Fila ruta origen → destino
+        LinearLayout filaR = new LinearLayout(this);
+        filaR.setOrientation(LinearLayout.HORIZONTAL);
+        filaR.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout ind = new LinearLayout(this);
+        ind.setOrientation(LinearLayout.VERTICAL);
+        ind.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        LinearLayout.LayoutParams lpI = new LinearLayout.LayoutParams((int)(18 * d), LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpI.setMargins(0, 0, p12, 0); ind.setLayoutParams(lpI);
+        View cv = new View(this);
+        cv.setLayoutParams(new LinearLayout.LayoutParams((int)(10 * d), (int)(10 * d)));
+        GradientDrawable gv = new GradientDrawable(); gv.setShape(GradientDrawable.OVAL);
+        gv.setColor(Color.parseColor("#4CAF50")); cv.setBackground(gv); ind.addView(cv);
+        View lv = new View(this);
+        LinearLayout.LayoutParams lpLv = new LinearLayout.LayoutParams((int)(2 * d), (int)(26 * d));
+        lpLv.setMargins((int)(4 * d), (int)(2 * d), (int)(4 * d), (int)(2 * d));
+        lv.setLayoutParams(lpLv); lv.setBackgroundColor(Color.parseColor("#B2DFDB")); ind.addView(lv);
+        View rv = new View(this);
+        rv.setLayoutParams(new LinearLayout.LayoutParams((int)(10 * d), (int)(10 * d)));
+        GradientDrawable gr = new GradientDrawable(); gr.setShape(GradientDrawable.OVAL);
+        gr.setColor(Color.parseColor("#EF5350")); rv.setBackground(gr); ind.addView(rv);
+        filaR.addView(ind);
+
+        LinearLayout colR = new LinearLayout(this);
+        colR.setOrientation(LinearLayout.VERTICAL);
+        colR.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        TextView tvO = new TextView(this);
+        tvO.setText(origen); tvO.setTextSize(14f); tvO.setTypeface(null, Typeface.BOLD);
+        tvO.setTextColor(Color.parseColor("#004D40")); tvO.setMaxLines(2);
+        tvO.setEllipsize(android.text.TextUtils.TruncateAt.END); colR.addView(tvO);
+        if (!nombrePar.isEmpty() && !nombrePar.equals(destino)) {
+            TextView tvP = new TextView(this);
+            tvP.setText("🚏 Bajas en: " + nombrePar); tvP.setTextSize(12f);
+            tvP.setTextColor(Color.parseColor("#0097A7"));
+            LinearLayout.LayoutParams lpP = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            lpP.topMargin = (int)(10 * d); tvP.setLayoutParams(lpP); colR.addView(tvP);
+        }
+        TextView tvDes = new TextView(this);
+        tvDes.setText(destino); tvDes.setTextSize(13f);
+        tvDes.setTextColor(Color.parseColor("#546E7A")); tvDes.setMaxLines(2);
+        tvDes.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams lpD = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpD.topMargin = p12; tvDes.setLayoutParams(lpD); colR.addView(tvDes);
+        filaR.addView(colR); inner.addView(filaR);
+
+        // Separador
+        View sep2 = new View(this);
+        LinearLayout.LayoutParams lps2 = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, (int)(1 * d));
+        lps2.setMargins(0, p8, 0, p8); sep2.setLayoutParams(lps2);
+        sep2.setBackgroundColor(Color.parseColor("#E0F2F1")); inner.addView(sep2);
+
+        // Fila conductor + precio — TextView del conductor con tag para actualizar luego
+        LinearLayout filaI = new LinearLayout(this);
+        filaI.setOrientation(LinearLayout.HORIZONTAL);
+        filaI.setGravity(android.view.Gravity.CENTER_VERTICAL);
+
+        TextView tvC = new TextView(this);
+        tvC.setTag("tv_conductor_" + idViajeFinal);   // ← tag para poder actualizar después
+        tvC.setText("🚗 " + conductorFinal);
+        tvC.setTextSize(12f); tvC.setTextColor(Color.parseColor("#00695C"));
+        tvC.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        tvC.setMaxLines(1); tvC.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        filaI.addView(tvC);
+
+        if (precio > 0) {
+            TextView tvP2 = new TextView(this);
+            tvP2.setText(" $" + String.format("%.0f", precio)); tvP2.setTextSize(13f);
+            tvP2.setTypeface(null, Typeface.BOLD); tvP2.setTextColor(Color.parseColor("#FF6F00"));
+            LinearLayout.LayoutParams lpP2 = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            lpP2.setMargins(p8, 0, 0, 0); tvP2.setLayoutParams(lpP2); filaI.addView(tvP2);
+        }
+        inner.addView(filaI);
+
+        if (!fechaSal.isEmpty()) {
+            String fl = fechaSal.length() > 10 ? fechaSal.substring(0, 16).replace("T", " ") : fechaSal;
+            TextView tvF = new TextView(this);
+            tvF.setText("🕐 " + fl); tvF.setTextSize(11f);
+            tvF.setTextColor(Color.parseColor("#90A4AE"));
+            LinearLayout.LayoutParams lpF = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            lpF.topMargin = p4; tvF.setLayoutParams(lpF); inner.addView(tvF);
+        }
+
+        card.addView(inner);
+        card.setOnClickListener(v -> abrirDetalle(idViajeFinal));
+        if (layoutMisReservas != null) layoutMisReservas.addView(card);
+
+        // ── Fallback por API: si el nombre sigue vacío o es "Cargando..." ────
+        // Intentar cargar el nombre del conductor directamente desde el endpoint del viaje
+        if (conductor.isEmpty() && idViajeFinal > 0) {
+            cargarNombreConductorDesdeViaje(idViajeFinal, tvC);
+        } else if (conductor.isEmpty() && idCondFinal > 0) {
+            cargarNombreConductorPorId(idCondFinal, tvC);
+        }
+    }
+
+    /**
+     * Carga el nombre del conductor consultando el detalle del viaje.
+     * Actualiza el TextView una vez que llega la respuesta.
+     */
+    private void cargarNombreConductorDesdeViaje(int idViaje, TextView tvConductor) {
+        ConexionApi.getInstance(this).getObject(
+                Constantes.viajePorId((long) idViaje),
+                viajeObj -> {
+                    String nombre = "";
+
+                    // Extraer desde objeto conductor del viaje
+                    JSONObject condObj = viajeObj.optJSONObject("conductor");
+                    if (condObj != null) {
+                        nombre = extractNombreCompleto(condObj);
+                        // Si conductor tiene sub-objeto usuario
+                        if (nombre.isEmpty()) {
+                            JSONObject u = condObj.optJSONObject("usuario");
+                            if (u != null) nombre = extractNombreCompleto(u);
+                        }
+                    }
+
+                    // Campos planos del viaje
+                    if (nombre.isEmpty()) {
+                        nombre = primeraNoVacia(
+                                viajeObj.optString("nombreConductor",  ""),
+                                viajeObj.optString("conductorNombre",  ""),
+                                viajeObj.optString("conductor",        "")
+                        );
+                    }
+
+                    // Si encontramos el id del conductor, intentar cargarlo por endpoint de usuario
+                    if (nombre.isEmpty()) {
+                        int idCond = -1;
+                        if (condObj != null)
+                            idCond = condObj.optInt("id", condObj.optInt("idUsuarios",
+                                    condObj.optInt("idUsuario", -1)));
+                        if (idCond <= 0)
+                            idCond = viajeObj.optInt("idConductor",
+                                    viajeObj.optInt("conductorId", -1));
+                        if (idCond > 0) {
+                            cargarNombreConductorPorId(idCond, tvConductor);
+                            return;
+                        }
+                    }
+
+                    if (!nombre.isEmpty()) {
+                        final String nomFinal = nombre;
+                        runOnUiThread(() -> tvConductor.setText("🚗 " + nomFinal));
+                    }
+                },
+                error -> Log.w(TAG, "No se pudo cargar viaje " + idViaje + " para nombre conductor")
+        );
+    }
+
+    /**
+     * Carga el nombre del conductor directamente desde el endpoint de usuario.
+     */
+    private void cargarNombreConductorPorId(int idConductor, TextView tvConductor) {
+        if (idConductor <= 0) return;
+        ConexionApi.getInstance(this).getObject(
+                Constantes.USUARIOS + "/" + idConductor,
+                perfil -> {
+                    String nombre = extractNombreCompleto(perfil);
+                    if (!nombre.isEmpty()) {
+                        final String nomFinal = nombre;
+                        runOnUiThread(() -> tvConductor.setText("🚗 " + nomFinal));
+                    }
+                },
+                error -> Log.w(TAG, "No se pudo cargar perfil conductor id=" + idConductor)
+        );
+    }
+
+    // =========================================================================
+    //  HELPERS DE EXTRACCIÓN DE NOMBRE (más robusto que antes)
+    // =========================================================================
+
+    /**
+     * Extrae el nombre de un objeto JSON probando múltiples campos y estructuras anidadas.
+     * Primero busca "nombre", "nombreCompleto", "name", luego "nombres"+"apellidos",
+     * luego sub-objetos "usuario" y "persona"/"perfil".
+     */
+    private String extractNombreCompleto(JSONObject o) {
+        if (o == null) return "";
+
+        // Campos directos de nombre completo
+        String nombre = primeraNoVacia(
+                o.optString("nombre",          ""),
+                o.optString("nombreCompleto",  ""),
+                o.optString("name",            ""),
+                o.optString("fullName",        ""),
+                o.optString("nombreUsuario",   ""),
+                o.optString("displayName",     "")
+        );
+        if (!nombre.isEmpty()) return nombre;
+
+        // nombres + apellidos
+        String n = o.optString("nombres",   o.optString("primerNombre",   ""));
+        String a = o.optString("apellidos", o.optString("primerApellido", ""));
+        if (!n.isEmpty() || !a.isEmpty()) return (n + " " + a).trim();
+
+        // Sub-objeto usuario
+        JSONObject u = o.optJSONObject("usuario");
+        if (u != null) {
+            nombre = primeraNoVacia(
+                    u.optString("nombre",         ""),
+                    u.optString("nombreCompleto", ""),
+                    u.optString("name",           "")
+            );
+            if (!nombre.isEmpty()) return nombre;
+            n = u.optString("nombres",   "");
+            a = u.optString("apellidos", "");
+            if (!n.isEmpty() || !a.isEmpty()) return (n + " " + a).trim();
+        }
+
+        // Sub-objeto persona / perfil
+        for (String sub : new String[]{"persona", "perfil", "profile"}) {
+            JSONObject p = o.optJSONObject(sub);
+            if (p != null) {
+                nombre = primeraNoVacia(
+                        p.optString("nombre",         ""),
+                        p.optString("nombreCompleto", ""),
+                        p.optString("name",           "")
+                );
+                if (!nombre.isEmpty()) return nombre;
+                n = p.optString("nombres",   "");
+                a = p.optString("apellidos", "");
+                if (!n.isEmpty() || !a.isEmpty()) return (n + " " + a).trim();
+            }
+        }
+
+        return "";
+    }
+
+    /** Devuelve el primer String no vacío de la lista. */
+    private String primeraNoVacia(String... valores) {
+        for (String v : valores) {
+            if (v != null && !v.isEmpty() && !v.equals("null")) return v;
+        }
+        return "";
     }
 
     private String etiquetaReserva(String e){switch(e.toUpperCase()){case"ACTIVA":case"CONFIRMADA":return"✅ Confirmada";case"EN_CURSO":case"INICIADO":return"En curso";case"ESPERANDO_RECOGIDA":return"⏳ Esperando recogida";case"RECOGIDO":return"🚗 ¡Te recogieron!";case"PENDIENTE":return"⏳ Pendiente";default:return"📌 "+e;}}
@@ -426,7 +768,9 @@ public class MisReservasActivity extends BaseActivity {
             try {
                 JSONObject v = viajes.getJSONObject(i);
                 String est = v.optString("estado", "").toUpperCase();
-                if (!est.equals(ESTADO_EN_CURSO) && !est.equals(ESTADO_INICIADO)) continue;
+                if (!est.equals("EN_CURSO") && !est.equals("INICIADO") &&
+                        !est.equals("DISPONIBLE") && !est.equals("PROGRAMADO") &&
+                        !est.equals("CREADO")) continue;
                 int cupos = v.optInt("cuposDisponibles", v.optInt("cupos", -1));
                 if (cupos == 0) continue;
                 if (tengoGps) {
@@ -452,7 +796,7 @@ public class MisReservasActivity extends BaseActivity {
     }
 
     // =========================================================================
-    //  MOSTRAR RESULTADOS (sin mapa)
+    //  MOSTRAR RESULTADOS
     // =========================================================================
     private void procesarViajes(JSONArray viajes, String txtO, String txtD){
         runOnUiThread(()->{
@@ -469,7 +813,7 @@ public class MisReservasActivity extends BaseActivity {
                     if(txtVacioSub!=null)txtVacioSub.setText(
                             gpsListo
                                     ? "No hay conductores con viaje EN CURSO cerca de ti ahora.\n\nEspera a que un conductor presione \"Iniciar viaje\"."
-                                    : "No hay conductores con viaje EN CURSO en este momento.\n\nEspera a que un conductor presione \"Iniciar viaje\"."
+                                    : "No hay viajes disponibles cerca de ti ahora.\n\nBusca de nuevo en unos minutos."
                     );
                 }
                 return;
@@ -489,55 +833,95 @@ public class MisReservasActivity extends BaseActivity {
     // =========================================================================
     //  CARD VIAJE RESULTADO
     // =========================================================================
-    private void agregarCardViaje(JSONObject viaje,int idx){
-        float d=getResources().getDisplayMetrics().density;int p16=(int)(16*d),p12=(int)(12*d),p8=(int)(8*d),p4=(int)(4*d);
-        int idV=extraerIdViaje(viaje);double precio=viaje.optDouble("precio",0);int cupos=viaje.optInt("cuposDisponibles",viaje.optInt("cupos",0));
-        String fecha=viaje.optString("fechaHoraSalida",viaje.optString("fecha",""));
-        String origen="Origen",destino="Destino",cond="Conductor";
-        JSONObject ruta=viaje.optJSONObject("ruta");
-        if(ruta!=null){origen=extraerOrigenDeRuta(ruta);destino=extraerDestinoDeRuta(ruta);}
-        else{origen=viaje.optString("origen",origen);destino=viaje.optString("destino",destino);}
-        JSONObject co = viaje.optJSONObject("conductor");
-        if (co != null) {
-            // Intento 1: nombre directo en conductor
-            cond = extractNombre(co);
-            // Intento 2: dentro de conductor.usuario
-            if (cond.isEmpty()) {
-                JSONObject u = co.optJSONObject("usuario");
-                if (u != null) cond = extractNombre(u);
-            }
-            // Intento 3: conductor.persona o conductor.perfil
-            if (cond.isEmpty()) {
-                JSONObject persona = co.optJSONObject("persona");
-                if (persona == null) persona = co.optJSONObject("perfil");
-                if (persona != null) cond = extractNombre(persona);
-            }
-            // Intento 4: campos sueltos de nombre+apellido dentro de conductor
-            if (cond.isEmpty()) {
-                String n = co.optString("nombres", co.optString("primerNombre", ""));
-                String a = co.optString("apellidos", co.optString("primerApellido", ""));
-                if (!n.isEmpty() || !a.isEmpty()) cond = (n + " " + a).trim();
-            }
-        }
-// Intento 5: campo plano en el viaje
-        if (cond.isEmpty()) cond = viaje.optString("nombreConductor",
-                viaje.optString("conductorNombre",
-                        viaje.optString("conductor", "Conductor")));
+    private void agregarCardViaje(JSONObject viaje, int idx) {
+        float d=getResources().getDisplayMetrics().density;
+        int p16=(int)(16*d),p12=(int)(12*d),p8=(int)(8*d),p4=(int)(4*d);
+        int    idV    = extraerIdViaje(viaje);
+        double precio = viaje.optDouble("precio", 0);
+        int    cupos  = viaje.optInt("cuposDisponibles", viaje.optInt("cupos", 0));
+        String fecha  = viaje.optString("fechaHoraSalida", viaje.optString("fecha", ""));
+        String origen = "Origen", destino = "Destino", cond = "";
 
-        int col=COLORES_INT[idx%COLORES_INT.length];
-        MaterialCardView card=new MaterialCardView(this);LinearLayout.LayoutParams lpC=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpC.setMargins(0,0,0,p12);card.setLayoutParams(lpC);card.setRadius(18*d);card.setCardElevation(6*d);card.setCardBackgroundColor(Color.WHITE);card.setClickable(true);card.setFocusable(true);card.setStrokeColor(col);card.setStrokeWidth((int)(2.5f*d));
-        LinearLayout inner=new LinearLayout(this);inner.setOrientation(LinearLayout.HORIZONTAL);View barra=new View(this);LinearLayout.LayoutParams lpB=new LinearLayout.LayoutParams((int)(6*d),LinearLayout.LayoutParams.MATCH_PARENT);barra.setLayoutParams(lpB);barra.setBackgroundColor(col);inner.addView(barra);
-        LinearLayout cont=new LinearLayout(this);cont.setOrientation(LinearLayout.VERTICAL);cont.setPadding(p16,p12,p16,p12);cont.setLayoutParams(new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f));
-        LinearLayout filaTop=new LinearLayout(this);filaTop.setOrientation(LinearLayout.HORIZONTAL);filaTop.setGravity(android.view.Gravity.CENTER_VERTICAL);LinearLayout indR=new LinearLayout(this);indR.setOrientation(LinearLayout.VERTICAL);indR.setGravity(android.view.Gravity.CENTER_HORIZONTAL);LinearLayout.LayoutParams lpI=new LinearLayout.LayoutParams((int)(20*d),LinearLayout.LayoutParams.WRAP_CONTENT);lpI.setMargins(0,0,p12,0);indR.setLayoutParams(lpI);View c1=new View(this);c1.setLayoutParams(new LinearLayout.LayoutParams((int)(10*d),(int)(10*d)));GradientDrawable g1=new GradientDrawable();g1.setShape(GradientDrawable.OVAL);g1.setColor(col);c1.setBackground(g1);indR.addView(c1);View ln=new View(this);LinearLayout.LayoutParams lpLn=new LinearLayout.LayoutParams((int)(2*d),(int)(28*d));lpLn.setMargins((int)(4*d),(int)(2*d),(int)(4*d),(int)(2*d));ln.setLayoutParams(lpLn);ln.setBackgroundColor(Color.parseColor("#B2DFDB"));indR.addView(ln);View c2=new View(this);c2.setLayoutParams(new LinearLayout.LayoutParams((int)(10*d),(int)(10*d)));GradientDrawable g2=new GradientDrawable();g2.setShape(GradientDrawable.OVAL);g2.setColor(Color.parseColor("#EF5350"));c2.setBackground(g2);indR.addView(c2);filaTop.addView(indR);
-        LinearLayout colRt=new LinearLayout(this);colRt.setOrientation(LinearLayout.VERTICAL);colRt.setLayoutParams(new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f));TextView tvOr=new TextView(this);tvOr.setText("🟢 "+origen);tvOr.setTextSize(13f);tvOr.setTypeface(null,Typeface.BOLD);tvOr.setTextColor(Color.parseColor("#004D40"));tvOr.setMaxLines(2);tvOr.setEllipsize(android.text.TextUtils.TruncateAt.END);colRt.addView(tvOr);TextView tvDe=new TextView(this);tvDe.setText("🔴 "+destino);tvDe.setTextSize(13f);tvDe.setTextColor(Color.parseColor("#546E7A"));tvDe.setMaxLines(2);tvDe.setEllipsize(android.text.TextUtils.TruncateAt.END);LinearLayout.LayoutParams lpDe=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpDe.topMargin=(int)(14*d);tvDe.setLayoutParams(lpDe);colRt.addView(tvDe);filaTop.addView(colRt);
-        TextView tvEst=new TextView(this);tvEst.setText("ACTIVO");tvEst.setTextSize(10f);tvEst.setTextColor(Color.WHITE);tvEst.setTypeface(null,Typeface.BOLD);tvEst.setPadding(p8,p4,p8,p4);GradientDrawable bgEst=new GradientDrawable();bgEst.setShape(GradientDrawable.RECTANGLE);bgEst.setCornerRadius(20*d);bgEst.setColor(0xFF2E7D32);tvEst.setBackground(bgEst);LinearLayout.LayoutParams lpEst=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpEst.setMargins(p8,0,0,0);tvEst.setLayoutParams(lpEst);filaTop.addView(tvEst);cont.addView(filaTop);
+        JSONObject ruta = viaje.optJSONObject("ruta");
+        if (ruta != null) { origen = extraerOrigenDeRuta(ruta); destino = extraerDestinoDeRuta(ruta); }
+        else { origen = viaje.optString("origen", origen); destino = viaje.optString("destino", destino); }
+
+        // Extracción robusta del conductor en resultados de búsqueda
+        JSONObject co = viaje.optJSONObject("conductor");
+        if (co != null) cond = extractNombreCompleto(co);
+        if (cond.isEmpty()) cond = primeraNoVacia(
+                viaje.optString("nombreConductor", ""),
+                viaje.optString("conductorNombre", ""),
+                viaje.optString("conductor",       "")
+        );
+
+        final String condFinal = cond.isEmpty() ? "Conductor" : cond;
+        final int    idVFinal  = idV;
+        int col = COLORES_INT[idx % COLORES_INT.length];
+
+        MaterialCardView card=new MaterialCardView(this);
+        LinearLayout.LayoutParams lpC=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpC.setMargins(0,0,0,p12);card.setLayoutParams(lpC);card.setRadius(18*d);card.setCardElevation(6*d);
+        card.setCardBackgroundColor(Color.WHITE);card.setClickable(true);card.setFocusable(true);
+        card.setStrokeColor(col);card.setStrokeWidth((int)(2.5f*d));
+
+        LinearLayout inner=new LinearLayout(this);inner.setOrientation(LinearLayout.HORIZONTAL);
+        View barra=new View(this);
+        LinearLayout.LayoutParams lpB=new LinearLayout.LayoutParams((int)(6*d),LinearLayout.LayoutParams.MATCH_PARENT);
+        barra.setLayoutParams(lpB);barra.setBackgroundColor(col);inner.addView(barra);
+
+        LinearLayout cont=new LinearLayout(this);cont.setOrientation(LinearLayout.VERTICAL);
+        cont.setPadding(p16,p12,p16,p12);
+        cont.setLayoutParams(new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f));
+
+        // Fila ruta
+        LinearLayout filaTop=new LinearLayout(this);filaTop.setOrientation(LinearLayout.HORIZONTAL);filaTop.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout indR=new LinearLayout(this);indR.setOrientation(LinearLayout.VERTICAL);indR.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        LinearLayout.LayoutParams lpI=new LinearLayout.LayoutParams((int)(20*d),LinearLayout.LayoutParams.WRAP_CONTENT);lpI.setMargins(0,0,p12,0);indR.setLayoutParams(lpI);
+        View c1=new View(this);c1.setLayoutParams(new LinearLayout.LayoutParams((int)(10*d),(int)(10*d)));
+        GradientDrawable g1=new GradientDrawable();g1.setShape(GradientDrawable.OVAL);g1.setColor(col);c1.setBackground(g1);indR.addView(c1);
+        View ln=new View(this);LinearLayout.LayoutParams lpLn=new LinearLayout.LayoutParams((int)(2*d),(int)(28*d));lpLn.setMargins((int)(4*d),(int)(2*d),(int)(4*d),(int)(2*d));ln.setLayoutParams(lpLn);ln.setBackgroundColor(Color.parseColor("#B2DFDB"));indR.addView(ln);
+        View c2=new View(this);c2.setLayoutParams(new LinearLayout.LayoutParams((int)(10*d),(int)(10*d)));
+        GradientDrawable g2=new GradientDrawable();g2.setShape(GradientDrawable.OVAL);g2.setColor(Color.parseColor("#EF5350"));c2.setBackground(g2);indR.addView(c2);
+        filaTop.addView(indR);
+
+        LinearLayout colRt=new LinearLayout(this);colRt.setOrientation(LinearLayout.VERTICAL);
+        colRt.setLayoutParams(new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f));
+        TextView tvOr=new TextView(this);tvOr.setText("🟢 "+origen);tvOr.setTextSize(13f);tvOr.setTypeface(null,Typeface.BOLD);tvOr.setTextColor(Color.parseColor("#004D40"));tvOr.setMaxLines(2);tvOr.setEllipsize(android.text.TextUtils.TruncateAt.END);colRt.addView(tvOr);
+        TextView tvDe=new TextView(this);tvDe.setText("🔴 "+destino);tvDe.setTextSize(13f);tvDe.setTextColor(Color.parseColor("#546E7A"));tvDe.setMaxLines(2);tvDe.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams lpDe=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpDe.topMargin=(int)(14*d);tvDe.setLayoutParams(lpDe);colRt.addView(tvDe);
+        filaTop.addView(colRt);
+
+        TextView tvEst=new TextView(this);tvEst.setText("ACTIVO");tvEst.setTextSize(10f);tvEst.setTextColor(Color.WHITE);tvEst.setTypeface(null,Typeface.BOLD);tvEst.setPadding(p8,p4,p8,p4);
+        GradientDrawable bgEst=new GradientDrawable();bgEst.setShape(GradientDrawable.RECTANGLE);bgEst.setCornerRadius(20*d);bgEst.setColor(0xFF2E7D32);tvEst.setBackground(bgEst);
+        LinearLayout.LayoutParams lpEst=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpEst.setMargins(p8,0,0,0);tvEst.setLayoutParams(lpEst);
+        filaTop.addView(tvEst);cont.addView(filaTop);
+
         View div=new View(this);LinearLayout.LayoutParams lpDiv=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,(int)(1*d));lpDiv.setMargins(0,p12,0,p12);div.setLayoutParams(lpDiv);div.setBackgroundColor(Color.parseColor("#E0F2F1"));cont.addView(div);
-        LinearLayout filaI=new LinearLayout(this);filaI.setOrientation(LinearLayout.HORIZONTAL);filaI.setGravity(android.view.Gravity.CENTER_VERTICAL);TextView tvCd=new TextView(this);tvCd.setText(" "+cond);tvCd.setTextSize(12f);tvCd.setTextColor(Color.parseColor("#00695C"));tvCd.setLayoutParams(new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f));tvCd.setMaxLines(1);tvCd.setEllipsize(android.text.TextUtils.TruncateAt.END);filaI.addView(tvCd);
+
+        // Fila conductor + precio + cupos
+        LinearLayout filaI=new LinearLayout(this);filaI.setOrientation(LinearLayout.HORIZONTAL);filaI.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        TextView tvCd=new TextView(this);
+        tvCd.setText("🚗 " + condFinal);
+        tvCd.setTextSize(12f);tvCd.setTextColor(Color.parseColor("#00695C"));
+        tvCd.setLayoutParams(new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f));
+        tvCd.setMaxLines(1);tvCd.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        filaI.addView(tvCd);
+
         if(precio>0){TextView tvPr=new TextView(this);tvPr.setText("$"+String.format("%.0f",precio));tvPr.setTextSize(13f);tvPr.setTypeface(null,Typeface.BOLD);tvPr.setTextColor(Color.parseColor("#FF6F00"));LinearLayout.LayoutParams lpPr=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpPr.setMargins(p8,0,p8,0);tvPr.setLayoutParams(lpPr);filaI.addView(tvPr);}
-        TextView tvCu=new TextView(this);tvCu.setText(cupos>0?"💺 "+cupos+" libres":"💺 Sin cupos");tvCu.setTextSize(12f);tvCu.setTypeface(null,Typeface.BOLD);tvCu.setTextColor(cupos>0?Color.parseColor("#2E7D32"):Color.parseColor("#C62828"));tvCu.setPadding(p8,p4,p8,p4);GradientDrawable bgCu=new GradientDrawable();bgCu.setShape(GradientDrawable.RECTANGLE);bgCu.setCornerRadius(12*d);bgCu.setColor(cupos>0?Color.parseColor("#E8F5E9"):Color.parseColor("#FFEBEE"));tvCu.setBackground(bgCu);filaI.addView(tvCu);cont.addView(filaI);
+        TextView tvCu=new TextView(this);tvCu.setText(cupos>0?"💺 "+cupos+" libres":"💺 Sin cupos");tvCu.setTextSize(12f);tvCu.setTypeface(null,Typeface.BOLD);tvCu.setTextColor(cupos>0?Color.parseColor("#2E7D32"):Color.parseColor("#C62828"));tvCu.setPadding(p8,p4,p8,p4);GradientDrawable bgCu=new GradientDrawable();bgCu.setShape(GradientDrawable.RECTANGLE);bgCu.setCornerRadius(12*d);bgCu.setColor(cupos>0?Color.parseColor("#E8F5E9"):Color.parseColor("#FFEBEE"));tvCu.setBackground(bgCu);filaI.addView(tvCu);
+        cont.addView(filaI);
+
         if(!fecha.isEmpty()){String fl=fecha.length()>10?fecha.substring(0,16).replace("T"," "):fecha;TextView tvF=new TextView(this);tvF.setText("🕐 Salida: "+fl);tvF.setTextSize(11f);tvF.setTextColor(Color.parseColor("#90A4AE"));LinearLayout.LayoutParams lpF=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpF.topMargin=p8;tvF.setLayoutParams(lpF);cont.addView(tvF);}
-        inner.addView(cont);card.addView(inner);final int idF=idV;card.setOnClickListener(v->abrirDetalle(idF));
+
+        inner.addView(cont);card.addView(inner);
+        card.setOnClickListener(v -> abrirDetalle(idVFinal));
         if(layoutResultadosViajes!=null)layoutResultadosViajes.addView(card);
+
+        // Fallback nombre conductor en resultados si quedó vacío
+        if (cond.isEmpty() && idV > 0) {
+            cargarNombreConductorDesdeViaje(idV, tvCd);
+        }
     }
 
     // =========================================================================
@@ -577,5 +961,7 @@ public class MisReservasActivity extends BaseActivity {
     private double[] geocodificar(String dir)throws Exception{String q=dir.toLowerCase().contains("popay")?dir:dir+", Popayán, Colombia";String url="https://nominatim.openstreetmap.org/search?q="+java.net.URLEncoder.encode(q,"UTF-8")+"&format=json&limit=1&countrycodes=co";JSONArray arr=new JSONArray(petHttp(url));if(arr.length()==0){url="https://nominatim.openstreetmap.org/search?q="+java.net.URLEncoder.encode(dir+", Colombia","UTF-8")+"&format=json&limit=1";arr=new JSONArray(petHttp(url));}if(arr.length()==0)throw new Exception("No encontrado: "+dir);JSONObject o=arr.getJSONObject(0);return new double[]{o.getDouble("lat"),o.getDouble("lon")};}
     private String petHttp(String urlStr)throws Exception{HttpURLConnection c=null;try{URL u=new URL(urlStr);c=(HttpURLConnection)u.openConnection();c.setRequestProperty("User-Agent","Moviflexx-App/1.0");c.setConnectTimeout(15000);c.setReadTimeout(15000);BufferedReader r=new BufferedReader(new InputStreamReader(c.getInputStream()));StringBuilder sb=new StringBuilder();String l;while((l=r.readLine())!=null)sb.append(l);r.close();return sb.toString();}finally{if(c!=null)c.disconnect();}}
     private double distKm(double la1,double lo1,double la2,double lo2){double R=6371,dLa=Math.toRadians(la2-la1),dLo=Math.toRadians(lo2-lo1);double a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(Math.toRadians(la1))*Math.cos(Math.toRadians(la2))*Math.sin(dLo/2)*Math.sin(dLo/2);return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
-    private String extractNombre(JSONObject o){if(o==null)return"";for(String k:new String[]{"nombre","nombreCompleto","name","fullName","nombreUsuario","displayName","nombres"}){String v=o.optString(k,"");if(!v.isEmpty()&&!v.equals("null"))return v;}String n=o.optString("nombres",""),a=o.optString("apellidos","");if(!n.isEmpty()||!a.isEmpty())return(n+" "+a).trim();return"";}
+
+    // extractNombre se mantiene por compatibilidad con agregarCardViaje anterior
+    private String extractNombre(JSONObject o){ return extractNombreCompleto(o); }
 }

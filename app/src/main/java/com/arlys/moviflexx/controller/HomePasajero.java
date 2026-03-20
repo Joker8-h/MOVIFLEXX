@@ -98,9 +98,7 @@ public class HomePasajero extends BaseActivity {
         configurarListeners();
         configurarBottomNav();
         iniciarCarruselMoviflexInfo();
-        sectionPagosPendientes = findViewById(R.id.section_pagos_pendientes);
-        layoutPagosPendientes  = findViewById(R.id.layout_pagos_pendientes);
-        dividerPagos           = findViewById(R.id.divider_pagos);
+
 
         // 🔥 Asistente de Voz (Iniciado automáticamente por BaseActivity)
     }
@@ -111,7 +109,6 @@ public class HomePasajero extends BaseActivity {
         cargarRutasFrecuentesPasajero();
         iniciarAutoScrollCarrusel();
         cargarViajesPorCalificar();
-        cargarPagosPendientes();
         NotificacionesHelper.configurar(this);
 
         if (bottomNavigation != null)
@@ -260,212 +257,30 @@ public class HomePasajero extends BaseActivity {
         );
     }
 
-    private void cargarPagosPendientes() {
-        if (pagosPendientesYaVerificados) return;
-        pagosPendientesYaVerificados = true;
-
-        ConexionApi.getInstance(this).getArrayNoCache(
-                Constantes.MIS_RESERVAS,
-                response -> {
-                    List<JSONObject> candidatos = new ArrayList<>();
-                    for (int i = 0; i < response.length(); i++) {
-                        JSONObject reserva = response.optJSONObject(i);
-                        if (reserva == null) continue;
-                        JSONObject viaje = reserva.optJSONObject("viaje");
-                        if (viaje == null) continue;
-                        String estViaje = viaje.optString("estado", "").toUpperCase().trim();
-                        boolean relevante = "FINALIZADO".equals(estViaje)
-                                || "COMPLETADO".equals(estViaje);
-                        if (!relevante) continue;
-
-                        int viajeId = reserva.optInt("idViajes", 0);
-                        if (viajeId == 0 && viaje != null)
-                            viajeId = viaje.optInt("idViajes", viaje.optInt("id", 0));
-                        if (viajeId == 0) continue;
-
-                        double precio = viaje.optDouble("precio", 0);
-                        String destino = "";
-                        JSONObject ruta = viaje.optJSONObject("ruta");
-                        if (ruta != null) destino = ruta.optString("destino",
-                                ruta.optString("nombre", ""));
-
-                        try {
-                            JSONObject item = new JSONObject();
-                            item.put("viajeId", viajeId);
-                            item.put("precio",  precio);
-                            item.put("destino", destino);
-                            item.put("estado",  estViaje);
-                            candidatos.add(item);
-                        } catch (Exception ignored) {}
-                    }
-                    verificarPagosPendientesYMostrar(candidatos, session.getIdUsuario(), new ArrayList<>(), 0);
-                },
-                err -> Log.w(TAG, "cargarPagosPendientes error: " + err)
-        );
-    }
     private boolean pagosPendientesYaVerificados = false;
+
+    private void cargarPagosPendientes() {
+        // ── Pagos pendientes ya no se muestran en el home ──────────────────────
+        // Se muestran como notificaciones en la pantalla de Notificaciones.
+        // El badge del campanazo (NotificacionesHelper) ya los cuenta.
+        // Este método se conserva vacío para no romper las llamadas existentes.
+    }
 
     private void verificarPagosPendientesYMostrar(List<JSONObject> todos, int idPasajero,
                                                   List<JSONObject> sinPagar, int indice) {
-        if (indice >= todos.size()) {
-            runOnUiThread(() -> mostrarCardsPagosPendientes(sinPagar));
-            return;
-        }
-        JSONObject item   = todos.get(indice);
-        int        viajeId = item.optInt("viajeId", 0);
-
-        ConexionApi.getInstance(this).getObjectNoCache(
-                Constantes.pagoDeUsuarioEnViaje(viajeId, idPasajero),
-                response -> {
-                    verificarPagosPendientesYMostrar(todos, idPasajero, sinPagar, indice + 1);
-                },
-                error -> {
-                    sinPagar.add(item);
-                    verificarPagosPendientesYMostrar(todos, idPasajero, sinPagar, indice + 1);
-                }
-        );
+        // No se usa — los pagos se muestran en Notificaciones
     }
 
     private void mostrarCardsPagosPendientes(List<JSONObject> items) {
-        if (layoutPagosPendientes == null || sectionPagosPendientes == null) return;
-        layoutPagosPendientes.removeAllViews();
-
-        if (items.isEmpty()) {
+        // Ocultar la sección si existe en el layout
+        if (sectionPagosPendientes != null)
             sectionPagosPendientes.setVisibility(View.GONE);
-            if (dividerPagos != null) dividerPagos.setVisibility(View.GONE);
-            return;
-        }
-
-        sectionPagosPendientes.setVisibility(View.VISIBLE);
-        if (dividerPagos != null) dividerPagos.setVisibility(View.VISIBLE);
-
-        float d = getResources().getDisplayMetrics().density;
-
-        // ── Header ──
-        LinearLayout header = new LinearLayout(this);
-        header.setOrientation(LinearLayout.HORIZONTAL);
-        header.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        LinearLayout.LayoutParams lpH = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpH.bottomMargin = (int)(10*d);
-        header.setLayoutParams(lpH);
-
-        TextView tvTit = new TextView(this);
-        tvTit.setText("Pagos pendientes");
-        tvTit.setTextSize(17f);
-        tvTit.setTypeface(null, Typeface.BOLD);
-        tvTit.setTextColor(Color.parseColor("#1A2F4A")); // era #004D40
-        tvTit.setLayoutParams(new LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        header.addView(tvTit);
-
-        TextView tvBadge = new TextView(this);
-        tvBadge.setText(items.size() + (items.size() == 1 ? " viaje" : " viajes"));
-        tvBadge.setTextSize(11f);
-        tvBadge.setTypeface(null, Typeface.BOLD);
-        tvBadge.setTextColor(Color.WHITE);
-        tvBadge.setPadding((int)(10*d),(int)(4*d),(int)(10*d),(int)(4*d));
-        GradientDrawable bgBadge = new GradientDrawable();
-        bgBadge.setShape(GradientDrawable.RECTANGLE);
-        bgBadge.setCornerRadius(20*d);
-        bgBadge.setColor(Color.parseColor("#EF5350")); // era #E53935 — rojo alerta
-        tvBadge.setBackground(bgBadge);
-        header.addView(tvBadge);
-        layoutPagosPendientes.addView(header);
-
-        // ── Cards ──
-        for (JSONObject item : items) {
-            int    viajeId = item.optInt("viajeId", 0);
-            double precio  = item.optDouble("precio", 0);
-            String destino = item.optString("destino", "Destino");
-
-            GradientDrawable bgCard = new GradientDrawable();
-            bgCard.setShape(GradientDrawable.RECTANGLE);
-            bgCard.setCornerRadius(16*d);
-            bgCard.setColor(Color.WHITE);
-            bgCard.setStroke((int)(1.5f*d), Color.parseColor("#FFCDD2")); // mantener rojo claro
-
-            LinearLayout card = new LinearLayout(this);
-            card.setOrientation(LinearLayout.HORIZONTAL);
-            card.setGravity(android.view.Gravity.CENTER_VERTICAL);
-            card.setBackground(bgCard);
-            card.setPadding((int)(14*d),(int)(14*d),(int)(14*d),(int)(14*d));
-            card.setElevation(4*d);
-            LinearLayout.LayoutParams lpCard = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            lpCard.bottomMargin = (int)(10*d);
-            card.setLayoutParams(lpCard);
-
-            // Ícono círculo teal
-            TextView tvIcon = new TextView(this);
-            tvIcon.setText("$");
-            tvIcon.setTextSize(20f);
-            tvIcon.setTypeface(null, Typeface.BOLD);
-            tvIcon.setTextColor(Color.WHITE);
-            tvIcon.setGravity(android.view.Gravity.CENTER);
-            LinearLayout.LayoutParams lpIcon = new LinearLayout.LayoutParams((int)(44*d),(int)(44*d));
-            lpIcon.rightMargin = (int)(12*d);
-            tvIcon.setLayoutParams(lpIcon);
-            GradientDrawable bgIcon = new GradientDrawable();
-            bgIcon.setShape(GradientDrawable.OVAL);
-            bgIcon.setColor(Color.parseColor("#EF5350")); // rojo para pagos pendientes
-            tvIcon.setBackground(bgIcon);
-            card.addView(tvIcon);
-
-            // Info
-            LinearLayout col = new LinearLayout(this);
-            col.setOrientation(LinearLayout.VERTICAL);
-            col.setLayoutParams(new LinearLayout.LayoutParams(
-                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-
-            TextView tvDest = new TextView(this);
-            tvDest.setText(destino);
-            tvDest.setTextSize(13f);
-            tvDest.setTypeface(null, Typeface.BOLD);
-            tvDest.setTextColor(Color.parseColor("#1A2F4A")); // era #1A2035
-            col.addView(tvDest);
-
-            if (precio > 0) {
-                TextView tvPrecio = new TextView(this);
-                tvPrecio.setText("$" + String.format(java.util.Locale.getDefault(), "%,.0f", precio) + " COP");
-                tvPrecio.setTextSize(12f);
-                tvPrecio.setTextColor(Color.parseColor("#00868A")); // era #00695C
-                LinearLayout.LayoutParams lpP = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                lpP.topMargin = (int)(3*d);
-                tvPrecio.setLayoutParams(lpP);
-                col.addView(tvPrecio);
-            }
-            card.addView(col);
-
-            // Botón Pagar
-            MaterialButton btnPagar = new MaterialButton(this);
-            btnPagar.setText("Pagar");
-            btnPagar.setTextSize(12f);
-            btnPagar.setTextColor(Color.WHITE);
-            btnPagar.setCornerRadius((int)(20*d));
-            btnPagar.setBackgroundColor(Color.parseColor("#EF5350")); // rojo para acción de pago
-            LinearLayout.LayoutParams lpBtn = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT, (int)(40*d));
-            lpBtn.leftMargin = (int)(8*d);
-            btnPagar.setLayoutParams(lpBtn);
-
-            final int fViajeId = viajeId;
-            final double fPrecio = precio;
-            final String fDestino = destino;
-            btnPagar.setOnClickListener(v -> {
-                Intent intent = new Intent(this, PagoActivity.class);
-                intent.putExtra(PagoActivity.EXTRA_ID_VIAJE,  fViajeId);
-                intent.putExtra(PagoActivity.EXTRA_MONTO,     fPrecio);
-                intent.putExtra(PagoActivity.EXTRA_DESTINO,   fDestino);
-                startActivity(intent);
-            });
-
-            card.addView(btnPagar);
-            layoutPagosPendientes.addView(card);
-        }
+        if (dividerPagos != null)
+            dividerPagos.setVisibility(View.GONE);
+        if (layoutPagosPendientes != null)
+            layoutPagosPendientes.removeAllViews();
+        // Los pagos pendientes ahora se ven en la pantalla de Notificaciones
     }
-
     // ═══════════════════════════════════════════════════════════════════════════
     //  LISTENERS + BOTTOM NAV
     // ═══════════════════════════════════════════════════════════════════════════

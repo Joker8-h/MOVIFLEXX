@@ -18,6 +18,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Gravity;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -34,6 +35,7 @@ import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.model.ConexionApi;
 import com.arlys.moviflexx.model.Constantes;
 import com.arlys.moviflexx.model.Manager.CalificacionesManager;
+import com.arlys.moviflexx.model.ViajeAlertaManager;
 import com.arlys.moviflexx.model.Manager.RouteManager;
 import com.arlys.moviflexx.model.SessionManager;
 import com.arlys.moviflexx.model.pojo.RouteOption;
@@ -80,6 +82,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
     private static final int    POLLING_MS = 5000;
     private static final int    GPS_CONDUCTOR_POLLING_MS = 3000; // ← cada 3 seg para pasajero
     private static final int    LOCATION_PERMISSION_REQUEST = 1001;
+    private static final int REQUEST_MAPA_SUBIDA = 2001;
 
 
     private static final int    COLOR_RUTA            = 0xFF009B8D;
@@ -90,6 +93,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
     private static final String COLOR_LIBRE = "#4CAF50";
     private static final String COLOR_OCUP  = "#EF5350";
     private static final String COLOR_SEL   = "#FF9800";
+
 
     private static final String OSRM_URL        =
             "https://optimizacionofrutas-production.up.railway.app";
@@ -105,9 +109,30 @@ public class DetalleViajeActivity extends AppCompatActivity {
     private long tiempoReserva = 0L; // timestamp cuando reservó
 
     private MaterialButton btnPagarViaje;
+    private MaterialCardView cardInfoConductor;
     private static final long TIEMPO_CAMBIO_MS = 60_000L; // 1 minuto
     private Handler timerHandler = new Handler(Looper.getMainLooper());
     private Runnable timerRunnable;
+
+    // ── Modelo de asiento (nuevo sistema visual) ─────────────────────────────────
+    private static final int SEAT_LIBRE      = 0;
+    private static final int SEAT_OCUPADO    = 1;
+    private static final int SEAT_SELECCIONADO = 2;
+    private static final int SEAT_CONDUCTOR  = 3;
+    private static final int SEAT_RESERVANDO = 4;
+    private static final int SEAT_RESERVADO = 5;
+    private static final int COLOR_SEAT_RESERVADO       = 0xFF7B1FA2; // morado
+    private static final int COLOR_SEAT_BORDER_RESERVADO= 0xFF4A0072;
+    private static final int COLOR_SEAT_LIBRE       = 0xFF1DB87A;
+    private static final int COLOR_SEAT_OCUPADO     = 0xFFE74C3C;
+    private static final int COLOR_SEAT_SELECCIONADO= 0xFFF39C12;
+    private static final int COLOR_SEAT_CONDUCTOR   = 0xFF2C3E50;
+    private static final int COLOR_SEAT_RESERVANDO  = 0xFF9B59B6;
+    private static final int COLOR_SEAT_BORDER_LIBRE       = 0xFF0fa060;
+    private static final int COLOR_SEAT_BORDER_OCUPADO     = 0xFFc0392b;
+    private static final int COLOR_SEAT_BORDER_SELECCIONADO= 0xFFd68910;
+    private static final int COLOR_SEAT_BORDER_CONDUCTOR   = 0xFF1a252f;
+    private static final int COLOR_SEAT_BORDER_RESERVANDO  = 0xFF7d3c98;
 
     // IDs de marcadores
     private static final String MID_ORIGEN    = "m_origen";
@@ -117,7 +142,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
     private static final String MID_CONDUCTOR = "m_conductor";
 
     private static final List<String> ESTADOS_RESERVABLES = Arrays.asList(
-            "EN_CURSO", "INICIADO"
+            "EN_CURSO", "INICIADO", "DISPONIBLE", "PROGRAMADO", "CREADO"
     );
 
     private static final List<String> ESTADOS_RESERVA_ACTIVA = Arrays.asList(
@@ -130,10 +155,10 @@ public class DetalleViajeActivity extends AppCompatActivity {
     );
 
     private static final int[] COLORES_PASAJEROS = {
-            0xFFFF9800, 0xFF9C27B0, 0xFF2196F3, 0xFFE91E63, 0xFF009688, 0xFFFF5722
+            0xFF00ACC1, 0xFF00838F, 0xFF006064, 0xFF0097A7, 0xFF00BCD4, 0xFF4DD0E1
     };
     private static final String[] COLORES_PASAJEROS_HEX = {
-            "#FF9800", "#9C27B0", "#2196F3", "#E91E63", "#009688", "#FF5722"
+            "#00ACC1", "#00838F", "#006064", "#0097A7", "#00BCD4", "#4DD0E1"
     };
 
     // ── UI ────────────────────────────────────────────────────────────────────
@@ -164,8 +189,9 @@ public class DetalleViajeActivity extends AppCompatActivity {
     private double  latOrigen, lngOrigen, latDestino, lngDestino;
     private int     cuposTotales = 0, cuposDisponibles = 0;
     private double  precioViaje  = 0;
-
     private double precioCalculadoPasajero = 0;
+    private double precioCalculadoPersistente = 0;
+
     private double  distanciaKm  = 0, duracionMin = 0;
     private int     indiceRuta   = 0;
     private String  miParadaBajada = "";
@@ -213,7 +239,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
     private boolean coordsOrigenInvalidas  = false;
     private boolean coordsDestinoInvalidas = false;
 
-    private boolean calificacionYaDisparada = false;  // ← AGREGAR AQUÍ
+    private boolean calificacionYaDisparada = false;
 
     // ── Polling general (estado del viaje) ───────────────────────────────────
     private final Handler pollingHandler = new Handler(Looper.getMainLooper());
@@ -439,6 +465,8 @@ public class DetalleViajeActivity extends AppCompatActivity {
         }
     }
 
+
+
     // =========================================================================
     //  POLLING GPS CONDUCTOR → para que el pasajero vea al conductor en tiempo real
     // =========================================================================
@@ -467,11 +495,6 @@ public class DetalleViajeActivity extends AppCompatActivity {
             gpsPollingHandler.removeCallbacks(gpsPollingRunnable);
     }
 
-    /**
-     * Consulta al backend la última posición del conductor y actualiza el mapa.
-     * Endpoint esperado: GET /api/viajes/{id}/ubicacion-conductor
-     * Respuesta esperada: { "lat": x.xxx, "lng": y.yyy }
-     */
     // REEMPLAZA este método completo:
     private void obtenerUbicacionConductorDesdeBackend() {
         // ← Agregar timestamp para evitar cache de Volley
@@ -578,8 +601,10 @@ public class DetalleViajeActivity extends AppCompatActivity {
         if (btnAccionPrincipal != null)
             btnAccionPrincipal.setOnClickListener(v -> mostrarBottomSheetParada());
 
-        btnIniciar.setOnClickListener(v -> cambiarEstadoViaje("iniciar"));
-        btnFinalizar.setOnClickListener(v -> confirmarFinalizar());
+        btnIniciar.setOnClickListener(v -> {
+            ViajeAlertaManager.cancelarAlertas(viajeId); // cancela jobs pendientes
+            cambiarEstadoViaje("iniciar");
+        });        btnFinalizar.setOnClickListener(v -> confirmarFinalizar());
         if (btnMensajeConductor != null)
             btnMensajeConductor.setOnClickListener(v -> abrirOCrearChat());
 
@@ -618,7 +643,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
                                 new Handler(Looper.getMainLooper()).postDelayed(cb, 1200);
                             }
                         }
-                        return true; // consumir el evento para no mover el mapa
+                        return true;
                     }
                     break;
                 case MotionEvent.ACTION_CANCEL:
@@ -629,11 +654,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Activa el modo de seleccion en el mapa.
-     * Muestra un banner flotante y espera que el usuario toque el mapa.
-     * Cuando toca, llama a onSeleccion con el punto elegido y el nombre geocodificado.
-     */
+
     private void activarModoSeleccionMapa(android.widget.TextView chipRef, MaterialButton[] btnRef) {
         modoSeleccionMapaActivo = true;
         mostrarBannerSeleccionMapa();
@@ -655,6 +676,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
     private android.widget.TextView chipSubidaRef = null;
     private MaterialButton[] btnSubidaRef = null;
     private ParadaDinamica[] subidaElegidaRef = null;
+    private LinearLayout filaSubidaSeleccionada = null;
 
     private void mostrarBannerSeleccionMapa() {
         if (map == null) return;
@@ -728,10 +750,6 @@ public class DetalleViajeActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Encuentra el punto de la ruta activa mas cercano al punto tocado.
-     * Esto asegura que la subida siempre quede sobre o cerca de la ruta.
-     */
     private GeoPoint puntoMasCercanoEnRuta(GeoPoint tocado) {
         if (rutaActiva == null || rutaActiva.isEmpty()) return null;
         GeoPoint mejor = null; double menorDist = Double.MAX_VALUE;
@@ -745,10 +763,6 @@ public class DetalleViajeActivity extends AppCompatActivity {
         return (menorDist < 0.0002) ? mejor : tocado;
     }
 
-    /**
-     * Dado un GeoPoint, obtiene el nombre del lugar via Nominatim (en background)
-     * y actualiza el marcador en el mapa + chip del sheet.
-     */
     private void geocodificarPuntoYNotificar(GeoPoint gp) {
         // Mostrar marcador provisional inmediatamente
         runOnUiThread(() -> {
@@ -756,7 +770,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
             nombreSubidaPasajero = String.format("%.4f, %.4f", gp.getLatitude(), gp.getLongitude());
             // Actualizar chip provisional
             if (chipSubidaRef != null) {
-                chipSubidaRef.setText("📍 Cargando nombre...");
+                chipSubidaRef.setText(" Cargando nombre...");
                 chipSubidaRef.setVisibility(android.view.View.VISIBLE);
             }
             // Habilitar boton provisional
@@ -786,7 +800,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     nombreSubidaPasajero = nomFinal;
                     if (chipSubidaRef != null) {
-                        chipSubidaRef.setText("🙋 " + nomFinal);
+                        chipSubidaRef.setText("" + nomFinal);
                         chipSubidaRef.setVisibility(android.view.View.VISIBLE);
                     }
                     ParadaDinamica pdFinal = new ParadaDinamica(nomFinal, gp.getLatitude(), gp.getLongitude(), -99);
@@ -912,7 +926,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
         inner.addView(crearSeparadorFila(d, p6));
         inner.addView(crearFilaReserva(ROW_ID_BAJADA,   "🚏", "Bajarás en",          "—", d, 0, p6));
         inner.addView(crearSeparadorFila(d, p6));
-        inner.addView(crearFilaReserva(ROW_ID_PRECIO,   "", "Precio total",        "—", d, 0, 0));
+        inner.addView(crearFilaReserva(ROW_ID_PRECIO,   "$", "Precio total",        "—", d, 0, 0));
 
         txtMiReservaInfo = new TextView(this);
         txtMiReservaInfo.setVisibility(View.GONE);
@@ -1054,9 +1068,9 @@ public class DetalleViajeActivity extends AppCompatActivity {
         cardPasajeros.setLayoutParams(lp);
         cardPasajeros.setRadius(16 * d);
         cardPasajeros.setCardElevation(0);
-        cardPasajeros.setCardBackgroundColor(Color.parseColor("#E3F2FD"));
+        cardPasajeros.setCardBackgroundColor(Color.parseColor("#E0F7FA"));
+        cardPasajeros.setStrokeColor(Color.parseColor("#80DEEA"));
         cardPasajeros.setStrokeWidth((int)(1.5f * d));
-        cardPasajeros.setStrokeColor(Color.parseColor("#BBDEFB"));
         cardPasajeros.setVisibility(View.GONE);
 
         LinearLayout inner = new LinearLayout(this);
@@ -1076,7 +1090,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
         android.graphics.drawable.GradientDrawable barShape = new android.graphics.drawable.GradientDrawable();
         barShape.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
         barShape.setCornerRadius(4 * d);
-        barShape.setColors(new int[]{Color.parseColor("#1565C0"), Color.parseColor("#1976D2")});
+        barShape.setColors(new int[]{Color.parseColor("#00BFA0"), Color.parseColor("#00897B")});
         barShape.setOrientation(android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM);
         accentBar.setBackground(barShape);
         fila.addView(accentBar);
@@ -1085,7 +1099,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
         titulo.setText("PASAJEROS RESERVADOS");
         titulo.setTextSize(10f);
         titulo.setTypeface(null, Typeface.BOLD);
-        titulo.setTextColor(Color.parseColor("#1565C0"));
+        titulo.setTextColor(Color.parseColor("#006064"));
         titulo.setLetterSpacing(0.16f);
         titulo.setLayoutParams(new LinearLayout.LayoutParams(0,
                 LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
@@ -1093,7 +1107,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
         txtTotalPasajeros = new TextView(this);
         txtTotalPasajeros.setTextSize(11f);
-        txtTotalPasajeros.setTextColor(Color.parseColor("#1565C0"));
+        txtTotalPasajeros.setTextColor(Color.parseColor("#006064"));
         txtTotalPasajeros.setTypeface(null, Typeface.BOLD);
         fila.addView(txtTotalPasajeros);
         inner.addView(fila);
@@ -1103,7 +1117,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
                 LinearLayout.LayoutParams.MATCH_PARENT, (int)(1*d));
         ls.setMargins(0, p8, 0, p8);
         sep.setLayoutParams(ls);
-        sep.setBackgroundColor(Color.parseColor("#BBDEFB"));
+        sep.setBackgroundColor(Color.parseColor("#80DEEA"));
         inner.addView(sep);
 
         layoutListaPasajeros = new LinearLayout(this);
@@ -1166,7 +1180,6 @@ public class DetalleViajeActivity extends AppCompatActivity {
         // ── Extraer km y min desde "descripcion" si extraerMetricas no encontró nada ──
         if ((distanciaKm <= 0 || duracionMin <= 0) && ruta != null) {
             String desc = ruta.optString("descripcion", "");
-            // Ejemplo: "Ruta de 12.5 km en Carro (20 min)"
             try {
                 java.util.regex.Matcher mKm = java.util.regex.Pattern
                         .compile("([\\d.]+)\\s*km").matcher(desc);
@@ -1222,7 +1235,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
             txtVehiculo.setText("" + veh.optString("marca","") + " "
                     + veh.optString("modelo","") + " • " + veh.optString("placa",""));
 
-        // ── Precio — distanciaKm ya disponible ──
+        // ── Precio ──
         double pr = r.optDouble("precio", -1);
         if (pr < 0) {
             try { pr = Double.parseDouble(r.optString("precio", "0")); }
@@ -1255,35 +1268,816 @@ public class DetalleViajeActivity extends AppCompatActivity {
         if (!esConductor && ("INICIADO".equals(estadoViaje) || "EN_CURSO".equals(estadoViaje)))
             iniciarPollingUbicacionConductor();
 
+        // ── Card info conductor (foto, calificación, teléfono) ──────────────
+        // Solo mostrarla al pasajero; el conductor ya se ve a sí mismo
+        if (!esConductor) {
+            runOnUiThread(this::crearOActualizarCardConductor);
+        }
+        // Mostrar banner "Conductor en ruta" si el viaje ya inició y el pasajero tiene reserva
+        if (!esConductor && ("EN_CURSO".equals(estadoViaje) || "INICIADO".equals(estadoViaje))) {
+            mostrarBannerConductorEnRuta();
+        }
+
+
+
         if (esConductor) cargarReservasConductor();
         else             cargarMiReservaPasajero();
     }
 
 
-    private void cargarNombreConductorPorId(int id) {
-        if (id <= 0) return;  // ← AGREGAR
-        ConexionApi.getInstance(this).getObject(Constantes.USUARIOS + "/" + id,
+
+    private void crearOActualizarCardConductor() {
+        LinearLayout container = findViewById(R.id.container_mi_reserva);
+        if (container == null) return;
+
+        // Si ya existe la card, solo actualizarla
+        if (cardInfoConductor != null) {
+            actualizarCardConductorUI();
+            return;
+        }
+
+        float d  = getResources().getDisplayMetrics().density;
+        int p16  = (int)(16 * d), p14 = (int)(14 * d);
+        int p12  = (int)(12 * d), p10 = (int)(10 * d);
+        int p8   = (int)(8  * d), p6  = (int)(6  * d);
+        int p4   = (int)(4  * d);
+
+        // Separador
+        View divisorTop = new View(this);
+        LinearLayout.LayoutParams lpDivTop = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, (int)(1 * d));
+        lpDivTop.setMargins(0, p14, 0, p14);
+        divisorTop.setLayoutParams(lpDivTop);
+        divisorTop.setBackgroundColor(android.graphics.Color.parseColor("#E0F2F1"));
+        container.addView(divisorTop, 0);
+
+        // ── Card principal ────────────────────────────────────────────────────
+        cardInfoConductor = new MaterialCardView(this);
+        LinearLayout.LayoutParams lpCard = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        cardInfoConductor.setLayoutParams(lpCard);
+        cardInfoConductor.setRadius(18 * d);
+        cardInfoConductor.setCardElevation(4 * d);
+        cardInfoConductor.setCardBackgroundColor(android.graphics.Color.WHITE);
+        cardInfoConductor.setStrokeWidth((int)(1.5f * d));
+        cardInfoConductor.setStrokeColor(android.graphics.Color.parseColor("#E0F2F1"));
+
+        LinearLayout inner = new LinearLayout(this);
+        inner.setOrientation(LinearLayout.VERTICAL);
+        inner.setPadding(p16, p16, p16, p16);
+
+        // ── Encabezado con barra acento ───────────────────────────────────────
+        LinearLayout encabezado = new LinearLayout(this);
+        encabezado.setOrientation(LinearLayout.HORIZONTAL);
+        encabezado.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams lpEnc = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpEnc.setMargins(0, 0, 0, p14);
+        encabezado.setLayoutParams(lpEnc);
+
+        View accentBar = new View(this);
+        LinearLayout.LayoutParams lpBar = new LinearLayout.LayoutParams((int)(4*d), (int)(18*d));
+        lpBar.setMargins(0, 0, (int)(10*d), 0);
+        accentBar.setLayoutParams(lpBar);
+        android.graphics.drawable.GradientDrawable barShape =
+                new android.graphics.drawable.GradientDrawable();
+        barShape.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        barShape.setCornerRadius(4 * d);
+        barShape.setColors(new int[]{
+                android.graphics.Color.parseColor("#00BFA0"),
+                android.graphics.Color.parseColor("#00897B")});
+        barShape.setOrientation(
+                android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM);
+        accentBar.setBackground(barShape);
+        encabezado.addView(accentBar);
+
+        TextView tvTitulo = new TextView(this);
+        tvTitulo.setText("CONDUCTOR DEL VIAJE");
+        tvTitulo.setTextSize(10f);
+        tvTitulo.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvTitulo.setTextColor(android.graphics.Color.parseColor("#00897B"));
+        tvTitulo.setLetterSpacing(0.14f);
+        tvTitulo.setLayoutParams(new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        encabezado.addView(tvTitulo);
+
+        TextView tvIcono = new TextView(this);
+        tvIcono.setText("");
+        tvIcono.setTextSize(18f);
+        encabezado.addView(tvIcono);
+        inner.addView(encabezado);
+
+        // ── Fila avatar + nombre + calificación ───────────────────────────────
+        LinearLayout filaAvatar = new LinearLayout(this);
+        filaAvatar.setOrientation(LinearLayout.HORIZONTAL);
+        filaAvatar.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams lpFA = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpFA.setMargins(0, 0, 0, p12);
+        filaAvatar.setLayoutParams(lpFA);
+
+        // ── Avatar (foto o inicial) ───────────────────────────────────────────
+        android.widget.FrameLayout frameAvatar = new android.widget.FrameLayout(this);
+        LinearLayout.LayoutParams lpFrame = new LinearLayout.LayoutParams(
+                (int)(64*d), (int)(64*d));
+        lpFrame.setMargins(0, 0, p14, 0);
+        frameAvatar.setLayoutParams(lpFrame);
+
+        // Card foto
+        MaterialCardView cardFoto = new MaterialCardView(this);
+        cardFoto.setTag("card_foto_conductor");
+        android.widget.FrameLayout.LayoutParams lpCF =
+                new android.widget.FrameLayout.LayoutParams(
+                        android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                        android.widget.FrameLayout.LayoutParams.MATCH_PARENT);
+        cardFoto.setLayoutParams(lpCF);
+        cardFoto.setRadius((int)(32*d));
+        cardFoto.setCardElevation(3 * d);
+        cardFoto.setStrokeWidth((int)(2*d));
+        cardFoto.setStrokeColor(android.graphics.Color.parseColor("#00CED1"));
+
+        android.widget.ImageView ivFoto = new android.widget.ImageView(this);
+        ivFoto.setTag("iv_foto_conductor");
+        ivFoto.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
+        cardFoto.addView(ivFoto);
+        cardFoto.setVisibility(View.GONE);
+        frameAvatar.addView(cardFoto);
+
+        // Card inicial (fallback)
+        MaterialCardView cardInicial = new MaterialCardView(this);
+        cardInicial.setTag("card_inicial_conductor");
+        cardInicial.setLayoutParams(lpCF);
+        cardInicial.setRadius((int)(32*d));
+        cardInicial.setCardElevation(3 * d);
+        android.graphics.drawable.GradientDrawable bgInicial =
+                new android.graphics.drawable.GradientDrawable();
+        bgInicial.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        bgInicial.setColors(new int[]{
+                android.graphics.Color.parseColor("#00CED1"),
+                android.graphics.Color.parseColor("#00897B")});
+        bgInicial.setOrientation(
+                android.graphics.drawable.GradientDrawable.Orientation.TL_BR);
+
+        TextView tvInicial = new TextView(this);
+        tvInicial.setTag("tv_inicial_conductor");
+        tvInicial.setTextSize(24f);
+        tvInicial.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvInicial.setTextColor(android.graphics.Color.WHITE);
+        tvInicial.setGravity(android.view.Gravity.CENTER);
+        tvInicial.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
+
+        // Determinar inicial
+        String nombreInit = nombreConductorViaje != null && !nombreConductorViaje.isEmpty()
+                && !nombreConductorViaje.startsWith("Conductor #")
+                ? String.valueOf(nombreConductorViaje.charAt(0)).toUpperCase()
+                : "C";
+        tvInicial.setText(nombreInit);
+        cardInicial.setBackground(bgInicial);
+        cardInicial.addView(tvInicial);
+        frameAvatar.addView(cardInicial);
+        filaAvatar.addView(frameAvatar);
+
+        // ── Columna nombre + calificación + estado ────────────────────────────
+        LinearLayout colDatos = new LinearLayout(this);
+        colDatos.setOrientation(LinearLayout.VERTICAL);
+        colDatos.setLayoutParams(new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        // Nombre
+        TextView tvNombreCond = new TextView(this);
+        tvNombreCond.setTag("tv_nombre_conductor_card");
+        String nomMostrar = (nombreConductorViaje != null && !nombreConductorViaje.isEmpty()
+                && !nombreConductorViaje.startsWith("Conductor #"))
+                ? nombreConductorViaje : "Cargando...";
+        tvNombreCond.setText(nomMostrar);
+        tvNombreCond.setTextSize(16f);
+        tvNombreCond.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvNombreCond.setTextColor(android.graphics.Color.parseColor("#004D40"));
+        tvNombreCond.setMaxLines(1);
+        tvNombreCond.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        colDatos.addView(tvNombreCond);
+
+        // Chip "Conductor"
+        TextView chipRol = new TextView(this);
+        chipRol.setText("Conductor");
+        chipRol.setTextSize(11f);
+        chipRol.setTextColor(android.graphics.Color.parseColor("#00897B"));
+        chipRol.setTypeface(null, android.graphics.Typeface.BOLD);
+        chipRol.setPadding(p8, (int)(3*d), p8, (int)(3*d));
+        android.graphics.drawable.GradientDrawable bgChip =
+                new android.graphics.drawable.GradientDrawable();
+        bgChip.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        bgChip.setCornerRadius(20 * d);
+        bgChip.setColor(android.graphics.Color.parseColor("#E0F7FA"));
+        bgChip.setStroke((int)(1*d), android.graphics.Color.parseColor("#80CBC4"));
+        chipRol.setBackground(bgChip);
+        LinearLayout.LayoutParams lpChip = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpChip.topMargin = (int)(4*d);
+        chipRol.setLayoutParams(lpChip);
+        colDatos.addView(chipRol);
+
+        // Estrellas + promedio
+        LinearLayout filaEstrellas = new LinearLayout(this);
+        filaEstrellas.setOrientation(LinearLayout.HORIZONTAL);
+        filaEstrellas.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams lpFE = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpFE.topMargin = (int)(6*d);
+        filaEstrellas.setLayoutParams(lpFE);
+        filaEstrellas.setTag("fila_estrellas_conductor");
+
+        // Placeholder estrellas (se actualizan al cargar)
+        for (int i = 0; i < 5; i++) {
+            TextView tvStar = new TextView(this);
+            tvStar.setText("★");
+            tvStar.setTextSize(14f);
+            tvStar.setTextColor(android.graphics.Color.parseColor("#CFD8DC"));
+            filaEstrellas.addView(tvStar);
+        }
+
+        TextView tvPromedio = new TextView(this);
+        tvPromedio.setTag("tv_promedio_conductor");
+        tvPromedio.setText("  —");
+        tvPromedio.setTextSize(13f);
+        tvPromedio.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvPromedio.setTextColor(android.graphics.Color.parseColor("#546E7A"));
+        filaEstrellas.addView(tvPromedio);
+        colDatos.addView(filaEstrellas);
+
+        filaAvatar.addView(colDatos);
+        inner.addView(filaAvatar);
+
+        // ── Separador ─────────────────────────────────────────────────────────
+        View sep = new View(this);
+        LinearLayout.LayoutParams lpSep = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, (int)(1*d));
+        lpSep.setMargins(0, 0, 0, p12);
+        sep.setLayoutParams(lpSep);
+        sep.setBackgroundColor(android.graphics.Color.parseColor("#E0F2F1"));
+        inner.addView(sep);
+
+        // ── Fila teléfono ─────────────────────────────────────────────────────
+        LinearLayout filaTelefono = new LinearLayout(this);
+        filaTelefono.setOrientation(LinearLayout.HORIZONTAL);
+        filaTelefono.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        filaTelefono.setTag("fila_telefono_conductor");
+        filaTelefono.setVisibility(View.GONE);  // oculta hasta que cargue
+        LinearLayout.LayoutParams lpFT = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpFT.setMargins(0, 0, 0, p8);
+        filaTelefono.setLayoutParams(lpFT);
+
+        android.widget.FrameLayout iconTelFrame = new android.widget.FrameLayout(this);
+        LinearLayout.LayoutParams lpIconFrame = new LinearLayout.LayoutParams(
+                (int)(38*d), (int)(38*d));
+        lpIconFrame.setMargins(0, 0, p12, 0);
+        iconTelFrame.setLayoutParams(lpIconFrame);
+        android.graphics.drawable.GradientDrawable bgIconTel =
+                new android.graphics.drawable.GradientDrawable();
+        bgIconTel.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        bgIconTel.setColor(android.graphics.Color.parseColor("#E0F7FA"));
+        bgIconTel.setStroke((int)(1*d), android.graphics.Color.parseColor("#B2EBF2"));
+        iconTelFrame.setBackground(bgIconTel);
+
+        TextView tvIconTel = new TextView(this);
+        tvIconTel.setText("📞");
+        tvIconTel.setTextSize(16f);
+        tvIconTel.setGravity(android.view.Gravity.CENTER);
+        tvIconTel.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
+        iconTelFrame.addView(tvIconTel);
+        filaTelefono.addView(iconTelFrame);
+
+        LinearLayout colTel = new LinearLayout(this);
+        colTel.setOrientation(LinearLayout.VERTICAL);
+        colTel.setLayoutParams(new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView tvLabelTel = new TextView(this);
+        tvLabelTel.setText("TELÉFONO");
+        tvLabelTel.setTextSize(9f);
+        tvLabelTel.setTextColor(android.graphics.Color.parseColor("#80CBC4"));
+        tvLabelTel.setAllCaps(true);
+        tvLabelTel.setLetterSpacing(0.1f);
+        colTel.addView(tvLabelTel);
+
+        TextView tvTelefonoCond = new TextView(this);
+        tvTelefonoCond.setTag("tv_telefono_conductor_card");
+        tvTelefonoCond.setText("—");
+        tvTelefonoCond.setTextSize(14f);
+        tvTelefonoCond.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvTelefonoCond.setTextColor(android.graphics.Color.parseColor("#004D40"));
+        LinearLayout.LayoutParams lpTV = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpTV.topMargin = (int)(2*d);
+        tvTelefonoCond.setLayoutParams(lpTV);
+        colTel.addView(tvTelefonoCond);
+        filaTelefono.addView(colTel);
+
+        // Botón llamar
+        com.google.android.material.button.MaterialButton btnLlamar =
+                new com.google.android.material.button.MaterialButton(this);
+        btnLlamar.setTag("btn_llamar_conductor");
+        btnLlamar.setText("Llamar");
+        btnLlamar.setTextSize(12f);
+        btnLlamar.setTextColor(android.graphics.Color.WHITE);
+        btnLlamar.setCornerRadius((int)(20*d));
+        btnLlamar.setBackgroundColor(android.graphics.Color.parseColor("#00897B"));
+        LinearLayout.LayoutParams lpLlamar = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, (int)(36*d));
+        lpLlamar.setMargins(p8, 0, 0, 0);
+        btnLlamar.setLayoutParams(lpLlamar);
+        btnLlamar.setInsetTop(0); btnLlamar.setInsetBottom(0);
+        filaTelefono.addView(btnLlamar);
+        inner.addView(filaTelefono);
+
+        // ── Fila calificaciones detalle ───────────────────────────────────────
+        LinearLayout filaCalif = new LinearLayout(this);
+        filaCalif.setOrientation(LinearLayout.HORIZONTAL);
+        filaCalif.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        filaCalif.setTag("fila_calif_conductor");
+        filaCalif.setVisibility(View.GONE);
+        LinearLayout.LayoutParams lpFC = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        filaCalif.setLayoutParams(lpFC);
+
+        android.widget.FrameLayout iconCalFrame = new android.widget.FrameLayout(this);
+        iconCalFrame.setLayoutParams(lpIconFrame);
+        android.graphics.drawable.GradientDrawable bgIconCal =
+                new android.graphics.drawable.GradientDrawable();
+        bgIconCal.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        bgIconCal.setColor(android.graphics.Color.parseColor("#FFF8E1"));
+        bgIconCal.setStroke((int)(1*d), android.graphics.Color.parseColor("#FFD54F"));
+        iconCalFrame.setBackground(bgIconCal);
+
+        TextView tvIconCal = new TextView(this);
+        tvIconCal.setText("⭐");
+        tvIconCal.setTextSize(16f);
+        tvIconCal.setGravity(android.view.Gravity.CENTER);
+        tvIconCal.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
+        iconCalFrame.addView(tvIconCal);
+        filaCalif.addView(iconCalFrame);
+
+        LinearLayout colCal = new LinearLayout(this);
+        colCal.setOrientation(LinearLayout.VERTICAL);
+        colCal.setLayoutParams(new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView tvLabelCal = new TextView(this);
+        tvLabelCal.setText("CALIFICACIÓN");
+        tvLabelCal.setTextSize(9f);
+        tvLabelCal.setTextColor(android.graphics.Color.parseColor("#80CBC4"));
+        tvLabelCal.setAllCaps(true);
+        tvLabelCal.setLetterSpacing(0.1f);
+        colCal.addView(tvLabelCal);
+
+        TextView tvCalDetalle = new TextView(this);
+        tvCalDetalle.setTag("tv_calif_detalle_conductor");
+        tvCalDetalle.setText("Sin calificaciones aún");
+        tvCalDetalle.setTextSize(13f);
+        tvCalDetalle.setTextColor(android.graphics.Color.parseColor("#546E7A"));
+        LinearLayout.LayoutParams lpTVCal = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpTVCal.topMargin = (int)(2*d);
+        tvCalDetalle.setLayoutParams(lpTVCal);
+        colCal.addView(tvCalDetalle);
+        filaCalif.addView(colCal);
+        inner.addView(filaCalif);
+
+        cardInfoConductor.addView(inner);
+        container.addView(cardInfoConductor, 0);
+
+        // Cargar datos del conductor via API
+        if (idConductorViaje > 0) {
+            cargarDatosCompletosDelConductor(idConductorViaje);
+        }
+    }
+
+    private void mostrarBannerConductorEnRuta() {
+        // Buscar si ya existe el banner
+        LinearLayout container = findViewById(R.id.container_mi_reserva);
+        if (container == null) return;
+
+        // Evitar duplicados
+        if (container.findViewWithTag("banner_en_ruta") != null) return;
+
+        float d = getResources().getDisplayMetrics().density;
+        int p12 = (int)(12*d), p10 = (int)(10*d), p8 = (int)(8*d);
+
+        com.google.android.material.card.MaterialCardView banner =
+                new com.google.android.material.card.MaterialCardView(this);
+        banner.setTag("banner_en_ruta");
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, 0, 0, p12);
+        banner.setLayoutParams(lp);
+        banner.setRadius(14 * d);
+        banner.setCardElevation(3 * d);
+        banner.setCardBackgroundColor(android.graphics.Color.parseColor("#E8F5E9"));
+        banner.setStrokeWidth((int)(1.5f * d));
+        banner.setStrokeColor(android.graphics.Color.parseColor("#A5D6A7"));
+
+        LinearLayout inner = new LinearLayout(this);
+        inner.setOrientation(LinearLayout.HORIZONTAL);
+        inner.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        inner.setPadding(p12, p10, p12, p10);
+
+        // Punto verde pulsante
+        android.widget.FrameLayout dotFrame = new android.widget.FrameLayout(this);
+        LinearLayout.LayoutParams lpDot = new LinearLayout.LayoutParams(
+                (int)(12*d), (int)(12*d));
+        lpDot.setMargins(0, 0, p10, 0);
+        dotFrame.setLayoutParams(lpDot);
+        android.graphics.drawable.GradientDrawable dot = new android.graphics.drawable.GradientDrawable();
+        dot.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        dot.setColor(android.graphics.Color.parseColor("#4CAF50"));
+        dotFrame.setBackground(dot);
+
+        // Animación pulso
+        android.animation.ObjectAnimator pulso = android.animation.ObjectAnimator
+                .ofFloat(dotFrame, "alpha", 1f, 0.2f);
+        pulso.setDuration(800);
+        pulso.setRepeatCount(android.animation.ObjectAnimator.INFINITE);
+        pulso.setRepeatMode(android.animation.ObjectAnimator.REVERSE);
+        pulso.start();
+        inner.addView(dotFrame);
+
+        LinearLayout col = new LinearLayout(this);
+        col.setOrientation(LinearLayout.VERTICAL);
+        col.setLayoutParams(new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        android.widget.TextView tvTitulo = new android.widget.TextView(this);
+        tvTitulo.setText("Conductor en ruta");
+        tvTitulo.setTextSize(14f);
+        tvTitulo.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvTitulo.setTextColor(android.graphics.Color.parseColor("#1B5E20"));
+        col.addView(tvTitulo);
+
+        android.widget.TextView tvSub = new android.widget.TextView(this);
+        tvSub.setText("Prepárate en tu punto de recogida");
+        tvSub.setTextSize(12f);
+        tvSub.setTextColor(android.graphics.Color.parseColor("#2E7D32"));
+        LinearLayout.LayoutParams lpSub = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpSub.topMargin = (int)(2*d);
+        tvSub.setLayoutParams(lpSub);
+        col.addView(tvSub);
+        inner.addView(col);
+
+        banner.addView(inner);
+        container.addView(banner, 0); // agregar al inicio
+    }
+
+    /**
+     * Actualiza los TextViews de la card del conductor cuando ya existe.
+     */
+    private void actualizarCardConductorUI() {
+        if (cardInfoConductor == null) return;
+
+        // Actualizar nombre
+        View tvNom = cardInfoConductor.findViewWithTag("tv_nombre_conductor_card");
+        if (tvNom instanceof TextView) {
+            String nom = (nombreConductorViaje != null && !nombreConductorViaje.isEmpty()
+                    && !nombreConductorViaje.startsWith("Conductor #"))
+                    ? nombreConductorViaje : "—";
+            ((TextView) tvNom).setText(nom);
+
+            // Actualizar inicial del avatar
+            View tvIni = cardInfoConductor.findViewWithTag("tv_inicial_conductor");
+            if (tvIni instanceof TextView && !nom.equals("—"))
+                ((TextView) tvIni).setText(String.valueOf(nom.charAt(0)).toUpperCase());
+        }
+
+        // Recargar datos si tenemos id
+        if (idConductorViaje > 0)
+            cargarDatosCompletosDelConductor(idConductorViaje);
+    }
+
+    /**
+     * Carga foto, teléfono y calificación del conductor desde el backend
+     * y actualiza la card dinámicamente.
+     */
+    private void cargarDatosCompletosDelConductor(int idCond) {
+        if (idCond <= 0 || cardInfoConductor == null) return;
+
+        // ── 1. Cargar perfil (foto + teléfono) ───────────────────────────────
+        String[] endpointsPerfil = {
+                Constantes.authPorId((long) idCond),
+                Constantes.USUARIOS + "/" + idCond,
+                Constantes.BASE_URL + "/api/usuarios/" + idCond
+        };
+        cargarPerfilConductorDesdeEndpoints(endpointsPerfil, 0);
+
+        // ── 2. Cargar calificación promedio ───────────────────────────────────
+        ConexionApi.getInstance(this).getObjectNoCache(
+                Constantes.calificacionPromedio((long) idCond),
+                promedioObj -> {
+                    double prom = 0;
+                    int total   = 0;
+                    JSONObject anidado = promedioObj.optJSONObject("promedio");
+                    if (anidado != null) {
+                        prom  = anidado.optDouble("promedio", 0);
+                        total = anidado.optInt("total", 0);
+                    } else {
+                        prom  = promedioObj.optDouble("promedio",
+                                promedioObj.optDouble("average",
+                                        promedioObj.optDouble("calificacionPromedio", 0)));
+                        total = promedioObj.optInt("total",
+                                promedioObj.optInt("count",
+                                        promedioObj.optInt("totalCalificaciones", 0)));
+                    }
+                    final double fProm  = prom;
+                    final int    fTotal = total;
+                    runOnUiThread(() -> actualizarEstrellasConductor(fProm, fTotal));
+                },
+                err -> android.util.Log.w(TAG, "No se pudo cargar calificación conductor id=" + idCond)
+        );
+    }
+
+    private void cargarPerfilConductorDesdeEndpoints(String[] endpoints, int idx) {
+        if (idx >= endpoints.length || cardInfoConductor == null) return;
+
+        ConexionApi.getInstance(this).getObject(endpoints[idx],
                 perfil -> {
-                    String nom = extractNombre(perfil);
-                    if (!nom.isEmpty()) {
+                    android.util.Log.d(TAG, "Perfil conductor endpoint[" + idx + "]: "
+                            + perfil.toString().substring(0, Math.min(300, perfil.toString().length())));
+
+                    // Extraer nombre
+                    String nom = extraerNombreDePerfil(perfil);
+                    if (!nom.isEmpty() && (nombreConductorViaje == null
+                            || nombreConductorViaje.isEmpty()
+                            || nombreConductorViaje.startsWith("Conductor #"))) {
                         nombreConductorViaje = nom;
                         runOnUiThread(() -> {
                             actualizarNombreConductorUI();
                             actualizarBotonChat();
+                            View tvNom = cardInfoConductor.findViewWithTag("tv_nombre_conductor_card");
+                            if (tvNom instanceof TextView) ((TextView) tvNom).setText(nom);
+                            View tvIni = cardInfoConductor.findViewWithTag("tv_inicial_conductor");
+                            if (tvIni instanceof TextView && !nom.isEmpty())
+                                ((TextView) tvIni).setText(String.valueOf(nom.charAt(0)).toUpperCase());
                         });
+                    }
+
+                    // Extraer foto
+                    String foto = extraerFotoDePerfil(perfil);
+
+                    // Extraer teléfono
+                    String tel = extraerTelefonoDePerfil(perfil);
+
+                    runOnUiThread(() -> {
+                        if (!foto.isEmpty()) aplicarFotoCondcutorEnCard(foto);
+                        if (!tel.isEmpty()) mostrarTelefonoEnCard(tel);
+                        else if (idx + 1 < new String[]{}.length) {
+                            // si no encontró datos, intenta siguiente endpoint
+                        }
+                    });
+
+                    // Si no encontró teléfono ni foto, intentar siguiente endpoint
+                    if (foto.isEmpty() && tel.isEmpty() && idx + 1 < endpoints.length) {
+                        cargarPerfilConductorDesdeEndpoints(endpoints, idx + 1);
                     }
                 },
                 err -> {
-                    // ← AGREGAR: si es 404, asignar nombre genérico y NO reintentar
                     int code = (err != null && err.networkResponse != null)
                             ? err.networkResponse.statusCode : 0;
-                    if (code == 404) {
-                        nombreConductorViaje = "Conductor";
-                        runOnUiThread(() -> actualizarNombreConductorUI());
-                    }
-                    Log.w(TAG, "No se pudo cargar nombre del conductor #" + id + " (código " + code + ")");
+                    android.util.Log.w(TAG, "Perfil conductor endpoint[" + idx
+                            + "] falló código=" + code);
+                    cargarPerfilConductorDesdeEndpoints(endpoints, idx + 1);
                 }
         );
+    }
+
+    private String extraerNombreDePerfil(JSONObject o) {
+        if (o == null) return "";
+        for (String k : new String[]{"nombre","nombreCompleto","name","fullName","nombreUsuario","displayName"}) {
+            String v = o.optString(k, "");
+            if (!v.isEmpty() && !v.equals("null")) return v;
+        }
+        String n = o.optString("nombres", o.optString("primerNombre", ""));
+        String a = o.optString("apellidos", o.optString("primerApellido", ""));
+        if (!n.isEmpty() || !a.isEmpty()) return (n + " " + a).trim();
+        for (String sub : new String[]{"usuario","persona","perfil","data"}) {
+            JSONObject obj = o.optJSONObject(sub);
+            if (obj != null) {
+                for (String k : new String[]{"nombre","nombreCompleto","name"}) {
+                    String v = obj.optString(k, "");
+                    if (!v.isEmpty() && !v.equals("null")) return v;
+                }
+                String sn = obj.optString("nombres","");
+                String sa = obj.optString("apellidos","");
+                if (!sn.isEmpty() || !sa.isEmpty()) return (sn + " " + sa).trim();
+            }
+        }
+        return "";
+    }
+
+    private String extraerFotoDePerfil(JSONObject o) {
+        if (o == null) return "";
+        for (String k : new String[]{"fotoPerfi","fotoPerfil","foto","photoUrl","profilePicture","avatar","imagenPerfil","urlFoto"}) {
+            String v = o.optString(k, "");
+            if (!v.isEmpty() && !v.equals("null")) return v;
+        }
+        for (String sub : new String[]{"usuario","persona","perfil"}) {
+            JSONObject obj = o.optJSONObject(sub);
+            if (obj != null) {
+                for (String k : new String[]{"fotoPerfi","fotoPerfil","foto","photoUrl","avatar"}) {
+                    String v = obj.optString(k, "");
+                    if (!v.isEmpty() && !v.equals("null")) return v;
+                }
+            }
+        }
+        return "";
+    }
+
+    private String extraerTelefonoDePerfil(JSONObject o) {
+        if (o == null) return "";
+        for (String k : new String[]{"telefono","celular","phone","phoneNumber","numeroTelefono","movil","cel"}) {
+            String v = o.optString(k, "");
+            if (!v.isEmpty() && !v.equals("null")) return v;
+        }
+        for (String sub : new String[]{"usuario","persona","perfil"}) {
+            JSONObject obj = o.optJSONObject(sub);
+            if (obj != null) {
+                for (String k : new String[]{"telefono","celular","phone","phoneNumber","movil"}) {
+                    String v = obj.optString(k, "");
+                    if (!v.isEmpty() && !v.equals("null")) return v;
+                }
+            }
+        }
+        return "";
+    }
+
+    private void aplicarFotoCondcutorEnCard(String fotoUrl) {
+        if (cardInfoConductor == null || fotoUrl == null || fotoUrl.isEmpty()) return;
+
+        View cardFotoV   = cardInfoConductor.findViewWithTag("card_foto_conductor");
+        View cardInicialV= cardInfoConductor.findViewWithTag("card_inicial_conductor");
+        View ivFotoV     = cardInfoConductor.findViewWithTag("iv_foto_conductor");
+
+        if (cardFotoV instanceof MaterialCardView && ivFotoV instanceof android.widget.ImageView) {
+            MaterialCardView cardFoto = (MaterialCardView) cardFotoV;
+            android.widget.ImageView ivFoto = (android.widget.ImageView) ivFotoV;
+            cardFoto.setVisibility(View.VISIBLE);
+            if (cardInicialV != null) cardInicialV.setVisibility(View.GONE);
+            com.bumptech.glide.Glide.with(this)
+                    .load(fotoUrl)
+                    .circleCrop()
+                    .placeholder(R.drawable.logomo)
+                    .error(R.drawable.logomo)
+                    .into(ivFoto);
+        }
+    }
+
+    private void mostrarTelefonoEnCard(String telefono) {
+        if (cardInfoConductor == null) return;
+        View filaV   = cardInfoConductor.findViewWithTag("fila_telefono_conductor");
+        View tvTelV  = cardInfoConductor.findViewWithTag("tv_telefono_conductor_card");
+        View btnLlamV= cardInfoConductor.findViewWithTag("btn_llamar_conductor");
+
+        if (filaV != null) filaV.setVisibility(View.VISIBLE);
+        if (tvTelV instanceof TextView) ((TextView) tvTelV).setText(telefono);
+        if (btnLlamV instanceof com.google.android.material.button.MaterialButton) {
+            ((com.google.android.material.button.MaterialButton) btnLlamV)
+                    .setOnClickListener(v -> {
+                        Intent callIntent = new Intent(Intent.ACTION_DIAL,
+                                android.net.Uri.parse("tel:" + telefono));
+                        startActivity(callIntent);
+                    });
+        }
+
+        // Mostrar también la fila de calificación junto al teléfono
+        View filaCalV = cardInfoConductor.findViewWithTag("fila_calif_conductor");
+        if (filaCalV != null) filaCalV.setVisibility(View.VISIBLE);
+    }
+
+    private void actualizarEstrellasConductor(double promedio, int total) {
+        if (cardInfoConductor == null) return;
+
+        // Actualizar texto promedio
+        View tvPromV = cardInfoConductor.findViewWithTag("tv_promedio_conductor");
+        if (tvPromV instanceof TextView) {
+            String texto = promedio > 0
+                    ? String.format("  %.1f (%d %s)", promedio, total,
+                    total == 1 ? "cal." : "cals.")
+                    : "  Sin calificaciones";
+            ((TextView) tvPromV).setText(texto);
+        }
+
+        // Actualizar detalle en fila calificación
+        View tvCalV = cardInfoConductor.findViewWithTag("tv_calif_detalle_conductor");
+        if (tvCalV instanceof TextView) {
+            ((TextView) tvCalV).setText(promedio > 0
+                    ? String.format("%.1f / 5.0  ·  %d calificaciones", promedio, total)
+                    : "Sin calificaciones aún");
+        }
+
+        // Actualizar estrellas en fila
+        View filaE = cardInfoConductor.findViewWithTag("fila_estrellas_conductor");
+        if (!(filaE instanceof LinearLayout)) return;
+        LinearLayout filaEstrellas = (LinearLayout) filaE;
+
+        int llenas   = (int) promedio;
+        boolean media = (promedio - llenas) >= 0.25 && (promedio - llenas) < 0.75;
+        int totalL   = (promedio - llenas) >= 0.75 ? llenas + 1 : llenas;
+
+        // Actualizar colores de las 5 estrellas (los primeros 5 hijos son las estrellas)
+        int starCount = 0;
+        for (int i = 0; i < filaEstrellas.getChildCount() && starCount < 5; i++) {
+            View child = filaEstrellas.getChildAt(i);
+            if (child instanceof TextView) {
+                starCount++;
+                int color = starCount <= totalL
+                        ? android.graphics.Color.parseColor("#FFC107")
+                        : android.graphics.Color.parseColor("#CFD8DC");
+                ((TextView) child).setTextColor(color);
+            }
+        }
+
+        // Mostrar fila calificación
+        View filaCalV = cardInfoConductor.findViewWithTag("fila_calif_conductor");
+        if (filaCalV != null) filaCalV.setVisibility(View.VISIBLE);
+    }
+
+    private void cargarNombreConductorPorId(int id) {
+        if (id <= 0) return;
+
+        // Intentar primero con el endpoint de perfil/auth
+        String[] endpoints = {
+                Constantes.USUARIOS + "/" + id,
+                Constantes.BASE_URL + "/api/auth/usuarios/" + id,
+                Constantes.BASE_URL + "/api/usuarios/" + id,
+                Constantes.authPorId((long) id)
+        };
+
+        intentarCargarNombreDesdeEndpoints(endpoints, 0);
+    }
+
+    private void intentarCargarNombreDesdeEndpoints(String[] endpoints, int indice) {
+        if (indice >= endpoints.length) {
+            // Todos fallaron: mostrar id como fallback
+            nombreConductorViaje = "Conductor #" + (idConductorViaje > 0 ? idConductorViaje : "?");
+            runOnUiThread(() -> { actualizarNombreConductorUI(); actualizarBotonChat(); });
+            return;
+        }
+
+        ConexionApi.getInstance(this).getObject(endpoints[indice],
+                perfil -> {
+                    // Log para ver qué llega
+                    Log.d(TAG, "cargarNombre endpoint[" + indice + "]: " + perfil.toString().substring(0, Math.min(300, perfil.toString().length())));
+
+                    String nom = extraerNombreDePerfilCompleto(perfil);
+                    if (!nom.isEmpty()) {
+                        nombreConductorViaje = nom;
+                        runOnUiThread(() -> { actualizarNombreConductorUI(); actualizarBotonChat(); });
+                    } else {
+                        // Intentar el siguiente endpoint
+                        intentarCargarNombreDesdeEndpoints(endpoints, indice + 1);
+                    }
+                },
+                err -> {
+                    int code = (err != null && err.networkResponse != null) ? err.networkResponse.statusCode : 0;
+                    Log.w(TAG, "cargarNombre endpoint[" + indice + "] falló, código=" + code);
+                    intentarCargarNombreDesdeEndpoints(endpoints, indice + 1);
+                }
+        );
+    }
+
+    private String extraerNombreDePerfilCompleto(JSONObject perfil) {
+        if (perfil == null) return "";
+
+        // Buscar directo
+        for (String k : new String[]{"nombre","nombreCompleto","name","fullName","nombreUsuario","displayName"}) {
+            String v = perfil.optString(k, "");
+            if (!v.isEmpty() && !v.equals("null")) return v;
+        }
+
+        // nombres + apellidos
+        String n = perfil.optString("nombres", perfil.optString("primerNombre", ""));
+        String a = perfil.optString("apellidos", perfil.optString("primerApellido", ""));
+        if (!n.isEmpty() || !a.isEmpty()) return (n + " " + a).trim();
+
+        // Sub-objeto usuario
+        for (String sub : new String[]{"usuario", "persona", "perfil", "conductor", "data"}) {
+            JSONObject obj = perfil.optJSONObject(sub);
+            if (obj != null) {
+                for (String k : new String[]{"nombre","nombreCompleto","name"}) {
+                    String v = obj.optString(k, "");
+                    if (!v.isEmpty() && !v.equals("null")) return v;
+                }
+                String sn = obj.optString("nombres","");
+                String sa = obj.optString("apellidos","");
+                if (!sn.isEmpty() || !sa.isEmpty()) return (sn + " " + sa).trim();
+            }
+        }
+        return "";
     }
 
     // =========================================================================
@@ -2233,11 +3027,17 @@ public class DetalleViajeActivity extends AppCompatActivity {
                             String nomS = u.optString("nombreParadaSubida",
                                     u.optString("nombreParadaInicio", ""));
 
+                            // ── Precio guardado en la reserva ──
+                            double precioGuardado = u.optDouble("precioFinal",
+                                    u.optDouble("precio",
+                                            u.optDouble("costoPorPasajero", 0)));
+
                             final double fLatP = latP, fLngP = lngP;
                             final String fNomP = nomP.isEmpty() ? destinoActual : nomP;
                             final double fLatS = latS, fLngS = lngS;
                             final String fNomS = nomS;
-                            final int fIdR = idR;
+                            final int    fIdR  = idR;
+                            final double fPrecioGuardado = precioGuardado;
                             final JSONObject uFinal = u;
 
                             runOnUiThread(() -> {
@@ -2247,7 +3047,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
                                 // Asignar punto de bajada
                                 if (fLatP != 0) {
-                                    gpParada    = new GeoPoint(fLatP, fLngP);
+                                    gpParada     = new GeoPoint(fLatP, fLngP);
                                     nombreParada = fNomP;
                                 }
 
@@ -2260,12 +3060,36 @@ public class DetalleViajeActivity extends AppCompatActivity {
                                     nombreSubidaPasajero = "";
                                 }
 
+                                // ── Restaurar precio calculado persistente ──────────
+                                // Prioridad: 1) ya calculado en esta sesión
+                                //            2) precio guardado en la reserva del backend
+                                //            3) recalcular desde tramo
+                                if (precioCalculadoPersistente > 0) {
+                                    // Ya se calculó antes en esta sesión, reusar
+                                    precioCalculadoPasajero = precioCalculadoPersistente;
+                                    actualizarValorFila(ROW_ID_PRECIO,
+                                            String.format(java.util.Locale.getDefault(),
+                                                    "$ %,.0f COP", precioCalculadoPersistente));
+                                } else if (fPrecioGuardado > 0) {
+                                    // Precio que vino del backend en la reserva
+                                    precioCalculadoPersistente = fPrecioGuardado;
+                                    precioCalculadoPasajero    = fPrecioGuardado;
+                                    actualizarValorFila(ROW_ID_PRECIO,
+                                            String.format(java.util.Locale.getDefault(),
+                                                    "$ %,.0f COP", fPrecioGuardado));
+                                } else if (gpParada != null) {
+                                    // Sin precio guardado: recalcular desde el tramo
+                                    calcularYMostrarPrecioTramo();
+                                }
+
                                 mostrarCardMiReserva(construirReservaJson(uFinal, est, fIdR, fLatP, fLngP, fNomP));
                                 actualizarBotonPasajero();
                                 actualizarChipsCupos(cuposTotales, cuposDisponibles);
+
                                 if (EST_RECOGIDO.equals(est) || EST_COMPLETADO.equals(est))
                                     pedirRutaConWaypoint();
-                                else renderizarMapa();
+                                else
+                                    renderizarMapa();
                             });
                             return;
                         }
@@ -2379,8 +3203,9 @@ public class DetalleViajeActivity extends AppCompatActivity {
         miParadaBajada = np.isEmpty() ? destinoActual : np;
         actualizarValorFila(ROW_ID_ASIENTOS, asi + (asi == 1 ? " asiento" : " asientos"));
         actualizarValorFila(ROW_ID_BAJADA, miParadaBajada);
-        double precioMostrar = precioCalculadoPasajero > 0 ? precioCalculadoPasajero : pre;
-        actualizarValorFila(ROW_ID_PRECIO, precioMostrar > 0
+        double precioMostrar = precioCalculadoPersistente > 0
+                ? precioCalculadoPersistente
+                : (precioCalculadoPasajero > 0 ? precioCalculadoPasajero : pre);        actualizarValorFila(ROW_ID_PRECIO, precioMostrar > 0
                 ? String.format(Locale.getDefault(), "%.0f COP", precioMostrar)
                 : "No definido");
 
@@ -2453,6 +3278,10 @@ public class DetalleViajeActivity extends AppCompatActivity {
             Toast.makeText(this, "No se puede reservar en este momento", Toast.LENGTH_LONG).show();
             return;
         }
+
+        // ── Referencia final para usar en lambda ──────────────────────────────
+        final ParadaDinamica fPd = pd;  // ← ESTA LÍNEA
+
         JSONObject body = new JSONObject();
         try {
             body.put("latSubida",          latOrigen);
@@ -2473,32 +3302,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
             body.put("nombreParada",       pd.nombre);
             body.put("latDestino",         pd.lat);
             body.put("lngDestino",         pd.lng);
-
-            // Intentar asociar la parada de SUBIDA al origen real de la ruta
-            // para que el backend pueda usar la lógica de segment-fares (idParadaSubida + idParadaBajada)
-            int idParadaSubidaBD = 0;
-            if (!paradasRuta.isEmpty()) {
-                for (JSONObject p : paradasRuta) {
-                    String nom = p.optString("nombre", "").trim();
-                    String tipo = p.optString("tipo", "");
-                    int idP = p.optInt("idParada", p.optInt("id", 0));
-
-                    boolean esOrigenNombre = !nom.isEmpty() && nom.equalsIgnoreCase(origenActual);
-                    boolean esOrigenTipo = tipo != null && tipo.toUpperCase(Locale.ROOT).contains("ORIGEN");
-
-                    if (idP > 0 && (esOrigenNombre || esOrigenTipo)) {
-                        idParadaSubidaBD = idP;
-                        break;
-                    }
-                }
-            }
-            if (idParadaSubidaBD > 0) {
-                body.put("idParadaSubida", idParadaSubidaBD);
-                body.put("idParadaInicio", idParadaSubidaBD);
-            }
-
             if (pd.idParadaBD > 0) {
-                // Parada de BAJADA
                 body.put("idParadaBajada", pd.idParadaBD);
                 body.put("idParadaFin",    pd.idParadaBD);
                 body.put("idParada",       pd.idParadaBD);
@@ -2518,14 +3322,20 @@ public class DetalleViajeActivity extends AppCompatActivity {
                 response -> {
                     loaderDetalle.setVisibility(View.GONE);
                     idReservaActual = response.optInt("idUsuarioViaje",
-                            response.optInt("idReserva", response.optInt("id", response.optInt("reservaId", -1))));
+                            response.optInt("idReserva",
+                                    response.optInt("id",
+                                            response.optInt("reservaId", -1))));
                     estadoReserva = response.optString("estado", EST_CONFIRMADA).toUpperCase();
-                    yaReservo = true;
-                    gpParada = pd.toGeoPoint();
-                    nombreParada = pd.nombre;
-                    gpSubida = null;
+                    yaReservo     = true;
+
+                    // Usar fPd (final) en lugar de pd
+                    gpParada     = fPd.toGeoPoint();
+                    nombreParada = fPd.nombre;
+                    gpSubida     = null;
                     nombreSubidaPasajero = "";
-                    iniciarTimerCambioReserva();
+
+                    calcularYMostrarPrecioTramo();
+
                     runOnUiThread(() -> {
                         cuposDisponibles = Math.max(0, cuposDisponibles - 1);
                         actualizarChipsCupos(cuposTotales, cuposDisponibles);
@@ -2536,10 +3346,12 @@ public class DetalleViajeActivity extends AppCompatActivity {
                     });
                     cargarMiReservaPasajero();
                 },
-                error -> { loaderDetalle.setVisibility(View.GONE); manejarErrorReserva(error); }
+                error -> {
+                    loaderDetalle.setVisibility(View.GONE);
+                    manejarErrorReserva(error);
+                }
         );
     }
-
 
     private void manejarErrorReserva(VolleyError error) {
         String mensaje = "❌ Error al reservar."; int statusCode = -1;
@@ -2692,7 +3504,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
                         u.optInt("idReserva", u.optInt("id", -1)));
                 if (idRes > 0) reserva.put("idReserva", idRes);
 
-                // Parada de bajada
+                // ── Parada de bajada ─────────────────────────────────────────────
                 double latP = u.optDouble("latBajada", u.optDouble("latParada", 0));
                 double lngP = u.optDouble("lngBajada", u.optDouble("lngParada", 0));
                 String nomP = u.optString("nombreParadaBajada",
@@ -2712,24 +3524,59 @@ public class DetalleViajeActivity extends AppCompatActivity {
                 }
                 if (!nomP.isEmpty()) reserva.put("nombreParada", nomP);
 
-                // Objeto pasajero/usuario
+                // ── Punto de subida (recogida) ───────────────────────────────────
+                double latSub = u.optDouble("latSubida",
+                        u.optDouble("latOrigen",
+                                u.optDouble("latInicio", 0)));
+                double lngSub = u.optDouble("lngSubida",
+                        u.optDouble("lngOrigen",
+                                u.optDouble("lngInicio", 0)));
+                String nomSub = u.optString("nombreParadaSubida",
+                        u.optString("nombreParadaInicio",
+                                u.optString("nombreOrigen", "")));
+                if (latSub != 0) {
+                    reserva.put("latSubida",          latSub);
+                    reserva.put("lngSubida",          lngSub);
+                    reserva.put("latOrigen",          latSub);
+                    reserva.put("lngOrigen",          lngSub);
+                    reserva.put("nombreParadaSubida", nomSub);
+                    reserva.put("nombreParadaInicio", nomSub);
+                }
+
+                // ── Precio individual del pasajero ───────────────────────────────
+                double precio = u.optDouble("precioFinal",
+                        u.optDouble("precio",
+                                u.optDouble("costoPorPasajero",
+                                        u.optDouble("precioTramo", 0))));
+                // Buscar en sub-objeto pago si existe
+                if (precio <= 0) {
+                    JSONObject pagoObj = u.optJSONObject("pago");
+                    if (pagoObj != null) precio = pagoObj.optDouble("monto", 0);
+                }
+                if (precio > 0) {
+                    reserva.put("precioFinal",        precio);
+                    reserva.put("precio",             precio);
+                    reserva.put("costoPorPasajero",   precio);
+                }
+
+                // ── Objeto pasajero/usuario ──────────────────────────────────────
                 JSONObject usuarioObj = u.optJSONObject("usuario");
                 if (usuarioObj != null) {
                     int idU = usuarioObj.optInt("idUsuarios",
                             usuarioObj.optInt("id", 0));
                     if (idU > 0) usuarioObj.put("id", idU);
                     reserva.put("pasajero", usuarioObj);
-                    reserva.put("usuario", usuarioObj);
+                    reserva.put("usuario",  usuarioObj);
                 } else {
                     int idU = u.optInt("idUsuarios", u.optInt("idPasajero", 0));
                     JSONObject fallback = new JSONObject();
-                    fallback.put("id", idU);
+                    fallback.put("id",         idU);
                     fallback.put("idUsuarios", idU);
                     fallback.put("nombre",
                             u.optString("nombrePasajero",
                                     u.optString("nombre", "Pasajero")));
                     reserva.put("pasajero", fallback);
-                    reserva.put("usuario", fallback);
+                    reserva.put("usuario",  fallback);
                 }
 
                 result.put(reserva);
@@ -2739,6 +3586,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
         }
         return result;
     }
+
     private JSONArray normalizarUsuariosDeViaje(JSONArray usuarios) {
         JSONArray result = new JSONArray();
         for (int i = 0; i < usuarios.length(); i++) {
@@ -2803,6 +3651,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
                     String est = res.optString("estado","").toUpperCase().trim();
                     if (ESTADOS_CANCELADOS.contains(est)) continue;
 
+                    // ── Nombre del pasajero ───────────────────────────────────
                     String np = "";
                     JSONObject po = null;
                     for (String k : new String[]{"pasajero","usuario","user","passenger"}) {
@@ -2813,11 +3662,36 @@ public class DetalleViajeActivity extends AppCompatActivity {
                             String n = po.optString(k,""); if (!n.isEmpty() && !n.equals("null")) { np = n; break; }
                         }
                         if (np.isEmpty()) {
-                            String n=po.optString("nombres",""),a=po.optString("apellidos","");
-                            if(!n.isEmpty()||!a.isEmpty()) np=(n+" "+a).trim();
+                            String n = po.optString("nombres",""), a = po.optString("apellidos","");
+                            if (!n.isEmpty() || !a.isEmpty()) np = (n + " " + a).trim();
                         }
                     }
-                    if (np.isEmpty()) np = res.optString("nombrePasajero","Pasajero "+(colorIdx+1));
+                    if (np.isEmpty()) np = res.optString("nombrePasajero","Pasajero " + (colorIdx + 1));
+
+                    // ── Foto del pasajero ─────────────────────────────────────
+                    String fotoUrl = "";
+                    if (po != null) {
+                        for (String k : new String[]{"fotoPerfi","fotoPerfil","foto","photoUrl",
+                                "avatar","imagenPerfil","urlFoto","profilePicture"}) {
+                            String f = po.optString(k, "");
+                            if (!f.isEmpty() && !f.equals("null")) { fotoUrl = f; break; }
+                        }
+                    }
+                    if (fotoUrl.isEmpty()) {
+                        for (String k : new String[]{"fotoPasajero","fotoPerfil","fotoUsuario"}) {
+                            String f = res.optString(k, "");
+                            if (!f.isEmpty() && !f.equals("null")) { fotoUrl = f; break; }
+                        }
+                    }
+
+                    // ── Coords subida/bajada ──────────────────────────────────
+                    double latS = res.optDouble("latSubida",
+                            res.optDouble("latOrigen", res.optDouble("latInicio", 0)));
+                    double lngS = res.optDouble("lngSubida",
+                            res.optDouble("lngOrigen", res.optDouble("lngInicio", 0)));
+                    String nomSubida = res.optString("nombreParadaSubida",
+                            res.optString("nombreParadaInicio", ""));
+                    if (nomSubida.isEmpty()) nomSubida = origenActual;
 
                     int asi = res.optInt("numeroAsientos", res.optInt("asientos", 1));
                     total += asi;
@@ -2836,51 +3710,122 @@ public class DetalleViajeActivity extends AppCompatActivity {
                         }
                     }
 
-                    // Punto de SUBIDA del pasajero
-                    double latS = res.optDouble("latSubida",
-                            res.optDouble("latOrigen", res.optDouble("latInicio", 0)));
-                    double lngS = res.optDouble("lngSubida",
-                            res.optDouble("lngOrigen", res.optDouble("lngInicio", 0)));
-                    String nomS = res.optString("nombreParadaSubida",
-                            res.optString("nombreParadaInicio", ""));
-
                     if (gpSubida == null && latS != 0 && lngS != 0
                             && !sonIguales(latS, lngS, latOrigen, lngOrigen)) {
                         gpSubida = new GeoPoint(latS, lngS);
-                        nombreSubidaPasajero = nomS.isEmpty() ? np : nomS;
+                        nombreSubidaPasajero = nomSubida.isEmpty() ? np : nomSubida;
                     }
 
                     boolean tieneParada = latP != 0 && lngP != 0;
-                    int    pasColor    = tieneParada ? COLORES_PASAJEROS[colorIdx % COLORES_PASAJEROS.length] : Color.parseColor("#607D8B");
-                    String pasColorHex = tieneParada ? COLORES_PASAJEROS_HEX[colorIdx % COLORES_PASAJEROS_HEX.length] : "#607D8B";
+                    int     pasColor    = tieneParada
+                            ? COLORES_PASAJEROS[colorIdx % COLORES_PASAJEROS.length]
+                            : Color.parseColor("#607D8B");
+                    String  pasColorHex = tieneParada
+                            ? COLORES_PASAJEROS_HEX[colorIdx % COLORES_PASAJEROS_HEX.length]
+                            : "#607D8B";
 
                     if (tieneParada) {
                         paradasPasajeros.add(new GeoPoint(latP, lngP));
-                        nombresPasajerosParadas.add(np+(par.isEmpty()?"":" → "+par));
+                        nombresPasajerosParadas.add(np + (par.isEmpty() ? "" : " → " + par));
                     }
 
-                    resolverNombreParada(latP, lngP, np, asi, par, est, idRes,
-                            tieneParada ? "P"+(colorIdx+1) : "?",
-                            pasColor, pasColorHex, tieneParada);
+                    // ── Variables finales para lambdas ────────────────────────
+                    final String  fFoto       = fotoUrl;
+                    final String  fNomSubida  = nomSubida;
+                    final String  fNp         = np;
+                    final int     fAsi        = asi;
+                    final String  fPar        = par;
+                    final String  fEst        = est;
+                    final int     fIdRes      = idRes;
+                    final int     fColorIdx   = colorIdx;
+                    final int     fPasColor   = pasColor;
+                    final String  fPasColorHex= pasColorHex;
+                    final boolean fTieneParada= tieneParada;
+                    final double  fLatP       = latP;
+                    final double  fLngP       = lngP;
+                    final double  fLatS       = latS;
+                    final double  fLngS       = lngS;
+
+                    // ── Precio: leer TODOS los campos posibles del backend ──
+                    double precioGuardado = 0;
+// 1. Campos directos del objeto usuario-viaje
+                    for (String k : new String[]{"precioFinal","precioTramo","costoPorPasajero","precio","monto"}) {
+                        double v = res.optDouble(k, 0);
+                        if (v > 0) { precioGuardado = v; break; }
+                    }
+// 2. Sub-objeto "pago" si existe
+                    if (precioGuardado <= 0) {
+                        JSONObject pagoObj = res.optJSONObject("pago");
+                        if (pagoObj != null) precioGuardado = pagoObj.optDouble("monto", 0);
+                    }
+
+                    if (precioGuardado <= 0) {
+                        JSONObject usuObj = res.optJSONObject("usuario");
+                        if (usuObj == null) usuObj = res.optJSONObject("pasajero");
+                        if (usuObj != null) {
+                            for (String k : new String[]{"precioFinal","precio","costoPorPasajero"}) {
+                                double v = usuObj.optDouble(k, 0);
+                                if (v > 0) { precioGuardado = v; break; }
+                            }
+                        }
+                    }
+
+                    if (precioGuardado > 0) {
+                        // ── 1. Precio ya guardado en la reserva ──────────────
+                        final double fPrecio = precioGuardado;
+                        resolverNombreParada(fLatP, fLngP, fNp, fAsi, fPar, fEst, fIdRes,
+                                fTieneParada ? "P" + (fColorIdx + 1) : "?",
+                                fPasColor, fPasColorHex, fTieneParada,
+                                fFoto, fPrecio, fNomSubida);
+
+                    } else if (fTieneParada && distanciaKm > 0 && precioViaje > 0) {
+
+
+                        // ── 2. Calcular precio del tramo igual que el pasajero ──
+                        double latSubidaFinal = fLatS != 0 ? fLatS : latOrigen;
+                        double lngSubidaFinal = fLngS != 0 ? fLngS : lngOrigen;
+
+                        PrecioTramoPasajeroManager.calcular(
+                                latSubidaFinal, lngSubidaFinal,
+                                fLatP, fLngP,
+                                distanciaKm,
+                                precioViaje,
+                                resultado -> {
+                                    Log.d(TAG, "Precio tramo conductor→pasajero "
+                                            + fNp + ": $" + resultado.precioFinal
+                                            + " | tramo=" + resultado.distanciaKm + "km"
+                                            + " | total=" + distanciaKm + "km");
+                                    resolverNombreParada(fLatP, fLngP, fNp, fAsi, fPar, fEst, fIdRes,
+                                            fTieneParada ? "P" + (fColorIdx + 1) : "?",
+                                            fPasColor, fPasColorHex, fTieneParada,
+                                            fFoto, resultado.precioFinal, fNomSubida);
+                                }
+                        );
+                    } else {
+                        // ── 3. Fallback: precio global del viaje ──────────────
+                        resolverNombreParada(fLatP, fLngP, fNp, fAsi, fPar, fEst, fIdRes,
+                                fTieneParada ? "P" + (fColorIdx + 1) : "?",
+                                fPasColor, fPasColorHex, fTieneParada,
+                                fFoto, precioViaje, fNomSubida);
+                    }
 
                     if (tieneParada) colorIdx++;
                     if (EST_ESPERANDO_RECOGIDA.equals(est)) {
                         hayEsperando = true;
                         if (gpParada == null && tieneParada) {
-                            gpParada = new GeoPoint(latP,lngP);
+                            gpParada     = new GeoPoint(latP, lngP);
                             nombreParada = par.isEmpty() ? np : par;
                         }
                     }
                 }
 
-                // ── Actualizar contador con delay para esperar geocodificación ──
+                // ── Actualizar contador ───────────────────────────────────────
                 final boolean fHayEsperando = hayEsperando;
-                final int fTotal = total;
+                final int     fTotal        = total;
 
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     int countFilas = layoutListaPasajeros.getChildCount();
                     if (countFilas == 0 && fTotal > 0) {
-                        // Geocodificación aún en progreso, reintentar
                         new Handler(Looper.getMainLooper()).postDelayed(() -> {
                             int c2 = layoutListaPasajeros.getChildCount();
                             if (c2 == 0) {
@@ -2896,15 +3841,325 @@ public class DetalleViajeActivity extends AppCompatActivity {
                         txtTotalPasajeros.setText(countFilas + " pasajero(s) · " + fTotal + " asiento(s)");
                         cardPasajeros.setVisibility(View.VISIBLE);
                     }
-                    if (btnRecoger != null) btnRecoger.setVisibility(fHayEsperando ? View.VISIBLE : View.GONE);
+                    if (btnRecoger != null)
+                        btnRecoger.setVisibility(fHayEsperando ? View.VISIBLE : View.GONE);
                     renderizarMapa();
                 }, 800);
 
             } catch (Exception e) {
-                Log.e(TAG,"Error procesando reservas conductor",e);
+                Log.e(TAG, "Error procesando reservas conductor", e);
                 mostrarSinPasajeros();
             }
         });
+    }
+    // ── resolverNombreParada actualizado con foto, precio y subida ────────────
+    private void resolverNombreParada(double latP, double lngP, String np, int asi,
+                                      String par, String est, int idRes,
+                                      String etiqMarcador, int colorMarcador,
+                                      String colorHex, boolean tieneParada,
+                                      String fotoUrl, double precioPasajero,
+                                      String nomSubida) {
+        // ── SIN RECALCULAR: solo mostrar precio que vino del backend ──────────
+        if (!tieneParada) {
+            agregarFilaPasajeroColoreado(np, asi, "Sin parada asignada", est, idRes,
+                    etiqMarcador, colorMarcador, colorHex, false,
+                    fotoUrl, precioPasajero, nomSubida);
+            return;
+        }
+        if (!par.isEmpty()) {
+            agregarFilaPasajeroColoreado(np, asi, par, est, idRes,
+                    etiqMarcador, colorMarcador, colorHex, tieneParada,
+                    fotoUrl, precioPasajero, nomSubida);
+            return;
+        }
+        // Geocodificar nombre en background, precio no se toca
+        new Thread(() -> {
+            String nombre = "";
+            try {
+                String url = "https://nominatim.openstreetmap.org/reverse?lat=" + latP
+                        + "&lon=" + lngP + "&format=json&addressdetails=1&zoom=16&accept-language=es";
+                String resp = peticionHttp(url);
+                if (resp != null && !resp.isEmpty()) {
+                    JSONObject geo = new JSONObject(resp);
+                    nombre = extraerNombreNominatim(geo.optJSONObject("address"), geo);
+                }
+            } catch (Exception ignored) {}
+            final String nomFinal = (nombre == null || nombre.isEmpty())
+                    ? String.format(Locale.getDefault(), "%.4f, %.4f", latP, lngP)
+                    : nombre;
+            runOnUiThread(() -> agregarFilaPasajeroColoreado(np, asi, nomFinal, est, idRes,
+                    etiqMarcador, colorMarcador, colorHex, tieneParada,
+                    fotoUrl, precioPasajero, nomSubida));
+        }).start();
+    }
+
+    // ── agregarFilaPasajeroColoreado con foto + precio + mini ruta ────────────
+    private void agregarFilaPasajeroColoreado(String nombre, int asientos, String parada,
+                                              String estado, int idRes,
+                                              String etiqMarcador, int colorMarcador,
+                                              String colorHex, boolean tieneParada,
+                                              String fotoUrl, double precioPasajero,
+                                              String nomSubida) {
+        float d = getResources().getDisplayMetrics().density;
+        int p14=(int)(14*d), p10=(int)(10*d), p8=(int)(8*d),
+                p6 =(int)(6 *d), p4 =(int)(4 *d);
+
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams lpCard = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpCard.setMargins(0, p4, 0, p4);
+        card.setLayoutParams(lpCard);
+        card.setPadding(p14, p10, p14, p10);
+        GradientDrawable bgCard = new GradientDrawable();
+        bgCard.setShape(GradientDrawable.RECTANGLE);
+        bgCard.setCornerRadius(16 * d);
+        bgCard.setColor(android.graphics.Color.WHITE);
+        bgCard.setStroke((int)(2.5f * d), tieneParada ? colorMarcador
+                : android.graphics.Color.parseColor("#CFD8DC"));
+        card.setBackground(bgCard);
+        card.setElevation(3 * d);
+
+        // ── Fila 1: Avatar/foto + nombre + badge estado ───────────────────────
+        LinearLayout fila1 = new LinearLayout(this);
+        fila1.setOrientation(LinearLayout.HORIZONTAL);
+        fila1.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams lpF1 = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpF1.setMargins(0, 0, 0, p6);
+        fila1.setLayoutParams(lpF1);
+
+        // ── Avatar circular (foto o letra) ────────────────────────────────────
+        android.widget.FrameLayout avatarFrame = new android.widget.FrameLayout(this);
+        LinearLayout.LayoutParams lpAv = new LinearLayout.LayoutParams(
+                (int)(42*d), (int)(42*d));
+        lpAv.setMargins(0, 0, p10, 0);
+        avatarFrame.setLayoutParams(lpAv);
+
+        // Letra de fallback
+        TextView tvLetra = new TextView(this);
+        tvLetra.setText(nombre.isEmpty() ? "P" : nombre.substring(0,1).toUpperCase());
+        tvLetra.setTextColor(android.graphics.Color.WHITE);
+        tvLetra.setTextSize(15f);
+        tvLetra.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvLetra.setGravity(android.view.Gravity.CENTER);
+        tvLetra.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
+        GradientDrawable bgLetra = new GradientDrawable();
+        bgLetra.setShape(GradientDrawable.OVAL);
+        bgLetra.setColor(tieneParada ? colorMarcador
+                : android.graphics.Color.parseColor("#90A4AE"));
+        tvLetra.setBackground(bgLetra);
+        avatarFrame.addView(tvLetra);
+
+        // Foto encima si existe
+        if (fotoUrl != null && !fotoUrl.isEmpty()) {
+            android.widget.ImageView ivFoto = new android.widget.ImageView(this);
+            ivFoto.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
+            ivFoto.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
+            GradientDrawable clipOval = new GradientDrawable();
+            clipOval.setShape(GradientDrawable.OVAL);
+            ivFoto.setBackground(clipOval);
+            avatarFrame.addView(ivFoto);
+            com.bumptech.glide.Glide.with(this)
+                    .load(fotoUrl)
+                    .circleCrop()
+                    .placeholder(android.R.drawable.ic_menu_myplaces)
+                    .error(android.R.drawable.ic_menu_myplaces)
+                    .into(ivFoto);
+        }
+        fila1.addView(avatarFrame);
+
+        // ── Columna nombre + badge ────────────────────────────────────────────
+        LinearLayout colNombre = new LinearLayout(this);
+        colNombre.setOrientation(LinearLayout.VERTICAL);
+        colNombre.setLayoutParams(new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView tvNombre = new TextView(this);
+        tvNombre.setText(nombre);
+        tvNombre.setTextSize(14.5f);
+        tvNombre.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvNombre.setTextColor(android.graphics.Color.parseColor("#1A2035"));
+        tvNombre.setMaxLines(1);
+        tvNombre.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        colNombre.addView(tvNombre);
+
+        // Asientos
+        TextView tvAsi = new TextView(this);
+        tvAsi.setText("💺 " + asientos + (asientos == 1 ? " asiento" : " asientos"));
+        tvAsi.setTextSize(11.5f);
+        tvAsi.setTextColor(android.graphics.Color.parseColor("#546E7A"));
+        LinearLayout.LayoutParams lpAsi = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpAsi.topMargin = (int)(3*d);
+        tvAsi.setLayoutParams(lpAsi);
+        colNombre.addView(tvAsi);
+        fila1.addView(colNombre);
+
+        // Badge estado
+        TextView badge = new TextView(this);
+        badge.setText(badgeEstado(estado));
+        badge.setTextSize(10f);
+        badge.setTypeface(null, android.graphics.Typeface.BOLD);
+        badge.setTextColor(android.graphics.Color.WHITE);
+        badge.setPadding(p8, (int)(3*d), p8, (int)(3*d));
+        GradientDrawable bgBadge = new GradientDrawable();
+        bgBadge.setShape(GradientDrawable.RECTANGLE);
+        bgBadge.setCornerRadius(20*d);
+        bgBadge.setColor(colorBadgeEstado(estado));
+        badge.setBackground(bgBadge);
+        fila1.addView(badge);
+        card.addView(fila1);
+
+        // ── Badge precio por tramo ────────────────────────────────────────────
+        // ── Badge precio por tramo ────────────────────────────────────────────────
+        if (precioPasajero > 0) {
+            java.text.NumberFormat nf = java.text.NumberFormat
+                    .getNumberInstance(new java.util.Locale("es", "CO"));
+
+            TextView tvPrecio = new TextView(this);
+            tvPrecio.setText("$" + nf.format(precioPasajero));
+            tvPrecio.setTextSize(11f);
+            tvPrecio.setTypeface(null, Typeface.BOLD);
+            tvPrecio.setTextColor(Color.parseColor("#004D40"));
+            tvPrecio.setPadding(p6, (int)(2*d), p6, (int)(2*d));
+
+            LinearLayout.LayoutParams lpPrecio = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            lpPrecio.topMargin = (int)(3*d);
+            tvPrecio.setLayoutParams(lpPrecio);
+
+            GradientDrawable bgPrecio = new GradientDrawable();
+            bgPrecio.setShape(GradientDrawable.RECTANGLE);
+            bgPrecio.setCornerRadius(20*d);
+            bgPrecio.setColor(Color.parseColor("#E0F7FA"));
+            bgPrecio.setStroke((int)(1*d), Color.parseColor("#00897B"));
+            tvPrecio.setBackground(bgPrecio);
+            card.addView(tvPrecio);
+        }
+
+        // ── Mini ruta: subida → bajada ────────────────────────────────────────
+        if (tieneParada) {
+            LinearLayout miniRuta = new LinearLayout(this);
+            miniRuta.setOrientation(LinearLayout.HORIZONTAL);
+            miniRuta.setGravity(android.view.Gravity.CENTER_VERTICAL);
+            LinearLayout.LayoutParams lpMR = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            lpMR.setMargins(0, 0, 0, p6);
+            miniRuta.setLayoutParams(lpMR);
+            miniRuta.setPadding(p8, p6, p8, p6);
+            GradientDrawable bgMR = new GradientDrawable();
+            bgMR.setShape(GradientDrawable.RECTANGLE);
+            bgMR.setCornerRadius(10*d);
+            bgMR.setColor(android.graphics.Color.parseColor("#F5F5F5"));
+            bgMR.setStroke((int)(1*d), android.graphics.Color.parseColor("#E0E0E0"));
+            miniRuta.setBackground(bgMR);
+
+            TextView tvSubida = new TextView(this);
+            tvSubida.setText("🟢 " + (nomSubida.isEmpty() ? origenActual : nomSubida));
+            tvSubida.setTextSize(11f);
+            tvSubida.setTextColor(android.graphics.Color.parseColor("#2E7D32"));
+            tvSubida.setMaxLines(1);
+            tvSubida.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            tvSubida.setLayoutParams(new LinearLayout.LayoutParams(
+                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            miniRuta.addView(tvSubida);
+
+            TextView tvFlecha = new TextView(this);
+            tvFlecha.setText("  →  ");
+            tvFlecha.setTextSize(12f);
+            tvFlecha.setTextColor(android.graphics.Color.parseColor("#90A4AE"));
+            miniRuta.addView(tvFlecha);
+
+            TextView tvBajada = new TextView(this);
+            tvBajada.setText("🔴 " + parada);
+            tvBajada.setTextSize(11f);
+            tvBajada.setTextColor(android.graphics.Color.parseColor("#B71C1C"));
+            tvBajada.setMaxLines(1);
+            tvBajada.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            tvBajada.setLayoutParams(new LinearLayout.LayoutParams(
+                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            miniRuta.addView(tvBajada);
+            card.addView(miniRuta);
+        }
+
+        // ── Fila parada (bajada destacada) ────────────────────────────────────
+        LinearLayout filaParada = new LinearLayout(this);
+        filaParada.setOrientation(LinearLayout.HORIZONTAL);
+        filaParada.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        filaParada.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        if (tieneParada) {
+            TextView chipNum = new TextView(this);
+            chipNum.setText(etiqMarcador);
+            chipNum.setTextSize(10f);
+            chipNum.setTypeface(null, android.graphics.Typeface.BOLD);
+            chipNum.setTextColor(android.graphics.Color.WHITE);
+            chipNum.setGravity(android.view.Gravity.CENTER);
+            LinearLayout.LayoutParams lpCh = new LinearLayout.LayoutParams((int)(26*d), (int)(26*d));
+            lpCh.setMargins(0, 0, p6, 0);
+            chipNum.setLayoutParams(lpCh);
+            GradientDrawable bgCh = new GradientDrawable();
+            bgCh.setShape(GradientDrawable.OVAL);
+            bgCh.setColor(colorMarcador);
+            chipNum.setBackground(bgCh);
+            filaParada.addView(chipNum);
+
+            TextView tvParada = new TextView(this);
+            tvParada.setText("🚏 " + parada);
+            tvParada.setTextSize(12f);
+            tvParada.setTextColor(android.graphics.Color.parseColor(colorHex));
+            tvParada.setTypeface(null, android.graphics.Typeface.BOLD);
+            tvParada.setMaxLines(2);
+            tvParada.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            tvParada.setLayoutParams(new LinearLayout.LayoutParams(
+                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            tvParada.setPadding(p8, p4, p8, p4);
+            GradientDrawable bgPar = new GradientDrawable();
+            bgPar.setShape(GradientDrawable.RECTANGLE);
+            bgPar.setCornerRadius(10*d);
+            bgPar.setColor(android.graphics.Color.parseColor("#F0F4F8"));
+            bgPar.setStroke((int)(1*d), colorMarcador);
+            tvParada.setBackground(bgPar);
+            filaParada.addView(tvParada);
+        } else {
+            TextView tvSin = new TextView(this);
+            tvSin.setText("⚠️  El pasajero aún no ha marcado su parada");
+            tvSin.setTextSize(11.5f);
+            tvSin.setTextColor(android.graphics.Color.parseColor("#9E9E9E"));
+            tvSin.setTypeface(null, android.graphics.Typeface.ITALIC);
+            tvSin.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            filaParada.addView(tvSin);
+        }
+        card.addView(filaParada);
+
+
+
+        // ── Botón confirmar recogida (si espera) ──────────────────────────────
+        if (EST_ESPERANDO_RECOGIDA.equals(estado)) {
+            com.google.android.material.button.MaterialButton btnR =
+                    new com.google.android.material.button.MaterialButton(this);
+            btnR.setText("✅  Confirmar recogida");
+            btnR.setTextSize(13f);
+            btnR.setTextColor(android.graphics.Color.WHITE);
+            btnR.setCornerRadius((int)(12*d));
+            btnR.setBackgroundColor(tieneParada ? colorMarcador
+                    : android.graphics.Color.parseColor("#1976D2"));
+            LinearLayout.LayoutParams lpBtn = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, (int)(44*d));
+            lpBtn.topMargin = p8;
+            btnR.setLayoutParams(lpBtn);
+            btnR.setOnClickListener(v -> { idReservaActual = idRes; confirmarRecogida(); });
+            card.addView(btnR);
+        }
+
+        layoutListaPasajeros.addView(card);
     }
 
     private void resolverNombreParada(double latP, double lngP, String np, int asi,
@@ -2951,109 +4206,215 @@ public class DetalleViajeActivity extends AppCompatActivity {
     }
 
     private void agregarFilaPasajeroColoreado(String nombre, int asientos, String parada,
-                                              String estado, int idRes, String etiqMarcador,
-                                              int colorMarcador, String colorHex, boolean tieneParada) {
+                                              String estado, int idRes,
+                                              String etiqMarcador, int colorMarcador,
+                                              String colorHex, boolean tieneParada) {
         float d = getResources().getDisplayMetrics().density;
-        int p14=(int)(14*d),p10=(int)(10*d),p8=(int)(8*d),p6=(int)(6*d),p4=(int)(4*d);
+        int p14=(int)(14*d), p10=(int)(10*d), p8=(int)(8*d),
+                p6 =(int)(6 *d), p4 =(int)(4 *d);
 
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams lpCard = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpCard.setMargins(0, p4, 0, p4); card.setLayoutParams(lpCard);
+        lpCard.setMargins(0, p4, 0, p4);
+        card.setLayoutParams(lpCard);
         card.setPadding(p14, p10, p14, p10);
         GradientDrawable bgCard = new GradientDrawable();
-        bgCard.setShape(GradientDrawable.RECTANGLE); bgCard.setCornerRadius(16*d);
+        bgCard.setShape(GradientDrawable.RECTANGLE);
+        bgCard.setCornerRadius(16 * d);
         bgCard.setColor(Color.WHITE);
-        bgCard.setStroke((int)(2.5f*d), tieneParada ? colorMarcador : Color.parseColor("#CFD8DC"));
-        card.setBackground(bgCard); card.setElevation(3*d);
+        bgCard.setStroke((int)(2.5f * d), tieneParada ? colorMarcador
+                : Color.parseColor("#CFD8DC"));
+        card.setBackground(bgCard);
+        card.setElevation(3 * d);
 
+        // ── Fila 1: avatar + nombre + badge estado ────────────────────────────
         LinearLayout fila1 = new LinearLayout(this);
         fila1.setOrientation(LinearLayout.HORIZONTAL);
-        fila1.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        fila1.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams lpF1 = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpF1.setMargins(0, 0, 0, p6);
+        fila1.setLayoutParams(lpF1);
 
+        // Avatar letra
         TextView avatar = new TextView(this);
+        LinearLayout.LayoutParams lpAv = new LinearLayout.LayoutParams((int)(36*d), (int)(36*d));
+        lpAv.setMargins(0, 0, p8, 0);
+        avatar.setLayoutParams(lpAv);
+        avatar.setGravity(Gravity.CENTER);
+        avatar.setTextColor(Color.WHITE);
+        avatar.setTextSize(15f);
+        avatar.setTypeface(null, Typeface.BOLD);
         avatar.setText(nombre.isEmpty() ? "P" : nombre.substring(0,1).toUpperCase());
-        avatar.setTextColor(Color.WHITE); avatar.setTextSize(15f);
-        avatar.setTypeface(null, Typeface.BOLD); avatar.setGravity(android.view.Gravity.CENTER);
-        LinearLayout.LayoutParams lpAv = new LinearLayout.LayoutParams((int)(36*d),(int)(36*d));
-        lpAv.setMargins(0,0,p10,0); avatar.setLayoutParams(lpAv);
-        GradientDrawable bgAv = new GradientDrawable(); bgAv.setShape(GradientDrawable.OVAL);
+        GradientDrawable bgAv = new GradientDrawable();
+        bgAv.setShape(GradientDrawable.OVAL);
         bgAv.setColor(tieneParada ? colorMarcador : Color.parseColor("#90A4AE"));
-        avatar.setBackground(bgAv); fila1.addView(avatar);
+        avatar.setBackground(bgAv);
+        fila1.addView(avatar);
+
+        // Columna nombre + asientos
+        LinearLayout colNombre = new LinearLayout(this);
+        colNombre.setOrientation(LinearLayout.VERTICAL);
+        colNombre.setLayoutParams(new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         TextView tvNombre = new TextView(this);
-        tvNombre.setText(nombre); tvNombre.setTextSize(14.5f);
-        tvNombre.setTypeface(null, Typeface.BOLD); tvNombre.setTextColor(Color.parseColor("#1A2035"));
-        tvNombre.setMaxLines(1); tvNombre.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        tvNombre.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        fila1.addView(tvNombre);
+        tvNombre.setText(nombre);
+        tvNombre.setTextSize(14.5f);
+        tvNombre.setTypeface(null, Typeface.BOLD);
+        tvNombre.setTextColor(Color.parseColor("#1A2035"));
+        tvNombre.setMaxLines(1);
+        tvNombre.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        colNombre.addView(tvNombre);
 
-        TextView badge = new TextView(this);
-        badge.setText(badgeEstado(estado)); badge.setTextSize(10f);
-        badge.setTypeface(null, Typeface.BOLD); badge.setTextColor(Color.WHITE);
-        badge.setPadding(p8,(int)(3*d),p8,(int)(3*d));
-        GradientDrawable bgBadge = new GradientDrawable();
-        bgBadge.setShape(GradientDrawable.RECTANGLE); bgBadge.setCornerRadius(20*d);
-        bgBadge.setColor(colorBadgeEstado(estado)); badge.setBackground(bgBadge);
-        fila1.addView(badge); card.addView(fila1);
-
-        TextView tvAsientos = new TextView(this);
-        tvAsientos.setText("💺 " + asientos + (asientos==1?" asiento":" asientos"));
-        tvAsientos.setTextSize(12f); tvAsientos.setTextColor(Color.parseColor("#546E7A"));
-        LinearLayout.LayoutParams lpAs = new LinearLayout.LayoutParams(
+        TextView tvAsi = new TextView(this);
+        tvAsi.setText("💺 " + asientos + (asientos == 1 ? " asiento" : " asientos"));
+        tvAsi.setTextSize(11.5f);
+        tvAsi.setTextColor(Color.parseColor("#546E7A"));
+        LinearLayout.LayoutParams lpAsi = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpAs.topMargin=(int)(5*d); tvAsientos.setLayoutParams(lpAs); card.addView(tvAsientos);
+        lpAsi.topMargin = (int)(3*d);
+        tvAsi.setLayoutParams(lpAsi);
+        colNombre.addView(tvAsi);
+        fila1.addView(colNombre);
 
+        // Badge estado
+        TextView badge = new TextView(this);
+        badge.setText(badgeEstado(estado));
+        badge.setTextSize(10f);
+        badge.setTypeface(null, Typeface.BOLD);
+        badge.setTextColor(Color.WHITE);
+        badge.setPadding(p8, (int)(3*d), p8, (int)(3*d));
+        GradientDrawable bgBadge = new GradientDrawable();
+        bgBadge.setShape(GradientDrawable.RECTANGLE);
+        bgBadge.setCornerRadius(20*d);
+        bgBadge.setColor(colorBadgeEstado(estado));
+        badge.setBackground(bgBadge);
+        fila1.addView(badge);
+        card.addView(fila1);
+
+        // ── Fila parada (bajada) ──────────────────────────────────────────────
         LinearLayout filaParada = new LinearLayout(this);
         filaParada.setOrientation(LinearLayout.HORIZONTAL);
-        filaParada.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        filaParada.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout.LayoutParams lpFP = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpFP.topMargin=p6; filaParada.setLayoutParams(lpFP);
+        lpFP.topMargin = p6;
+        filaParada.setLayoutParams(lpFP);
 
         if (tieneParada) {
             TextView chipNum = new TextView(this);
-            chipNum.setText(etiqMarcador); chipNum.setTextSize(10f);
-            chipNum.setTypeface(null, Typeface.BOLD); chipNum.setTextColor(Color.WHITE);
-            chipNum.setGravity(android.view.Gravity.CENTER);
-            LinearLayout.LayoutParams lpCh = new LinearLayout.LayoutParams((int)(26*d),(int)(26*d));
-            lpCh.setMargins(0,0,p6,0); chipNum.setLayoutParams(lpCh);
-            GradientDrawable bgCh = new GradientDrawable(); bgCh.setShape(GradientDrawable.OVAL); bgCh.setColor(colorMarcador);
-            chipNum.setBackground(bgCh); filaParada.addView(chipNum);
+            chipNum.setText(etiqMarcador);
+            chipNum.setTextSize(10f);
+            chipNum.setTypeface(null, Typeface.BOLD);
+            chipNum.setTextColor(Color.WHITE);
+            chipNum.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams lpCh = new LinearLayout.LayoutParams((int)(26*d), (int)(26*d));
+            lpCh.setMargins(0, 0, p6, 0);
+            chipNum.setLayoutParams(lpCh);
+            GradientDrawable bgCh = new GradientDrawable();
+            bgCh.setShape(GradientDrawable.OVAL);
+            bgCh.setColor(colorMarcador);
+            chipNum.setBackground(bgCh);
+            filaParada.addView(chipNum);
 
             TextView tvParada = new TextView(this);
-            tvParada.setText("🚏 " + parada); tvParada.setTextSize(12f);
-            tvParada.setTextColor(Color.parseColor(colorHex)); tvParada.setTypeface(null, Typeface.BOLD);
-            tvParada.setMaxLines(2); tvParada.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            tvParada.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-            tvParada.setPadding(p8,p4,p8,p4);
+            tvParada.setText("🚏 " + parada);
+            tvParada.setTextSize(12f);
+            tvParada.setTextColor(Color.parseColor(colorHex));
+            tvParada.setTypeface(null, Typeface.BOLD);
+            tvParada.setMaxLines(2);
+            tvParada.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            tvParada.setLayoutParams(new LinearLayout.LayoutParams(
+                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            tvParada.setPadding(p8, p4, p8, p4);
             GradientDrawable bgPar = new GradientDrawable();
-            bgPar.setShape(GradientDrawable.RECTANGLE); bgPar.setCornerRadius(10*d);
-            bgPar.setColor(Color.parseColor("#F0F4F8")); bgPar.setStroke((int)(1*d), colorMarcador);
-            tvParada.setBackground(bgPar); filaParada.addView(tvParada);
+            bgPar.setShape(GradientDrawable.RECTANGLE);
+            bgPar.setCornerRadius(10*d);
+            bgPar.setColor(Color.parseColor("#F0F4F8"));
+            bgPar.setStroke((int)(1*d), colorMarcador);
+            tvParada.setBackground(bgPar);
+            filaParada.addView(tvParada);
         } else {
-            TextView tvSinParada = new TextView(this);
-            tvSinParada.setText("⚠️  El pasajero aún no ha marcado su parada");
-            tvSinParada.setTextSize(11.5f); tvSinParada.setTextColor(Color.parseColor("#9E9E9E"));
-            tvSinParada.setTypeface(null, Typeface.ITALIC);
-            tvSinParada.setLayoutParams(new LinearLayout.LayoutParams(
+            TextView tvSin = new TextView(this);
+            tvSin.setText("⚠️  El pasajero aún no ha marcado su parada");
+            tvSin.setTextSize(11.5f);
+            tvSin.setTextColor(Color.parseColor("#9E9E9E"));
+            tvSin.setTypeface(null, Typeface.ITALIC);
+            tvSin.setLayoutParams(new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-            filaParada.addView(tvSinParada);
+            filaParada.addView(tvSin);
         }
         card.addView(filaParada);
 
+        // ── Mini ruta: subida → bajada ────────────────────────────────────────
+        String subidaNombre = origenActual; // fallback al origen de la ruta
+        if (tieneParada && !subidaNombre.isEmpty()) {
+            LinearLayout miniRuta = new LinearLayout(this);
+            miniRuta.setOrientation(LinearLayout.HORIZONTAL);
+            miniRuta.setGravity(Gravity.CENTER_VERTICAL);
+            LinearLayout.LayoutParams lpMR = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            lpMR.topMargin = (int)(6*d);
+            miniRuta.setLayoutParams(lpMR);
+            miniRuta.setPadding(p6, p4, p6, p4);
+
+            GradientDrawable bgMR = new GradientDrawable();
+            bgMR.setShape(GradientDrawable.RECTANGLE);
+            bgMR.setCornerRadius(8*d);
+            bgMR.setColor(Color.parseColor("#F5F5F5"));
+            bgMR.setStroke((int)(1*d), Color.parseColor("#E0E0E0"));
+            miniRuta.setBackground(bgMR);
+
+            TextView tvSubida = new TextView(this);
+            tvSubida.setText("🟢 " + subidaNombre);
+            tvSubida.setTextSize(11f);
+            tvSubida.setTextColor(Color.parseColor("#2E7D32"));
+            tvSubida.setMaxLines(1);
+            tvSubida.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            tvSubida.setLayoutParams(new LinearLayout.LayoutParams(
+                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            miniRuta.addView(tvSubida);
+
+            TextView tvFlecha = new TextView(this);
+            tvFlecha.setText("  →  ");
+            tvFlecha.setTextSize(12f);
+            tvFlecha.setTextColor(Color.parseColor("#90A4AE"));
+            miniRuta.addView(tvFlecha);
+
+            TextView tvBajada = new TextView(this);
+            tvBajada.setText("🔴 " + parada);
+            tvBajada.setTextSize(11f);
+            tvBajada.setTextColor(Color.parseColor("#B71C1C"));
+            tvBajada.setMaxLines(1);
+            tvBajada.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            tvBajada.setLayoutParams(new LinearLayout.LayoutParams(
+                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            miniRuta.addView(tvBajada);
+
+            card.addView(miniRuta);
+        }
+
+        // ── Botón confirmar recogida (si espera) ──────────────────────────────
         if (EST_ESPERANDO_RECOGIDA.equals(estado)) {
-            MaterialButton btnR = new MaterialButton(this);
-            btnR.setText("✅  Confirmar recogida"); btnR.setTextSize(13f);
-            btnR.setTextColor(Color.WHITE); btnR.setCornerRadius((int)(12*d));
-            btnR.setBackgroundColor(tieneParada ? colorMarcador : Color.parseColor("#1976D2"));
+            com.google.android.material.button.MaterialButton btnR =
+                    new com.google.android.material.button.MaterialButton(this);
+            btnR.setText("✅  Confirmar recogida");
+            btnR.setTextSize(13f);
+            btnR.setTextColor(Color.WHITE);
+            btnR.setCornerRadius((int)(12*d));
+            btnR.setBackgroundColor(tieneParada ? colorMarcador
+                    : Color.parseColor("#1976D2"));
             LinearLayout.LayoutParams lpBtn = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,(int)(44*d));
-            lpBtn.topMargin=p8; btnR.setLayoutParams(lpBtn);
-            btnR.setOnClickListener(v -> { idReservaActual=idRes; confirmarRecogida(); });
+                    LinearLayout.LayoutParams.MATCH_PARENT, (int)(44*d));
+            lpBtn.topMargin = p8;
+            btnR.setLayoutParams(lpBtn);
+            btnR.setOnClickListener(v -> { idReservaActual = idRes; confirmarRecogida(); });
             card.addView(btnR);
         }
+
         layoutListaPasajeros.addView(card);
     }
 
@@ -3062,12 +4423,12 @@ public class DetalleViajeActivity extends AppCompatActivity {
         switch (e.toUpperCase()) {
             case "ACTIVA": case "CONFIRMADA": case "RESERVADO": return "✓ Confirmada";
             case "PENDIENTE":    return "⏳ Pendiente";
-            case "EN_CURSO": case "INICIADO": return "🚗 A bordo";
+            case "EN_CURSO": case "INICIADO": return " A bordo";
             case "ESPERANDO_RECOGIDA": return "⏳ Esperando";
             case "RECOGIDO":     return "✅ Recogido";
-            case "COMPLETADO": case "FINALIZADO": return "🏁 Completado";
+            case "COMPLETADO": case "FINALIZADO": return "Completado";
             case "CANCELADO": case "CANCELADA": return "✕ Cancelada";
-            default: return "📋 " + e;
+            default: return " " + e;
         }
     }
 
@@ -3154,7 +4515,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
         // ── Título ──
         TextView tTitulo = new TextView(this);
-        tTitulo.setText("🙋 ¿Dónde te vas a subir?");
+        tTitulo.setText("¿Dónde te vas a subir?");
         tTitulo.setTextSize(18f); tTitulo.setTypeface(null, Typeface.BOLD);
         tTitulo.setTextColor(Color.parseColor("#004D40"));
         LinearLayout.LayoutParams lpTit = new LinearLayout.LayoutParams(
@@ -3183,31 +4544,69 @@ public class DetalleViajeActivity extends AppCompatActivity {
         subidaElegidaRef = elegida;
 
         // ── Botón: tocar en el mapa ──
+        // ── Botón: tocar en el mapa ──
         MaterialButton btnTocarMapa = new MaterialButton(this);
-        btnTocarMapa.setText("🗺️  TOCAR EN EL MAPA");
-        btnTocarMapa.setTextSize(13f); btnTocarMapa.setTextColor(Color.parseColor("#00695C"));
+        btnTocarMapa.setText("TOCAR EN EL MAPA");
+        btnTocarMapa.setTextSize(13f);
+        btnTocarMapa.setTextColor(Color.parseColor("#00695C"));
         btnTocarMapa.setBackgroundColor(Color.TRANSPARENT);
         btnTocarMapa.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#00897B")));
-        btnTocarMapa.setStrokeWidth((int)(2*dp)); btnTocarMapa.setCornerRadius((int)(14*dp));
+        btnTocarMapa.setStrokeWidth((int)(2*dp));
+        btnTocarMapa.setCornerRadius((int)(14*dp));
+        btnTocarMapa.setVisibility(View.VISIBLE);  // ← asegurarlo explícito
         LinearLayout.LayoutParams lpTM = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, (int)(46*dp));
-        lpTM.setMargins(0, 0, 0, p8); btnTocarMapa.setLayoutParams(lpTM);
+        lpTM.setMargins(0, 0, 0, p8);
+        btnTocarMapa.setLayoutParams(lpTM);
+        // En mostrarSheetSubida(), REEMPLAZA el btnTocarMapa.setOnClickListener:
         btnTocarMapa.setOnClickListener(v -> {
-            // Cerrar el sheet y activar modo de toque en el mapa
             sheet.dismiss();
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                activarModoSeleccionMapa(tvElegida, btnRef);
-                // Cuando el usuario toque el mapa, reabrir el sheet con la selección
-                onMapaTocadoCallback = () -> {
-                    modoSeleccionMapaActivo = false;
-                    ocultarBannerSeleccionMapa();
-                    new Handler(Looper.getMainLooper()).postDelayed(this::mostrarSheetSubida, 200);
-                };
-            }, 300);
-        });
-        root.addView(btnTocarMapa);
+            Intent intentMapa = new Intent(this, MapaSeleccionActivity.class);
+            if (gpOrigen != null) {
+                intentMapa.putExtra("lat_centro", gpOrigen.getLatitude());
+                intentMapa.putExtra("lng_centro", gpOrigen.getLongitude());
+            }
+            if (gpSubida != null) {
+                intentMapa.putExtra("lat_previa", gpSubida.getLatitude());
+                intentMapa.putExtra("lng_previa", gpSubida.getLongitude());
+            }
+            if (gpDestino != null) {
+                intentMapa.putExtra("lat_destino", gpDestino.getLatitude());
+                intentMapa.putExtra("lng_destino", gpDestino.getLongitude());
+            }
 
-        // ── Separador "o" ──
+            // Intentar pasar geojsonRuta; si está vacío, construirlo desde rutaActiva
+            String geojsonParaMapa = geojsonRuta;
+            if ((geojsonParaMapa == null || geojsonParaMapa.isEmpty()) && rutaActiva != null && rutaActiva.size() >= 2) {
+                try {
+                    org.json.JSONArray coords = new org.json.JSONArray();
+                    for (GeoPoint gp : rutaActiva) {
+                        org.json.JSONArray par = new org.json.JSONArray();
+                        par.put(gp.getLongitude());
+                        par.put(gp.getLatitude());
+                        coords.put(par);
+                    }
+                    org.json.JSONObject geo = new org.json.JSONObject();
+                    geo.put("type", "LineString");
+                    geo.put("coordinates", coords);
+                    geojsonParaMapa = geo.toString();
+                    Log.d("DEBUG_RUTA", "GeoJSON construido desde rutaActiva: " + rutaActiva.size() + " puntos");
+                } catch (Exception ex) {
+                    Log.w("DEBUG_RUTA", "Error construyendo GeoJSON: " + ex.getMessage());
+                }
+            }
+
+            Log.d("DEBUG_RUTA", "geojsonParaMapa length=" + (geojsonParaMapa != null ? geojsonParaMapa.length() : "null"));
+
+            if (geojsonParaMapa != null && !geojsonParaMapa.isEmpty()) {
+                intentMapa.putExtra("geojson_ruta", geojsonParaMapa);
+            }
+
+            startActivityForResult(intentMapa, REQUEST_MAPA_SUBIDA);
+        });
+        root.addView(btnTocarMapa);  // ← debe estar ANTES del crearSeparadorO
+
+// ── Separador "o" ──
         root.addView(crearSeparadorO(dp, p8));
 
         // ── Campo de búsqueda ──
@@ -3229,13 +4628,13 @@ public class DetalleViajeActivity extends AppCompatActivity {
         // Si hay una subida previa (tocada en el mapa), mostrarla ya seleccionada
         if (gpSubida != null && nombreSubidaPasajero != null && !nombreSubidaPasajero.isEmpty()) {
             elegida[0] = new ParadaDinamica(nombreSubidaPasajero, gpSubida.getLatitude(), gpSubida.getLongitude(), -99);
-            tvElegida.setText("🙋 " + nombreSubidaPasajero);
+            tvElegida.setText("" + nombreSubidaPasajero);
             tvElegida.setVisibility(View.VISIBLE);
         }
 
         poblarListaSubida(lista, paradasConOrigen, "", dp, p8, p4, pE -> {
             elegida[0] = pE;
-            tvElegida.setText("🙋 " + pE.nombre); tvElegida.setVisibility(View.VISIBLE);
+            tvElegida.setText(" " + pE.nombre); tvElegida.setVisibility(View.VISIBLE);
             gpSubida = pE.toGeoPoint(); nombreSubidaPasajero = pE.nombre;
             renderizarMapa();
             if (btnRef[0] != null) {
@@ -3486,7 +4885,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
         lpRow.setMargins(0, 0, 0, margin); row.setLayoutParams(lpRow);
 
         String[] labels = {"1  Subida", "2  Bajada"};
-        String[] icons  = {"🙋", "🚏"};
+        String[] icons  = {"", ""};
         String[] coloresActivo  = {"#00897B", "#FF6F00"};
         String[] coloresInactivo = {"#B2DFDB", "#FFE0B2"};
 
@@ -3592,23 +4991,153 @@ public class DetalleViajeActivity extends AppCompatActivity {
         });
     }
 
-    /** Lista de subida: incluye el origen como opción resaltada */
-    private void poblarListaSubida(LinearLayout container, ArrayList<ParadaDinamica> paradas,
-                                   String filtro, float dp, int p8, int p4,
+    private void poblarListaSubida(LinearLayout container,
+                                   ArrayList<ParadaDinamica> paradas,
+                                   String filtro,
+                                   float dp, int p8, int p4,
                                    java.util.function.Consumer<ParadaDinamica> onSelect) {
         container.removeAllViews();
+
         if (paradas.isEmpty()) {
-            TextView tv = new TextView(this); tv.setText("Sin puntos disponibles");
-            tv.setTextSize(13f); tv.setTextColor(Color.parseColor("#9E9E9E")); tv.setPadding(p8, p8, p8, p8);
-            container.addView(tv); return;
+            android.widget.TextView tv = new android.widget.TextView(this);
+            tv.setText("Sin puntos disponibles");
+            tv.setTextSize(13f);
+            tv.setTextColor(android.graphics.Color.parseColor("#9E9E9E"));
+            tv.setPadding(p8, p8, p8, p8);
+            container.addView(tv);
+            return;
         }
+
+        // ── Paleta ───────────────────────────────────────────────────────────
+        final int colorNormalBg    = android.graphics.Color.parseColor("#F9FAFB");
+        final int colorNormalBorde = android.graphics.Color.parseColor("#B2DFDB");
+        final int colorSelBg       = android.graphics.Color.parseColor("#E0F7FA");
+        final int colorSelBorde    = android.graphics.Color.parseColor("#00897B");
+        final int colorNormalTxt   = android.graphics.Color.parseColor("#004D40");
+        final int colorSelTxt      = android.graphics.Color.parseColor("#00695C");
+
         for (int i = 0; i < paradas.size(); i++) {
-            ParadaDinamica pd = paradas.get(i);
-            boolean esOrigen = i == 0;
-            String icon = esOrigen ? "🟢" : "🔵";
-            String label = icon + "  " + pd.nombre + (esOrigen ? "  (Inicio)" : "");
-            container.addView(crearFilaParada(label, pd, true, dp, p8, p4, onSelect));
+            ParadaDinamica pd  = paradas.get(i);
+            boolean esOrigen   = (i == 0);
+            String  icon       = esOrigen ? "🟢" : "🔵";
+            String  labelTexto = icon + "  " + pd.nombre + (esOrigen ? "  (Inicio)" : "");
+
+            // ¿Esta fila coincide con la subida ya guardada?
+            boolean estaActiva = (gpSubida != null)
+                    && Math.abs(pd.lat - gpSubida.getLatitude())  < 0.00005
+                    && Math.abs(pd.lng - gpSubida.getLongitude()) < 0.00005;
+
+            // ── Contenedor de fila ────────────────────────────────────────────
+            LinearLayout fila = new LinearLayout(this);
+            fila.setOrientation(LinearLayout.HORIZONTAL);
+            fila.setGravity(android.view.Gravity.CENTER_VERTICAL);
+            LinearLayout.LayoutParams lpF = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            lpF.setMargins(0, (int)(3*dp), 0, (int)(3*dp));
+            fila.setLayoutParams(lpF);
+            fila.setPadding(p8, p8, p8, p8);
+            fila.setClickable(true);
+            fila.setFocusable(true);
+
+            // ── Icono de check (posición 0) ───────────────────────────────────
+            android.widget.TextView tvCheck = new android.widget.TextView(this);
+            tvCheck.setTextSize(15f);
+            tvCheck.setText(estaActiva ? "✅" : "");
+            tvCheck.setWidth((int)(30*dp));
+            tvCheck.setGravity(android.view.Gravity.CENTER);
+            fila.addView(tvCheck);   // child 0
+
+            // ── Texto de la parada (posición 1) ───────────────────────────────
+            android.widget.TextView tvLabel = new android.widget.TextView(this);
+            tvLabel.setText(labelTexto);
+            tvLabel.setTextSize(14f);
+            tvLabel.setTextColor(estaActiva ? colorSelTxt : colorNormalTxt);
+            tvLabel.setTypeface(null, estaActiva
+                    ? android.graphics.Typeface.BOLD
+                    : android.graphics.Typeface.NORMAL);
+            tvLabel.setLayoutParams(new LinearLayout.LayoutParams(
+                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            fila.addView(tvLabel);   // child 1
+
+            // ── Background inicial ────────────────────────────────────────────
+            aplicarEstiloFila(fila, estaActiva, colorSelBg, colorSelBorde,
+                    colorNormalBg, colorNormalBorde, dp);
+
+            // Si ya está activa, registrarla
+            if (estaActiva) filaSubidaSeleccionada = fila;
+
+            // ── Click: RESET total del container → marcar solo esta fila ─────
+            final LinearLayout filaFinal  = fila;
+            final android.widget.TextView tvCheckFinal = tvCheck;
+            final android.widget.TextView tvLabelFinal = tvLabel;
+
+            fila.setOnClickListener(v -> {
+
+                // 1. Recorrer TODOS los hijos del container y resetear
+                for (int ci = 0; ci < container.getChildCount(); ci++) {
+                    android.view.View hijo = container.getChildAt(ci);
+                    if (!(hijo instanceof LinearLayout)) continue;
+                    LinearLayout filaHija = (LinearLayout) hijo;
+
+                    // Fondo limpio — siempre nuevo drawable para no mutar
+                    aplicarEstiloFila(filaHija, false,
+                            colorSelBg, colorSelBorde,
+                            colorNormalBg, colorNormalBorde, dp);
+
+                    // Resetear check e texto
+                    android.view.View c0 = filaHija.getChildAt(0);
+                    android.view.View c1 = filaHija.getChildAt(1);
+                    if (c0 instanceof android.widget.TextView)
+                        ((android.widget.TextView) c0).setText("");
+                    if (c1 instanceof android.widget.TextView) {
+                        android.widget.TextView t = (android.widget.TextView) c1;
+                        t.setTextColor(colorNormalTxt);
+                        t.setTypeface(null, android.graphics.Typeface.NORMAL);
+                    }
+                }
+
+                // 2. Marcar la fila tocada
+                aplicarEstiloFila(filaFinal, true,
+                        colorSelBg, colorSelBorde,
+                        colorNormalBg, colorNormalBorde, dp);
+                tvCheckFinal.setText("✅");
+                tvLabelFinal.setTextColor(colorSelTxt);
+                tvLabelFinal.setTypeface(null, android.graphics.Typeface.BOLD);
+                filaSubidaSeleccionada = filaFinal;
+
+                // 3. Animación tap
+                v.animate().scaleX(0.95f).scaleY(0.95f).setDuration(70)
+                        .withEndAction(() ->
+                                v.animate().scaleX(1f).scaleY(1f).setDuration(110).start())
+                        .start();
+
+                // 4. Notificar selección
+                onSelect.accept(pd);
+            });
+
+            container.addView(fila);
         }
+    }
+
+    // ── Helper: aplica un drawable NUEVO a la fila según su estado ─────────────
+// (Evita mutar drawables compartidos — esa era la causa raíz del bug)
+    private void aplicarEstiloFila(LinearLayout fila, boolean seleccionada,
+                                   int colorSelBg, int colorSelBorde,
+                                   int colorNormalBg, int colorNormalBorde,
+                                   float dp) {
+        android.graphics.drawable.GradientDrawable bg =
+                new android.graphics.drawable.GradientDrawable();
+        bg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        bg.setCornerRadius(10 * dp);
+        if (seleccionada) {
+            bg.setColor(colorSelBg);
+            bg.setStroke((int)(2*dp), colorSelBorde);
+        } else {
+            bg.setColor(colorNormalBg);
+            bg.setStroke((int)(1*dp), colorNormalBorde);
+        }
+        fila.setBackground(bg);
     }
 
     private void habilitarBtnBajada(MaterialButton btn, String nombre) {
@@ -3644,13 +5173,18 @@ public class DetalleViajeActivity extends AppCompatActivity {
         if (idUsuario <= 0 || viajeId <= 0 || cuposDisponibles <= 0
                 || !ESTADOS_RESERVABLES.contains(estadoViaje)) {
             loaderDetalle.setVisibility(View.GONE);
-            Toast.makeText(this, "No se puede reservar en este momento", Toast.LENGTH_LONG).show(); return;
+            Toast.makeText(this, "No se puede reservar en este momento", Toast.LENGTH_LONG).show();
+            return;
         }
 
-        // Determinar coords de subida
-        double latS = (subida != null) ? subida.lat : latOrigen;
-        double lngS = (subida != null) ? subida.lng : lngOrigen;
-        String nomS = (subida != null) ? subida.nombre : origenActual;
+        // ── Coords de subida — declaradas final para usar en lambda ──────────
+        final double latS = (subida != null) ? subida.lat : latOrigen;
+        final double lngS = (subida != null) ? subida.lng : lngOrigen;
+        final String nomS = (subida != null) ? subida.nombre : origenActual;
+
+        // ── Referencias finales para el lambda ───────────────────────────────
+        final ParadaDinamica fSubida = subida;
+        final ParadaDinamica fBajada = bajada;
 
         JSONObject body = new JSONObject();
         try {
@@ -3686,224 +5220,571 @@ public class DetalleViajeActivity extends AppCompatActivity {
             body.put("idViaje",            viajeId);
             body.put("asientos",           1);
             body.put("precio",             precioViaje > 0 ? precioViaje : 0);
-        } catch (JSONException e) { loaderDetalle.setVisibility(View.GONE); return; }
+        } catch (JSONException e) {
+            loaderDetalle.setVisibility(View.GONE);
+            return;
+        }
 
         ConexionApi.getInstance(this).post(Constantes.RESERVAS, body,
                 response -> {
                     loaderDetalle.setVisibility(View.GONE);
                     idReservaActual = response.optInt("idUsuarioViaje",
-                            response.optInt("idReserva", response.optInt("id", response.optInt("reservaId", -1))));
+                            response.optInt("idReserva",
+                                    response.optInt("id",
+                                            response.optInt("reservaId", -1))));
                     estadoReserva = response.optString("estado", EST_CONFIRMADA).toUpperCase();
-                    yaReservo = true;
-                    gpParada = bajada.toGeoPoint(); nombreParada = bajada.nombre;
+                    yaReservo     = true;
 
-                    calcularYMostrarPrecioTramo(); // ← línea nueva
-                    DetalleViajeActivity activity = this;
-                    // Guardar subida definitiva
-                    if (subida != null && !sonIguales(latS, lngS, latOrigen, lngOrigen)) {
-                        gpSubida = subida.toGeoPoint(); nombreSubidaPasajero = subida.nombre;
+                    // Usar fBajada (final) en lugar de bajada
+                    gpParada     = fBajada.toGeoPoint();
+                    nombreParada = fBajada.nombre;
+
+                    // Guardar subida definitiva — usar fSubida y latS/lngS (final)
+                    if (fSubida != null && !sonIguales(latS, lngS, latOrigen, lngOrigen)) {
+                        gpSubida             = fSubida.toGeoPoint();
+                        nombreSubidaPasajero = fSubida.nombre;
                     } else {
-                        gpSubida = null; nombreSubidaPasajero = "";
+                        gpSubida             = null;
+                        nombreSubidaPasajero = "";
                     }
+
+                    // Calcular precio persistente ANTES del runOnUiThread
+                    // para que precioCalculadoPersistente ya esté listo
+                    // cuando mostrarCardMiReserva() lo consuma
+                    calcularYMostrarPrecioTramo();
+
                     runOnUiThread(() -> {
                         cuposDisponibles = Math.max(0, cuposDisponibles - 1);
                         actualizarChipsCupos(cuposTotales, cuposDisponibles);
-                        actualizarBotonPasajero(); actualizarBotonChat();
-                        renderizarMapa(); mostrarCardMiReserva(response);
+                        actualizarBotonPasajero();
+                        actualizarBotonChat();
+                        renderizarMapa();
+                        mostrarCardMiReserva(response);
                     });
                     cargarMiReservaPasajero();
                 },
-                error -> { loaderDetalle.setVisibility(View.GONE); manejarErrorReserva(error); }
+                error -> {
+                    loaderDetalle.setVisibility(View.GONE);
+                    manejarErrorReserva(error);
+                }
         );
     }
 
-    // =========================================================================
-    //  CUPOS
-    // =========================================================================
-    private void actualizarChipsCupos(int total, int disponibles){
-        if(layoutCupos==null||total>8||total<=0) return;
-        runOnUiThread(()->{
+    private void actualizarChipsCupos(int total, int disponibles) {
+        if (layoutCupos == null || total <= 0 || total > 8) return;
+        runOnUiThread(() -> {
             layoutCupos.removeAllViews();
-            float d=getResources().getDisplayMetrics().density;
-            int p8=(int)(8*d), p4=(int)(4*d), p6=(int)(6*d);
+            float d = getResources().getDisplayMetrics().density;
 
-            LinearLayout filaAsientos = new LinearLayout(this);
-            filaAsientos.setOrientation(LinearLayout.HORIZONTAL);
-            filaAsientos.setGravity(android.view.Gravity.CENTER);
-            LinearLayout.LayoutParams filaLp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            filaLp.setMargins(0, 0, 0, (int)(12*d));
-            filaAsientos.setLayoutParams(filaLp);
+            // ── Detectar tipo de vehículo ─────────────────────────────────────
+            // Si tienes el campo tipoVehiculo del backend, úsalo aquí.
+            // Por ahora inferimos: si cuposTotales == 1 → moto.
+            boolean esMoto = (total == 1);
 
-            int seatW=(int)(44*d), seatH=(int)(48*d), seatM=(int)(5*d);
-            for(int i=0;i<total;i++){
-                final int idx=i;
-                boolean libre=i<disponibles;
-                boolean esMio=yaReservo&&cupoSeleccionado==i;
-
-                LinearLayout seatBox = new LinearLayout(this);
-                seatBox.setOrientation(LinearLayout.VERTICAL);
-                seatBox.setGravity(android.view.Gravity.CENTER);
-                LinearLayout.LayoutParams sbLp = new LinearLayout.LayoutParams(seatW, LinearLayout.LayoutParams.WRAP_CONTENT);
-                sbLp.setMargins(seatM,0,seatM,0);
-                seatBox.setLayoutParams(sbLp);
-
-                TextView tvIcon = new TextView(this);
-                tvIcon.setTextSize(26f);
-                tvIcon.setGravity(android.view.Gravity.CENTER);
-                LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                tvIcon.setLayoutParams(iconLp);
-
-                if(esMio){
-                    tvIcon.setText("🟠");
-                } else if(libre){
-                    tvIcon.setText("🟢");
-                } else {
-                    tvIcon.setText("🔴");
-                }
-
-                TextView tvLabel = new TextView(this);
-                tvLabel.setTextSize(9f);
-                tvLabel.setGravity(android.view.Gravity.CENTER);
-                tvLabel.setLayoutParams(new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-                if(esMio){
-                    tvLabel.setText("Tuyo");
-                    tvLabel.setTextColor(Color.parseColor("#E65100"));
-                    tvLabel.setTypeface(null, android.graphics.Typeface.BOLD);
-                } else if(libre){
-                    tvLabel.setText("Libre");
-                    tvLabel.setTextColor(Color.parseColor("#2E7D32"));
-                } else {
-                    tvLabel.setText("Lleno");
-                    tvLabel.setTextColor(Color.parseColor("#C62828"));
-                }
-
-                seatBox.addView(tvIcon);
-                seatBox.addView(tvLabel);
-
-                if(!esConductor){
-                    if(esMio){
-                        seatBox.setClickable(true); seatBox.setFocusable(true);
-                        seatBox.setOnClickListener(v->mostrarBottomSheetParada());
-                    } else if(libre&&!yaReservo){
-                        seatBox.setClickable(true); seatBox.setFocusable(true);
-                        seatBox.setOnClickListener(v->{ cupoSeleccionado=idx; mostrarBottomSheetParada(); });
-                    }
-                }
-                filaAsientos.addView(seatBox);
+            if (esMoto) {
+                renderizarAsientosMoto(d);
+            } else {
+                renderizarAsientosCarro(total, disponibles, d);
             }
-            layoutCupos.addView(filaAsientos);
 
-            int ocupados = total - disponibles;
+            // ── Barra de disponibilidad ───────────────────────────────────────
+            agregarBarraDisponibilidad(total, disponibles, d);
 
-            LinearLayout barContainer = new LinearLayout(this);
-            barContainer.setOrientation(LinearLayout.VERTICAL);
-            LinearLayout.LayoutParams barContLp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            barContLp.setMargins((int)(4*d), 0, (int)(4*d), (int)(6*d));
-            barContainer.setLayoutParams(barContLp);
-
-            LinearLayout rowCount = new LinearLayout(this);
-            rowCount.setOrientation(LinearLayout.HORIZONTAL);
-            rowCount.setGravity(android.view.Gravity.CENTER_VERTICAL);
-            LinearLayout.LayoutParams rcLp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            rcLp.setMargins(0,0,0,(int)(6*d));
-            rowCount.setLayoutParams(rcLp);
-
-            TextView tvDisp = new TextView(this);
-            tvDisp.setText("✅ " + disponibles + " disponible" + (disponibles!=1?"s":""));
-            tvDisp.setTextSize(12f);
-            tvDisp.setTextColor(Color.parseColor("#2E7D32"));
-            tvDisp.setTypeface(null, android.graphics.Typeface.BOLD);
-            LinearLayout.LayoutParams tvDispLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-            tvDisp.setLayoutParams(tvDispLp);
-
-            TextView tvOcup = new TextView(this);
-            tvOcup.setText(ocupados + " ocupado" + (ocupados!=1?"s":"") + " 🔒");
-            tvOcup.setTextSize(12f);
-            tvOcup.setTextColor(Color.parseColor("#B71C1C"));
-            tvOcup.setGravity(android.view.Gravity.END);
-            LinearLayout.LayoutParams tvOcupLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-            tvOcup.setLayoutParams(tvOcupLp);
-
-            rowCount.addView(tvDisp);
-            rowCount.addView(tvOcup);
-
-            android.widget.FrameLayout barFrame = new android.widget.FrameLayout(this);
-            LinearLayout.LayoutParams bfLp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, (int)(8*d));
-            barFrame.setLayoutParams(bfLp);
-
-            View barBg = new View(this);
-            barBg.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
-                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
-            GradientDrawable bgShape = new GradientDrawable();
-            bgShape.setShape(GradientDrawable.RECTANGLE);
-            bgShape.setCornerRadius((int)(4*d));
-            bgShape.setColor(Color.parseColor("#E0E0E0"));
-            barBg.setBackground(bgShape);
-
-            View barFill = new View(this);
-            int fillPct = total > 0 ? (int)((disponibles * 100f / total)) : 0;
-            android.widget.FrameLayout.LayoutParams fillLp =
-                    new android.widget.FrameLayout.LayoutParams(0,
-                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT);
-            barFill.setLayoutParams(fillLp);
-            GradientDrawable fillShape = new GradientDrawable();
-            fillShape.setShape(GradientDrawable.RECTANGLE);
-            fillShape.setCornerRadius((int)(4*d));
-            int c1 = disponibles > total/2 ? Color.parseColor("#43A047") : Color.parseColor("#FB8C00");
-            fillShape.setColor(c1);
-            barFill.setBackground(fillShape);
-
-            barFrame.addView(barBg);
-            barFrame.addView(barFill);
-
-            barFrame.post(()->{
-                int totalW = barFrame.getWidth();
-                android.animation.ValueAnimator anim = android.animation.ValueAnimator.ofInt(0, totalW * fillPct / 100);
-                anim.setDuration(600);
-                anim.setInterpolator(new android.view.animation.DecelerateInterpolator());
-                anim.addUpdateListener(a -> {
-                    android.widget.FrameLayout.LayoutParams lp2 =
-                            (android.widget.FrameLayout.LayoutParams) barFill.getLayoutParams();
-                    lp2.width = (int) a.getAnimatedValue();
-                    barFill.setLayoutParams(lp2);
-                });
-                anim.start();
-            });
-
-            barContainer.addView(rowCount);
-            barContainer.addView(barFrame);
-            layoutCupos.addView(barContainer);
-
-            LinearLayout leyenda = new LinearLayout(this);
-            leyenda.setOrientation(LinearLayout.HORIZONTAL);
-            leyenda.setGravity(android.view.Gravity.CENTER);
-            LinearLayout.LayoutParams leyLp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            leyLp.gravity = android.view.Gravity.CENTER_HORIZONTAL;
-            leyenda.setLayoutParams(leyLp);
-
-            String[][] leyItems = {{"🟢","Libre"},{"🔴","Ocupado"}, esMioCheck() ? new String[]{"🟠","Tuyo"} : null};
-            for(String[] item: leyItems){
-                if(item==null) continue;
-                TextView tv=new TextView(this);
-                tv.setText(item[0]+" "+item[1]);
-                tv.setTextSize(11f);
-                tv.setTextColor(Color.parseColor("#607D8B"));
-                LinearLayout.LayoutParams tvLp=new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                tvLp.setMargins((int)(8*d),0,(int)(8*d),0);
-                tv.setLayoutParams(tvLp);
-                leyenda.addView(tv);
-            }
-            layoutCupos.addView(leyenda);
+            // ── Leyenda ───────────────────────────────────────────────────────
+            agregarLeyendaAsientos(d);
         });
+    }
+
+    /** Layout de MOTO: conductor arriba, pasajero abajo */
+    private void renderizarAsientosMoto(float d) {
+        LinearLayout colMoto = new LinearLayout(this);
+        colMoto.setOrientation(LinearLayout.VERTICAL);
+        colMoto.setGravity(android.view.Gravity.CENTER);
+        colMoto.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        // Marco visual de la moto
+        LinearLayout marco = new LinearLayout(this);
+        marco.setOrientation(LinearLayout.VERTICAL);
+        marco.setGravity(android.view.Gravity.CENTER);
+        int marcoW = (int)(130 * d);
+        LinearLayout.LayoutParams lpMarco = new LinearLayout.LayoutParams(marcoW, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpMarco.setMargins(0, 0, 0, (int)(8*d));
+        marco.setLayoutParams(lpMarco);
+        marco.setPadding((int)(20*d), (int)(18*d), (int)(20*d), (int)(16*d));
+        GradientDrawable bgMarco = new GradientDrawable();
+        bgMarco.setShape(GradientDrawable.RECTANGLE);
+        bgMarco.setCornerRadius(40*d);
+        bgMarco.setColor(Color.parseColor("#F0F4F8"));
+        bgMarco.setStroke((int)(2*d), Color.parseColor("#D0D8E0"));
+        marco.setBackground(bgMarco);
+
+        // Label MOTO
+        TextView tvLabel = new TextView(this);
+        tvLabel.setText("MOTO");
+        tvLabel.setTextSize(9f); tvLabel.setTextColor(Color.parseColor("#8a95a0"));
+        tvLabel.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvLabel.setLetterSpacing(0.1f);
+        tvLabel.setGravity(android.view.Gravity.CENTER);
+        tvLabel.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        tvLabel.setPadding(0, 0, 0, (int)(10*d));
+        marco.addView(tvLabel);
+
+        // Asiento conductor (bloqueado)
+        marco.addView(crearAsientoView(SEAT_CONDUCTOR, "Conductor", false, d, null));
+
+        // Separador
+        View sep = new View(this);
+        LinearLayout.LayoutParams lpSep = new LinearLayout.LayoutParams((int)(1*d), (int)(14*d));
+        lpSep.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+        lpSep.setMargins(0, (int)(4*d), 0, (int)(4*d));
+        sep.setLayoutParams(lpSep);
+        sep.setBackgroundColor(Color.parseColor("#c0c8d0"));
+        marco.addView(sep);
+
+        // Asiento pasajero moto
+        boolean libreP = cuposDisponibles > 0;
+        int estadoP = libreP ? SEAT_LIBRE : SEAT_OCUPADO;
+        if (yaReservo && cupoSeleccionado >= 0) estadoP = SEAT_SELECCIONADO;
+        marco.addView(crearAsientoView(estadoP, libreP ? "Libre" : "Ocupado", !esConductor && libreP && !yaReservo, d,
+                v -> { cupoSeleccionado = 0; mostrarBottomSheetParada(); }));
+        colMoto.addView(marco);
+        layoutCupos.addView(colMoto);
+    }
+
+    /** Layout de CARRO: distribución [Conductor][Copiloto] + [T1][T2][T3] */
+    private void renderizarAsientosCarro(int total, int disponibles, float d) {
+        // Wrapper centrado con forma de carro
+        LinearLayout wrapper = new LinearLayout(this);
+        wrapper.setOrientation(LinearLayout.VERTICAL);
+        wrapper.setGravity(android.view.Gravity.CENTER);
+        LinearLayout.LayoutParams lpW = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpW.setMargins(0, 0, 0, (int)(8*d));
+        wrapper.setLayoutParams(lpW);
+        wrapper.setPadding((int)(16*d), (int)(16*d), (int)(16*d), (int)(20*d));
+        GradientDrawable bgWrapper = new GradientDrawable();
+        bgWrapper.setShape(GradientDrawable.RECTANGLE);
+        // Parte delantera redondeada, trasera menos
+        bgWrapper.setCornerRadii(new float[]{28*d,28*d,28*d,28*d, 18*d,18*d,18*d,18*d});
+        bgWrapper.setColor(Color.parseColor("#F0F4F8"));
+        bgWrapper.setStroke((int)(2*d), Color.parseColor("#D0D8E0"));
+        wrapper.setBackground(bgWrapper);
+
+        // Label PARTE DELANTERA
+        TextView tvDelantero = new TextView(this);
+        tvDelantero.setText("PARTE DELANTERA");
+        tvDelantero.setTextSize(8f); tvDelantero.setTextColor(Color.parseColor("#8a95a0"));
+        tvDelantero.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvDelantero.setLetterSpacing(0.1f);
+        tvDelantero.setGravity(android.view.Gravity.CENTER);
+        tvDelantero.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        tvDelantero.setPadding(0, 0, 0, (int)(8*d));
+        wrapper.addView(tvDelantero);
+
+        // Indicador parabrisas
+        View parabrisas = new View(this);
+        LinearLayout.LayoutParams lpP = new LinearLayout.LayoutParams((int)(60*d), (int)(3*d));
+        lpP.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+        lpP.setMargins(0, 0, 0, (int)(10*d));
+        parabrisas.setLayoutParams(lpP);
+        GradientDrawable bgPB = new GradientDrawable();
+        bgPB.setShape(GradientDrawable.RECTANGLE); bgPB.setCornerRadius(2*d);
+        bgPB.setColor(Color.parseColor("#C5CDD6")); parabrisas.setBackground(bgPB);
+        wrapper.addView(parabrisas);
+
+        // ── FILA DELANTERA: Conductor + Copiloto ─────────────────────────────
+        LinearLayout filaDelantera = new LinearLayout(this);
+        filaDelantera.setOrientation(LinearLayout.HORIZONTAL);
+        filaDelantera.setGravity(android.view.Gravity.CENTER);
+        LinearLayout.LayoutParams lpFD = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpFD.setMargins(0, 0, 0, (int)(8*d));
+        filaDelantera.setLayoutParams(lpFD);
+
+        // Conductor (siempre bloqueado)
+        filaDelantera.addView(crearAsientoView(SEAT_CONDUCTOR, "Conductor", false, d, null));
+
+        // Espacio central (simula consola del carro)
+        View consolaCentral = new View(this);
+        LinearLayout.LayoutParams lpCC = new LinearLayout.LayoutParams((int)(20*d), (int)(40*d));
+        consolaCentral.setLayoutParams(lpCC);
+        filaDelantera.addView(consolaCentral);
+
+        // Copiloto (asiento índice 0)
+        if (total >= 2) {
+            int estCopiloto = obtenerEstadoAsiento(0, disponibles);
+            boolean clicCopiloto = !esConductor && estCopiloto == SEAT_LIBRE && !yaReservo;
+            boolean clicCopilotoReserva = !esConductor && yaReservo && cupoSeleccionado == 0;
+            if (clicCopilotoReserva) estCopiloto = SEAT_SELECCIONADO;
+            final int idxC = 0;
+            filaDelantera.addView(crearAsientoView(estCopiloto,
+                    estCopiloto == SEAT_SELECCIONADO ? "Tuyo" : (estCopiloto == SEAT_LIBRE ? "Libre" : "Ocupado"),
+                    clicCopiloto, d,
+                    v -> { cupoSeleccionado = idxC; mostrarBottomSheetParada(); }));
+        }
+        wrapper.addView(filaDelantera);
+
+        // Separador central (simula "piso" del carro)
+        View pisoCarro = new View(this);
+        LinearLayout.LayoutParams lpPiso = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, (int)(1.5f*d));
+        lpPiso.setMargins(0, (int)(4*d), 0, (int)(8*d));
+        pisoCarro.setLayoutParams(lpPiso);
+        pisoCarro.setBackgroundColor(Color.parseColor("#C5CDD680"));
+        wrapper.addView(pisoCarro);
+
+        // ── FILA TRASERA ─────────────────────────────────────────────────────
+        int numTraseros = Math.min(total - 1, 3); // Máx 3 traseros
+        if (numTraseros > 0) {
+            LinearLayout filaTrasera = new LinearLayout(this);
+            filaTrasera.setOrientation(LinearLayout.HORIZONTAL);
+            filaTrasera.setGravity(android.view.Gravity.CENTER);
+            filaTrasera.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+            for (int i = 0; i < numTraseros; i++) {
+                int idxAsiento = i + 1; // índice 1,2,3 (el 0 es copiloto)
+                int estadoT = obtenerEstadoAsiento(idxAsiento, disponibles);
+                boolean clic = !esConductor && estadoT == SEAT_LIBRE && !yaReservo;
+                boolean esElMio = yaReservo && cupoSeleccionado == idxAsiento;
+                if (esElMio) estadoT = SEAT_SELECCIONADO;
+                final int idxFinal = idxAsiento;
+                filaTrasera.addView(crearAsientoView(estadoT,
+                        esElMio ? "Tuyo" : (estadoT == SEAT_LIBRE ? "Libre" : "Ocupado"),
+                        clic, d,
+                        v -> { cupoSeleccionado = idxFinal; mostrarBottomSheetParada(); }));
+
+                // Pequeño espacio entre asientos traseros
+                if (i < numTraseros - 1) {
+                    View gap = new View(this);
+                    gap.setLayoutParams(new LinearLayout.LayoutParams((int)(6*d), 1));
+                    filaTrasera.addView(gap);
+                }
+            }
+            wrapper.addView(filaTrasera);
+        }
+
+        // Label PARTE TRASERA
+        View separadorTrasero = new View(this);
+        LinearLayout.LayoutParams lpST = new LinearLayout.LayoutParams((int)(60*d), (int)(3*d));
+        lpST.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+        lpST.setMargins(0, (int)(10*d), 0, (int)(6*d));
+        separadorTrasero.setLayoutParams(lpST);
+        GradientDrawable bgST = new GradientDrawable();
+        bgST.setShape(GradientDrawable.RECTANGLE); bgST.setCornerRadius(2*d);
+        bgST.setColor(Color.parseColor("#C5CDD6")); separadorTrasero.setBackground(bgST);
+        wrapper.addView(separadorTrasero);
+
+        TextView tvTrasero = new TextView(this);
+        tvTrasero.setText("PARTE TRASERA");
+        tvTrasero.setTextSize(8f); tvTrasero.setTextColor(Color.parseColor("#8a95a0"));
+        tvTrasero.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvTrasero.setLetterSpacing(0.1f);
+        tvTrasero.setGravity(android.view.Gravity.CENTER);
+        tvTrasero.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        wrapper.addView(tvTrasero);
+
+        layoutCupos.addView(wrapper);
+    }
+
+    /**
+     * Calcula el estado visual de un asiento según su índice y cuántos están disponibles.
+     * Simple heurística: los primeros `disponibles` asientos están libres.
+     */
+    private int obtenerEstadoAsiento(int idx, int disponibles) {
+        // Si el viaje ya inició → ocupado (rojo)
+        boolean viajeIniciado = "EN_CURSO".equals(estadoViaje) || "INICIADO".equals(estadoViaje);
+
+        if (idx < (cuposTotales - disponibles)) {
+            // Este asiento está tomado
+            return viajeIniciado ? SEAT_OCUPADO : SEAT_RESERVADO;
+        }
+        return SEAT_LIBRE;
+    }
+
+    private View crearAsientoView(int estado, String etiqueta, boolean clickable, float d,
+                                  View.OnClickListener onClick) {
+        int seatSize = (int)(52 * d);
+        int colorFondo, colorBorde;
+        switch (estado) {
+            case SEAT_OCUPADO:
+                colorFondo = COLOR_SEAT_OCUPADO; colorBorde = COLOR_SEAT_BORDER_OCUPADO; break;
+            case SEAT_RESERVADO:
+                colorFondo = COLOR_SEAT_RESERVADO; colorBorde = COLOR_SEAT_BORDER_RESERVADO; break;
+            case SEAT_SELECCIONADO:
+                colorFondo = COLOR_SEAT_SELECCIONADO; colorBorde = COLOR_SEAT_BORDER_SELECCIONADO; break;
+            case SEAT_CONDUCTOR:
+                colorFondo = COLOR_SEAT_CONDUCTOR; colorBorde = COLOR_SEAT_BORDER_CONDUCTOR; break;
+            case SEAT_RESERVANDO:
+                colorFondo = COLOR_SEAT_RESERVANDO; colorBorde = COLOR_SEAT_BORDER_RESERVANDO; break;
+            default:
+                colorFondo = COLOR_SEAT_LIBRE; colorBorde = COLOR_SEAT_BORDER_LIBRE; break;
+        }
+
+        LinearLayout asientoBox = new LinearLayout(this);
+        asientoBox.setOrientation(LinearLayout.VERTICAL);
+        asientoBox.setGravity(android.view.Gravity.CENTER);
+        LinearLayout.LayoutParams lpBox = new LinearLayout.LayoutParams(
+                (int)(64*d), LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpBox.setMargins((int)(4*d), 0, (int)(4*d), 0);
+        asientoBox.setLayoutParams(lpBox);
+
+        // ── Ícono del asiento ─────────────────────────────────────────────────
+        android.widget.FrameLayout iconFrame = new android.widget.FrameLayout(this);
+        LinearLayout.LayoutParams lpIF = new LinearLayout.LayoutParams(seatSize, seatSize);
+        lpIF.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+        iconFrame.setLayoutParams(lpIF);
+
+        // Fondo del asiento
+        GradientDrawable bgAsiento = new GradientDrawable();
+        bgAsiento.setShape(GradientDrawable.RECTANGLE);
+        bgAsiento.setCornerRadius(10 * d);
+        bgAsiento.setColor(colorFondo);
+        bgAsiento.setStroke((int)(2.5f * d), colorBorde);
+        iconFrame.setBackground(bgAsiento);
+
+        // SVG → Bitmap del ícono de silla
+        android.graphics.Bitmap bmpSilla = crearBitmapSilla(colorFondo, d);
+        android.widget.ImageView ivSilla = new android.widget.ImageView(this);
+        ivSilla.setImageBitmap(bmpSilla);
+        ivSilla.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
+        iconFrame.addView(ivSilla);
+
+        // ── Check dorado para seleccionado ────────────────────────────────────
+        if (estado == SEAT_SELECCIONADO) {
+            View checkCircle = new View(this);
+            int checkSize = (int)(16 * d);
+            android.widget.FrameLayout.LayoutParams lpCheck =
+                    new android.widget.FrameLayout.LayoutParams(checkSize, checkSize);
+            lpCheck.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
+            lpCheck.setMargins(0, (int)(3*d), (int)(3*d), 0);
+            checkCircle.setLayoutParams(lpCheck);
+            GradientDrawable bgCheck = new GradientDrawable();
+            bgCheck.setShape(GradientDrawable.OVAL);
+            bgCheck.setColor(Color.WHITE);
+            checkCircle.setBackground(bgCheck);
+            // Dibujar ✓ encima
+            TextView tvCheck = new TextView(this);
+            tvCheck.setText("✓");
+            tvCheck.setTextSize(8f);
+            tvCheck.setTextColor(COLOR_SEAT_SELECCIONADO);
+            tvCheck.setTypeface(null, android.graphics.Typeface.BOLD);
+            tvCheck.setGravity(android.view.Gravity.CENTER);
+            tvCheck.setLayoutParams(lpCheck);
+            iconFrame.addView(tvCheck);
+        }
+
+        // ── Ícono de persona para OCUPADO ─────────────────────────────────────
+        if (estado == SEAT_OCUPADO) {
+            TextView tvPersona = new TextView(this);
+            tvPersona.setText("👤");
+            tvPersona.setTextSize(14f);
+            tvPersona.setGravity(android.view.Gravity.CENTER);
+            android.widget.FrameLayout.LayoutParams lpPer =
+                    new android.widget.FrameLayout.LayoutParams(
+                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT);
+            tvPersona.setLayoutParams(lpPer);
+            iconFrame.addView(tvPersona);
+        }
+
+        asientoBox.addView(iconFrame);
+
+        // ── Etiqueta debajo ───────────────────────────────────────────────────
+        TextView tvEtiqueta = new TextView(this);
+        tvEtiqueta.setText(etiqueta);
+        tvEtiqueta.setTextSize(9f);
+        tvEtiqueta.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvEtiqueta.setTextColor(colorFondo);
+        tvEtiqueta.setGravity(android.view.Gravity.CENTER);
+        tvEtiqueta.setMaxLines(1);
+        tvEtiqueta.setTextAlignment(android.view.View.TEXT_ALIGNMENT_CENTER);
+        LinearLayout.LayoutParams lpEtq = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpEtq.topMargin = (int)(4 * d);
+        tvEtiqueta.setLayoutParams(lpEtq);
+        asientoBox.addView(tvEtiqueta);
+
+        // ── Click listener ────────────────────────────────────────────────────
+        if (clickable && onClick != null) {
+            asientoBox.setClickable(true);
+            asientoBox.setFocusable(true);
+            android.util.TypedValue tv2 = new android.util.TypedValue();
+            getTheme().resolveAttribute(android.R.attr.selectableItemBackground, tv2, true);
+            asientoBox.setForeground(getResources().getDrawable(tv2.resourceId, getTheme()));
+            asientoBox.setOnClickListener(v -> {
+                // Animación de tap
+                v.animate().scaleX(0.88f).scaleY(0.88f).setDuration(80)
+                        .withEndAction(() -> v.animate().scaleX(1f).scaleY(1f).setDuration(120).start())
+                        .start();
+                onClick.onClick(v);
+            });
+        }
+
+        return asientoBox;
+    }
+
+    /** Genera el bitmap del ícono de silla de carro (vista superior) */
+    private android.graphics.Bitmap crearBitmapSilla(int colorFondo, float d) {
+        int size = (int)(48 * d);
+        android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(size, size,
+                android.graphics.Bitmap.Config.ARGB_8888);
+        android.graphics.Canvas canvas = new android.graphics.Canvas(bmp);
+        android.graphics.Paint paint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        paint.setColor(Color.WHITE);
+        paint.setAlpha(230);
+
+        float cx = size / 2f;
+        // Respaldo
+        canvas.drawRoundRect(cx - size*0.33f, size*0.08f, cx + size*0.33f, size*0.50f,
+                size*0.18f, size*0.18f, paint);
+        // Asiento
+        canvas.drawRoundRect(cx - size*0.37f, size*0.50f, cx + size*0.37f, size*0.80f,
+                size*0.12f, size*0.12f, paint);
+        // Pata izquierda
+        canvas.drawRoundRect(cx - size*0.37f, size*0.78f, cx - size*0.20f, size*0.95f,
+                size*0.08f, size*0.08f, paint);
+        // Pata derecha
+        canvas.drawRoundRect(cx + size*0.20f, size*0.78f, cx + size*0.37f, size*0.95f,
+                size*0.08f, size*0.08f, paint);
+        return bmp;
+    }
+
+    /** Barra de progreso disponibles/ocupados con animación */
+    private void agregarBarraDisponibilidad(int total, int disponibles, float d) {
+        int ocupados = total - disponibles;
+        int p4 = (int)(4*d), p6 = (int)(6*d), p8 = (int)(8*d), p14 = (int)(14*d);
+
+        // Fila de contadores
+        LinearLayout rowCount = new LinearLayout(this);
+        rowCount.setOrientation(LinearLayout.HORIZONTAL);
+        rowCount.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams lpRow = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpRow.setMargins(p4, p8, p4, p6); rowCount.setLayoutParams(lpRow);
+
+        TextView tvDisp = new TextView(this);
+        tvDisp.setText("✅ " + disponibles + " disponible" + (disponibles != 1 ? "s" : ""));
+        tvDisp.setTextSize(12f); tvDisp.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvDisp.setTextColor(Color.parseColor("#2E7D32"));
+        tvDisp.setLayoutParams(new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        rowCount.addView(tvDisp);
+
+        TextView tvOcup = new TextView(this);
+        tvOcup.setText(ocupados + " ocupado" + (ocupados != 1 ? "s" : "") + " 🔒");
+        tvOcup.setTextSize(12f); tvOcup.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvOcup.setTextColor(Color.parseColor("#B71C1C"));
+        tvOcup.setGravity(android.view.Gravity.END);
+        tvOcup.setLayoutParams(new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        rowCount.addView(tvOcup);
+        layoutCupos.addView(rowCount);
+
+        // Barra animada
+        android.widget.FrameLayout barFrame = new android.widget.FrameLayout(this);
+        LinearLayout.LayoutParams lpBar = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, (int)(8*d));
+        lpBar.setMargins(p4, 0, p4, p6); barFrame.setLayoutParams(lpBar);
+
+        View barBg = new View(this);
+        barBg.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
+        GradientDrawable bgShape = new GradientDrawable();
+        bgShape.setShape(GradientDrawable.RECTANGLE); bgShape.setCornerRadius(4*d);
+        bgShape.setColor(Color.parseColor("#E0E0E0")); barBg.setBackground(bgShape);
+
+        View barFill = new View(this);
+        android.widget.FrameLayout.LayoutParams fillLp =
+                new android.widget.FrameLayout.LayoutParams(0,
+                        android.widget.FrameLayout.LayoutParams.MATCH_PARENT);
+        barFill.setLayoutParams(fillLp);
+        GradientDrawable fillShape = new GradientDrawable();
+        fillShape.setShape(GradientDrawable.RECTANGLE); fillShape.setCornerRadius(4*d);
+        int colorBarra = disponibles > total / 2
+                ? Color.parseColor("#43A047") : Color.parseColor("#FB8C00");
+        fillShape.setColor(colorBarra); barFill.setBackground(fillShape);
+
+        barFrame.addView(barBg); barFrame.addView(barFill);
+        layoutCupos.addView(barFrame);
+
+        // Animación con post
+        final int fTotal = total, fDisp = disponibles;
+        barFrame.post(() -> {
+            int totalW = barFrame.getWidth();
+            int targetW = totalW * fDisp / fTotal;
+            android.animation.ValueAnimator anim = android.animation.ValueAnimator.ofInt(0, targetW);
+            anim.setDuration(700);
+            anim.setInterpolator(new android.view.animation.DecelerateInterpolator());
+            anim.addUpdateListener(a -> {
+                android.widget.FrameLayout.LayoutParams lp2 =
+                        (android.widget.FrameLayout.LayoutParams) barFill.getLayoutParams();
+                lp2.width = (int) a.getAnimatedValue(); barFill.setLayoutParams(lp2);
+            });
+            anim.start();
+        });
+    }
+
+    /** Leyenda de colores */
+    private void agregarLeyendaAsientos(float d) {
+        LinearLayout leyenda = new LinearLayout(this);
+        leyenda.setOrientation(LinearLayout.HORIZONTAL);
+        leyenda.setGravity(android.view.Gravity.CENTER);
+        LinearLayout.LayoutParams lpL = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpL.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+        lpL.topMargin = (int)(4*d);
+        leyenda.setLayoutParams(lpL);
+
+        boolean viajeIniciado = "EN_CURSO".equals(estadoViaje) || "INICIADO".equals(estadoViaje);
+
+        if (!esConductor && yaReservo && cupoSeleccionado >= 0) {
+            leyenda.addView(crearItemLeyenda(COLOR_SEAT_LIBRE,       "Libre",      d));
+            leyenda.addView(crearItemLeyenda(
+                    viajeIniciado ? COLOR_SEAT_OCUPADO : COLOR_SEAT_RESERVADO,
+                    viajeIniciado ? "Ocupado" : "Reservado",           d));
+            leyenda.addView(crearItemLeyenda(COLOR_SEAT_SELECCIONADO, "Tuyo",       d));
+            leyenda.addView(crearItemLeyenda(COLOR_SEAT_CONDUCTOR,    "Conductor",  d));
+        } else {
+            leyenda.addView(crearItemLeyenda(COLOR_SEAT_LIBRE,     "Libre",     d));
+            leyenda.addView(crearItemLeyenda(
+                    viajeIniciado ? COLOR_SEAT_OCUPADO : COLOR_SEAT_RESERVADO,
+                    viajeIniciado ? "Ocupado" : "Reservado",       d));
+            leyenda.addView(crearItemLeyenda(COLOR_SEAT_CONDUCTOR, "Conductor", d));
+        }
+        layoutCupos.addView(leyenda);
+    }
+
+    private View crearItemLeyenda(int color, String label, float d) {
+        LinearLayout item = new LinearLayout(this);
+        item.setOrientation(LinearLayout.HORIZONTAL);
+        item.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams lpItem = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpItem.setMargins((int)(6*d), 0, (int)(6*d), 0);
+        item.setLayoutParams(lpItem);
+
+        View dot = new View(this);
+        LinearLayout.LayoutParams lpDot = new LinearLayout.LayoutParams((int)(10*d), (int)(10*d));
+        lpDot.setMargins(0, 0, (int)(4*d), 0);
+        dot.setLayoutParams(lpDot);
+        GradientDrawable bgDot = new GradientDrawable();
+        bgDot.setShape(GradientDrawable.RECTANGLE); bgDot.setCornerRadius(3*d);
+        bgDot.setColor(color); dot.setBackground(bgDot);
+        item.addView(dot);
+
+        TextView tv = new TextView(this);
+        tv.setText(label); tv.setTextSize(11f);
+        tv.setTextColor(Color.parseColor("#607D8B"));
+        item.addView(tv);
+        return item;
     }
 
     private boolean esMioCheck(){ return yaReservo && cupoSeleccionado >= 0; }
@@ -3913,6 +5794,16 @@ public class DetalleViajeActivity extends AppCompatActivity {
     // =========================================================================
     private void iniciarPolling(){
         if(pollingActivo) return;
+        // Pulsar el dot del badge EN VIVO
+        View dotVivo = findViewById(R.id.dot_en_vivo);
+        if (dotVivo != null) {
+            android.animation.ObjectAnimator pulse = android.animation.ObjectAnimator
+                    .ofFloat(dotVivo, "alpha", 1f, 0.2f);
+            pulse.setDuration(800);
+            pulse.setRepeatCount(android.animation.ObjectAnimator.INFINITE);
+            pulse.setRepeatMode(android.animation.ObjectAnimator.REVERSE);
+            pulse.start();
+        }
         pollingActivo=true;
         pollingRunnable=new Runnable(){
             @Override public void run(){
@@ -3979,20 +5870,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
                 error -> {}
         );
     }
-    private void dispararCalificacionSegunRol() {
-        if (calificacionYaDisparada) return;  // ← AGREGAR
-        calificacionYaDisparada = true;        // ← AGREGAR
-        if (esConductor) {
-            paso3BuscarPasajerosParaCalificar();
-        } else {
-            dispararCalificacionAlConductor();
-        }
-    }
 
-    /**
-     * Consulta el estado de la reserva del pasajero y actualiza el mapa si cambió.
-     * Cuando el estado pasa a RECOGIDO: elimina el marcador de subida del mapa.
-     */
     private void actualizarEstadoReservaPorPolling() {
         ConexionApi.getInstance(this).getObject(Constantes.RESERVAS + "/" + idReservaActual,
                 response -> {
@@ -4046,10 +5924,6 @@ public class DetalleViajeActivity extends AppCompatActivity {
         );
     }
 
-    // =========================================================================
-    //  FINALIZAR + CALIFICACIONES
-    // =========================================================================
-
     private void paso2FinalizarYCalificar() {
         ConexionApi.getInstance(this).post(
                 Constantes.viajeFinalizar((long) viajeId), null,
@@ -4058,14 +5932,556 @@ public class DetalleViajeActivity extends AppCompatActivity {
                     Toast.makeText(this, "✅ Viaje finalizado.", Toast.LENGTH_LONG).show();
                     estadoViaje = "FINALIZADO";
                     cargarDetalleViaje();
-                    new Handler(Looper.getMainLooper())
-                            .postDelayed(this::paso3BuscarPasajerosParaCalificar, 1500);
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        if (esConductor) mostrarBottomSheetCobro();
+                        // Pasajero: el botón Pagar aparece en la UI automáticamente
+                    }, 1500);
                 },
                 e2 -> {
                     loaderDetalle.setVisibility(View.GONE);
                     Toast.makeText(this, "Error finalizando", Toast.LENGTH_LONG).show();
                 }
         );
+    }
+
+    private void dispararCalificacionSegunRol() {
+        if (calificacionYaDisparada) return;
+        calificacionYaDisparada = true;
+        if (esConductor) {
+            mostrarBottomSheetCobro(); // Paso 1: cobro
+        } else {
+            dispararCalificacionAlConductor(); // Pasajero: califica al conductor
+        }
+    }
+
+    private void mostrarBottomSheetCobro() {
+        if (!esConductor) return;
+        ConexionApi.getInstance(this).getObjectNoCache(
+                Constantes.viajePorId((long) viajeId),
+                viajeObj -> {
+                    JSONArray usuarios = viajeObj.optJSONArray("usuarios");
+                    ArrayList<JSONObject> pasajerosActivos = new ArrayList<>();
+                    if (usuarios != null) {
+                        for (int i = 0; i < usuarios.length(); i++) {
+                            JSONObject u = usuarios.optJSONObject(i);
+                            if (u == null) continue;
+                            String est = u.optString("estado", "").toUpperCase().trim();
+                            if ("CANCELADO".equals(est) || "CANCELADA".equals(est)) continue;
+                            pasajerosActivos.add(u);
+                        }
+                    }
+                    runOnUiThread(() -> mostrarBottomSheetCobroConPasajeros(pasajerosActivos));
+                },
+                err -> runOnUiThread(() -> mostrarBottomSheetCobroConPasajeros(new ArrayList<>()))
+        );
+    }
+
+    private void mostrarBottomSheetCobroConPasajeros(ArrayList<JSONObject> pasajeros) {
+        BottomSheetDialog sheet = new BottomSheetDialog(this, R.style.BottomSheetTheme);
+        float dp = getResources().getDisplayMetrics().density;
+        int p16 = (int)(16*dp), p12 = (int)(12*dp), p8 = (int)(8*dp), p24 = (int)(24*dp);
+
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(p16, p16, p16, p24);
+
+        root.addView(crearTiron(dp, p12));
+
+        // Título
+        TextView tvTitulo = new TextView(this);
+        tvTitulo.setText("Cobro del viaje");
+        tvTitulo.setTextSize(22f);
+        tvTitulo.setTypeface(null, Typeface.BOLD);
+        tvTitulo.setTextColor(Color.parseColor("#004D40"));
+        LinearLayout.LayoutParams lpT = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpT.setMargins(0, 0, 0, (int)(4*dp));
+        tvTitulo.setLayoutParams(lpT);
+        root.addView(tvTitulo);
+
+        TextView tvSub = new TextView(this);
+        tvSub.setText("Confirma el pago de cada pasajero antes de calificar");
+        tvSub.setTextSize(13f);
+        tvSub.setTextColor(Color.parseColor("#546E7A"));
+        LinearLayout.LayoutParams lpSub = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpSub.setMargins(0, 0, 0, p16);
+        tvSub.setLayoutParams(lpSub);
+        root.addView(tvSub);
+
+        View sep0 = new View(this);
+        LinearLayout.LayoutParams lpS0 = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, (int)(1*dp));
+        lpS0.setMargins(0, 0, 0, p12);
+        sep0.setLayoutParams(lpS0);
+        sep0.setBackgroundColor(Color.parseColor("#E0F2F1"));
+        root.addView(sep0);
+
+        final int[] pagosConfirmados = {0};
+        final int totalPasajeros = pasajeros.isEmpty() ? 1 : pasajeros.size();
+
+        // Botón continuar (se crea primero para pasarlo como referencia)
+        MaterialButton btnContinuar = new MaterialButton(this);
+        btnContinuar.setText("CONTINUAR A CALIFICAR");
+        btnContinuar.setTextSize(14f);
+        btnContinuar.setTextColor(Color.WHITE);
+        btnContinuar.setCornerRadius((int)(14*dp));
+        btnContinuar.setEnabled(false);
+        btnContinuar.setAlpha(0.5f);
+        btnContinuar.setBackgroundColor(Color.parseColor("#B0BEC5"));
+        LinearLayout.LayoutParams lpBtn = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, (int)(52*dp));
+        lpBtn.setMargins(0, p8, 0, p8);
+        btnContinuar.setLayoutParams(lpBtn);
+
+        if (pasajeros.isEmpty()) {
+            crearCardCobroPasajeroConVerificacion(root, "Pasajero", -1, precioViaje,
+                    pagosConfirmados, totalPasajeros, btnContinuar, dp);
+        } else {
+            for (JSONObject u : pasajeros) {
+                String nombre = "";
+                JSONObject usuObj = u.optJSONObject("usuario");
+                if (usuObj != null) {
+                    for (String k : new String[]{"nombre","nombreCompleto","name","nombres"}) {
+                        String v = usuObj.optString(k, "");
+                        if (!v.isEmpty() && !v.equals("null")) { nombre = v; break; }
+                    }
+                }
+                if (nombre.isEmpty()) nombre = u.optString("nombrePasajero",
+                        u.optString("nombre", "Pasajero"));
+
+                double precio = u.optDouble("precioFinal",
+                        u.optDouble("precioTramo",
+                                u.optDouble("precio",
+                                        u.optDouble("costoPorPasajero",
+                                                u.optDouble("monto", 0)))));
+                if (precio <= 0) precio = precioViaje;
+
+                int idPas = -1;
+                if (usuObj != null) {
+                    for (String k : new String[]{"idUsuarios","id","idUsuario"}) {
+                        int id = usuObj.optInt(k, -1);
+                        if (id > 0) { idPas = id; break; }
+                    }
+                }
+                if (idPas <= 0) {
+                    for (String k : new String[]{"idUsuarios","idUsuario","idPasajero"}) {
+                        int id = u.optInt(k, -1);
+                        if (id > 0) { idPas = id; break; }
+                    }
+                }
+
+                crearCardCobroPasajeroConVerificacion(root, nombre, idPas, precio,
+                        pagosConfirmados, totalPasajeros, btnContinuar, dp);
+            }
+        }
+
+        // Nota
+        TextView tvNota = new TextView(this);
+        tvNota.setText("Una vez confirmados los pagos podrás calificar a los pasajeros");
+        tvNota.setTextSize(12f);
+        tvNota.setTextColor(Color.parseColor("#78909C"));
+        tvNota.setGravity(android.view.Gravity.CENTER);
+        LinearLayout.LayoutParams lpN = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpN.setMargins(0, p12, 0, p8);
+        tvNota.setLayoutParams(lpN);
+        root.addView(tvNota);
+
+        final BottomSheetDialog fSheet = sheet;
+        btnContinuar.setOnClickListener(v -> {
+            fSheet.dismiss();
+            new Handler(Looper.getMainLooper()).postDelayed(
+                    this::paso3BuscarPasajerosParaCalificar, 400);
+        });
+        root.addView(btnContinuar);
+
+        // Saltar
+        TextView tvSaltar = new TextView(this);
+        tvSaltar.setText("Saltar y calificar directamente");
+        tvSaltar.setTextSize(13f);
+        tvSaltar.setTextColor(Color.parseColor("#00897B"));
+        tvSaltar.setGravity(android.view.Gravity.CENTER);
+        tvSaltar.setPadding(0, p8, 0, p8);
+        tvSaltar.setClickable(true);
+        tvSaltar.setFocusable(true);
+        tvSaltar.setOnClickListener(v -> {
+            fSheet.dismiss();
+            new Handler(Looper.getMainLooper()).postDelayed(
+                    this::paso3BuscarPasajerosParaCalificar, 400);
+        });
+        root.addView(tvSaltar);
+
+        android.widget.ScrollView sv = new android.widget.ScrollView(this);
+        sv.addView(root);
+        sheet.setContentView(sv);
+        sheet.show();
+    }
+
+    private void crearCardCobroPasajeroConVerificacion(LinearLayout root, String nombre,
+                                                       int idPasajero, double precio,
+                                                       int[] pagosConfirmados, int total,
+                                                       MaterialButton btnContinuar, float dp) {
+        int p12=(int)(12*dp), p8=(int)(8*dp), p6=(int)(6*dp), p4=(int)(4*dp);
+        java.text.NumberFormat nf = java.text.NumberFormat
+                .getNumberInstance(new java.util.Locale("es", "CO"));
+
+        MaterialCardView card = new MaterialCardView(this);
+        LinearLayout.LayoutParams lpCard = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpCard.setMargins(0, 0, 0, p8);
+        card.setLayoutParams(lpCard);
+        card.setRadius(16*dp);
+        card.setCardElevation(0);
+        card.setCardBackgroundColor(Color.parseColor("#FAFAFA"));
+        card.setStrokeWidth((int)(1.5f*dp));
+        card.setStrokeColor(Color.parseColor("#E0E0E0"));
+
+        LinearLayout inner = new LinearLayout(this);
+        inner.setOrientation(LinearLayout.VERTICAL);
+        inner.setPadding(p12, p12, p12, p12);
+
+        LinearLayout fila1 = new LinearLayout(this);
+        fila1.setOrientation(LinearLayout.HORIZONTAL);
+        fila1.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams lpF1 = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpF1.setMargins(0, 0, 0, p8);
+        fila1.setLayoutParams(lpF1);
+
+        TextView avatar = new TextView(this);
+        LinearLayout.LayoutParams lpAv = new LinearLayout.LayoutParams((int)(40*dp),(int)(40*dp));
+        lpAv.setMargins(0, 0, p8, 0);
+        avatar.setLayoutParams(lpAv);
+        avatar.setGravity(android.view.Gravity.CENTER);
+        avatar.setTextColor(Color.WHITE);
+        avatar.setTextSize(16f);
+        avatar.setTypeface(null, Typeface.BOLD);
+        avatar.setText(nombre.isEmpty() ? "P" : nombre.substring(0,1).toUpperCase());
+        GradientDrawable bgAv = new GradientDrawable();
+        bgAv.setShape(GradientDrawable.OVAL);
+        bgAv.setColor(Color.parseColor("#00897B"));
+        avatar.setBackground(bgAv);
+        fila1.addView(avatar);
+
+        LinearLayout col = new LinearLayout(this);
+        col.setOrientation(LinearLayout.VERTICAL);
+        col.setLayoutParams(new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView tvNom = new TextView(this);
+        tvNom.setText(nombre);
+        tvNom.setTextSize(15f);
+        tvNom.setTypeface(null, Typeface.BOLD);
+        tvNom.setTextColor(Color.parseColor("#004D40"));
+        col.addView(tvNom);
+
+        TextView tvPrecio = new TextView(this);
+        tvPrecio.setText("$" + nf.format(precio) + " COP");
+        tvPrecio.setTextSize(13f);
+        tvPrecio.setTextColor(Color.parseColor("#00897B"));
+        tvPrecio.setTypeface(null, Typeface.BOLD);
+        col.addView(tvPrecio);
+        fila1.addView(col);
+
+        final TextView badge = new TextView(this);
+        badge.setText("Verificando...");
+        badge.setTextSize(11f);
+        badge.setTypeface(null, Typeface.BOLD);
+        badge.setTextColor(Color.WHITE);
+        badge.setPadding(p8, (int)(4*dp), p8, (int)(4*dp));
+        GradientDrawable bgBadge = new GradientDrawable();
+        bgBadge.setShape(GradientDrawable.RECTANGLE);
+        bgBadge.setCornerRadius(20*dp);
+        bgBadge.setColor(Color.parseColor("#90A4AE"));
+        badge.setBackground(bgBadge);
+        fila1.addView(badge);
+        inner.addView(fila1);
+
+        LinearLayout areaAccion = new LinearLayout(this);
+        areaAccion.setOrientation(LinearLayout.VERTICAL);
+        areaAccion.setVisibility(View.GONE);
+        inner.addView(areaAccion);
+
+        card.addView(inner);
+        root.addView(card);
+
+        if (idPasajero <= 0) {
+            runOnUiThread(() -> configurarCardPendiente(areaAccion, badge, bgBadge));
+            return;
+        }
+
+        // ── Verificar usando el endpoint de pagos del viaje (más confiable) ──
+        String urlPagos = Constantes.pagosPorViaje((long) viajeId);
+        ConexionApi.getInstance(this).getArrayNoCache(urlPagos,
+                pagosArr -> {
+                    // Buscar el pago de este pasajero específico
+                    JSONObject pagoEncontrado = null;
+                    for (int i = 0; i < pagosArr.length(); i++) {
+                        JSONObject p = pagosArr.optJSONObject(i);
+                        if (p == null) continue;
+                        int idU = -1;
+                        for (String k : new String[]{"idUsuario","idPasajero","usuarioId","pasajeroId"}) {
+                            int id = p.optInt(k, -1);
+                            if (id > 0) { idU = id; break; }
+                        }
+                        if (idU <= 0) {
+                            JSONObject uObj = p.optJSONObject("usuario");
+                            if (uObj == null) uObj = p.optJSONObject("pasajero");
+                            if (uObj != null) {
+                                for (String k : new String[]{"id","idUsuarios","idUsuario"}) {
+                                    int id = uObj.optInt(k, -1);
+                                    if (id > 0) { idU = id; break; }
+                                }
+                            }
+                        }
+                        if (idU == idPasajero) {
+                            pagoEncontrado = p;
+                            break;
+                        }
+                    }
+
+                    if (pagoEncontrado == null) {
+                        // Intentar fallback con endpoint individual
+                        buscarPagoIndividual(idPasajero, precio, nf, tvPrecio,
+                                badge, bgBadge, bgAv, avatar, card, areaAccion,
+                                pagosConfirmados, total, btnContinuar, dp);
+                        return;
+                    }
+
+                    final JSONObject fPago = pagoEncontrado;
+                    long   idPagoFound = fPago.optLong("idPago", fPago.optLong("id", -1));
+                    boolean cp = fPago.optBoolean("confirmacionPasajero", false);
+                    boolean cc = fPago.optBoolean("confirmacionConductor", false);
+                    double montoReal = fPago.optDouble("monto", precio);
+                    if (montoReal <= 0) montoReal = precio;
+                    final double fMonto = montoReal;
+
+                    runOnUiThread(() -> tvPrecio.setText("$" + nf.format(fMonto) + " COP"));
+
+                    if (cc) {
+                        runOnUiThread(() -> marcarCardPagadaDetalle(
+                                card, badge, bgBadge, bgAv, avatar,
+                                areaAccion, pagosConfirmados, total, btnContinuar, dp));
+                    } else if (cp) {
+                        runOnUiThread(() -> {
+                            badge.setText("Pasajero confirmó ✓");
+                            bgBadge.setColor(Color.parseColor("#1565C0"));
+                            badge.setBackground(bgBadge);
+                            configurarBtnConfirmarConductor(areaAccion, badge, bgBadge,
+                                    card, bgAv, avatar, idPagoFound,
+                                    pagosConfirmados, total, btnContinuar, dp);
+                        });
+                    } else {
+                        runOnUiThread(() -> configurarCardPendiente(areaAccion, badge, bgBadge));
+                    }
+                },
+                // Fallback si el array falla
+                errArr -> buscarPagoIndividual(idPasajero, precio, nf, tvPrecio,
+                        badge, bgBadge, bgAv, avatar, card, areaAccion,
+                        pagosConfirmados, total, btnContinuar, dp)
+        );
+    }
+
+    // Fallback: buscar pago por endpoint individual del pasajero
+    private void buscarPagoIndividual(int idPasajero, double precioBase,
+                                      java.text.NumberFormat nf, TextView tvPrecio,
+                                      TextView badge, GradientDrawable bgBadge,
+                                      GradientDrawable bgAv, TextView avatar,
+                                      MaterialCardView card, LinearLayout areaAccion,
+                                      int[] pagosConfirmados, int total,
+                                      MaterialButton btnContinuar, float dp) {
+
+        String url = Constantes.pagoDeUsuarioEnViaje((long) viajeId, (long) idPasajero);
+        ConexionApi.getInstance(this).getObjectNoCache(url,
+                pagoFound -> {
+                    long   idPagoFound = pagoFound.optLong("idPago", pagoFound.optLong("id", -1));
+                    boolean cp = pagoFound.optBoolean("confirmacionPasajero", false);
+                    boolean cc = pagoFound.optBoolean("confirmacionConductor", false);
+                    double montoReal = pagoFound.optDouble("monto", 0);
+                    if (montoReal <= 0) montoReal = precioBase;
+                    final double fMonto = montoReal;
+
+                    runOnUiThread(() -> tvPrecio.setText("$" + nf.format(fMonto) + " COP"));
+
+                    if (cc) {
+                        runOnUiThread(() -> marcarCardPagadaDetalle(
+                                card, badge, bgBadge, bgAv, avatar,
+                                areaAccion, pagosConfirmados, total, btnContinuar, dp));
+                    } else if (cp) {
+                        runOnUiThread(() -> {
+                            badge.setText("Pasajero confirmó ✓");
+                            bgBadge.setColor(Color.parseColor("#1565C0"));
+                            badge.setBackground(bgBadge);
+                            configurarBtnConfirmarConductor(areaAccion, badge, bgBadge,
+                                    card, bgAv, avatar, idPagoFound,
+                                    pagosConfirmados, total, btnContinuar, dp);
+                        });
+                    } else {
+                        runOnUiThread(() -> configurarCardPendiente(areaAccion, badge, bgBadge));
+                    }
+                },
+                error -> {
+                    int code = (error != null && error.networkResponse != null)
+                            ? error.networkResponse.statusCode : 0;
+                    // Sin importar el código de error: mostrar pendiente sin calcular nada
+                    runOnUiThread(() -> configurarCardPendiente(areaAccion, badge, bgBadge));
+                }
+        );
+    }
+
+
+    private void configurarCardPendiente(LinearLayout areaAccion, TextView badge,
+                                         GradientDrawable bgBadge) {
+        badge.setText("Pendiente");
+        bgBadge.setColor(Color.parseColor("#F57F17"));
+        badge.setBackground(bgBadge);
+        TextView tvEspera = new TextView(this);
+        tvEspera.setText("⏳ El pasajero aún no ha confirmado. Pídele que confirme desde su app.");
+        tvEspera.setTextSize(12f);
+        tvEspera.setTextColor(Color.parseColor("#546E7A"));
+        areaAccion.addView(tvEspera);
+        areaAccion.setVisibility(View.VISIBLE);
+    }
+
+    private void configurarBtnConfirmarConductor(LinearLayout areaAccion, TextView badge,
+                                                 GradientDrawable bgBadge, MaterialCardView card,
+                                                 GradientDrawable bgAv, TextView avatar,
+                                                 long idPago, int[] pagosConfirmados, int total,
+                                                 MaterialButton btnContinuar, float dp) {
+        int p6=(int)(6*dp), p8=(int)(8*dp);
+        areaAccion.removeAllViews();
+
+        TextView tvLabel = new TextView(this);
+        tvLabel.setText("¿Cómo te pagó?");
+        tvLabel.setTextSize(12f);
+        tvLabel.setTextColor(Color.parseColor("#546E7A"));
+        LinearLayout.LayoutParams lpL = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpL.setMargins(0, 0, 0, p6);
+        tvLabel.setLayoutParams(lpL);
+        areaAccion.addView(tvLabel);
+
+        LinearLayout filaBotones = new LinearLayout(this);
+        filaBotones.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams lpFB = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpFB.setMargins(0, 0, 0, p8);
+        filaBotones.setLayoutParams(lpFB);
+
+        final String[] metodo = {""};
+
+        MaterialButton btnEf = new MaterialButton(this);
+        btnEf.setText("Efectivo");
+        btnEf.setTextSize(12f);
+        btnEf.setTextColor(Color.parseColor("#004D40"));
+        btnEf.setCornerRadius((int)(10*dp));
+        btnEf.setStrokeColor(android.content.res.ColorStateList
+                .valueOf(Color.parseColor("#80CBC4")));
+        btnEf.setStrokeWidth((int)(1.5f*dp));
+        btnEf.setBackgroundColor(Color.parseColor("#E0F2F1"));
+        LinearLayout.LayoutParams lpBE = new LinearLayout.LayoutParams(0, (int)(40*dp), 1f);
+        lpBE.setMargins(0, 0, p6, 0);
+        btnEf.setLayoutParams(lpBE);
+        filaBotones.addView(btnEf);
+
+        MaterialButton btnTr = new MaterialButton(this);
+        btnTr.setText("Transferencia");
+        btnTr.setTextSize(12f);
+        btnTr.setTextColor(Color.parseColor("#004D40"));
+        btnTr.setCornerRadius((int)(10*dp));
+        btnTr.setStrokeColor(android.content.res.ColorStateList
+                .valueOf(Color.parseColor("#80CBC4")));
+        btnTr.setStrokeWidth((int)(1.5f*dp));
+        btnTr.setBackgroundColor(Color.parseColor("#E0F2F1"));
+        btnTr.setLayoutParams(new LinearLayout.LayoutParams(0, (int)(40*dp), 1f));
+        filaBotones.addView(btnTr);
+        areaAccion.addView(filaBotones);
+
+        MaterialButton btnConf = new MaterialButton(this);
+        btnConf.setText("CONFIRMAR PAGO RECIBIDO");
+        btnConf.setTextSize(13f);
+        btnConf.setTextColor(Color.WHITE);
+        btnConf.setCornerRadius((int)(12*dp));
+        btnConf.setBackgroundColor(Color.parseColor("#B0BEC5"));
+        btnConf.setEnabled(false);
+        btnConf.setAlpha(0.5f);
+        btnConf.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, (int)(46*dp)));
+        areaAccion.addView(btnConf);
+        areaAccion.setVisibility(View.VISIBLE);
+
+        Runnable actualizarSeleccion = () -> {
+            boolean esEf = "efectivo".equals(metodo[0]);
+            boolean esTr = "transferencia".equals(metodo[0]);
+            btnEf.setBackgroundColor(esEf
+                    ? Color.parseColor("#00897B") : Color.parseColor("#E0F2F1"));
+            btnEf.setTextColor(esEf ? Color.WHITE : Color.parseColor("#004D40"));
+            btnTr.setBackgroundColor(esTr
+                    ? Color.parseColor("#00897B") : Color.parseColor("#E0F2F1"));
+            btnTr.setTextColor(esTr ? Color.WHITE : Color.parseColor("#004D40"));
+            boolean hay = !metodo[0].isEmpty();
+            btnConf.setEnabled(hay);
+            btnConf.setAlpha(hay ? 1f : 0.5f);
+            btnConf.setBackgroundColor(hay
+                    ? Color.parseColor("#00897B") : Color.parseColor("#B0BEC5"));
+        };
+
+        btnEf.setOnClickListener(v -> { metodo[0] = "efectivo";      actualizarSeleccion.run(); });
+        btnTr.setOnClickListener(v -> { metodo[0] = "transferencia"; actualizarSeleccion.run(); });
+
+        btnConf.setOnClickListener(v -> {
+            if (metodo[0].isEmpty() || idPago <= 0) return;
+            btnConf.setEnabled(false);
+            btnConf.setText("Confirmando...");
+
+            JSONObject bodyConf = new JSONObject();
+            try { bodyConf.put("confirmacionConductor", true); } catch (Exception ignored) {}
+
+            ConexionApi.getInstance(this).put(
+                    Constantes.pagoConfirmarConductor(idPago), bodyConf,
+                    resp -> runOnUiThread(() ->
+                            marcarCardPagadaDetalle(card, badge, bgBadge, bgAv, avatar,
+                                    areaAccion, pagosConfirmados, total, btnContinuar, dp)),
+                    err -> {
+                        int code = (err != null && err.networkResponse != null)
+                                ? err.networkResponse.statusCode : 0;
+                        runOnUiThread(() -> {
+                            if (code == 409) {
+                                marcarCardPagadaDetalle(card, badge, bgBadge, bgAv, avatar,
+                                        areaAccion, pagosConfirmados, total, btnContinuar, dp);
+                            } else {
+                                btnConf.setEnabled(true);
+                                btnConf.setText("CONFIRMAR PAGO RECIBIDO");
+                                Toast.makeText(this,
+                                        "Error al confirmar (código " + code + ")",
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        });
+                    }
+            );
+        });
+    }
+
+    private void marcarCardPagadaDetalle(MaterialCardView card, TextView badge,
+                                         GradientDrawable bgBadge, GradientDrawable bgAv,
+                                         TextView avatar, LinearLayout areaAccion,
+                                         int[] pagosConfirmados, int total,
+                                         MaterialButton btnContinuar, float dp) {
+        card.setCardBackgroundColor(Color.parseColor("#E8F5E9"));
+        card.setStrokeColor(Color.parseColor("#A5D6A7"));
+        badge.setText("Pagado ✓");
+        bgBadge.setColor(Color.parseColor("#2E7D32"));
+        badge.setBackground(bgBadge);
+        bgAv.setColor(0xFF2E7D32);
+        avatar.setBackground(bgAv);
+        areaAccion.setVisibility(View.GONE);
+        pagosConfirmados[0]++;
+        if (pagosConfirmados[0] >= total) {
+            btnContinuar.setEnabled(true);
+            btnContinuar.setAlpha(1f);
+            btnContinuar.setBackgroundColor(Color.parseColor("#00897B"));
+        }
     }
 
     private void finalizarViaje() {
@@ -4215,20 +6631,43 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
     private void mostrarCalificacionesEncadenadas(ArrayList<Integer> ids, ArrayList<String> nombres,
                                                   int idCalificador, int indice) {
-        if (indice >= ids.size()) return;
-        int idP=ids.get(indice); String nomP=nombres.get(indice); int sig=indice+1;
+        if (indice >= ids.size()) {
+            // ── Conductor: al terminar calificaciones → abrir ResumenViajeActivity ──
+            if (esConductor) {
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    if (!isFinishing() && !isDestroyed()) {
+                        Intent intent = new Intent(this, ResumenViajeActivity.class);
+                        intent.putExtra(ResumenViajeActivity.EXTRA_ID_VIAJE, viajeId);
+                        startActivity(intent);
+                    }
+                }, 500);
+            }
+            return;
+        }
+        int idP = ids.get(indice);
+        String nomP = nombres.get(indice);
+        int sig = indice + 1;
         new CalificacionesManager(this).verificarCalificacion(viajeId, idCalificador, idP,
                 new CalificacionesManager.OnVerificacionListener() {
                     @Override public void onDebeCalificar() {
-                        CalificacionController.mostrarBottomSheetCalificar(DetalleViajeActivity.this,
+                        CalificacionController.mostrarBottomSheetCalificar(
+                                DetalleViajeActivity.this,
                                 viajeId, idP, nomP, idCalificador, true,
                                 (p, c) -> new Handler(Looper.getMainLooper()).postDelayed(
-                                        () -> mostrarCalificacionesEncadenadas(ids, nombres, idCalificador, sig), 700));
+                                        () -> mostrarCalificacionesEncadenadas(
+                                                ids, nombres, idCalificador, sig), 700));
                     }
                     @Override public void onYaCalifico(int p, String e) {
                         mostrarCalificacionesEncadenadas(ids, nombres, idCalificador, sig);
                     }
                 });
+    }
+
+    private void abrirResumenViaje() {
+        if (isFinishing() || isDestroyed()) return;
+        Intent intent = new Intent(this, ResumenViajeActivity.class);
+        intent.putExtra(ResumenViajeActivity.EXTRA_ID_VIAJE, viajeId);
+        startActivity(intent);
     }
 
     private void dispararCalificacionAlConductor() {
@@ -4312,9 +6751,12 @@ public class DetalleViajeActivity extends AppCompatActivity {
             if(estadoViaje.equals("EN_CURSO")||estadoViaje.equals("INICIADO"))
                 btnFinalizar.setVisibility(View.VISIBLE);
         } else {
-            if(ESTADOS_RESERVABLES.contains(estadoViaje)) verificarReservaActivaYMostrarBoton();
-            else if(estadoViaje.equals("CREADO")||estadoViaje.equals("PROGRAMADO")||estadoViaje.equals("DISPONIBLE"))
-                mostrarBannerEsperaInicio();
+            if (ESTADOS_RESERVABLES.contains(estadoViaje)
+                    || "DISPONIBLE".equals(estadoViaje)
+                    || "PROGRAMADO".equals(estadoViaje)
+                    || "CREADO".equals(estadoViaje)) {
+                verificarReservaActivaYMostrarBoton();
+            }
         }
         actualizarBotonChat();
     }
@@ -4799,7 +7241,6 @@ public class DetalleViajeActivity extends AppCompatActivity {
         double latSubida = gpSubida != null ? gpSubida.getLatitude()  : latOrigen;
         double lngSubida = gpSubida != null ? gpSubida.getLongitude() : lngOrigen;
 
-        // Si no tenemos distancia total de la ruta, no podemos calcular proporcionalmente
         if (distanciaKm <= 0) {
             Log.w(TAG, "calcularYMostrarPrecioTramo: distanciaKm no disponible");
             return;
@@ -4811,8 +7252,9 @@ public class DetalleViajeActivity extends AppCompatActivity {
                 distanciaKm,
                 precioViaje,
                 resultado -> {
-                    // ← ya estamos en el hilo UI
-                    precioCalculadoPasajero = resultado.precioFinal;
+                    // ── GUARDAR PERSISTENTE (nunca se sobrescribe al recargar) ──
+                    precioCalculadoPersistente = resultado.precioFinal;
+                    precioCalculadoPasajero    = resultado.precioFinal;
 
                     // Actualizar fila "Precio total" en la card Tu Reserva
                     actualizarValorFila(ROW_ID_PRECIO, resultado.precioFormateado);
@@ -4822,7 +7264,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
                         txtPrecio.setText(resultado.precioFormateado);
 
                     // Toast informativo para el pasajero
-                    String info = "💰 Tu precio: " + resultado.precioFormateado
+                    String info = "$ Tu precio: " + resultado.precioFormateado
                             + "  (" + String.format(Locale.getDefault(),
                             "%.1f km", resultado.distanciaKm) + ")";
                     Toast.makeText(this, info, Toast.LENGTH_LONG).show();
@@ -4851,11 +7293,11 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
     private String etiquetaEstado(String e){
         switch(e){
-            case "CREADO":    return "📋 Estado: Disponible";
+            case "CREADO":    return "Estado: Disponible";
             case "PROGRAMADO":return "📅 Estado: Programado";
             case "DISPONIBLE":return "✅ Estado: Disponible";
-            case "EN_CURSO": case "INICIADO": return "🚗 Estado: En curso";
-            case "FINALIZADO":return "🏁 Estado: Finalizado";
+            case "EN_CURSO": case "INICIADO": return "Estado: En curso";
+            case "FINALIZADO":return "Estado: Finalizado";
             case "CANCELADO": return "❌ Estado: Cancelado";
             default:          return "📌 Estado: "+e;
         }
@@ -5021,6 +7463,32 @@ public class DetalleViajeActivity extends AppCompatActivity {
     private void detenerTimerCambio() {
         if (timerRunnable != null) timerHandler.removeCallbacks(timerRunnable);
     }
+
+    // ← PEGA AQUÍ onActivityResult
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode,
+                                    @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_MAPA_SUBIDA
+                && resultCode == RESULT_OK
+                && data != null) {
+            double lat = data.getDoubleExtra("lat_subida", Double.NaN);
+            double lng = data.getDoubleExtra("lng_subida", Double.NaN);
+            String nom = data.getStringExtra("nombre_subida");
+            if (!Double.isNaN(lat) && !Double.isNaN(lng)) {
+                gpSubida             = new GeoPoint(lat, lng);
+                nombreSubidaPasajero = (nom != null && !nom.isEmpty())
+                        ? nom : "Punto en el mapa";
+                filaSubidaSeleccionada = null;
+                renderizarMapa();
+                ParadaDinamica pdSubida = new ParadaDinamica(
+                        nombreSubidaPasajero, lat, lng, -99);
+                new Handler(Looper.getMainLooper()).postDelayed(
+                        () -> mostrarSheetBajada(pdSubida, null), 350);
+            }
+        }
+    }
+
     // =========================================================================
     //  PARADA ADAPTER
     // =========================================================================
@@ -5031,6 +7499,8 @@ public class DetalleViajeActivity extends AppCompatActivity {
         ParadaAdapter(ArrayList<String> paradas, String origen, String destino) {
             this.origen = origen; this.destino = destino; this.items.addAll(paradas);
         }
+
+
 
         @NonNull @Override
         public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -5054,6 +7524,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
             row.addView(tvNombre);
             return new VH(row);
         }
+
 
         @Override public void onBindViewHolder(@NonNull VH h, int pos) {
             String nombre = items.get(pos);
@@ -5165,7 +7636,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
                 if (colRight != null) { colRight.setBackground(null); colRight.setPadding(0,(int)(4*d),0,(int)(4*d)); }
             } else if (esBajada) {
                 tvDot.setText("🚏");
-                tvLabel.setText("📍  TU BAJADA"); tvLabel.setTextColor(Color.parseColor("#004D40"));
+                tvLabel.setText("TU BAJADA"); tvLabel.setTextColor(Color.parseColor("#004D40"));
                 tvNombre.setText(nombre); tvNombre.setTextColor(Color.parseColor("#00695C"));
                 linea.setBackgroundColor(Color.parseColor("#26A69A"));
                 if (colRight != null) {
