@@ -1756,6 +1756,83 @@ public class HomePasajero extends BaseActivity {
         }
     }
 
+    // ─── VOICE ASSISTANT BRIDGE ──────────────────────────────────────────────
+    
+    /**
+     * Muestra los viajes encontrados por voz en un BottomSheet.
+     */
+    public void abrirResultadosViajesPorVoz(org.json.JSONArray viajes) {
+       runOnUiThread(() -> {
+           BottomSheetDialog dialog = new BottomSheetDialog(this);
+           float d = getResources().getDisplayMetrics().density;
+           
+           LinearLayout root = new LinearLayout(this);
+           root.setOrientation(LinearLayout.VERTICAL);
+           root.setBackgroundColor(Color.parseColor("#F0FAFA"));
+           root.setPadding((int)(16*d), (int)(16*d), (int)(16*d), (int)(24*d));
+
+           TextView tvTitulo = new TextView(this);
+           tvTitulo.setText("Viajes Encontrados");
+           tvTitulo.setTextSize(18f); tvTitulo.setTypeface(null, Typeface.BOLD);
+           tvTitulo.setTextColor(Color.parseColor("#1A2F4A"));
+           root.addView(tvTitulo);
+
+           LinearLayout lista = new LinearLayout(this);
+           lista.setOrientation(LinearLayout.VERTICAL);
+           lista.setPadding(0, (int)(12*d), 0, 0);
+           
+           for (int i = 0; i < viajes.length(); i++) {
+               org.json.JSONObject v = viajes.optJSONObject(i);
+               if (v == null) continue;
+               
+               int finalI = i;
+               MaterialCardView card = new MaterialCardView(this);
+               card.setRadius(12*d); card.setCardElevation(2*d);
+               LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+               lp.topMargin = (int)(8*d); card.setLayoutParams(lp);
+               
+               LinearLayout inner = new LinearLayout(this);
+               inner.setOrientation(LinearLayout.VERTICAL);
+               inner.setPadding((int)(12*d), (int)(12*d), (int)(12*d), (int)(12*d));
+               
+               String origen = v.optString("origen", "Origen");
+               String destino = v.optString("destino", "Destino");
+               
+               TextView tvRuta = new TextView(this);
+               tvRuta.setText((i+1) + ". " + origen + " → " + destino);
+               tvRuta.setTypeface(null, Typeface.BOLD);
+               inner.addView(tvRuta);
+               
+               card.addView(inner);
+               card.setOnClickListener(view -> {
+                   dialog.dismiss();
+                   irADetalleViaje(v);
+               });
+               lista.addView(card);
+           }
+           
+           ScrollView scroll = new ScrollView(this);
+           scroll.addView(lista);
+           root.addView(scroll);
+           
+           dialog.setContentView(root);
+           dialog.show();
+           
+           if (voiceAssistant != null) {
+               voiceAssistant.hablar("He encontrado " + viajes.length() + " viajes. Dime el número del viaje que te interesa.");
+           }
+       });
+    }
+
+    private void irADetalleViaje(org.json.JSONObject v) {
+        int idViaje = v.optInt("idViajes", v.optInt("id", 0));
+        if (idViaje > 0) {
+            Intent intent = new Intent(this, DetalleViajeActivity.class);
+            intent.putExtra("ID_VIAJE", idViaje);
+            startActivity(intent);
+        }
+    }
+
     // ─── SCREEN DESCRIPTOR ────────────────────────────────────────────────────
     @Override public String getNombrePantalla() { return "Inicio del Pasajero"; }
     @Override public String getDescripcionPantalla() {

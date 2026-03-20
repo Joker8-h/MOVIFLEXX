@@ -1226,7 +1226,8 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
             }
 
             java.text.NumberFormat nf = java.text.NumberFormat.getNumberInstance(new java.util.Locale("es", "CO"));
-            final double fMontoFinal = montoFinal;
+            // Forzar redondeo para consistencia con el backend y el pasajero
+            final double fMontoFinal = com.arlys.moviflexx.model.Manager.PrecioTramoPasajeroManager.redondear(montoFinal);
 
             // ── Card del pasajero ─────────────────────────────────────────────
             com.google.android.material.card.MaterialCardView cardPas =
@@ -1808,6 +1809,7 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
                     // ── 2. Calcular precio del tramo con PrecioTramoPasajeroManager ──
                     if (fLatB != 0 && fLngB != 0 && fDistKm > 0 && fPrecioTotal > 0) {
                         com.arlys.moviflexx.model.Manager.PrecioTramoPasajeroManager.calcular(
+                                activity, viajeId,
                                 fLatS, fLngS,
                                 fLatB, fLngB,
                                 fDistKm,

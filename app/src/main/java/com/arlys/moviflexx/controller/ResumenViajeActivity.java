@@ -234,8 +234,14 @@ public class ResumenViajeActivity extends BaseActivity {
         double precioViaje = viajeObj.optDouble("precio", 0);
         if (precioViaje == 0) {
             JSONObject ruta = viajeObj.optJSONObject("ruta");
-            if (ruta != null) precioViaje = ruta.optDouble("precio",
-                    ruta.optDouble("costoCombustible", 0));
+            if (ruta != null) {
+                precioViaje = ruta.optDouble("precio", ruta.optDouble("costoCombustible", 0));
+            }
+        }
+        // Redondear para que coincida con el cálculo del pasajero (PrecioTramoPasajeroManager)
+        if (precioViaje > 0) {
+            precioViaje = Math.ceil(precioViaje / 100.0) * 100.0;
+            if (precioViaje < 500) precioViaje = 500;
         }
 
         // Mapa de pagos por idUsuario — busca en múltiples campos
@@ -332,11 +338,38 @@ public class ResumenViajeActivity extends BaseActivity {
                             pagoExistente.optString("metodoPago", "—"));
 
                     item.put("metodoPago", tipoPago);
-                    item.put("monto",  pagoExistente.optDouble("monto", precioViaje));
+                    
+                    // Priorizar el precio acordado en la reserva (Bruto) sobre el monto del pago (que puede traer comisión/Neto)
+                    double m = 0;
+                    for (String k : new String[]{"precioFinal", "precioTramo", "costoPorPasajero", "precio", "monto"}) {
+                        m = u.optDouble(k, 0);
+                        if (m > 0) break;
+                    }
+                    if (m <= 0) m = pagoExistente.optDouble("monto", precioViaje);
+
+                    if (m > 0) {
+                        m = Math.ceil(m / 100.0) * 100.0;
+                        if (m < 500) m = 500;
+                    }
+                    item.put("monto",  m);
                     item.put("estado", estadoPago);
                 } else {
                     item.put("metodoPago", "—");
-                    item.put("monto",  precioViaje);
+                    // Prioridad de campos de precio (igual que en DetalleViajeActivity)
+                    double montoReserva = 0;
+                    for (String k : new String[]{"precioFinal", "precioTramo", "costoPorPasajero", "precio", "monto"}) {
+                        montoReserva = u.optDouble(k, 0);
+                        if (montoReserva > 0) break;
+                    }
+                    if (montoReserva <= 0) montoReserva = precioViaje;
+
+                    // Aplicar redondeo para consistencia visual (múltiplos de 100, min 500)
+                    if (montoReserva > 0) {
+                        montoReserva = Math.ceil(montoReserva / 100.0) * 100.0;
+                        if (montoReserva < 500) montoReserva = 500;
+                    }
+
+                    item.put("monto",  montoReserva);
                     item.put("estado", "sin_pago");
                 }
                 resultado.put(item);
@@ -415,8 +448,17 @@ public class ResumenViajeActivity extends BaseActivity {
             agregarFilaTabla(pasajero, metodo, monto, estado, nf, i < pagos.length() - 1);
         }
 
-        // Preferir totalConfirmado del backend; solo usar local como fallback
-        double totalMostrar = (totalConfirmadoBackend >= 0) ? totalConfirmadoBackend : totalCalculado;
+        // Priorizar el total calculado localmente (suma de montos brutos redondeados) 
+        // para que coincida exactamente con lo que el pasajero pagó.
+        double totalMostrar = totalCalculado;
+        if (totalMostrar <= 0 && totalConfirmadoBackend >= 0) {
+            totalMostrar = totalConfirmadoBackend;
+        }
+
+        if (totalMostrar > 0) {
+            totalMostrar = Math.ceil(totalMostrar / 100.0) * 100.0;
+            if (totalMostrar < 500) totalMostrar = 500;
+        }
 
         if (txtTotalGanado     != null) txtTotalGanado.setText(nf.format(totalMostrar));
         if (txtCountPagados    != null) txtCountPagados.setText(String.valueOf(countPagados));

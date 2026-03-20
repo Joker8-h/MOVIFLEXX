@@ -9,24 +9,18 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.adapter.CalificacionesPendientesAdapter;
 import com.arlys.moviflexx.adapter.ViajesAdapter;
-import com.arlys.moviflexx.model.VoiceAssistantManager;
 import com.arlys.moviflexx.model.ConexionApi;
 import com.arlys.moviflexx.model.Constantes;
 import com.arlys.moviflexx.model.Manager.CalificacionesManager;
 import com.arlys.moviflexx.model.NotificacionesHelper;
 import com.arlys.moviflexx.model.SessionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.chip.Chip;
 
@@ -896,14 +890,17 @@ public class HomeConductor extends BaseActivity {
     }
 
     // ─── SCREEN DESCRIPTOR ────────────────────────────────────────────────────
-    @Override public String getNombrePantalla() { return "Inicio del Conductor"; }
-    @Override public String getDescripcionPantalla() {
+    @Override
+    public String getNombrePantalla() { return "Inicio del Conductor"; }
+    @Override
+    public String getDescripcionPantalla() {
         int total = viajes.size();
         return "Estás en la pantalla principal de conductor. "
              + "Tienes " + total + (total == 1 ? " viaje activo." : " viajes activos.")
              + " Puedes publicar viajes, ver tus rutas y vehículos.";
     }
-    @Override public String getOpcionesPantalla() {
+    @Override
+    public String getOpcionesPantalla() {
         return "Puedes decir: publicar viaje, mis rutas, mis vehículos, "
              + "perfil, mensajes, mapa, o ayuda.";
     }

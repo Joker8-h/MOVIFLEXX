@@ -165,8 +165,20 @@ public class VoiceFlowManager {
         // Filtrar por destino si es posible
         for (int i = 0; i < response.length() && viajesEncontrados.size() < 5; i++) {
             JSONObject viaje = response.optJSONObject(i);
-            if (viaje != null) {
+            if (viaje == null) continue;
+
+            if (destinoBuscado == null || destinoBuscado.isEmpty()) {
                 viajesEncontrados.add(viaje);
+            } else {
+                String busqueda = destinoBuscado.toLowerCase(java.util.Locale.ROOT);
+                String origen   = viaje.optString("origen", "").toLowerCase(java.util.Locale.ROOT);
+                String destino  = viaje.optString("destino", "").toLowerCase(java.util.Locale.ROOT);
+                JSONObject ruta = viaje.optJSONObject("ruta");
+                String nomRuta  = (ruta != null) ? ruta.optString("nombre", "").toLowerCase(java.util.Locale.ROOT) : "";
+
+                if (origen.contains(busqueda) || destino.contains(busqueda) || nomRuta.contains(busqueda)) {
+                    viajesEncontrados.add(viaje);
+                }
             }
         }
 

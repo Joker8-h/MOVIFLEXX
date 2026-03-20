@@ -3241,8 +3241,12 @@ public class DetalleViajeActivity extends BaseActivity {
                     || "COMPLETADO".equals(estadoViaje);
 
             if (viajeTerminado) {
-                final double montoFinal = precioCalculadoPasajero > 0 ? precioCalculadoPasajero : pre;
-                mostrarBotonPago(montoFinal, nombreConductorViaje);
+                double montoFinal = precioViaje;
+                if (precioCalculadoPasajero > 0) montoFinal = precioCalculadoPasajero;
+                else if (precioCalculadoPersistente > 0) montoFinal = precioCalculadoPersistente;
+                
+                final double finalM = montoFinal;
+                mostrarBotonPago(finalM, nombreConductorViaje);
                 View divider = findViewById(R.id.divider_pago);
                 if (divider != null) divider.setVisibility(View.VISIBLE);
             } else {
@@ -3771,8 +3775,8 @@ public class DetalleViajeActivity extends BaseActivity {
                     }
 
                     if (precioGuardado > 0) {
-                        // ── 1. Precio ya guardado en la reserva ──────────────
-                        final double fPrecio = precioGuardado;
+                        // ── 1. Precio ya guardado en la reserva (Forzar redondeo para consistencia) ──
+                        final double fPrecio = com.arlys.moviflexx.model.Manager.PrecioTramoPasajeroManager.redondear(precioGuardado);
                         resolverNombreParada(fLatP, fLngP, fNp, fAsi, fPar, fEst, fIdRes,
                                 fTieneParada ? "P" + (fColorIdx + 1) : "?",
                                 fPasColor, fPasColorHex, fTieneParada,
@@ -3786,6 +3790,7 @@ public class DetalleViajeActivity extends BaseActivity {
                         double lngSubidaFinal = fLngS != 0 ? fLngS : lngOrigen;
 
                         PrecioTramoPasajeroManager.calcular(
+                                this, viajeId,
                                 latSubidaFinal, lngSubidaFinal,
                                 fLatP, fLngP,
                                 distanciaKm,
@@ -5843,10 +5848,14 @@ public class DetalleViajeActivity extends BaseActivity {
                                 && !"COMPLETADO".equals(estadoAnterior);
 
                         if (ahora_finalizado && antes_no_era && !esConductor) {
-                            // ← Solo para pasajero: mostrar botón de pago directo
-                            // sin esperar a que cargarDetalleViaje() lo dispare
+                            // ← Usar precio calculado del tramo si existe, sino el base
+                            double montoF = precioViaje;
+                            if (precioCalculadoPasajero > 0) montoF = precioCalculadoPasajero;
+                            else if (precioCalculadoPersistente > 0) montoF = precioCalculadoPersistente;
+
+                            final double finalM = montoF;
                             runOnUiThread(() -> {
-                                mostrarBotonPago(precioViaje, nombreConductorViaje);
+                                mostrarBotonPago(finalM, nombreConductorViaje);
                                 View divider = findViewById(R.id.divider_pago);
                                 if (divider != null) divider.setVisibility(View.VISIBLE);
                             });
@@ -6799,7 +6808,22 @@ public class DetalleViajeActivity extends BaseActivity {
 
     private void mostrarBotonPagoRecibido(JSONObject pago) {
         if (btnPagarViaje == null) return;
-        double monto = pago.optDouble("monto", precioViaje);
+        
+        // Priorizar el precio acordado (Bruto) sobre el monto del pago (que puede traer comisión/Neto)
+        double monto = 0;
+        // Buscar primero en el objeto de pago (si trae la reserva anidada)
+        for (String k : new String[]{"precioFinal", "precioTramo", "costoPorPasajero", "precio"}) {
+            monto = pago.optDouble(k, 0);
+            if (monto > 0) break;
+        }
+        // Fallback al monto del pago o al precio base del viaje
+        if (monto <= 0) monto = pago.optDouble("monto", precioViaje);
+
+        // Aplicar redondeo para consistencia visual (múltiplos de 100, min 500)
+        if (monto > 0) {
+            monto = Math.ceil(monto / 100.0) * 100.0;
+            if (monto < 500) monto = 500;
+        }
         String modo  = pago.optString("metodoPago", "");
         java.text.NumberFormat nf = java.text.NumberFormat
                 .getNumberInstance(new java.util.Locale("es", "CO"));
@@ -7259,6 +7283,7 @@ public class DetalleViajeActivity extends BaseActivity {
         }
 
         PrecioTramoPasajeroManager.calcular(
+                this, viajeId,
                 latSubida,               lngSubida,
                 gpParada.getLatitude(),  gpParada.getLongitude(),
                 distanciaKm,
@@ -7690,6 +7715,19 @@ public class DetalleViajeActivity extends BaseActivity {
     }
 
     // ─── VOICE ASSISTANT BRIDGE ──────────────────────────────────────────────
+    
+    /**
+     * Devuelve una lista con los nombres de todas las paradas (puntos de subida y bajada).
+     */
+    public java.util.List<String> getNombresParadas() {
+        java.util.ArrayList<String> nombres = new java.util.ArrayList<>();
+        if (paradasDin != null) {
+            for (ParadaDinamica pd : paradasDin) {
+                nombres.add(pd.nombre);
+            }
+        }
+        return nombres;
+    }
 
     /**
      * Llamado por VoiceFlowManager cuando el usuario selecciona una parada por voz.

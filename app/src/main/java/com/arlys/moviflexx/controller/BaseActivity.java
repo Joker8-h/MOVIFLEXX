@@ -18,16 +18,99 @@ import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.model.SessionManager;
 import com.arlys.moviflexx.model.VoiceAssistantManager;
 
+import androidx.drawerlayout.widget.DrawerLayout;
+import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import androidx.core.view.GravityCompat;
+import android.os.Handler;
+import android.os.Looper;
+
 /**
  * BaseActivity — Clase base para todas las Activities.
  * Proporciona transiciones, animaciones de botones y entrada de vistas.
  */
 public abstract class BaseActivity extends AppCompatActivity {
 
+    // ─── SCREEN DESCRIPTOR (Default implementations to avoid build breaks) ─────
+    public String getNombrePantalla() { return "Pantalla de MoviFlexx"; }
+    public String getDescripcionPantalla() { return "Estás en una pantalla de la aplicación."; }
+    public String getOpcionesPantalla() { return "Puedes navegar por la aplicación o pedir ayuda."; }
+
     public enum Transition { SLIDE, FADE, NONE }
 
     protected VoiceAssistantManager voiceAssistant;
     protected static final int REQ_AUDIO_GLOBAL = 2299;
+
+    // ─── NAVIGATION & DRAWER ──────────────────────────────────────────────────
+    protected DrawerLayout drawerLayout;
+    protected NavigationView navView;
+
+    protected void setupDrawer(int itemId) {
+        drawerLayout = findViewById(R.id.drawer_layout);
+        navView = findViewById(R.id.nav_view);
+        if (navView != null) {
+            navView.setCheckedItem(itemId);
+            navView.setNavigationItemSelectedListener(item -> {
+                int id = item.getItemId();
+                if (id == itemId) {
+                    if (drawerLayout != null) drawerLayout.closeDrawers();
+                    return true;
+                }
+                
+                // Navegación común
+                if (id == R.id.nav_inicio) {
+                    SessionManager s = new SessionManager(this);
+                    if (s.isConductor()) goTo(HomeConductor.class);
+                    else goTo(HomePasajero.class);
+                } else if (id == R.id.nav_viajes || id == R.id.nav_mis_viajes) {
+                    goTo(MisViajesActivity.class);
+                } else if (id == R.id.nav_perfil) {
+                    goTo(PerfilUsuario.class);
+                } else if (id == R.id.nav_mensajes) {
+                    goTo(Mensajes.class);
+                } else if (id == R.id.nav_cerrar_sesion) {
+                    if (voiceAssistant != null) voiceAssistant.hablar("Cerrando sesión.");
+                    new SessionManager(this).logout();
+                    goTo(Login.class, Transition.FADE, true);
+                }
+                
+                if (drawerLayout != null) drawerLayout.closeDrawers();
+                return true;
+            });
+        }
+    }
+
+    protected void abrirDrawer() {
+        if (drawerLayout != null) {
+            drawerLayout.openDrawer(GravityCompat.START);
+        }
+    }
+
+    protected void setupNavBar(BottomNavigationView nav, int itemId) {
+        if (nav == null) return;
+        nav.setSelectedItemId(itemId);
+        nav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == itemId) return true;
+
+            if (id == R.id.nav_inicio) {
+                SessionManager s = new SessionManager(this);
+                if (s.isConductor()) goTo(HomeConductor.class, Transition.NONE);
+                else goTo(HomePasajero.class, Transition.NONE);
+                return true;
+            } else if (id == R.id.nav_mis_viajes) {
+                goTo(MisViajesActivity.class, Transition.NONE);
+                return true;
+            } else if (id == R.id.nav_mensajes) {
+                goTo(Mensajes.class, Transition.NONE);
+                return true;
+            } else if (id == R.id.nav_perfil) {
+                goTo(PerfilUsuario.class, Transition.NONE);
+                return true;
+            }
+            return false;
+        });
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
