@@ -525,9 +525,9 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
                         activity.runOnUiThread(() ->
                                 CalificacionController.mostrarBottomSheetCalificar(
                                         activity, viajeId, idCalificado, nomCalificado,
+                                        "",              // ← AGREGAR ESTO
                                         idCalificador, esConductorCal,
                                         (puntuacion, comentario) -> {
-                                            // Solo actualizamos la lista, SIN abrir Resumen
                                             cacheCalificado.put(viajeId, true);
                                             activity.runOnUiThread(() -> notifyDataSetChanged());
                                         }
@@ -863,7 +863,9 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
                 if (act == null || act.isFinishing()) return;
                 // Solo abre el sheet de calificación, sin abrir Resumen
                 CalificacionController.mostrarBottomSheetCalificar(
-                        act, viajeId, fIdP, fNomP, idConductor, true,
+                        act, viajeId, fIdP, fNomP,
+                        "",              // ← AGREGAR ESTO
+                        idConductor, true,
                         (pun, com) -> marcarCalificado(btnCal, fDens));
             });
             fila.addView(btnCal);
@@ -2368,7 +2370,7 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
         Activity activity = resolveActivity(ctx);
         if (activity == null || activity.isFinishing()) return;
         Toast.makeText(ctx,
-                "💳 ¡Pago recibido! Un pasajero confirmó su pago — viaje #" + viajeId,
+                "$ ¡Pago recibido! Un pasajero confirmó su pago — viaje #" + viajeId,
                 Toast.LENGTH_LONG).show();
         activity.runOnUiThread(this::notifyDataSetChanged);
     }
@@ -2380,11 +2382,6 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
         pollingPagosRunnable = null;
         pollingViajeId       = -1;
     }
-
-    // =========================================================================
-    //  MÉTODOS LEGACY — mantenidos para compatibilidad con referencias internas
-    //  pero ya NO abren ResumenViajeActivity automáticamente
-    // =========================================================================
 
     /** @deprecated Usa {@link #iniciarSoloCalificacion} desde btnCalificar */
     private void iniciarFlujoCalificacion(int viajeId, int idCalificador) {
@@ -2419,4 +2416,4 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
         mostrarCalificacionesEncadenadaSSolo(ids, nombres, idCalificador, viajeId, indice);
     }
 
-} // ← cierre de ViajesAdapter
+}

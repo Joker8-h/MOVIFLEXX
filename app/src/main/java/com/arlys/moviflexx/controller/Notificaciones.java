@@ -1,6 +1,9 @@
 package com.arlys.moviflexx.controller;
 
 import android.content.Intent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.IntentFilter;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.SoundPool;
@@ -18,6 +21,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -60,6 +64,9 @@ public class Notificaciones extends AppCompatActivity {
     private ImageView      btnBack;
     private MaterialButton btnMarcarTodas;
 
+    // Receptor broadcast para notificaciones en tiempo real
+    private BroadcastReceiver notifReceiver;
+
     private NotificacionesAdapter       adapter;
     private final List<NotifItem>       lista       = new ArrayList<>();
     private final Set<Long>             idsYaVistos = new HashSet<>();
@@ -79,6 +86,11 @@ public class Notificaciones extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setStatusBarColor(
+                android.graphics.Color.parseColor("#0ABFA3"));
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
         setContentView(R.layout.activity_notificaciones);
         session   = new SessionManager(this);
         idUsuario = session.getIdUsuario();
@@ -86,11 +98,44 @@ public class Notificaciones extends AppCompatActivity {
         bindViews();
         configurarRecyclerView();
         configurarListeners();
+
+        // Receptor: cuando llega FCM y la pantalla está abierta, recarga al instante
+        notifReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                cargarNotificaciones();
+                reproducirSonido();
+            }
+        };
+
         cargarNotificaciones();
     }
 
-    @Override protected void onResume()  { super.onResume();  cargarNotificaciones(); }
-    @Override protected void onDestroy() { super.onDestroy(); if (soundPool != null) { soundPool.release(); soundPool = null; } }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Registrar receptor cuando la pantalla está visible
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                notifReceiver,
+                new IntentFilter(MyFirebaseMessagingService.ACTION_NUEVA_NOTIF));
+        cargarNotificaciones();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Desregistrar cuando la pantalla no está visible
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(notifReceiver);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (soundPool != null) {
+            soundPool.release();
+            soundPool = null;
+        }
+    }
 
     // ═══════════════════════════════════════════════════════
     //  SONIDO
@@ -119,7 +164,8 @@ public class Notificaciones extends AppCompatActivity {
             android.os.Vibrator v = (android.os.Vibrator) getSystemService(VIBRATOR_SERVICE);
             if (v != null && v.hasVibrator()) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                    v.vibrate(android.os.VibrationEffect.createOneShot(200, android.os.VibrationEffect.DEFAULT_AMPLITUDE));
+                    v.vibrate(android.os.VibrationEffect.createOneShot(200,
+                            android.os.VibrationEffect.DEFAULT_AMPLITUDE));
                 else v.vibrate(200);
             }
         } catch (Exception ignored) {}
@@ -182,7 +228,7 @@ public class Notificaciones extends AppCompatActivity {
     }
 
     // ═══════════════════════════════════════════════════════
-    //  PROCESAR
+    //  PROCESAR — más reciente PRIMERO
     // ═══════════════════════════════════════════════════════
 
     private void procesarRespuesta(JSONArray response) {
@@ -230,12 +276,15 @@ public class Notificaciones extends AppCompatActivity {
             idsYaVistos.add(item.id);
         }
 
+        // ── ORDENAR: más reciente PRIMERO ────────────────────────────────────
         lista.sort((a, b) -> {
             Date da = parsearFecha(a.fechaCreacion);
             Date db = parsearFecha(b.fechaCreacion);
+            // Si no tiene fecha, va al final
             if (da == null && db == null) return 0;
             if (da == null) return 1;
             if (db == null) return -1;
+            // db.compareTo(da) = descendente (más reciente primero)
             return db.compareTo(da);
         });
 
@@ -243,13 +292,14 @@ public class Notificaciones extends AppCompatActivity {
         runOnUiThread(() -> {
             if (progressBar != null) progressBar.setVisibility(View.GONE);
             if (lista.isEmpty()) {
-                // Aunque no haya notificaciones del backend, cargar pagos pendientes
                 cargarPagosPendientesComoNotificaciones();
                 return;
             }
             if (layoutEmpty      != null) layoutEmpty.setVisibility(View.GONE);
             if (rvNotificaciones != null) rvNotificaciones.setVisibility(View.VISIBLE);
             adapter.notifyDataSetChanged();
+            // Scroll al tope para mostrar el más reciente
+            rvNotificaciones.scrollToPosition(0);
 
             long noLeidas = 0;
             for (NotifItem n : lista) if (!n.leido) noLeidas++;
@@ -259,7 +309,6 @@ public class Notificaciones extends AppCompatActivity {
             if (hayNuevas) reproducirSonido();
             primerasCargaCompleta = true;
 
-            // ── Cargar pagos pendientes como notificaciones al inicio ─────────
             cargarPagosPendientesComoNotificaciones();
         });
     }
@@ -273,6 +322,9 @@ public class Notificaciones extends AppCompatActivity {
                 Constantes.MIS_RESERVAS,
                 response -> {
                     List<NotifItem> pagoItems = new ArrayList<>();
+                    // Set para evitar duplicados de viajeId dentro de esta carga
+                    Set<Integer> viajesAgregados = new HashSet<>();
+
                     for (int i = 0; i < response.length(); i++) {
                         JSONObject reserva = response.optJSONObject(i);
                         if (reserva == null) continue;
@@ -286,15 +338,22 @@ public class Notificaciones extends AppCompatActivity {
                             viajeId = viaje.optInt("idViajes", viaje.optInt("id", 0));
                         if (viajeId == 0) continue;
 
+                        // Evitar duplicados por viajeId
+                        if (viajesAgregados.contains(viajeId)) continue;
+                        viajesAgregados.add(viajeId);
+
+                        // Evitar duplicados con los ya en lista
+                        boolean yaTiene = false;
+                        for (NotifItem n : lista) if (n.id == -(long) viajeId) { yaTiene = true; break; }
+                        if (yaTiene) continue;
+
                         double precio = viaje.optDouble("precio", 0);
 
-                        // Extraer destino
                         String destino = "";
                         JSONObject ruta = viaje.optJSONObject("ruta");
                         if (ruta != null)
                             destino = ruta.optString("destino", ruta.optString("nombre", ""));
 
-                        // Extraer nombre del conductor
                         String nomConductor = "";
                         JSONObject conductor = viaje.optJSONObject("conductor");
                         if (conductor != null) {
@@ -308,17 +367,14 @@ public class Notificaciones extends AppCompatActivity {
                         }
 
                         NotifItem item    = new NotifItem();
-                        item.id           = -(long) viajeId; // negativo para distinguir de notifs reales
+                        item.id           = -(long) viajeId;
                         item.tipo         = "PAGO";
                         item.leido        = false;
                         item.idReferencia = viajeId;
-
-                        // Título: "Pago pendiente a [conductor]" o solo "Pago pendiente"
-                        item.titulo = nomConductor.isEmpty()
+                        item.titulo       = nomConductor.isEmpty()
                                 ? "Pago pendiente"
                                 : "Pago pendiente a " + nomConductor;
 
-                        // Mensaje: destino + precio
                         StringBuilder msg = new StringBuilder();
                         if (!destino.isEmpty()) msg.append("Destino: ").append(destino);
                         if (precio > 0) {
@@ -333,16 +389,24 @@ public class Notificaciones extends AppCompatActivity {
                         item.fechaCreacion = viaje.optString("fechaHoraSalida",
                                 viaje.optString("fechaSalida", ""));
 
-                        // Evitar duplicados
-                        boolean yaTiene = false;
-                        for (NotifItem n : lista) if (n.id == item.id) { yaTiene = true; break; }
-                        if (!yaTiene) pagoItems.add(item);
+                        pagoItems.add(item);
                     }
 
                     if (!pagoItems.isEmpty()) {
+                        // Ordenar pagos: más reciente primero
+                        pagoItems.sort((a, b) -> {
+                            Date da = parsearFecha(a.fechaCreacion);
+                            Date db = parsearFecha(b.fechaCreacion);
+                            if (da == null && db == null) return 0;
+                            if (da == null) return 1;
+                            if (db == null) return -1;
+                            return db.compareTo(da);
+                        });
+
                         runOnUiThread(() -> {
-                            lista.addAll(0, pagoItems); // al inicio de la lista
+                            lista.addAll(0, pagoItems);
                             adapter.notifyDataSetChanged();
+                            rvNotificaciones.scrollToPosition(0);
                             if (layoutEmpty      != null) layoutEmpty.setVisibility(View.GONE);
                             if (rvNotificaciones != null) rvNotificaciones.setVisibility(View.VISIBLE);
                             if (btnMarcarTodas   != null) btnMarcarTodas.setVisibility(View.VISIBLE);
@@ -366,7 +430,7 @@ public class Notificaciones extends AppCompatActivity {
     }
 
     // ═══════════════════════════════════════════════════════
-    //  BOTTOM SHEET ESTILO FACEBOOK — se abre al tocar ···
+    //  BOTTOM SHEET ESTILO FACEBOOK
     // ═══════════════════════════════════════════════════════
 
     private void mostrarOpcionesBottomSheet(NotifItem item, int position) {
@@ -378,7 +442,7 @@ public class Notificaciones extends AppCompatActivity {
         TextView         bsTvInicial  = sheetView.findViewById(R.id.bs_tv_inicial);
         TextView         bsTvTitulo   = sheetView.findViewById(R.id.bs_tv_titulo);
 
-        String nombre   = extraerNombreDelMensaje(item.mensaje);
+        String nombre    = extraerNombreDelMensaje(item.mensaje);
         String contenido = extraerContenidoMensaje(item.mensaje);
 
         String inicial = !nombre.isEmpty()
@@ -391,8 +455,8 @@ public class Notificaciones extends AppCompatActivity {
         bsTvTitulo.setText(headerSpan);
 
         // ── Opción 1: Marcar leída / no leída ──
-        LinearLayout opLeida   = sheetView.findViewById(R.id.bs_opcion_leida);
-        ImageView    iconLeida = sheetView.findViewById(R.id.bs_icon_leida);
+        LinearLayout opLeida    = sheetView.findViewById(R.id.bs_opcion_leida);
+        ImageView    iconLeida  = sheetView.findViewById(R.id.bs_icon_leida);
         TextView     textoLeida = sheetView.findViewById(R.id.bs_texto_leida);
 
         if (item.leido) {
@@ -406,7 +470,6 @@ public class Notificaciones extends AppCompatActivity {
         opLeida.setOnClickListener(v -> {
             dialog.dismiss();
             if (!item.leido) {
-                // Los pagos (id negativo) no tienen endpoint real — solo actualizar local
                 if (item.id < 0) {
                     item.leido = true;
                     adapter.notifyItemChanged(position);
@@ -533,7 +596,7 @@ public class Notificaciones extends AppCompatActivity {
             case "CHAT":       return 0xFF0A7A72;
             case "VIAJE":      return 0xFF006064;
             case "RESERVA":    return 0xFFE65100;
-            case "PAGO":       return 0xFFEF5350; // rojo para pagos pendientes
+            case "PAGO":       return 0xFFEF5350;
             case "BIENVENIDA": return 0xFF880E4F;
             default:           return 0xFF4A148C;
         }
@@ -565,7 +628,6 @@ public class Notificaciones extends AppCompatActivity {
                 break;
             }
             case "PAGO": {
-                // Abrir DetalleViajeActivity del viaje pendiente de pago
                 if (item.idReferencia > 0) {
                     Intent i = new Intent(this, DetalleViajeActivity.class);
                     i.putExtra("ID_VIAJE", (int) item.idReferencia);
@@ -643,9 +705,8 @@ public class Notificaciones extends AppCompatActivity {
     // ═══════════════════════════════════════════════════════
 
     private void marcarTodasLeidas() {
-        // Marcar localmente los pagos (id negativo) y en backend los reales
         for (NotifItem n : lista) {
-            if (n.id < 0) n.leido = true; // pagos: solo local
+            if (n.id < 0) n.leido = true;
         }
         ConexionApi.getInstance(this).patch(
                 Constantes.notificacionesMarcarTodas(idUsuario), new JSONObject(),
@@ -654,21 +715,17 @@ public class Notificaciones extends AppCompatActivity {
                     adapter.notifyDataSetChanged();
                     if (btnMarcarTodas != null) btnMarcarTodas.setVisibility(View.GONE);
                 }),
-                e -> {
-                    // Si falla el backend, al menos actualizar UI
-                    runOnUiThread(() -> {
-                        for (NotifItem n : lista) n.leido = true;
-                        adapter.notifyDataSetChanged();
-                        if (btnMarcarTodas != null) btnMarcarTodas.setVisibility(View.GONE);
-                    });
+                e -> runOnUiThread(() -> {
+                    for (NotifItem n : lista) n.leido = true;
+                    adapter.notifyDataSetChanged();
+                    if (btnMarcarTodas != null) btnMarcarTodas.setVisibility(View.GONE);
                     Log.e(TAG, "Error marcar todas");
-                }
+                })
         );
     }
 
     private void marcarUnaLeida(NotifItem item, int position) {
         if (!item.leido) {
-            // Pagos pendientes (id negativo): solo actualizar localmente
             if (item.id < 0) {
                 item.leido = true;
                 adapter.notifyItemChanged(position);
@@ -698,7 +755,6 @@ public class Notificaciones extends AppCompatActivity {
     }
 
     private void eliminarNotificacion(NotifItem item, int position) {
-        // Pagos pendientes (id negativo): solo eliminar de la lista local
         if (item.id < 0) {
             runOnUiThread(() -> {
                 if (position < lista.size()) {
@@ -827,7 +883,6 @@ public class Notificaciones extends AppCompatActivity {
                     texto = tituloOriginal.isEmpty() ? "Tu reserva fue actualizada." : tituloOriginal;
                     break;
                 case "PAGO":
-                    // Para pagos mostramos el título directamente (ya viene formateado)
                     texto = tituloOriginal.isEmpty() ? "Tienes un pago pendiente." : tituloOriginal;
                     break;
                 case "BIENVENIDA":

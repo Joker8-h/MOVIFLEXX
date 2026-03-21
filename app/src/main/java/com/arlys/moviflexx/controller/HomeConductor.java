@@ -104,6 +104,11 @@ public class HomeConductor extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setStatusBarColor(
+                android.graphics.Color.parseColor("#0ABFA3"));
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
         setContentView(R.layout.activity_home_conductor);
 
         session = new SessionManager(this);
@@ -698,6 +703,7 @@ public class HomeConductor extends BaseActivity {
                 pendiente.viajeId,
                 pendiente.pasajeroId,
                 pendiente.nombrePasajero,
+                "",              // ← fotoCalificado vacío, no tienes URL aquí
                 conductorId,
                 true,
                 (puntuacion, comentario) -> {
@@ -861,8 +867,8 @@ public class HomeConductor extends BaseActivity {
                                 CalificacionController.mostrarBottomSheetCalificar(
                                         HomeConductor.this,
                                         viajeId, idPasajero, nomPasajero,
-                                        idCalificador, true,
-                                        (puntuacion, comentario) -> {
+                                        "",              // ← fotoCalificado vacío
+                                        idCalificador, true, (puntuacion, comentario) -> {
                                             quitarPendienteDelLayout(viajeId, idPasajero);
                                             new Handler(Looper.getMainLooper()).postDelayed(
                                                     () -> mostrarCalificacionesEncadenadas(

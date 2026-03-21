@@ -16,8 +16,10 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -26,8 +28,6 @@ import com.arlys.moviflexx.model.Manager.CalificacionesManager;
 
 public class CalificacionController {
 
-    // ── Chips contextuales por puntaje ────────────────────────────────────
-    // Índice 0 = sin uso, índices 1-5 corresponden a cada estrella
     private static final String[][] CHIPS_CONDUCTOR = {
             {},
             {"Muy impuntual",     "Conducción peligrosa", "Trato grosero"},
@@ -47,25 +47,23 @@ public class CalificacionController {
     };
 
     private static final String[] ETIQUETAS = {
-            "",
-            "😤  Muy malo",
-            "😕  Regular",
-            "😊  Bueno",
-            "😃  Muy bueno",
-            "🏆  ¡Excelente!"
+            "", "😤  Muy malo", "😕  Regular", "😊  Bueno", "😃  Muy bueno", "🏆  ¡Excelente!"
     };
 
-    // ── Callback ──────────────────────────────────────────────────────────
     public interface OnCalificacionEnviadaListener {
         void onCalificacionEnviada(int puntuacion, String comentario);
     }
 
-    // ── Punto de entrada público ──────────────────────────────────────────
+    /**
+     * @param fotoCalificado  URL Cloudinary de la foto del usuario a calificar.
+     *                        Puede ser null o "" — en ese caso se muestra la inicial.
+     */
     public static void mostrarBottomSheetCalificar(
             Context context,
             int viajeId,
             int idCalificado,
             String nomCalificado,
+            String fotoCalificado,
             int idCalificador,
             boolean esElConductorCalificando,
             OnCalificacionEnviadaListener callback) {
@@ -73,7 +71,6 @@ public class CalificacionController {
         View root = LayoutInflater.from(context)
                 .inflate(R.layout.bottom_sheet_calificar, null);
 
-        // ── Dialog ───────────────────────────────────────────────────────
         BottomSheetDialog dialog = new BottomSheetDialog(context,
                 R.style.BottomSheetDialogThemeMoviFlexx);
         dialog.setContentView(root);
@@ -85,10 +82,16 @@ public class CalificacionController {
         behavior.setSkipCollapsed(true);
 
         // ── Vistas ───────────────────────────────────────────────────────
-        TextView    txtTitulo    = root.findViewById(R.id.txtTituloSheet);
-        TextView    txtSubtitulo = root.findViewById(R.id.txtSubtituloSheet);
-        TextView    txtEtiqueta  = root.findViewById(R.id.txtEtiquetaPuntuacion);
-        ImageView[] stars = {
+        TextView         txtTitulo     = root.findViewById(R.id.txtTituloSheet);
+        TextView         txtSubtitulo  = root.findViewById(R.id.txtSubtituloSheet);
+        TextView         txtEtiqueta   = root.findViewById(R.id.txtEtiquetaPuntuacion);
+        TextView         tvNombreSheet = root.findViewById(R.id.tvNombreCalificadoSheet);
+        TextView         tvRolSheet    = root.findViewById(R.id.tvRolCalificadoSheet);
+        MaterialCardView cardFoto      = root.findViewById(R.id.cardAvatarFotoSheet);
+        MaterialCardView cardInicial   = root.findViewById(R.id.cardAvatarInicialSheet);
+        ImageView        ivFoto        = root.findViewById(R.id.ivAvatarSheet);
+        TextView         tvInicial     = root.findViewById(R.id.tvInicialSheet);
+        ImageView[]      stars         = {
                 root.findViewById(R.id.star1), root.findViewById(R.id.star2),
                 root.findViewById(R.id.star3), root.findViewById(R.id.star4),
                 root.findViewById(R.id.star5)
@@ -101,25 +104,52 @@ public class CalificacionController {
         TextView             btnOmitir   = root.findViewById(R.id.btnOmitir);
         LinearLayout         layoutExito = root.findViewById(R.id.layoutExito);
 
-        // ── Chips según rol ───────────────────────────────────────────────
         final String[][] chipsActivos = esElConductorCalificando
                 ? CHIPS_PASAJERO : CHIPS_CONDUCTOR;
 
-        // ── Textos dinámicos ──────────────────────────────────────────────
-        String nombre = (nomCalificado != null && !nomCalificado.isEmpty())
-                ? nomCalificado : "el usuario";
+        // ── Nombre ───────────────────────────────────────────────────────
+        String nombre = (nomCalificado != null && !nomCalificado.trim().isEmpty())
+                ? nomCalificado.trim() : "Usuario";
 
-        if (esElConductorCalificando) {
-            txtTitulo.setText("⭐ Califica a tu pasajero");
+        if (txtTitulo != null)
+            txtTitulo.setText(esElConductorCalificando
+                    ? "⭐ Califica a tu pasajero"
+                    : "⭐ Califica al conductor");
+
+        if (txtSubtitulo != null)
+            txtSubtitulo.setText("¿Cómo fue tu experiencia?");
+
+        if (tvNombreSheet != null)
+            tvNombreSheet.setText(nombre);
+
+        if (tvRolSheet != null)
+            tvRolSheet.setText(esElConductorCalificando ? "Pasajero" : "Conductor");
+
+        // ── Avatar: foto Cloudinary o inicial ────────────────────────────
+        boolean tieneFoto = fotoCalificado != null
+                && !fotoCalificado.trim().isEmpty()
+                && !fotoCalificado.equalsIgnoreCase("null");
+
+        if (tieneFoto) {
+            if (cardFoto    != null) cardFoto.setVisibility(View.VISIBLE);
+            if (cardInicial != null) cardInicial.setVisibility(View.GONE);
+            if (ivFoto != null)
+                Glide.with(context)
+                        .load(fotoCalificado)
+                        .circleCrop()
+                        .placeholder(R.drawable.logomo)
+                        .error(R.drawable.logomo)
+                        .into(ivFoto);
         } else {
-            txtTitulo.setText("⭐ Califica al conductor");
+            if (cardFoto    != null) cardFoto.setVisibility(View.GONE);
+            if (cardInicial != null) cardInicial.setVisibility(View.VISIBLE);
+            if (tvInicial   != null)
+                tvInicial.setText(nombre.isEmpty() ? "?"
+                        : String.valueOf(nombre.charAt(0)).toUpperCase());
         }
-        txtSubtitulo.setText("¿Cómo fue tu experiencia con " + nombre + "?");
 
-        // ── Estado ───────────────────────────────────────────────────────
         final int[] puntaje = {0};
 
-        // ── Listeners estrellas ───────────────────────────────────────────
         for (int i = 0; i < stars.length; i++) {
             final int p = i + 1;
             stars[i].setOnClickListener(v -> {
@@ -130,56 +160,53 @@ public class CalificacionController {
                 habilitarEnviar(btnEnviar, true);
             });
         }
-
-        // Animación de entrada escalonada
         animarEntrada(stars);
 
-        // ── Enviar ────────────────────────────────────────────────────────
         btnEnviar.setOnClickListener(v -> {
-            if (puntaje[0] == 0) {
-                sacudir(root.findViewById(R.id.layoutEstrellas));
-                return;
-            }
-            String comentario = etComent.getText() != null
+            if (puntaje[0] == 0) { sacudir(root.findViewById(R.id.layoutEstrellas)); return; }
+
+            String comentario = (etComent.getText() != null)
                     ? etComent.getText().toString().trim() : "";
 
             btnEnviar.setEnabled(false);
             btnEnviar.setText("Enviando...");
             btnOmitir.setEnabled(false);
 
-            enviarApi(context, viajeId, idCalificado, idCalificador,
-                    puntaje[0], comentario,
-                    () -> mostrarExito(btnEnviar, btnOmitir, tilComent,
-                            root.findViewById(R.id.layoutEstrellas), scrollChips,
-                            layoutExito, () -> {
-                                if (callback != null)
-                                    callback.onCalificacionEnviada(puntaje[0], comentario);
-                                dialog.dismiss();
-                            }),
-                    msg -> {
-                        btnEnviar.setEnabled(true);
-                        btnEnviar.setText("⭐  ENVIAR CALIFICACIÓN");
-                        btnOmitir.setEnabled(true);
-                        Toast.makeText(context, "❌ " + msg, Toast.LENGTH_LONG).show();
-                    }
-            );
+            new CalificacionesManager(context).enviarCalificacion(
+                    viajeId, idCalificador, idCalificado, puntaje[0], comentario,
+                    new CalificacionesManager.OnCalificacionListener() {
+                        @Override public void onExito(int p, String msg) {
+                            new android.os.Handler(android.os.Looper.getMainLooper())
+                                    .post(() -> mostrarExito(
+                                            btnEnviar, btnOmitir, tilComent,
+                                            root.findViewById(R.id.layoutEstrellas),
+                                            scrollChips, layoutExito,
+                                            () -> { if (callback != null)
+                                                callback.onCalificacionEnviada(p, comentario);
+                                                dialog.dismiss(); }));
+                        }
+                        @Override public void onError(String msg) {
+                            new android.os.Handler(android.os.Looper.getMainLooper())
+                                    .post(() -> {
+                                        btnEnviar.setEnabled(true);
+                                        btnEnviar.setText("⭐  ENVIAR CALIFICACIÓN");
+                                        btnOmitir.setEnabled(true);
+                                        Toast.makeText(context, "❌ " + msg, Toast.LENGTH_LONG).show();
+                                    });
+                        }
+                    });
         });
 
         btnOmitir.setOnClickListener(v -> dialog.dismiss());
-
         dialog.show();
     }
 
-    // ═════════════════════════════════════════════════════════════════════
-    //  ESTRELLAS
-    // ═════════════════════════════════════════════════════════════════════
+    // ── Estrellas ─────────────────────────────────────────────────────────
 
     private static void actualizarEstrellas(ImageView[] stars, int puntaje) {
         for (int i = 0; i < stars.length; i++) {
             boolean on = i < puntaje;
-            stars[i].setImageResource(on
-                    ? R.drawable.ic_star_filled_gold
-                    : R.drawable.ic_star_empty_navy);
+            stars[i].setImageResource(on ? R.drawable.ic_star_filled_gold : R.drawable.ic_star_empty_navy);
             if (on) popStar(stars[i], i);
             else { stars[i].setScaleX(1f); stars[i].setScaleY(1f); }
         }
@@ -209,67 +236,40 @@ public class CalificacionController {
 
     private static void sacudir(View layout) {
         if (layout == null) return;
-        ObjectAnimator.ofFloat(layout, "translationX",
-                        0f, -18f, 18f, -12f, 12f, -6f, 6f, 0f)
+        ObjectAnimator.ofFloat(layout, "translationX", 0f,-18f,18f,-12f,12f,-6f,6f,0f)
                 .setDuration(450).start();
     }
 
-    // ═════════════════════════════════════════════════════════════════════
-    //  ETIQUETA DINÁMICA
-    // ═════════════════════════════════════════════════════════════════════
-
     private static void animarEtiqueta(TextView txt, int p) {
         if (p < 1 || p > 5) { txt.setText(""); return; }
-        txt.setAlpha(0f);
-        txt.setText(ETIQUETAS[p]);
+        txt.setAlpha(0f); txt.setText(ETIQUETAS[p]);
         txt.animate().alpha(1f).setDuration(200).start();
     }
 
-    // ═════════════════════════════════════════════════════════════════════
-    //  CHIPS DE SUGERENCIA
-    // ═════════════════════════════════════════════════════════════════════
+    // ── Chips ─────────────────────────────────────────────────────────────
 
     private static void mostrarChips(Context ctx, LinearLayout layout,
-                                     HorizontalScrollView scroll, int p,
-                                     String[][] chips) {
+                                     HorizontalScrollView scroll, int p, String[][] chips) {
         layout.removeAllViews();
-        if (p < 1 || p > 5 || chips[p].length == 0) {
-            ocultarChips(scroll);
-            return;
-        }
-        int m    = dp(ctx, 6);
-        int mEnd = dp(ctx, 8);
-
+        if (p < 1 || p > 5 || chips[p].length == 0) { ocultarChips(scroll); return; }
+        int m = dp(ctx, 6), mEnd = dp(ctx, 8);
         for (String label : chips[p]) {
             TextView chip = new TextView(ctx);
-            chip.setText(label);
-            chip.setTextSize(12.5f);
+            chip.setText(label); chip.setTextSize(12.5f);
             chip.setTextColor(Color.parseColor("#0E7C76"));
-            chip.setBackground(ctx.getResources()
-                    .getDrawable(R.drawable.bg_chip_sugerencia, ctx.getTheme()));
-            chip.setPadding(dp(ctx, 14), m, dp(ctx, 14), m);
+            chip.setBackground(ctx.getResources().getDrawable(R.drawable.bg_chip_sugerencia, ctx.getTheme()));
+            chip.setPadding(dp(ctx,14), m, dp(ctx,14), m);
             chip.setGravity(Gravity.CENTER_VERTICAL);
-            chip.setTag(false);
-            chip.setSingleLine(true);
-
+            chip.setTag(false); chip.setSingleLine(true);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT);
-            lp.setMarginEnd(mEnd);
-            chip.setLayoutParams(lp);
-
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            lp.setMarginEnd(mEnd); chip.setLayoutParams(lp);
             chip.setOnClickListener(v -> {
-                boolean sel = (boolean) chip.getTag();
-                sel = !sel;
-                chip.setTag(sel);
+                boolean sel = !(boolean) chip.getTag(); chip.setTag(sel);
                 chip.setBackground(ctx.getResources().getDrawable(
-                        sel ? R.drawable.bg_chip_sugerencia_selected
-                                : R.drawable.bg_chip_sugerencia, ctx.getTheme()));
+                        sel ? R.drawable.bg_chip_sugerencia_selected : R.drawable.bg_chip_sugerencia, ctx.getTheme()));
                 chip.setTextColor(sel ? Color.WHITE : Color.parseColor("#0E7C76"));
-                chip.animate()
-                        .scaleX(sel ? 1.06f : 1f)
-                        .scaleY(sel ? 1.06f : 1f)
-                        .setDuration(130).start();
+                chip.animate().scaleX(sel?1.06f:1f).scaleY(sel?1.06f:1f).setDuration(130).start();
             });
             layout.addView(chip);
         }
@@ -282,71 +282,25 @@ public class CalificacionController {
                 .withEndAction(() -> scroll.setVisibility(View.GONE)).start();
     }
 
-    // ═════════════════════════════════════════════════════════════════════
-    //  BOTÓN
-    // ═════════════════════════════════════════════════════════════════════
-
     private static void habilitarEnviar(Button btn, boolean ok) {
         btn.setEnabled(ok);
         btn.animate().alpha(ok ? 1f : 0.4f).setDuration(200).start();
     }
 
-    // ═════════════════════════════════════════════════════════════════════
-    //  PANEL ÉXITO
-    // ═════════════════════════════════════════════════════════════════════
-
     private static void mostrarExito(Button btnEnviar, TextView btnOmitir,
                                      View tilComent, View layoutStars,
-                                     View scrollChips, LinearLayout layoutExito,
-                                     Runnable onDone) {
-        for (View v : new View[]{btnEnviar, btnOmitir, tilComent, scrollChips, layoutStars}) {
-            if (v != null)
-                v.animate().alpha(0f).setDuration(220)
-                        .withEndAction(() -> v.setVisibility(View.GONE)).start();
-        }
+                                     View scrollChips, LinearLayout layoutExito, Runnable onDone) {
+        for (View v : new View[]{btnEnviar, btnOmitir, tilComent, scrollChips, layoutStars})
+            if (v != null) v.animate().alpha(0f).setDuration(220)
+                    .withEndAction(() -> v.setVisibility(View.GONE)).start();
         layoutExito.setVisibility(View.VISIBLE);
         layoutExito.setTranslationY(14f);
-        layoutExito.animate()
-                .alpha(1f).translationY(0f)
+        layoutExito.animate().alpha(1f).translationY(0f)
                 .setDuration(340).setStartDelay(200)
                 .setInterpolator(new DecelerateInterpolator()).start();
         layoutExito.postDelayed(onDone, 1900);
     }
 
-    // ═════════════════════════════════════════════════════════════════════
-    //  API  —  delega en CalificacionesManager para manejar cache + 409
-    // ═════════════════════════════════════════════════════════════════════
-
-    private static void enviarApi(Context ctx,
-                                  int viajeId,
-                                  int idCalificado,
-                                  int idCalificador,
-                                  int puntuacion,
-                                  String comentario,
-                                  Runnable onOk,
-                                  java.util.function.Consumer<String> onError) {
-
-        CalificacionesManager manager = new CalificacionesManager(ctx);
-
-        manager.enviarCalificacion(
-                viajeId, idCalificador, idCalificado, puntuacion, comentario,
-                new CalificacionesManager.OnCalificacionListener() {
-                    @Override
-                    public void onExito(int p, String msg) {
-                        new android.os.Handler(android.os.Looper.getMainLooper())
-                                .post(onOk);
-                    }
-
-                    @Override
-                    public void onError(String msg) {
-                        new android.os.Handler(android.os.Looper.getMainLooper())
-                                .post(() -> onError.accept(msg));
-                    }
-                }
-        );
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
     private static int dp(Context ctx, int dp) {
         return Math.round(dp * ctx.getResources().getDisplayMetrics().density);
     }

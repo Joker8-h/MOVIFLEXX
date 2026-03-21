@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F0FAFA">
@@ -9,9 +10,9 @@
     <!-- HEADER -->
     <LinearLayout
         android:id="@+id/header"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="#00CED1"
+        android:layout_width="414dp"
+        android:layout_height="134dp"
+        android:background="@drawable/fondooomoviflex"
         android:orientation="vertical"
         android:paddingStart="22dp"
         android:paddingTop="36dp"
@@ -34,13 +35,13 @@
                 android:layout_marginEnd="-40dp"
                 android:alpha="0.15"
                 android:background="@drawable/bg_glow_circle_teal"
-                android:clickable="false"/>
+                android:clickable="false" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -51,27 +52,27 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:letterSpacing="0.18"
                         android:text="MOVIFLEX"
-                        android:textColor="#CCFFFE"
-                        android:textSize="10sp"
-                        android:letterSpacing="0.18"/>
+                        android:textColor="#00CED1"
+                        android:textSize="10sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:letterSpacing="-0.01"
                         android:text="Mis Reservas"
-                        android:textColor="#FFFFFF"
+                        android:textColor="#1A2F4A"
                         android:textSize="26sp"
-                        android:textStyle="bold"
-                        android:letterSpacing="-0.01"/>
+                        android:textStyle="bold" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="Historial de tus viajes reservados"
-                        android:textColor="#CCFFFE"
-                        android:textSize="12sp"/>
+                        android:textColor="#00CED1"
+                        android:textSize="12sp" />
                 </LinearLayout>
 
                 <ProgressBar
@@ -79,7 +80,7 @@
                     android:layout_width="28dp"
                     android:layout_height="28dp"
                     android:indeterminateTint="#FFFFFF"
-                    android:visibility="gone"/>
+                    android:visibility="gone" />
             </LinearLayout>
         </FrameLayout>
     </LinearLayout>

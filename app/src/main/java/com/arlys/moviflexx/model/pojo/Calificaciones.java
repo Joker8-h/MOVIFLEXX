@@ -1,57 +1,55 @@
 package com.arlys.moviflexx.model.pojo;
 
 public class Calificaciones {
-    private int idCalificacion;
-    private int idUsuarios; // FK
-    private int idViajes; // FK
-    private int puntuacion;
-    private String comentario;
-    private String fechaCalificacion; // Usamos String para DATETIME
+    private int    idCalificacion;
+    private int    idViaje;
+    private int    idCalificador;
+    private int    idCalificado;
+    private int    puntuacion;
+    private String comentario;    // opcional — puede ser null o vacío
+    private String creadoEn;
 
-    public Calificaciones(int idCalificacion, int idUsuarios, int idViajes, int puntuacion, String comentario, String fechaCalificacion) {
+    // Campo transitorio: no viene del backend, se asigna en UI
+    private String nombreCalificado;
+
+    public Calificaciones() {}
+
+    public Calificaciones(int idCalificacion, int idViaje, int idCalificador,
+                          int idCalificado, int puntuacion,
+                          String comentario, String creadoEn) {
         this.idCalificacion = idCalificacion;
-        this.idUsuarios = idUsuarios;
-        this.idViajes = idViajes;
-        this.puntuacion = puntuacion;
-        this.comentario = comentario;
-        this.fechaCalificacion = fechaCalificacion;
+        this.idViaje        = idViaje;
+        this.idCalificador  = idCalificador;
+        this.idCalificado   = idCalificado;
+        this.puntuacion     = puntuacion;
+        this.comentario     = comentario;
+        this.creadoEn       = creadoEn;
     }
 
-    public void setIdCalificacion(int idCalificacion) {
-        this.idCalificacion = idCalificacion;
-    }
-    public void setIdUsuarios(int idUsuarios) {
-        this.idUsuarios = idUsuarios;
-    }
-    public void setIdViajes(int idViajes) {
-        this.idViajes = idViajes;
-    }
-    public void setPuntuacion(int puntuacion) {
-        this.puntuacion = puntuacion;
-    }
-    public void setComentario(String comentario) {
-        this.comentario = comentario;
-    }
-    public void setFechaCalificacion(String fechaCalificacion) {
-        this.fechaCalificacion = fechaCalificacion;
-    }
+    // ── Getters ───────────────────────────────────────────────────────────
+    public int    getIdCalificacion()   { return idCalificacion; }
+    public int    getIdViaje()          { return idViaje; }
+    public int    getIdCalificador()    { return idCalificador; }
+    public int    getIdCalificado()     { return idCalificado; }
+    public int    getPuntuacion()       { return puntuacion; }
+    public String getComentario()       { return comentario; }
+    public String getCreadoEn()         { return creadoEn; }
+    public String getNombreCalificado() { return nombreCalificado; }
 
-    public int getIdCalificacion() {
-        return idCalificacion;
-    }
-    public int getIdUsuarios() {
-        return idUsuarios;
-    }
-    public int getIdViajes() {
-        return idViajes;
-    }
-    public int getPuntuacion() {
-        return puntuacion;
-    }
-    public String getComentario() {
-        return comentario;
-    }
-    public String getFechaCalificacion() {
-        return fechaCalificacion;
+    // ── Setters ───────────────────────────────────────────────────────────
+    public void setIdCalificacion(int v)    { this.idCalificacion = v; }
+    public void setIdViaje(int v)           { this.idViaje = v; }
+    public void setIdCalificador(int v)     { this.idCalificador = v; }
+    public void setIdCalificado(int v)      { this.idCalificado = v; }
+    public void setPuntuacion(int v)        { this.puntuacion = v; }
+    public void setComentario(String v)     { this.comentario = v; }
+    public void setCreadoEn(String v)       { this.creadoEn = v; }
+    public void setNombreCalificado(String v){ this.nombreCalificado = v; }
+
+    // ── Helper estrellas ──────────────────────────────────────────────────
+    public static String construirEstrellas(int p) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 5; i++) sb.append(i < p ? "⭐" : "☆");
+        return sb.toString();
     }
 }

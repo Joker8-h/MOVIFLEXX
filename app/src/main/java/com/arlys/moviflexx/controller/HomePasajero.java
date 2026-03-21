@@ -88,6 +88,11 @@ public class HomePasajero extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setStatusBarColor(
+                android.graphics.Color.parseColor("#0ABFA3"));
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
         setContentView(R.layout.activity_home_pasajero);
 
         session = new SessionManager(this);
@@ -870,6 +875,7 @@ public class HomePasajero extends BaseActivity {
                             btn.setOnClickListener(v ->
                                     CalificacionController.mostrarBottomSheetCalificar(
                                             HomePasajero.this, viajeId, idConductor, nomCond,
+                                            "",
                                             idPasajero, false,
                                             (puntuacion, comentario) -> {
                                                 btn.setText("Ya calificado (" + puntuacion + ")");
@@ -1148,7 +1154,9 @@ public class HomePasajero extends BaseActivity {
 
             btnCal.setOnClickListener(v ->
                     CalificacionController.mostrarBottomSheetCalificar(
-                            this, fViajeId, fIdConductor, fNomCond, idPasajero, false,
+                            this, fViajeId, fIdConductor, fNomCond,
+                            "",              // ← fotoCalificado
+                            idPasajero, false,
                             (puntuacion, comentario) -> {
                                 if (fCard.getParent() != null)
                                     ((ViewGroup) fCard.getParent()).removeView(fCard);
@@ -1235,6 +1243,7 @@ public class HomePasajero extends BaseActivity {
                         runOnUiThread(() ->
                                 CalificacionController.mostrarBottomSheetCalificar(
                                         HomePasajero.this, viajeId, idConductor, nomCond,
+                                        "",              // ← fotoCalificado
                                         idPasajero, false,
                                         (puntuacion, comentario) -> {
                                             cargarViajesPorCalificar();

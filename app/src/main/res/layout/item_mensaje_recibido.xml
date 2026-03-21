@@ -2,7 +2,7 @@
 <!--
     item_mensaje_recibido.xml
     Burbuja IZQUIERDA (mensajes del contacto)
-    Blanco/gris muy claro, sin punto verde automático
+    Blanco/gris muy claro, misma estructura que item_mensaje_propio.xml
 -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -14,7 +14,7 @@
     android:paddingStart="10dp"
     android:paddingEnd="60dp">
 
-    <!-- Separador de fecha — se muestra si es un nuevo día -->
+    <!-- Separador de fecha (HEADER DE FECHA) — se muestra si es un nuevo día -->
     <TextView
         android:id="@+id/tvFechaHeader"
         android:layout_width="wrap_content"
@@ -30,6 +30,14 @@
         android:paddingBottom="4dp"
         android:layout_marginBottom="6dp"
         android:visibility="gone"/>
+    <!--
+        bg_fecha_pill.xml:
+        <shape android:shape="rectangle">
+          <solid android:color="#E0F8F3"/>
+          <corners android:radius="12dp"/>
+          <stroke android:width="1dp" android:color="#B2EDE6"/>
+        </shape>
+    -->
 
     <!-- Burbuja del mensaje -->
     <LinearLayout
@@ -42,7 +50,8 @@
         android:paddingEnd="12dp"
         android:paddingTop="8dp"
         android:paddingBottom="6dp"
-        android:minWidth="60dp">
+        android:minWidth="60dp"
+        android:maxWidth="260dp">
         <!--
             bg_bubble_received.xml:
             <shape android:shape="rectangle">
@@ -66,15 +75,45 @@
             android:textColor="#1A2E2B"
             android:lineSpacingExtra="2dp"/>
 
-        <!-- Hora — siempre visible -->
-        <TextView
-            android:id="@+id/tvHora"
+        <!-- Pie: hora + estado de envío -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end"
-            android:text="12:30"
-            android:textSize="10sp"
-            android:textColor="#99B8B4"
-            android:layout_marginTop="4dp"/>
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="4dp">
+
+            <!-- HORA — siempre visible -->
+            <TextView
+                android:id="@+id/tvHora"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="12:30"
+                android:textSize="10sp"
+                android:textColor="#99B8B4"
+                android:layout_marginEnd="4dp"/>
+
+            <!-- Ícono de estado: enviando / enviado / entregado / leído -->
+            <!-- enviando   → reloj ⏱  (icono_clock.xml) -->
+            <!-- enviado    → ✓ gris   -->
+            <!-- entregado  → ✓✓ gris  -->
+            <!-- leído      → ✓✓ teal  -->
+            <TextView
+                android:id="@+id/tvTicks"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="✓"
+                android:textSize="11sp"
+                android:textColor="#99B8B4"/>
+
+            <!-- Indicador de "enviando" (spinner mini) -->
+            <ProgressBar
+                android:id="@+id/pbEnviando"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:indeterminateTint="#99B8B4"
+                android:visibility="gone"/>
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>

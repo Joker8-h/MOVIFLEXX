@@ -13,6 +13,10 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.os.Build;
+import androidx.core.app.NotificationCompat;
 
 import androidx.annotation.NonNull;
 import androidx.activity.result.ActivityResultLauncher;
@@ -132,9 +136,18 @@ public class Login extends BaseActivity {
         // No iniciar el asistente de voz en Login
     }
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // ── Forzar status bar teal igual que Home ──────────────
+        getWindow().setStatusBarColor(
+                android.graphics.Color.parseColor("#0ABFA3"));
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+
         setContentView(R.layout.activity_login);
 
         // ── Enlazar vistas con IDs reales del XML ─────────────────────────────
@@ -419,6 +432,7 @@ public class Login extends BaseActivity {
 
             sessionManager.setPendingWelcome(true);
             guardarSesionYNavegar(token, nombre, email, telefono, idRol, idUsuario);
+            mostrarNotificacionLocal(nombre);
 
         } catch (JSONException e) {
             Log.e(TAG, "Error parseando: " + e.getMessage());
@@ -426,6 +440,8 @@ public class Login extends BaseActivity {
                     "Hubo un problema procesando la respuesta del servidor.");
         }
     }
+
+
 
     // ══════════════════════════════════════════════════════════════════════════
     //  FACE LOGIN
@@ -516,6 +532,33 @@ public class Login extends BaseActivity {
             dismissLoading();
             MoviAlert.error(this, "Error interno", "No se pudo preparar la solicitud.");
         }
+    }
+
+    private void mostrarNotificacionLocal(String nombre) {
+        String channelId = "moviflexx_login";
+        NotificationManager manager =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+        // Canal obligatorio Android 8+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel canal = new NotificationChannel(
+                    channelId,
+                    "Moviflexx Login",
+                    NotificationManager.IMPORTANCE_HIGH);
+            canal.enableVibration(true);
+            manager.createNotificationChannel(canal);
+        }
+
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(this, channelId)
+                        .setSmallIcon(R.drawable.ic_notifications)
+                        .setContentTitle("¡Bienvenido a Moviflexx! 👋")
+                        .setContentText("Hola " + nombre + ", has iniciado sesión correctamente.")
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setAutoCancel(true)
+                        .setDefaults(NotificationCompat.DEFAULT_ALL);
+
+        manager.notify(1001, builder.build());
     }
 
     public void irRegister(View view) {

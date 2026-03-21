@@ -11,10 +11,10 @@
     ══════════════════════════════════════════════════════ -->
     <LinearLayout
         android:id="@+id/header"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_width="411dp"
+        android:layout_height="213dp"
+        android:background="@drawable/fondooomoviflex"
         android:orientation="vertical"
-        android:background="#00CED1"
         android:paddingStart="22dp"
         android:paddingTop="36dp"
         android:paddingEnd="22dp"
@@ -37,7 +37,7 @@
                 android:layout_marginEnd="-40dp"
                 android:alpha="0.15"
                 android:background="@drawable/bg_glow_circle_teal"
-                android:clickable="false"/>
+                android:clickable="false" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -48,9 +48,9 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
                     android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:layout_marginBottom="20dp">
+                    android:orientation="horizontal">
 
                     <!-- Avatar con anillo blanco y punto online -->
                     <!-- POR ESTO: -->
@@ -95,8 +95,8 @@
                                 android:id="@+id/iv_avatar_header"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                android:scaleType="centerCrop"
-                                android:contentDescription="Foto de perfil"/>
+                                android:contentDescription="Foto de perfil"
+                                android:scaleType="centerCrop" />
                         </com.google.android.material.card.MaterialCardView>
 
 
@@ -113,27 +113,27 @@
                             android:id="@+id/tv_saludo"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:letterSpacing="0.04"
                             android:text="Buenos días,"
-                            android:textColor="#CCFFFE"
-                            android:textSize="12sp"
-                            android:letterSpacing="0.04"/>
+                            android:textColor="#1A2F4A"
+                            android:textSize="12sp" />
 
                         <TextView
                             android:id="@+id/tv_nombre_usuario"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Cargando..."
-                            android:textColor="#FFFFFF"
+                            android:textColor="#1A2F4A"
                             android:textSize="22sp"
-                            android:textStyle="bold"/>
+                            android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="¿A dónde vas hoy?"
-                            android:textColor="#CCFFFE"
-                            android:textSize="12sp"/>
+                            android:textColor="#1A2F4A"
+                            android:textSize="12sp" />
                     </LinearLayout>
 
                     <!-- Campana notificaciones -->
@@ -141,30 +141,31 @@
                         android:id="@+id/btn_notificaciones"
                         android:layout_width="46dp"
                         android:layout_height="46dp"
+                        android:background="@drawable/bg_icon_circle_white_alpha"
                         android:clickable="true"
                         android:focusable="true"
-                        android:background="@drawable/bg_icon_circle_white_alpha">
+                        android:backgroundTint="#00CED1">
 
                         <ImageView
                             android:layout_width="22dp"
                             android:layout_height="22dp"
                             android:layout_gravity="center"
+                            android:contentDescription="Notificaciones"
                             android:src="@drawable/ic_notifications"
-                            app:tint="#FFFFFF"
-                            android:contentDescription="Notificaciones"/>
+                            app:tint="#FFFFFF" />
 
                         <TextView
                             android:id="@+id/tv_badge_notif"
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:layout_gravity="top|end"
+                            android:background="@drawable/bg_badge_red"
                             android:gravity="center"
+                            android:text="0"
                             android:textColor="#FFFFFF"
                             android:textSize="9sp"
                             android:textStyle="bold"
-                            android:background="@drawable/bg_badge_red"
-                            android:visibility="gone"
-                            android:text="0"/>
+                            android:visibility="gone" />
                     </FrameLayout>
 
                 </LinearLayout>
@@ -175,36 +176,36 @@
                     android:id="@+id/btn_mis_viajes_frame"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
+                    android:background="@drawable/bg_btn_white_rounded"
                     android:clickable="true"
-                    android:focusable="true"
                     android:elevation="6dp"
-                    android:background="@drawable/bg_btn_white_rounded">
+                    android:focusable="true">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                        android:clickable="false"
                         android:gravity="center"
-                        android:orientation="horizontal"
-                        android:clickable="false">
+                        android:orientation="horizontal">
 
                         <ImageView
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:src="@drawable/ic_car"
                             android:layout_marginEnd="10dp"
-                            app:tint="#00CED1"
-                            android:contentDescription="Mis viajes"/>
+                            android:contentDescription="Mis viajes"
+                            android:src="@drawable/ic_car"
+                            app:tint="#00CED1" />
 
                         <TextView
                             android:id="@+id/btn_mis_viajes"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:clickable="false"
+                            android:letterSpacing="0.06"
                             android:text="MIS VIAJES REALIZADOS"
                             android:textColor="#00CED1"
                             android:textSize="15sp"
-                            android:textStyle="bold"
-                            android:letterSpacing="0.06"
-                            android:clickable="false"/>
+                            android:textStyle="bold" />
                     </LinearLayout>
                 </FrameLayout>
 

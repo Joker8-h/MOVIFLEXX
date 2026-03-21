@@ -116,6 +116,9 @@ dependencies {
     // 🖼️ Glide — carga de imágenes
     implementation("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
+
+    implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }
 
 

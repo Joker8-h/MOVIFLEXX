@@ -1531,7 +1531,9 @@ public class Mapa extends BaseActivity {
                 new CalificacionesManager.OnVerificacionListener() {
                     @Override public void onDebeCalificar() {
                         CalificacionController.mostrarBottomSheetCalificar(
-                                Mapa.this, idViaje, idP, nomP, idConductor, true,
+                                Mapa.this, idViaje, idP, nomP,
+                                "",              // ← fotoCalificado
+                                idConductor, true,
                                 (pun,com2) -> new Handler(Looper.getMainLooper())
                                         .postDelayed(() -> calificarEncadenadoMapa(ids,nombres,idConductor,sig), 600));
                     }
@@ -2697,8 +2699,11 @@ public class Mapa extends BaseActivity {
                     if (nomCond.isEmpty()) nomCond=nomConductor.isEmpty()?"el conductor":nomConductor;
                     final int fIdCond=idCond; final String fNomCond=nomCond; final int fIdPas=session.getIdUsuario();
                     if (fIdCond>0) {
-                        runOnUiThread(() -> CalificacionController.mostrarBottomSheetCalificar(
-                                this, idViaje, fIdCond, fNomCond, fIdPas, false,
+                        runOnUiThread(() ->
+                                CalificacionController.mostrarBottomSheetCalificar(
+                                this, idViaje, fIdCond, fNomCond,
+                                "",              // ← fotoCalificado
+                                fIdPas, false,
                                 (pun,com2) -> {
                                     if (refEstadoViaje!=null&&listenerEstadoViaje!=null)
                                         refEstadoViaje.removeEventListener(listenerEstadoViaje);

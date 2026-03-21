@@ -51,7 +51,7 @@ public class VehiculosAdapter extends RecyclerView.Adapter<VehiculosAdapter.Vehi
         h.txtNombre.setText(nombre);
 
         // Placa + tipo
-        StringBuilder sub = new StringBuilder("🪪 " + placa);
+        StringBuilder sub = new StringBuilder("" + placa);
         if (!tipo.isEmpty())  sub.append("  ·  ").append(tipo);
         if (!color.isEmpty()) sub.append("  ·  ").append(color);
         h.txtSubtitulo.setText(sub.toString());

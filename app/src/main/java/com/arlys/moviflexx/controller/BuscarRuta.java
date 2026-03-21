@@ -339,8 +339,8 @@ public class BuscarRuta extends AppCompatActivity {
         String hora        = item.optString("horaSalida", item.optString("fechaHora", ""));
 
         // ── Asignar textos ──
-        setTxt(view, R.id.txt_origen_conductor,  "📍 " + origen);
-        setTxt(view, R.id.txt_destino_conductor, "🏁 " + destino);
+        setTxt(view, R.id.txt_origen_conductor,  "" + origen);
+        setTxt(view, R.id.txt_destino_conductor, "" + destino);
         setTxt(view, R.id.txt_distancia_ruta,    String.format("%.1f km", distanciaKm));
         setTxt(view, R.id.txt_duracion_ruta,     String.format("%.0f min", duracionMin));
         setTxt(view, R.id.txt_vehiculo,          tipo.equals("motorcycle") ? "Moto" : "Carro");

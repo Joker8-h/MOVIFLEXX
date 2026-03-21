@@ -46,6 +46,11 @@ public class MisViajesActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setStatusBarColor(
+                android.graphics.Color.parseColor("#0ABFA3"));
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
         setContentView(R.layout.activity_mis_viajes);
 
         session = new SessionManager(this);
@@ -833,7 +838,9 @@ public class MisViajesActivity extends AppCompatActivity {
                     });
             btnCal.setOnClickListener(v ->
                     CalificacionController.mostrarBottomSheetCalificar(
-                            this, viajeId, idCond, nomCond, idPasajero, false,
+                            this, viajeId, idCond, nomCond,
+                            "",              // ← fotoCalificado
+                            idPasajero, false,
                             (pun, com) -> {
                                 fBtn.setText("Calificado " + pun + "⭐");
                                 fBtn.setBackgroundColor(Color.parseColor("#9E9E9E"));

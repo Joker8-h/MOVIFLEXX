@@ -2,49 +2,40 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- ════════════════════════════════════════════════════
-         BASE — Material3 DayNight (tu estructura original)
-         ════════════════════════════════════════════════════ -->
+         BASE — Material3 DayNight
+    ════════════════════════════════════════════════════ -->
     <style name="Base.Theme.Moviflexx" parent="Theme.Material3.DayNight.NoActionBar">
 
-        <!-- ── Colores primarios ── -->
         <item name="colorPrimary">#2EC4B6</item>
         <item name="colorOnPrimary">#FFFFFF</item>
         <item name="colorPrimaryContainer">#C2F0EB</item>
         <item name="colorOnPrimaryContainer">#0A5550</item>
 
-        <!-- ── Colores secundarios ── -->
         <item name="colorSecondary">#4DCFC4</item>
         <item name="colorOnSecondary">#FFFFFF</item>
         <item name="colorSecondaryContainer">#E6F9F7</item>
         <item name="colorOnSecondaryContainer">#0F756D</item>
 
-        <!-- ── Superficie ── -->
         <item name="colorSurface">#FFFFFF</item>
         <item name="colorOnSurface">#111827</item>
         <item name="colorSurfaceVariant">#F9FAFB</item>
         <item name="colorOnSurfaceVariant">#4B5563</item>
 
-        <!-- ── Fondo ── -->
         <item name="android:colorBackground">#F4F7F6</item>
 
-        <!-- ── Error ── -->
         <item name="colorError">#EF4444</item>
         <item name="colorOnError">#FFFFFF</item>
 
-        <!-- ── Status bar ── -->
         <item name="android:statusBarColor">#2EC4B6</item>
         <item name="android:navigationBarColor">#FFFFFF</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
 
-        <!-- ── Shapes globales ── -->
         <item name="shapeAppearanceSmallComponent">@style/Shape.Moviflexx.Small</item>
         <item name="shapeAppearanceMediumComponent">@style/Shape.Moviflexx.Medium</item>
         <item name="shapeAppearanceLargeComponent">@style/Shape.Moviflexx.Large</item>
 
-        <!-- ── Ripple global teal ── -->
         <item name="colorControlHighlight">#332EC4B6</item>
 
-        <!-- ── Animaciones de actividad ── -->
         <item name="android:windowActivityTransitions">true</item>
         <item name="android:windowAllowEnterTransitionOverlap">true</item>
         <item name="android:windowAllowReturnTransitionOverlap">true</item>
@@ -52,14 +43,25 @@
     </style>
 
     <!-- ════════════════════════════════════════════════════
-         TEMA PRINCIPAL — hereda de Base
-         ════════════════════════════════════════════════════ -->
+         TEMA PRINCIPAL
+    ════════════════════════════════════════════════════ -->
     <style name="Theme.Moviflexx" parent="Base.Theme.Moviflexx"/>
 
+    <!-- ════════════════════════════════════════════════════
+         SPLASH — un solo bloque, hereda de Theme.Moviflexx
+         postSplashScreenTheme apunta al tema principal
+         para que la transición sea suave
+    ════════════════════════════════════════════════════ -->
+    <style name="Theme.Moviflexx.Splash" parent="Theme.Moviflexx">
+        <item name="android:statusBarColor">#2EC4B6</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowBackground">#2EC4B6</item>
+        <item name="postSplashScreenTheme">@style/Theme.Moviflexx</item>
+    </style>
 
     <!-- ════════════════════════════════════════════════════
          SHAPES
-         ════════════════════════════════════════════════════ -->
+    ════════════════════════════════════════════════════ -->
     <style name="Shape.Moviflexx.Small" parent="ShapeAppearance.Material3.SmallComponent">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">8dp</item>
@@ -80,12 +82,9 @@
         <item name="cornerSize">50%</item>
     </style>
 
-
     <!-- ════════════════════════════════════════════════════
          BOTONES
-         ════════════════════════════════════════════════════ -->
-
-    <!-- Botón primario teal (filled) -->
+    ════════════════════════════════════════════════════ -->
     <style name="Button.Moviflexx.Primary" parent="Widget.Material3.Button">
         <item name="backgroundTint">#2EC4B6</item>
         <item name="android:textColor">#FFFFFF</item>
@@ -98,7 +97,6 @@
         <item name="android:stateListAnimator">@animator/btn_elevation_anim</item>
     </style>
 
-    <!-- Botón blanco (usado dentro del header teal) -->
     <style name="Button.Moviflexx.White" parent="Widget.Material3.Button">
         <item name="backgroundTint">#FFFFFF</item>
         <item name="android:textColor">#2EC4B6</item>
@@ -110,7 +108,6 @@
         <item name="android:stateListAnimator">@animator/btn_elevation_anim</item>
     </style>
 
-    <!-- Botón outline -->
     <style name="Button.Moviflexx.Outline" parent="Widget.Material3.Button.OutlinedButton">
         <item name="android:textColor">#2EC4B6</item>
         <item name="strokeColor">#2EC4B6</item>
@@ -121,19 +118,15 @@
         <item name="cornerRadius">27dp</item>
     </style>
 
-    <!-- Botón de texto ghost -->
     <style name="Button.Moviflexx.Text" parent="Widget.Material3.Button.TextButton">
         <item name="android:textColor">#2EC4B6</item>
         <item name="android:textSize">14sp</item>
         <item name="android:textStyle">bold</item>
     </style>
 
-
     <!-- ════════════════════════════════════════════════════
          CARDS
-         ════════════════════════════════════════════════════ -->
-
-    <!-- Card estándar blanca con sombra -->
+    ════════════════════════════════════════════════════ -->
     <style name="Card.Moviflexx" parent="Widget.Material3.CardView.Elevated">
         <item name="cardCornerRadius">20dp</item>
         <item name="cardElevation">3dp</item>
@@ -143,14 +136,12 @@
         <item name="android:focusable">true</item>
     </style>
 
-    <!-- Card teal (header accent) -->
     <style name="Card.Moviflexx.Teal" parent="Card.Moviflexx">
         <item name="cardBackgroundColor">#29B4A8</item>
         <item name="cardElevation">0dp</item>
         <item name="cardCornerRadius">16dp</item>
     </style>
 
-    <!-- Card flat (fondo suave, sin sombra) -->
     <style name="Card.Moviflexx.Flat" parent="Widget.Material3.CardView.Filled">
         <item name="cardCornerRadius">16dp</item>
         <item name="cardElevation">0dp</item>
@@ -159,10 +150,9 @@
         <item name="strokeColor">#C2F0EB</item>
     </style>
 
-
     <!-- ════════════════════════════════════════════════════
-         INPUTS (TextInputLayout)
-         ════════════════════════════════════════════════════ -->
+         INPUTS
+    ════════════════════════════════════════════════════ -->
     <style name="Input.Moviflexx" parent="Widget.Material3.TextInputLayout.OutlinedBox">
         <item name="boxCornerRadiusTopStart">14dp</item>
         <item name="boxCornerRadiusTopEnd">14dp</item>
@@ -174,7 +164,6 @@
         <item name="android:minHeight">56dp</item>
     </style>
 
-    <!-- Input con fondo relleno -->
     <style name="Input.Moviflexx.Filled" parent="Widget.Material3.TextInputLayout.FilledBox">
         <item name="boxCornerRadiusTopStart">14dp</item>
         <item name="boxCornerRadiusTopEnd">14dp</item>
@@ -185,10 +174,9 @@
         <item name="android:minHeight">56dp</item>
     </style>
 
-
     <!-- ════════════════════════════════════════════════════
          BOTTOM NAVIGATION
-         ════════════════════════════════════════════════════ -->
+    ════════════════════════════════════════════════════ -->
     <style name="BottomNav.Moviflexx" parent="Widget.Material3.BottomNavigationView">
         <item name="itemIconTint">@color/bottom_nav_selector</item>
         <item name="itemTextColor">@color/bottom_nav_selector</item>
@@ -197,10 +185,9 @@
         <item name="labelVisibilityMode">labeled</item>
     </style>
 
-
     <!-- ════════════════════════════════════════════════════
          CHIPS
-         ════════════════════════════════════════════════════ -->
+    ════════════════════════════════════════════════════ -->
     <style name="Chip.Moviflexx.Status" parent="Widget.Material3.Chip.Assist">
         <item name="chipBackgroundColor">#E6F9F7</item>
         <item name="chipStrokeWidth">0dp</item>
@@ -228,24 +215,13 @@
         <item name="chipMinHeight">28dp</item>
     </style>
 
-
     <!-- ════════════════════════════════════════════════════
          FAB
-         ════════════════════════════════════════════════════ -->
+    ════════════════════════════════════════════════════ -->
     <style name="FAB.Moviflexx" parent="Widget.Material3.FloatingActionButton.Primary">
         <item name="backgroundTint">#2EC4B6</item>
         <item name="tint">#FFFFFF</item>
         <item name="elevation">8dp</item>
-    </style>
-
-
-    <!-- ════════════════════════════════════════════════════
-         SPLASH / FULLSCREEN (sin action bar, status bar transparent)
-         ════════════════════════════════════════════════════ -->
-    <style name="Theme.Moviflexx.Splash" parent="Theme.Moviflexx">
-        <item name="android:statusBarColor">#2EC4B6</item>
-        <item name="android:windowFullscreen">false</item>
-        <item name="android:windowBackground">#2EC4B6</item>
     </style>
 
 </resources>

@@ -6,28 +6,11 @@ import android.util.Log;
 
 import com.arlys.moviflexx.model.ConexionApi;
 import com.arlys.moviflexx.model.Constantes;
-import com.arlys.moviflexx.model.pojo.Calificacion;
+import com.arlys.moviflexx.model.pojo.Calificaciones;
 
 import org.json.JSONObject;
 
-/**
- * CalificacionesManager
- *
- * El backend tiene:
- *   POST /api/calificaciones                → enviar calificacion (409 si ya existe)
- *   GET  /api/calificaciones/:id/promedio   → promedio de un usuario
- *   GET  /api/calificaciones/:id            → obtener por id
- *
- * NO existe endpoint de verificacion. Usamos SharedPreferences como cache local.
- * La clave incluye idCalificado para soportar múltiples pasajeros por viaje:
- *   "viaje_{idViaje}_cal_{idCalificador}_to_{idCalificado}"
- *
- * Flujo:
- *   1. verificarCalificacion() → busca en cache local
- *   2. Si no hay cache → onDebeCalificar() → muestra BottomSheet
- *   3. Al enviar exitosamente → guarda en cache
- *   4. Si el backend responde 409 → guarda en cache y trata como éxito
- */
+
 public class CalificacionesManager {
 
     private static final String TAG   = "CalificacionesManager";
@@ -62,9 +45,6 @@ public class CalificacionesManager {
 
     // =========================================================================
     //  CACHE LOCAL
-    //  Clave: "viaje_{idViaje}_cal_{idCalificador}_to_{idCalificado}"
-    //  Incluir idCalificado permite que el conductor califique a cada pasajero
-    //  de forma independiente dentro del mismo viaje.
     // =========================================================================
 
     private String cacheKey(int idViaje, int idCalificador, int idCalificado) {
@@ -91,8 +71,6 @@ public class CalificacionesManager {
 
     // =========================================================================
     //  VERIFICAR SI YA CALIFICO
-    //  Usa la cache local. Si no hay cache → asume que NO ha calificado.
-    //  Si el POST posterior responde 409 → guarda en cache automáticamente.
     // =========================================================================
 
     public void verificarCalificacion(int idViaje,
@@ -100,33 +78,24 @@ public class CalificacionesManager {
                                       int idCalificado,
                                       OnVerificacionListener listener) {
         if (idViaje <= 0 || idCalificador <= 0 || idCalificado <= 0) {
-            Log.w(TAG, "verificarCalificacion: IDs inválidos idViaje=" + idViaje
+            Log.w(TAG, "IDs inválidos — idViaje=" + idViaje
                     + " idCalificador=" + idCalificador
                     + " idCalificado=" + idCalificado);
             listener.onDebeCalificar();
             return;
         }
 
-        Log.d(TAG, "Verificando cache → viaje=" + idViaje
-                + " calificador=" + idCalificador
-                + " calificado=" + idCalificado);
-
         if (yaCalificoLocalmente(idViaje, idCalificador, idCalificado)) {
-            int puntuacion = puntuacionCache(idViaje, idCalificador, idCalificado);
-            String estrellas = puntuacion > 0
-                    ? Calificacion.construirEstrellas(puntuacion) : "⭐";
-            Log.d(TAG, "Cache local: ya calificó con puntuacion=" + puntuacion);
-            listener.onYaCalifico(puntuacion, estrellas);
+            int p = puntuacionCache(idViaje, idCalificador, idCalificado);
+            listener.onYaCalifico(p, Calificaciones.construirEstrellas(p));
         } else {
-            Log.d(TAG, "No hay cache local → debe calificar");
             listener.onDebeCalificar();
         }
     }
 
     // =========================================================================
-    //  ENVIAR CALIFICACION
-    //  POST /api/calificaciones
-    //  Body: { idViaje, idCalificador, idCalificado, puntuacion, comentario }
+    //  ENVIAR CALIFICACION  (comentario opcional)
+    //  Body: { idViaje, idCalificador, idCalificado, puntuacion, comentario? }
     // =========================================================================
 
     public void enviarCalificacion(int idViaje,
@@ -136,26 +105,16 @@ public class CalificacionesManager {
                                    String comentario,
                                    OnCalificacionListener listener) {
 
-        if (idViaje <= 0) {
-            listener.onError("Viaje inválido");
-            return;
-        }
-        if (idCalificado <= 0) {
-            listener.onError("Usuario a calificar inválido");
-            return;
-        }
-        if (idCalificador <= 0) {
-            listener.onError("Sesión inválida");
-            return;
-        }
+        if (idViaje <= 0)      { listener.onError("Viaje inválido");               return; }
+        if (idCalificado <= 0) { listener.onError("Usuario a calificar inválido"); return; }
+        if (idCalificador <= 0){ listener.onError("Sesión inválida");              return; }
         if (puntuacion < 1 || puntuacion > 5) {
             listener.onError("La puntuación debe ser entre 1 y 5");
             return;
         }
 
-        // Doble check de cache antes de enviar
         if (yaCalificoLocalmente(idViaje, idCalificador, idCalificado)) {
-            Log.d(TAG, "enviarCalificacion: ya calificado según cache, ignorando");
+            Log.d(TAG, "Ya calificado según cache — ignorando");
             listener.onError("Ya calificaste a este usuario en este viaje");
             return;
         }
@@ -166,50 +125,37 @@ public class CalificacionesManager {
             body.put("idCalificador", idCalificador);
             body.put("idCalificado",  idCalificado);
             body.put("puntuacion",    puntuacion);
+            // Comentario es opcional — solo se envía si el usuario escribió algo
             if (comentario != null && !comentario.trim().isEmpty())
                 body.put("comentario", comentario.trim());
 
-            Log.d(TAG, "Enviando calificación → viaje=" + idViaje
+            Log.d(TAG, "Enviando → viaje=" + idViaje
                     + " calificador=" + idCalificador
                     + " calificado=" + idCalificado
-                    + " puntuacion=" + puntuacion);
+                    + " puntuacion=" + puntuacion
+                    + " comentario=" + (comentario != null ? comentario.trim() : "vacío"));
 
             ConexionApi.getInstance(context).post(
                     Constantes.CALIFICACIONES,
                     body,
                     response -> {
-                        Log.d(TAG, "Calificación guardada OK en backend");
+                        Log.d(TAG, "OK en backend");
                         guardarEnCache(idViaje, idCalificador, idCalificado, puntuacion);
                         listener.onExito(puntuacion, mensajeToast(puntuacion));
                     },
                     error -> {
-                        int code = 0;
-                        String msg = "Error al guardar la calificación";
-
-                        if (error != null && error.networkResponse != null) {
-                            code = error.networkResponse.statusCode;
-                        }
-
-                        Log.e(TAG, "Error enviando calificación status=" + code);
-
+                        int code = (error != null && error.networkResponse != null)
+                                ? error.networkResponse.statusCode : 0;
+                        Log.e(TAG, "Error status=" + code);
                         switch (code) {
                             case 409:
-                                // Ya existe en backend → guardar en cache para no preguntar de nuevo
                                 guardarEnCache(idViaje, idCalificador, idCalificado, puntuacion);
                                 listener.onExito(puntuacion, "✅ Calificación registrada");
                                 break;
-                            case 400:
-                                listener.onError("Datos inválidos al calificar");
-                                break;
-                            case 403:
-                                listener.onError("Sin permiso para calificar");
-                                break;
-                            case 404:
-                                listener.onError("Viaje o usuario no encontrado");
-                                break;
-                            default:
-                                listener.onError(msg);
-                                break;
+                            case 400: listener.onError("Datos inválidos al calificar");     break;
+                            case 403: listener.onError("Sin permiso para calificar");       break;
+                            case 404: listener.onError("Viaje o usuario no encontrado");    break;
+                            default:  listener.onError("Error al guardar la calificación"); break;
                         }
                     }
             );
@@ -221,14 +167,10 @@ public class CalificacionesManager {
 
     // =========================================================================
     //  OBTENER PROMEDIO
-    //  GET /api/calificaciones/{idUsuario}/promedio
     // =========================================================================
 
     public void obtenerPromedio(int idUsuario, OnPromedioListener listener) {
-        if (idUsuario <= 0) {
-            listener.onError("ID de usuario inválido");
-            return;
-        }
+        if (idUsuario <= 0) { listener.onError("ID de usuario inválido"); return; }
         ConexionApi.getInstance(context).getObject(
                 Constantes.calificacionPromedio((long) idUsuario),
                 response -> {
@@ -238,18 +180,10 @@ public class CalificacionesManager {
                     int total = response.optInt("total",
                             response.optInt("count",
                                     response.optInt("totalCalificaciones", 0)));
-                    String estrellas = Calificacion.construirEstrellas((int) Math.round(promedio));
-                    Log.d(TAG, "Promedio usuario=" + idUsuario
-                            + " promedio=" + promedio + " total=" + total);
-                    listener.onPromedio(promedio, total, estrellas);
+                    listener.onPromedio(promedio, total,
+                            Calificaciones.construirEstrellas((int) Math.round(promedio)));
                 },
-                error -> {
-                    int code = 0;
-                    if (error != null && error.networkResponse != null)
-                        code = error.networkResponse.statusCode;
-                    Log.w(TAG, "Error promedio status=" + code);
-                    listener.onError("No se pudo obtener el promedio");
-                }
+                error -> listener.onError("No se pudo obtener el promedio")
         );
     }
 
@@ -259,7 +193,7 @@ public class CalificacionesManager {
 
     public void limpiarCache() {
         prefs.edit().clear().apply();
-        Log.d(TAG, "Cache de calificaciones limpiado completamente");
+        Log.d(TAG, "Cache limpiado completamente");
     }
 
     public void limpiarCacheViaje(int idViaje, int idCalificador, int idCalificado) {
@@ -270,7 +204,7 @@ public class CalificacionesManager {
     }
 
     // =========================================================================
-    //  HELPER — mensaje Toast según puntuación
+    //  HELPER — mensaje Toast
     // =========================================================================
 
     public static String mensajeToast(int puntuacion) {

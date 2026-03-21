@@ -52,7 +52,6 @@
             android:background="@drawable/fondomoviflex"
             android:paddingBottom="40dp">
 
-            <!-- ── Ilustración van MoviFlex (Paso 1) ── -->
             <ImageView
                 android:layout_width="260dp"
                 android:layout_height="165dp"
@@ -63,7 +62,6 @@
                 android:scaleType="fitCenter"
                 android:src="@drawable/moviflesx"/>
 
-            <!-- Logo + nombre -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -108,7 +106,7 @@
                 android:textColor="#2C3E50"
                 android:layout_marginBottom="28dp"/>
 
-            <!-- ── Barra progreso 1/3 ── -->
+            <!-- Barra progreso 1/3 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -119,7 +117,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="5dp"
                     android:background="@drawable/bg_progress_track">
-
                     <View
                         android:id="@+id/progress_paso1"
                         android:layout_width="110dp"
@@ -132,38 +129,19 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:layout_marginTop="8dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="① Correo"
-                        android:textColor="#1ABC9C"
-                        android:textSize="11sp"
-                        android:textStyle="bold"
-                        android:gravity="center"/>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="② Código"
-                        android:textColor="#BDBDBD"
-                        android:textSize="11sp"
-                        android:gravity="center"/>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="③ Datos"
-                        android:textColor="#BDBDBD"
-                        android:textSize="11sp"
-                        android:gravity="center"/>
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="① Correo"
+                        android:textColor="#1ABC9C" android:textSize="11sp"
+                        android:textStyle="bold" android:gravity="center"/>
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="② Código"
+                        android:textColor="#BDBDBD" android:textSize="11sp" android:gravity="center"/>
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="③ Datos"
+                        android:textColor="#BDBDBD" android:textSize="11sp" android:gravity="center"/>
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Instrucción -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -174,7 +152,6 @@
                 android:lineSpacingMultiplier="1.4"
                 android:layout_marginBottom="24dp"/>
 
-            <!-- Campo email paso 1 -->
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
@@ -188,11 +165,8 @@
                 app:boxStrokeWidth="1.5dp"
                 app:boxStrokeWidthFocused="2dp"
                 app:hintTextColor="@color/selector_input_hint_light"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp">
-
+                app:boxCornerRadiusTopStart="12dp" app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusBottomEnd="12dp">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edt_email_paso1"
                     android:layout_width="match_parent"
@@ -203,7 +177,6 @@
                     android:padding="14dp"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Botón enviar código -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_enviar_codigo"
                 android:layout_width="match_parent"
@@ -221,30 +194,17 @@
                 app:elevation="4dp"
                 app:rippleColor="#40FFFFFF"/>
 
-            <!-- ¿Ya tienes cuenta? -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center"
                 android:layout_marginTop="28dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="¿Ya tienes cuenta?  "
-                    android:textSize="13sp"
-                    android:textColor="#9E9E9E"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Inicia Sesión"
-                    android:textSize="13sp"
-                    android:textColor="#1ABC9C"
-                    android:textStyle="bold"
-                    android:clickable="true"
-                    android:focusable="true"
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="¿Ya tienes cuenta?  " android:textSize="13sp" android:textColor="#9E9E9E"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Inicia Sesión" android:textSize="13sp" android:textColor="#1ABC9C"
+                    android:textStyle="bold" android:clickable="true" android:focusable="true"
                     android:onClick="irLoginView"/>
             </LinearLayout>
 
@@ -273,314 +233,132 @@
             android:paddingEnd="28dp"
             android:paddingBottom="40dp">
 
-            <!-- Logo + nombre -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:layout_marginBottom="6dp">
-
-                <ImageView
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_marginEnd="8dp"
-                    android:src="@drawable/logomo"
-                    android:scaleType="fitCenter"
-                    android:adjustViewBounds="true"
+                <ImageView android:layout_width="38dp" android:layout_height="38dp"
+                    android:layout_marginEnd="8dp" android:src="@drawable/logomo"
+                    android:scaleType="fitCenter" android:adjustViewBounds="true"
                     android:contentDescription="Logo"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="MOVI"
-                    android:textColor="#2C3E50"
-                    android:textSize="24sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.04"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="FLEX"
-                    android:textColor="#1ABC9C"
-                    android:textSize="24sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.04"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="MOVI" android:textColor="#2C3E50" android:textSize="24sp"
+                    android:textStyle="bold" android:letterSpacing="0.04"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="FLEX" android:textColor="#1ABC9C" android:textSize="24sp"
+                    android:textStyle="bold" android:letterSpacing="0.04"/>
             </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Crea tu cuenta"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:textColor="#2C3E50"
-                android:layout_marginBottom="28dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Crea tu cuenta" android:textSize="22sp" android:textStyle="bold"
+                android:textColor="#2C3E50" android:layout_marginBottom="28dp"/>
 
-            <!-- ── Barra progreso 2/3 ── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="28dp">
-
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="5dp"
+            <!-- Barra progreso 2/3 -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:layout_marginBottom="28dp">
+                <FrameLayout android:layout_width="match_parent" android:layout_height="5dp"
                     android:background="@drawable/bg_progress_track">
-
-                    <View
-                        android:id="@+id/progress_paso2"
-                        android:layout_width="220dp"
-                        android:layout_height="5dp"
-                        android:background="@drawable/bg_progress_fill"/>
+                    <View android:id="@+id/progress_paso2" android:layout_width="220dp"
+                        android:layout_height="5dp" android:background="@drawable/bg_progress_fill"/>
                 </FrameLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="8dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="① Correo"
-                        android:textColor="#1ABC9C"
-                        android:textSize="11sp"
-                        android:textStyle="bold"
-                        android:gravity="center"/>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="② Código"
-                        android:textColor="#1ABC9C"
-                        android:textSize="11sp"
-                        android:textStyle="bold"
-                        android:gravity="center"/>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="③ Datos"
-                        android:textColor="#BDBDBD"
-                        android:textSize="11sp"
-                        android:gravity="center"/>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginTop="8dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="① Correo" android:textColor="#1ABC9C"
+                        android:textSize="11sp" android:textStyle="bold" android:gravity="center"/>
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="② Código" android:textColor="#1ABC9C"
+                        android:textSize="11sp" android:textStyle="bold" android:gravity="center"/>
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="③ Datos" android:textColor="#BDBDBD"
+                        android:textSize="11sp" android:gravity="center"/>
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Ícono email enviado -->
-            <FrameLayout
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="16dp"
+            <FrameLayout android:layout_width="72dp" android:layout_height="72dp"
+                android:layout_gravity="center_horizontal" android:layout_marginBottom="16dp"
                 android:background="@drawable/bg_circle_teal_light">
-
-                <ImageView
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_email"
-                    app:tint="#1ABC9C"
-                    android:contentDescription="Email enviado"/>
+                <ImageView android:layout_width="36dp" android:layout_height="36dp"
+                    android:layout_gravity="center" android:src="@drawable/ic_email"
+                    app:tint="#1ABC9C" android:contentDescription="Email enviado"/>
             </FrameLayout>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Código enviado a"
-                android:textSize="14sp"
-                android:textColor="#7F8C8D"
-                android:textAlignment="center"
-                android:layout_marginBottom="4dp"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Código enviado a" android:textSize="14sp" android:textColor="#7F8C8D"
+                android:textAlignment="center" android:layout_marginBottom="4dp"/>
+            <TextView android:id="@+id/tv_email_destino" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:text="tucorreo@gmail.com"
+                android:textSize="15sp" android:textStyle="bold" android:textColor="#2C3E50"
+                android:textAlignment="center" android:layout_marginBottom="32dp"/>
 
-            <TextView
-                android:id="@+id/tv_email_destino"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="tucorreo@gmail.com"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:textColor="#2C3E50"
-                android:textAlignment="center"
-                android:layout_marginBottom="32dp"/>
-
-            <!-- ── 6 campos OTP ── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginBottom="28dp">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/otp1"
-                    android:layout_width="44dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="6dp"
-                    android:gravity="center"
-                    android:inputType="number"
-                    android:maxLength="1"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:textColor="#2C3E50"
-                    android:background="@drawable/otp_field_background"
-                    android:padding="0dp"/>
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/otp2"
-                    android:layout_width="44dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="6dp"
-                    android:gravity="center"
-                    android:inputType="number"
-                    android:maxLength="1"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:textColor="#2C3E50"
-                    android:background="@drawable/otp_field_background"
-                    android:padding="0dp"/>
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/otp3"
-                    android:layout_width="44dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="6dp"
-                    android:gravity="center"
-                    android:inputType="number"
-                    android:maxLength="1"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:textColor="#2C3E50"
-                    android:background="@drawable/otp_field_background"
-                    android:padding="0dp"/>
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/otp4"
-                    android:layout_width="44dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="6dp"
-                    android:gravity="center"
-                    android:inputType="number"
-                    android:maxLength="1"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:textColor="#2C3E50"
-                    android:background="@drawable/otp_field_background"
-                    android:padding="0dp"/>
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/otp5"
-                    android:layout_width="44dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="6dp"
-                    android:gravity="center"
-                    android:inputType="number"
-                    android:maxLength="1"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:textColor="#2C3E50"
-                    android:background="@drawable/otp_field_background"
-                    android:padding="0dp"/>
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/otp6"
-                    android:layout_width="44dp"
-                    android:layout_height="56dp"
-                    android:gravity="center"
-                    android:inputType="number"
-                    android:maxLength="1"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:textColor="#2C3E50"
-                    android:background="@drawable/otp_field_background"
-                    android:padding="0dp"/>
+            <!-- 6 campos OTP -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center" android:layout_marginBottom="28dp">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/otp1"
+                    android:layout_width="44dp" android:layout_height="56dp" android:layout_marginEnd="6dp"
+                    android:gravity="center" android:inputType="number" android:maxLength="1"
+                    android:textSize="22sp" android:textStyle="bold" android:textColor="#2C3E50"
+                    android:background="@drawable/otp_field_background" android:padding="0dp"/>
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/otp2"
+                    android:layout_width="44dp" android:layout_height="56dp" android:layout_marginEnd="6dp"
+                    android:gravity="center" android:inputType="number" android:maxLength="1"
+                    android:textSize="22sp" android:textStyle="bold" android:textColor="#2C3E50"
+                    android:background="@drawable/otp_field_background" android:padding="0dp"/>
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/otp3"
+                    android:layout_width="44dp" android:layout_height="56dp" android:layout_marginEnd="6dp"
+                    android:gravity="center" android:inputType="number" android:maxLength="1"
+                    android:textSize="22sp" android:textStyle="bold" android:textColor="#2C3E50"
+                    android:background="@drawable/otp_field_background" android:padding="0dp"/>
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/otp4"
+                    android:layout_width="44dp" android:layout_height="56dp" android:layout_marginEnd="6dp"
+                    android:gravity="center" android:inputType="number" android:maxLength="1"
+                    android:textSize="22sp" android:textStyle="bold" android:textColor="#2C3E50"
+                    android:background="@drawable/otp_field_background" android:padding="0dp"/>
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/otp5"
+                    android:layout_width="44dp" android:layout_height="56dp" android:layout_marginEnd="6dp"
+                    android:gravity="center" android:inputType="number" android:maxLength="1"
+                    android:textSize="22sp" android:textStyle="bold" android:textColor="#2C3E50"
+                    android:background="@drawable/otp_field_background" android:padding="0dp"/>
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/otp6"
+                    android:layout_width="44dp" android:layout_height="56dp" android:gravity="center"
+                    android:inputType="number" android:maxLength="1" android:textSize="22sp"
+                    android:textStyle="bold" android:textColor="#2C3E50"
+                    android:background="@drawable/otp_field_background" android:padding="0dp"/>
             </LinearLayout>
 
-            <!-- Botón verificar OTP -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_verificar_otp"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:text="Verificar Email"
-                android:textColor="#FFFFFF"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.04"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:stateListAnimator="@null"
-                android:enabled="false"
-                app:backgroundTint="#1ABC9C"
-                app:cornerRadius="14dp"
-                app:elevation="4dp"
-                app:rippleColor="#40FFFFFF"/>
+                android:layout_width="match_parent" android:layout_height="52dp"
+                android:text="Verificar Email" android:textColor="#FFFFFF" android:textSize="15sp"
+                android:textStyle="bold" android:letterSpacing="0.04"
+                android:insetTop="0dp" android:insetBottom="0dp"
+                android:stateListAnimator="@null" android:enabled="false"
+                app:backgroundTint="#1ABC9C" app:cornerRadius="14dp"
+                app:elevation="4dp" app:rippleColor="#40FFFFFF"/>
 
-            <!-- Cambiar correo / Reenviar -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="8dp">
-
-                <TextView
-                    android:id="@+id/tv_cambiar_correo"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="← Cambiar Correo"
-                    android:textSize="13sp"
-                    android:textColor="#7F8C8D"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"/>
-
-                <TextView
-                    android:id="@+id/tv_reenviar_codigo"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Reenviar Código"
-                    android:textSize="13sp"
-                    android:textColor="#1ABC9C"
-                    android:textStyle="bold"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginTop="16dp" android:layout_marginBottom="8dp">
+                <TextView android:id="@+id/tv_cambiar_correo" android:layout_width="0dp"
+                    android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="← Cambiar Correo" android:textSize="13sp" android:textColor="#7F8C8D"
+                    android:clickable="true" android:focusable="true"
+                    android:paddingTop="8dp" android:paddingBottom="8dp"/>
+                <TextView android:id="@+id/tv_reenviar_codigo" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="Reenviar Código"
+                    android:textSize="13sp" android:textColor="#1ABC9C" android:textStyle="bold"
+                    android:clickable="true" android:focusable="true"
+                    android:paddingTop="8dp" android:paddingBottom="8dp"/>
             </LinearLayout>
 
-            <!-- ¿Ya tienes cuenta? -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginTop="12dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="¿Ya tienes cuenta?  "
-                    android:textSize="13sp"
-                    android:textColor="#9E9E9E"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Inicia Sesión"
-                    android:textSize="13sp"
-                    android:textColor="#1ABC9C"
-                    android:textStyle="bold"
-                    android:clickable="true"
-                    android:focusable="true"
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center" android:layout_marginTop="12dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="¿Ya tienes cuenta?  " android:textSize="13sp" android:textColor="#9E9E9E"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Inicia Sesión" android:textSize="13sp" android:textColor="#1ABC9C"
+                    android:textStyle="bold" android:clickable="true" android:focusable="true"
                     android:onClick="irLoginView"/>
             </LinearLayout>
 
@@ -590,8 +368,6 @@
     <!-- ════════════════════════════════════════════════════
          PASO 3 — FORMULARIO COMPLETO
     ════════════════════════════════════════════════════ -->
-
-    <!-- layoutFormulario: referenciado en Register.java -->
     <LinearLayout
         android:id="@+id/layoutFormulario"
         android:layout_width="match_parent"
@@ -618,105 +394,44 @@
             android:paddingEnd="28dp"
             android:paddingBottom="40dp">
 
-            <!-- Logo + nombre -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
                 android:layout_marginBottom="6dp">
-
-                <ImageView
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_marginEnd="8dp"
-                    android:src="@drawable/logomo"
-                    android:scaleType="fitCenter"
-                    android:adjustViewBounds="true"
+                <ImageView android:layout_width="38dp" android:layout_height="38dp"
+                    android:layout_marginEnd="8dp" android:src="@drawable/logomo"
+                    android:scaleType="fitCenter" android:adjustViewBounds="true"
                     android:contentDescription="Logo"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="MOVI"
-                    android:textColor="#2C3E50"
-                    android:textSize="24sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.04"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="FLEX"
-                    android:textColor="#1ABC9C"
-                    android:textSize="24sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.04"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="MOVI" android:textColor="#2C3E50" android:textSize="24sp"
+                    android:textStyle="bold" android:letterSpacing="0.04"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="FLEX" android:textColor="#1ABC9C" android:textSize="24sp"
+                    android:textStyle="bold" android:letterSpacing="0.04"/>
             </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Crea tu cuenta"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:textColor="#2C3E50"
-                android:layout_marginBottom="28dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Crea tu cuenta" android:textSize="22sp" android:textStyle="bold"
+                android:textColor="#2C3E50" android:layout_marginBottom="28dp"/>
 
-            <!-- ── Barra progreso 3/3 ── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="28dp">
-
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="5dp"
+            <!-- Barra progreso 3/3 -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:layout_marginBottom="28dp">
+                <FrameLayout android:layout_width="match_parent" android:layout_height="5dp"
                     android:background="@drawable/bg_progress_track">
-
-                    <View
-                        android:id="@+id/progress_paso3"
-                        android:layout_width="match_parent"
-                        android:layout_height="5dp"
-                        android:background="@drawable/bg_progress_fill"/>
+                    <View android:id="@+id/progress_paso3" android:layout_width="match_parent"
+                        android:layout_height="5dp" android:background="@drawable/bg_progress_fill"/>
                 </FrameLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="8dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="① Correo"
-                        android:textColor="#1ABC9C"
-                        android:textSize="11sp"
-                        android:textStyle="bold"
-                        android:gravity="center"/>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="② Código"
-                        android:textColor="#1ABC9C"
-                        android:textSize="11sp"
-                        android:textStyle="bold"
-                        android:gravity="center"/>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="③ Datos"
-                        android:textColor="#1ABC9C"
-                        android:textSize="11sp"
-                        android:textStyle="bold"
-                        android:gravity="center"/>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginTop="8dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="① Correo" android:textColor="#1ABC9C"
+                        android:textSize="11sp" android:textStyle="bold" android:gravity="center"/>
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="② Código" android:textColor="#1ABC9C"
+                        android:textSize="11sp" android:textStyle="bold" android:gravity="center"/>
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="③ Datos" android:textColor="#1ABC9C"
+                        android:textSize="11sp" android:textStyle="bold" android:gravity="center"/>
                 </LinearLayout>
             </LinearLayout>
 
@@ -724,25 +439,172 @@
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/til_nombre"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp" android:hint="Nombre completo"
+                app:errorEnabled="true" app:startIconDrawable="@drawable/ic_person"
+                app:startIconTint="#9E9E9E" app:boxBackgroundColor="#FFFFFF"
+                app:boxStrokeColor="@color/selector_input_stroke_light"
+                app:boxStrokeWidth="1.5dp" app:boxStrokeWidthFocused="2dp"
+                app:hintTextColor="@color/selector_input_hint_light"
+                app:boxCornerRadiusTopStart="12dp" app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusBottomEnd="12dp">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edt_nombre" android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPersonName|textCapWords"
+                    android:textColor="#2C3E50" android:textSize="15sp" android:padding="14dp"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- CAMPO EMAIL (verificado, solo lectura) -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_email"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp" android:hint="Correo electrónico"
+                app:errorEnabled="true" app:startIconDrawable="@drawable/ic_email"
+                app:startIconTint="#1ABC9C" app:boxBackgroundColor="#F0FDF9"
+                app:boxStrokeColor="#1ABC9C" app:boxStrokeWidth="1.5dp"
+                app:hintTextColor="#1ABC9C"
+                app:boxCornerRadiusTopStart="12dp" app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusBottomEnd="12dp">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edt_email" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:inputType="textEmailAddress"
+                    android:textColor="#1ABC9C" android:textSize="15sp" android:padding="14dp"
+                    android:enabled="false" android:alpha="0.9"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Indicador email verificado -->
+            <LinearLayout
+                android:id="@+id/layoutEmailVerificado"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:paddingStart="4dp" android:paddingTop="4dp"
+                android:layout_marginBottom="14dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="✅" android:textSize="13sp" android:layout_marginEnd="5dp"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Correo verificado" android:textColor="#1ABC9C"
+                    android:textSize="12sp" android:textStyle="bold"/>
+            </LinearLayout>
+
+            <!-- Bloque compatibilidad -->
+            <LinearLayout android:id="@+id/layoutEmailNoVerificado"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:visibility="gone" android:orientation="horizontal">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_verificar_email" android:layout_width="wrap_content"
+                    android:layout_height="40dp" android:text="Verificar" android:textSize="12sp"
+                    android:textColor="#FFFFFF" android:visibility="gone"
+                    app:cornerRadius="10dp" app:backgroundTint="#1ABC9C"/>
+            </LinearLayout>
+
+            <!-- CAMPO TELÉFONO PRINCIPAL -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_telefono"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp" android:hint="Teléfono"
+                app:errorEnabled="true" app:startIconDrawable="@drawable/ic_phone"
+                app:startIconTint="#9E9E9E" app:boxBackgroundColor="#FFFFFF"
+                app:boxStrokeColor="@color/selector_input_stroke_light"
+                app:boxStrokeWidth="1.5dp" app:boxStrokeWidthFocused="2dp"
+                app:hintTextColor="@color/selector_input_hint_light"
+                app:boxCornerRadiusTopStart="12dp" app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusBottomEnd="12dp">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edt_telefono" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:inputType="phone"
+                    android:textColor="#2C3E50" android:textSize="15sp" android:padding="14dp"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ══════════════════════════════════════════════
+                 CAMPO TELÉFONO DE EMERGENCIA  ← NUEVO
+            ══════════════════════════════════════════════ -->
+
+            <!-- Separador / etiqueta de sección -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="14dp"
-                android:hint="Nombre completo"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="10dp">
+
+                <View
+                    android:layout_width="3dp"
+                    android:layout_height="18dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="#E74C3C"
+                    android:backgroundTint="#E74C3C"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Contacto de emergencia"
+                    android:textColor="#E74C3C"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.02"/>
+
+                <!-- Icono escudo rojo -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🚨"
+                    android:textSize="14sp"/>
+            </LinearLayout>
+
+            <!-- Aviso explicativo -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_info_box_light"
+                android:padding="12dp"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🆘"
+                    android:textSize="18sp"
+                    android:layout_marginEnd="10dp"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="En caso de accidente o emergencia durante el viaje, notificaremos a este número."
+                    android:textColor="#7F8C8D"
+                    android:textSize="12sp"
+                    android:lineSpacingMultiplier="1.35"/>
+            </LinearLayout>
+
+            <!-- Campo nombre del contacto -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_nombre_emergencia"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:hint="Nombre del contacto"
                 app:errorEnabled="true"
                 app:startIconDrawable="@drawable/ic_person"
-                app:startIconTint="#9E9E9E"
-                app:boxBackgroundColor="#FFFFFF"
-                app:boxStrokeColor="@color/selector_input_stroke_light"
+                app:startIconTint="#E74C3C"
+                app:boxBackgroundColor="#FFF8F8"
+                app:boxStrokeColor="#FFCDD2"
                 app:boxStrokeWidth="1.5dp"
                 app:boxStrokeWidthFocused="2dp"
-                app:hintTextColor="@color/selector_input_hint_light"
+                app:hintTextColor="#E74C3C"
                 app:boxCornerRadiusTopStart="12dp"
                 app:boxCornerRadiusTopEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
                 app:boxCornerRadiusBottomEnd="12dp">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/edt_nombre"
+                    android:id="@+id/edt_nombre_emergencia"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPersonName|textCapWords"
@@ -751,232 +613,97 @@
                     android:padding="14dp"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- CAMPO EMAIL (verificado, solo lectura) -->
+            <!-- Campo teléfono del contacto -->
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/til_email"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:id="@+id/til_numero_emergencia"                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:hint="Correo electrónico"
-                app:errorEnabled="true"
-                app:startIconDrawable="@drawable/ic_email"
-                app:startIconTint="#1ABC9C"
-                app:boxBackgroundColor="#F0FDF9"
-                app:boxStrokeColor="#1ABC9C"
-                app:boxStrokeWidth="1.5dp"
-                app:hintTextColor="#1ABC9C"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/edt_email"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textEmailAddress"
-                    android:textColor="#1ABC9C"
-                    android:textSize="15sp"
-                    android:padding="14dp"
-                    android:enabled="false"
-                    android:alpha="0.9"/>
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Indicador email verificado ✅ -->
-            <LinearLayout
-                android:id="@+id/layoutEmailVerificado"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="4dp"
-                android:paddingTop="4dp"
-                android:layout_marginBottom="14dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="✅"
-                    android:textSize="13sp"
-                    android:layout_marginEnd="5dp"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Correo verificado"
-                    android:textColor="#1ABC9C"
-                    android:textSize="12sp"
-                    android:textStyle="bold"/>
-            </LinearLayout>
-
-            <!-- Bloque oculto compatibilidad Register.java -->
-            <LinearLayout
-                android:id="@+id/layoutEmailNoVerificado"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:visibility="gone"
-                android:orientation="horizontal">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_verificar_email"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:text="Verificar"
-                    android:textSize="12sp"
-                    android:textColor="#FFFFFF"
-                    android:visibility="gone"
-                    app:cornerRadius="10dp"
-                    app:backgroundTint="#1ABC9C"/>
-            </LinearLayout>
-
-            <!-- CAMPO TELÉFONO -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/til_telefono"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="14dp"
-                android:hint="Teléfono"
+                android:layout_marginBottom="20dp"
+                android:hint="Teléfono de emergencia"
                 app:errorEnabled="true"
                 app:startIconDrawable="@drawable/ic_phone"
-                app:startIconTint="#9E9E9E"
-                app:boxBackgroundColor="#FFFFFF"
-                app:boxStrokeColor="@color/selector_input_stroke_light"
+                app:startIconTint="#E74C3C"
+                app:boxBackgroundColor="#FFF8F8"
+                app:boxStrokeColor="#FFCDD2"
                 app:boxStrokeWidth="1.5dp"
                 app:boxStrokeWidthFocused="2dp"
-                app:hintTextColor="@color/selector_input_hint_light"
+                app:hintTextColor="#E74C3C"
+                app:helperTextEnabled="true"
+                app:helperText="Diferente a tu número personal"
+                app:helperTextTextColor="#9E9E9E"
                 app:boxCornerRadiusTopStart="12dp"
                 app:boxCornerRadiusTopEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
                 app:boxCornerRadiusBottomEnd="12dp">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/edt_telefono"
-                    android:layout_width="match_parent"
+                    android:id="@+id/edt_numero_emergencia"                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="phone"
                     android:textColor="#2C3E50"
                     android:textSize="15sp"
                     android:padding="14dp"/>
             </com.google.android.material.textfield.TextInputLayout>
+            <!-- ══ FIN TELÉFONO DE EMERGENCIA ══ -->
 
             <!-- CAMPO CONTRASEÑA -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/til_password"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                android:hint="Contraseña"
-                app:endIconMode="password_toggle"
-                app:endIconTint="#9E9E9E"
-                app:errorEnabled="true"
-                app:startIconDrawable="@drawable/ic_lock"
-                app:startIconTint="#9E9E9E"
-                app:boxBackgroundColor="#FFFFFF"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp" android:hint="Contraseña"
+                app:endIconMode="password_toggle" app:endIconTint="#9E9E9E"
+                app:errorEnabled="true" app:startIconDrawable="@drawable/ic_lock"
+                app:startIconTint="#9E9E9E" app:boxBackgroundColor="#FFFFFF"
                 app:boxStrokeColor="@color/selector_input_stroke_light"
-                app:boxStrokeWidth="1.5dp"
-                app:boxStrokeWidthFocused="2dp"
+                app:boxStrokeWidth="1.5dp" app:boxStrokeWidthFocused="2dp"
                 app:hintTextColor="@color/selector_input_hint_light"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp">
-
+                app:boxCornerRadiusTopStart="12dp" app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusBottomEnd="12dp">
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/edt_password"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textPassword"
-                    android:textColor="#2C3E50"
-                    android:textSize="15sp"
-                    android:padding="14dp"/>
+                    android:id="@+id/edt_password" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:inputType="textPassword"
+                    android:textColor="#2C3E50" android:textSize="15sp" android:padding="14dp"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- TÉRMINOS Y CONDICIONES -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp"
-                android:background="@drawable/bg_info_box_light"
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:layout_marginBottom="16dp" android:background="@drawable/bg_info_box_light"
                 android:padding="14dp">
-
-                <CheckBox
-                    android:id="@+id/cbTerminos"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:buttonTint="#1ABC9C"
+                <CheckBox android:id="@+id/cbTerminos" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:buttonTint="#1ABC9C"
                     android:layout_marginEnd="4dp"/>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="horizontal"
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="horizontal"
                     android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="He leído y acepto los "
-                        android:textColor="#7F8C8D"
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="He leído y acepto los " android:textColor="#7F8C8D"
                         android:textSize="13sp"/>
-
-                    <TextView
-                        android:id="@+id/tvLinkTerminos"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Términos y Condiciones"
-                        android:textColor="#1ABC9C"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:clickable="true"
-                        android:focusable="true"
+                    <TextView android:id="@+id/tvLinkTerminos" android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:text="Términos y Condiciones"
+                        android:textColor="#1ABC9C" android:textSize="13sp" android:textStyle="bold"
+                        android:clickable="true" android:focusable="true"
                         android:background="?attr/selectableItemBackground"/>
                 </LinearLayout>
             </LinearLayout>
 
             <!-- NOTA RECONOCIMIENTO FACIAL -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="@drawable/bg_info_box_light"
-                android:padding="14dp"
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:background="@drawable/bg_info_box_light" android:padding="14dp"
                 android:layout_marginBottom="24dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📸"
-                    android:textSize="20sp"
-                    android:layout_marginEnd="12dp"/>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Reconocimiento facial"
-                        android:textStyle="bold"
-                        android:textColor="#2C3E50"
-                        android:textSize="13sp"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="📸" android:textSize="20sp" android:layout_marginEnd="12dp"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Reconocimiento facial" android:textStyle="bold"
+                        android:textColor="#2C3E50" android:textSize="13sp"/>
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
                         android:text="Escaneamos tu rostro para futuros inicios de sesión seguros."
-                        android:textColor="#7F8C8D"
-                        android:textSize="12sp"
+                        android:textColor="#7F8C8D" android:textSize="12sp"
                         android:lineSpacingMultiplier="1.35"/>
                 </LinearLayout>
             </LinearLayout>
@@ -984,45 +711,22 @@
             <!-- BOTÓN CREAR CUENTA -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_register"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:text="Crear cuenta"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:letterSpacing="0.04"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
+                android:layout_width="match_parent" android:layout_height="52dp"
+                android:text="Crear cuenta" android:textStyle="bold" android:textColor="#FFFFFF"
+                android:textSize="16sp" android:letterSpacing="0.04"
+                android:insetTop="0dp" android:insetBottom="0dp"
                 android:stateListAnimator="@null"
-                app:backgroundTint="#1ABC9C"
-                app:cornerRadius="14dp"
-                app:elevation="4dp"
-                app:rippleColor="#40FFFFFF"/>
+                app:backgroundTint="#1ABC9C" app:cornerRadius="14dp"
+                app:elevation="4dp" app:rippleColor="#40FFFFFF"/>
 
-            <!-- ¿Ya tienes cuenta? -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginTop="24dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="¿Ya tienes una cuenta?  "
-                    android:textSize="13sp"
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center" android:layout_marginTop="24dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="¿Ya tienes una cuenta?  " android:textSize="13sp"
                     android:textColor="#9E9E9E"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Inicia Sesión"
-                    android:textSize="13sp"
-                    android:textColor="#1ABC9C"
-                    android:textStyle="bold"
-                    android:clickable="true"
-                    android:focusable="true"
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Inicia Sesión" android:textSize="13sp" android:textColor="#1ABC9C"
+                    android:textStyle="bold" android:clickable="true" android:focusable="true"
                     android:onClick="irLoginView"/>
             </LinearLayout>
 
@@ -1030,7 +734,7 @@
     </ScrollView>
 
     <!-- ════════════════════════════════════════════════════
-         PASO 4 — ESCANEO FACIAL (gone al inicio)
+         PASO 4 — ESCANEO FACIAL
     ════════════════════════════════════════════════════ -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layoutFace"

@@ -35,7 +35,8 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="183dp"
+                android:background="@drawable/fondooomoviflex"
                 android:orientation="vertical"
                 android:paddingStart="22dp"
                 android:paddingTop="36dp"
@@ -46,27 +47,27 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
+                    android:layout_marginBottom="20dp"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="20dp">
+                    android:orientation="horizontal">
 
                     <!-- Botón atrás -->
                     <FrameLayout
-                        android:id="@+id/btnBack"
-                        android:layout_width="42dp"
-                        android:layout_height="42dp"
-                        android:layout_marginEnd="14dp"
-                        android:background="@drawable/bg_icon_circle_white_alpha"
-                        android:clickable="true"
-                        android:focusable="true">
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_gravity="center"
-                            android:contentDescription="Volver"
-                            android:src="@drawable/ic_arrow_back"
-                            app:tint="#FFFFFF"/>
-                    </FrameLayout>
+                    android:id="@+id/btnBack"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:layout_marginEnd="14dp"
+                    android:background="@drawable/bg_icon_circle_white_alpha"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="Volver"
+                        android:src="@drawable/ic_arrow_back"
+                        app:tint="#7A9BAA"/>
+                </FrameLayout>
 
                     <!-- Títulos -->
                     <LinearLayout
@@ -78,27 +79,27 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:letterSpacing="0.18"
                             android:text="MOVIFLEX"
-                            android:textColor="#CCFFFE"
-                            android:textSize="10sp"
-                            android:letterSpacing="0.18"/>
+                            android:textColor="#00CED1"
+                            android:textSize="10sp" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Mis Rutas"
-                            android:textColor="#FFFFFF"
+                            android:textColor="#1A2F4A"
                             android:textSize="22sp"
-                            android:textStyle="bold"/>
+                            android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/txtContadorRutas"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
                             android:text="Cargando..."
-                            android:textColor="#CCFFFE"
-                            android:textSize="12sp"
-                            android:layout_marginTop="2dp"/>
+                            android:textColor="#00CED1"
+                            android:textSize="12sp" />
                     </LinearLayout>
 
                     <!-- Ícono brújula -->
@@ -106,13 +107,14 @@
                         android:layout_width="44dp"
                         android:layout_height="44dp"
                         android:background="@drawable/bg_icon_circle_white_alpha">
+
                         <ImageView
                             android:layout_width="22dp"
                             android:layout_height="22dp"
                             android:layout_gravity="center"
+                            android:contentDescription="Rutas"
                             android:src="@drawable/ic_menu_compass"
-                            app:tint="#FFFFFF"
-                            android:contentDescription="Rutas"/>
+                            app:tint="#7A9BAA" />
                     </FrameLayout>
 
                 </LinearLayout>
@@ -128,28 +130,28 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center"
                         android:clickable="true"
-                        android:focusable="true">
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
 
                         <TextView
                             android:id="@+id/tabRutas"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Mis Rutas"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:textColor="#FFFFFF"
                             android:paddingTop="10dp"
-                            android:paddingBottom="10dp"/>
+                            android:paddingBottom="10dp"
+                            android:text="Mis Rutas"
+                            android:textColor="#7A9BAA"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
 
                         <!-- Indicador activo: blanco sólido -->
                         <View
                             android:id="@+id/indicadorRutas"
                             android:layout_width="40dp"
                             android:layout_height="3dp"
-                            android:background="@drawable/bg_btn_white_rounded"/>
+                            android:background="@drawable/bg_btn_white_rounded" />
                     </LinearLayout>
 
                     <!-- Tab Mis Viajes -->
@@ -157,29 +159,29 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center"
                         android:clickable="true"
-                        android:focusable="true">
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
 
                         <TextView
                             android:id="@+id/tabHistorial"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Mis Viajes"
-                            android:textSize="14sp"
-                            android:textColor="#CCFFFE"
                             android:paddingTop="10dp"
-                            android:paddingBottom="10dp"/>
+                            android:paddingBottom="10dp"
+                            android:text="Mis Viajes"
+                            android:textColor="#CCFFFE"
+                            android:textSize="14sp" />
 
                         <!-- Indicador inactivo: translúcido -->
                         <View
                             android:id="@+id/indicadorHistorial"
                             android:layout_width="40dp"
                             android:layout_height="3dp"
-                            android:background="@drawable/bg_btn_white_rounded"
                             android:alpha="0.3"
-                            android:visibility="invisible"/>
+                            android:background="@drawable/bg_btn_white_rounded"
+                            android:visibility="invisible" />
                     </LinearLayout>
 
                 </LinearLayout>

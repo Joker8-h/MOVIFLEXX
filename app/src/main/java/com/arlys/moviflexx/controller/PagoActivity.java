@@ -74,6 +74,11 @@ public class PagoActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setStatusBarColor(
+                android.graphics.Color.parseColor("#0ABFA3"));
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
         setContentView(R.layout.activity_pago);
 
         session   = new SessionManager(this);
@@ -640,17 +645,19 @@ public class PagoActivity extends AppCompatActivity {
                             @Override
                             public void onDebeCalificar() {
                                 runOnUiThread(() ->
-                                        com.arlys.moviflexx.controller.CalificacionController
-                                                .mostrarBottomSheetCalificar(
+                                        com.arlys.moviflexx.controller.
+                                                CalificacionController.mostrarBottomSheetCalificar(
                                                         PagoActivity.this,
                                                         viajeId,
                                                         idCalificado,
                                                         nomCalificado,
+                                                        "",              // ← fotoCalificado
                                                         idCalificador,
-                                                        false, // pasajero califica al conductor
+                                                        false,
                                                         (p, c) -> Log.d(TAG, "Calificó: " + p + "⭐")
                                                 )
                                 );
+
                             }
                             @Override
                             public void onYaCalifico(int p, String e) {

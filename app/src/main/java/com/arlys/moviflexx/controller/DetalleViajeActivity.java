@@ -526,6 +526,12 @@ public class DetalleViajeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Configuration.getInstance().setUserAgentValue(getPackageName());
+        getWindow().setStatusBarColor(
+                android.graphics.Color.parseColor("#0ABFA3"));
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+
         setContentView(R.layout.activity_detalle_viaje2);
 
         session     = new SessionManager(this);
@@ -6652,7 +6658,9 @@ public class DetalleViajeActivity extends AppCompatActivity {
                     @Override public void onDebeCalificar() {
                         CalificacionController.mostrarBottomSheetCalificar(
                                 DetalleViajeActivity.this,
-                                viajeId, idP, nomP, idCalificador, true,
+                                viajeId, idP, nomP,
+                                "",              // ← fotoCalificado
+                                idCalificador, true,
                                 (p, c) -> new Handler(Looper.getMainLooper()).postDelayed(
                                         () -> mostrarCalificacionesEncadenadas(
                                                 ids, nombres, idCalificador, sig), 700));
@@ -6716,6 +6724,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
                                 viajeId,
                                 idConductorViaje,
                                 nombreConductorViaje,
+                                "",
                                 idPasajero,
                                 false,    // false = el pasajero está calificando
                                 (p, c) -> android.util.Log.d("DetalleViaje",

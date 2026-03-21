@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" >
-    <!-- PERMISOS -->
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ═══════════════════════════════════════════
+         PERMISOS
+    ═══════════════════════════════════════════ -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -10,7 +13,6 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-    <!-- PERMISOS DE GRABACIÓN DE AUDIO -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
@@ -20,7 +22,6 @@
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    <!-- 🔔 NOTIFICACIONES PUSH (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-feature
@@ -42,18 +43,158 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Moviflexx"
         android:usesCleartextTraffic="true"
-        tools:targetApi="31" >
+        tools:targetApi="31">
 
-        <!-- 🔔 Servicio FCM para notificaciones push -->
+        <!-- ═══════════════════════════════════════════════════════
+             PUNTO DE ENTRADA — SplashActivity decide a dónde ir:
+               • Sesión activa  → HomeConductor o HomePasajero
+               • Sin sesión     → Login
+             MainActivity ya NO es el launcher.
+        ═══════════════════════════════════════════════════════ -->
+        <activity
+            android:name=".controller.SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Moviflexx"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- MainActivity ya no es el launcher, pero se mantiene por si la usas -->
+        <activity
+            android:name=".controller.MainActivity"
+            android:exported="false" />
+
+        <!-- ═══════════════════════════════════════════════════════
+             AUTENTICACIÓN
+        ═══════════════════════════════════════════════════════ -->
+        <activity
+            android:name=".controller.Login"
+            android:exported="false" />
+        <activity
+            android:name=".controller.Register"
+            android:exported="false" />
+        <activity
+            android:name=".controller.VerificarOtp"
+            android:exported="false" />
+        <activity
+            android:name=".controller.EmailVerificacion"
+            android:exported="false" />
+
+        <!-- ═══════════════════════════════════════════════════════
+             HOME — CONDUCTOR Y PASAJERO
+        ═══════════════════════════════════════════════════════ -->
+        <activity
+            android:name=".controller.HomeConductor"
+            android:exported="false" />
+        <activity
+            android:name=".controller.HomePasajero"
+            android:exported="false" />
+        <activity
+            android:name=".controller.Home"
+            android:exported="false" />
+
+        <!-- ═══════════════════════════════════════════════════════
+             PERFIL Y CONFIGURACIÓN
+        ═══════════════════════════════════════════════════════ -->
+        <activity
+            android:name=".controller.PerfilUsuario"
+            android:exported="false" />
+
+        <!-- ═══════════════════════════════════════════════════════
+             MAPAS Y UBICACIÓN
+        ═══════════════════════════════════════════════════════ -->
+        <activity
+            android:name=".controller.Mapa"
+            android:exported="false" />
+        <activity
+            android:name=".controller.MapaPasajero"
+            android:exported="false" />
+        <activity
+            android:name=".controller.MapaSeleccionActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- ═══════════════════════════════════════════════════════
+             VIAJES — CONDUCTOR
+        ═══════════════════════════════════════════════════════ -->
+        <activity
+            android:name=".controller.PublicarRuta"
+            android:exported="false" />
+        <activity
+            android:name=".controller.PublicarViaje"
+            android:exported="false" />
+        <activity
+            android:name=".controller.MisRutasActivity"
+            android:exported="false" />
+        <activity
+            android:name=".controller.MisVehiculosActivity"
+            android:exported="false" />
+        <activity
+            android:name=".controller.RutasFrecuentes"
+            android:exported="false" />
+        <activity
+            android:name=".controller.DetalleViajeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".controller.ResumenViajeActivity"
+            android:exported="false" />
+
+        <!-- ═══════════════════════════════════════════════════════
+             VIAJES — PASAJERO
+        ═══════════════════════════════════════════════════════ -->
+        <activity
+            android:name=".controller.BuscarRuta"
+            android:exported="false" />
+        <activity
+            android:name=".controller.MisReservasActivity"
+            android:exported="false" />
+        <activity
+            android:name=".controller.MisViajesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".controller.PagoActivity"
+            android:exported="false" />
+
+        <!-- ═══════════════════════════════════════════════════════
+             MENSAJERÍA
+        ═══════════════════════════════════════════════════════ -->
+        <activity
+            android:name=".controller.Mensajes"
+            android:exported="false" />
+        <activity
+            android:name=".controller.Chat"
+            android:exported="false" />
+        <activity
+            android:name=".controller.Conversaciones"
+            android:exported="false" />
+
+        <!-- ═══════════════════════════════════════════════════════
+             NOTIFICACIONES Y UTILIDADES
+        ═══════════════════════════════════════════════════════ -->
+        <activity
+            android:name=".controller.Notificaciones"
+            android:exported="false" />
+        <activity
+            android:name=".controller.QrScanner"
+            android:exported="false" />
+
+        <!-- ═══════════════════════════════════════════════════════
+             SERVICIO FCM — NOTIFICACIONES PUSH
+        ═══════════════════════════════════════════════════════ -->
         <service
             android:name=".controller.MyFirebaseMessagingService"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
 
-        <!-- 🔔 Icono y color por defecto para notificaciones -->
+        <!-- ═══════════════════════════════════════════════════════
+             META-DATA
+        ═══════════════════════════════════════════════════════ -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_notifications" />
@@ -63,32 +204,6 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="moviflexx_notif" />
-
-        <activity
-            android:name=".controller.ResumenViajeActivity"
-            android:exported="false" />
-        <activity
-            android:name=".controller.VerificarOtp"
-            android:exported="false" />
-        <activity
-            android:name=".controller.EmailVerificacion"
-            android:exported="false" />
-        <activity
-            android:name=".controller.PagoActivity"
-            android:exported="false" />
-        <activity
-            android:name=".controller.QrScanner"
-            android:exported="false" />
-        <activity
-            android:name=".controller.Notificaciones"
-            android:exported="false" />
-        <activity
-            android:name=".controller.BuscarRuta"
-            android:exported="false" />
-        <activity
-            android:name=".controller.Conversaciones"
-            android:exported="false" />
-
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
@@ -96,72 +211,6 @@
         <uses-library
             android:name="org.apache.http.legacy"
             android:required="false" />
-
-        <activity
-            android:name=".controller.MisVehiculosActivity"
-            android:exported="false" />
-        <activity
-            android:name=".controller.MisRutasActivity"
-            android:exported="false" />
-        <activity
-            android:name=".controller.MisReservasActivity"
-            android:exported="false" />
-        <activity
-            android:name=".controller.MisViajesActivity"
-            android:exported="false" />
-        <activity
-            android:name=".controller.DetalleViajeActivity"
-            android:exported="false" />
-        <activity
-            android:name=".controller.PublicarRuta"
-            android:exported="false" />
-        <activity
-            android:name=".controller.Mensajes"
-            android:exported="false" />
-        <activity
-            android:name=".controller.Chat"
-            android:exported="false" />
-        <activity
-            android:name=".controller.RutasFrecuentes"
-            android:exported="false" />
-        <activity
-            android:name=".controller.MapaPasajero"
-            android:exported="false" />
-        <activity
-            android:name=".controller.Mapa"
-            android:exported="false" />
-        <activity
-            android:name=".controller.HomePasajero"
-            android:exported="false" />
-        <activity
-            android:name=".controller.Login"
-            android:exported="false" />
-        <activity
-            android:name=".controller.Register"
-            android:exported="false" />
-        <activity
-            android:name=".controller.HomeConductor"
-            android:exported="false" />
-        <activity
-            android:name=".controller.MapaSeleccionActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".controller.Home"
-            android:exported="false" />
-        <activity
-            android:name=".controller.PerfilUsuario"
-            android:exported="false" />
-        <activity
-            android:name=".controller.PublicarViaje"
-            android:exported="false" />
-        <activity
-            android:name=".controller.MainActivity"
-            android:exported="true" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
 
     </application>
 

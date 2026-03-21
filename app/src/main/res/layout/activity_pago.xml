@@ -37,9 +37,10 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:layout_height="136dp"
+                android:background="@drawable/fondooomoviflex"
                 android:gravity="center_vertical"
+                android:orientation="horizontal"
                 android:paddingStart="22dp"
                 android:paddingTop="36dp"
                 android:paddingEnd="22dp"
@@ -53,13 +54,14 @@
                     android:background="@drawable/bg_icon_circle_white_alpha"
                     android:clickable="true"
                     android:focusable="true">
+
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
+                        android:contentDescription="Volver"
                         android:src="@drawable/ic_arrow_back"
-                        app:tint="#FFFFFF"
-                        android:contentDescription="Volver"/>
+                        app:tint="#7A9BAA" />
                 </FrameLayout>
 
                 <LinearLayout
@@ -71,18 +73,18 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:letterSpacing="0.22"
                         android:text="MOVIFLEX"
-                        android:textColor="#CCFFFE"
-                        android:textSize="10sp"
-                        android:letterSpacing="0.22"/>
+                        android:textColor="#00CED1"
+                        android:textSize="10sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Pago del viaje"
-                        android:textColor="#FFFFFF"
+                        android:textColor="#1A2F4A"
                         android:textSize="22sp"
-                        android:textStyle="bold"/>
+                        android:textStyle="bold" />
                 </LinearLayout>
 
                 <ProgressBar
@@ -90,7 +92,7 @@
                     android:layout_width="28dp"
                     android:layout_height="28dp"
                     android:indeterminateTint="#FFFFFF"
-                    android:visibility="gone"/>
+                    android:visibility="gone" />
             </LinearLayout>
         </FrameLayout>
     </LinearLayout>
@@ -409,7 +411,8 @@
                         android:letterSpacing="0.06"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
-                        app:backgroundTint="#00CED1"
+                        app:backgroundTint="@null"
+                        android:background="@drawable/bg_btn_login"
                         app:cornerRadius="14dp"
                         app:elevation="4dp"
                         app:rippleColor="#40FFFFFF"/>

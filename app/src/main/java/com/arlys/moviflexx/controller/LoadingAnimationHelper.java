@@ -6,23 +6,6 @@ import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
-/**
- * Maneja el overlay de carga con animación de rotación pura en Java.
- * Compatible con cualquier minSdk (no usa AnimatedVectorDrawable).
- *
- * USO en tu Activity/Fragment:
- *
- *   private LoadingAnimationHelper loadingHelper;
- *
- *   // En onCreate, después de bindViews():
- *   loadingHelper = new LoadingAnimationHelper(loadingOverlay, ivLoadingAnim);
- *
- *   // Para mostrar:
- *   loadingHelper.mostrar();
- *
- *   // Para ocultar (con fade):
- *   loadingHelper.ocultar();
- */
 public class LoadingAnimationHelper {
 
     private final LinearLayout  overlay;

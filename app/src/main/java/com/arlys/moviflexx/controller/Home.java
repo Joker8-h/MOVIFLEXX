@@ -15,12 +15,17 @@ import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.model.OnboardingAdapter;
 
+/**
+ * Home — Onboarding.
+ * Al presionar "Ingresar" o "Saltar" va a Login.
+ * Queda en el back stack para que el usuario pueda
+ * volver aquí desde Login con el botón atrás.
+ */
 public class Home extends BaseActivity {
 
     private ImageView  logoHome;
@@ -39,15 +44,10 @@ public class Home extends BaseActivity {
     private ObjectAnimator shimmerAnim;
     private boolean shimmerStarted = false;
 
-    // ═══════════════════════════════════════════════════════════
-    //  LIFECYCLE
-    // ═══════════════════════════════════════════════════════════
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Status bar turquesa — combina con el header del layout
         getWindow().setStatusBarColor(android.graphics.Color.parseColor("#0ABFA3"));
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
@@ -84,10 +84,6 @@ public class Home extends BaseActivity {
         if (shimmerAnim != null) shimmerAnim.cancel();
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  BIND
-    // ═══════════════════════════════════════════════════════════
-
     private void bindViews() {
         logoHome    = findViewById(R.id.logoHome);
         viewPager   = findViewById(R.id.viewPagerOnboarding);
@@ -100,10 +96,6 @@ public class Home extends BaseActivity {
         txtBtnArrow = findViewById(R.id.txtBtnArrow);
         txtSkip     = findViewById(R.id.txtSkip);
     }
-
-    // ═══════════════════════════════════════════════════════════
-    //  VIEWPAGER2
-    // ═══════════════════════════════════════════════════════════
 
     private void initViewPager() {
         viewPager.setAdapter(new OnboardingAdapter());
@@ -119,7 +111,6 @@ public class Home extends BaseActivity {
                 currentPage = pos;
                 isLastPage  = (pos == 2);
                 animateDots(pos);
-                // Sentence case — más profesional que MAYÚSCULAS
                 animateBtnLabel(isLastPage ? "Ingresar" : "Siguiente");
                 resetAutoScroll();
             }
@@ -127,8 +118,6 @@ public class Home extends BaseActivity {
 
         startAutoScroll();
     }
-
-    // ─── Dots ──────────────────────────────────────────────────
 
     private void animateDots(int active) {
         View[] dots = {dot1, dot2, dot3};
@@ -149,12 +138,9 @@ public class Home extends BaseActivity {
                 dot.setLayoutParams(lp);
             });
             wa.start();
-
             dot.setBackgroundTintList(ColorStateList.valueOf(color));
         }
     }
-
-    // ─── Auto-scroll ───────────────────────────────────────────
 
     private final Runnable scrollNext = () -> {
         if (!navegando) {
@@ -171,63 +157,48 @@ public class Home extends BaseActivity {
         if (!navegando) handler.postDelayed(scrollNext, AUTO_SCROLL_MS);
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  LISTENERS
-    // ═══════════════════════════════════════════════════════════
-
     private void initListeners() {
         btnComenzar.setOnClickListener(v -> {
             if (navegando) return;
             if (!isLastPage) {
                 viewPager.setCurrentItem(currentPage + 1, true);
             } else {
-                navegando = true;
-                btnComenzar.setEnabled(false);
-                txtSkip.setEnabled(false);
-                handler.removeCallbacks(scrollNext);
-                doExitAndNavigate();
+                irAlLogin();
             }
         });
 
         txtSkip.setOnClickListener(v -> {
             if (navegando) return;
-            navegando = true;
-            btnComenzar.setEnabled(false);
-            txtSkip.setEnabled(false);
-            handler.removeCallbacks(scrollNext);
-            doExitAndNavigate();
+            irAlLogin();
         });
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  ANIMACIÓN DE ENTRADA — suave y profesional
-    //  Sin OvershootInterpolator exagerado en el logo
-    // ═══════════════════════════════════════════════════════════
+    private void irAlLogin() {
+        navegando = true;
+        btnComenzar.setEnabled(false);
+        txtSkip.setEnabled(false);
+        handler.removeCallbacks(scrollNext);
+        doExitAndNavigate();
+    }
 
     private void runEntranceAnimation() {
-        // Estado inicial invisible
         logoHome.setAlpha(0f);
         logoHome.setTranslationY(-12f);
-
         viewPager.setAlpha(0f);
         viewPager.setTranslationY(28f);
-
         btnComenzar.setAlpha(0f);
         btnComenzar.setTranslationY(20f);
-
         txtSkip.setAlpha(0f);
         dot1.setAlpha(0f);
         dot2.setAlpha(0f);
         dot3.setAlpha(0f);
 
-        // Logo: fade + slide suave desde arriba
         logoHome.animate()
                 .alpha(1f).translationY(0f)
                 .setDuration(550)
                 .setInterpolator(new DecelerateInterpolator(1.8f))
                 .start();
 
-        // Carrusel
         viewPager.animate()
                 .alpha(1f).translationY(0f)
                 .setDuration(550)
@@ -235,12 +206,10 @@ public class Home extends BaseActivity {
                 .setInterpolator(new DecelerateInterpolator(1.4f))
                 .start();
 
-        // Dots
         for (View d : new View[]{dot1, dot2, dot3}) {
             d.animate().alpha(1f).setDuration(300).setStartDelay(420).start();
         }
 
-        // Botón principal
         btnComenzar.animate()
                 .alpha(1f).translationY(0f)
                 .setDuration(480)
@@ -253,17 +222,12 @@ public class Home extends BaseActivity {
                 })
                 .start();
 
-        // Skip
         txtSkip.animate()
                 .alpha(1f)
                 .setDuration(350)
                 .setStartDelay(700)
                 .start();
     }
-
-    // ═══════════════════════════════════════════════════════════
-    //  SHIMMER
-    // ═══════════════════════════════════════════════════════════
 
     private void startShimmer() {
         if (shimmerStarted) return;
@@ -291,8 +255,6 @@ public class Home extends BaseActivity {
         });
     }
 
-    // ─── Flecha oscila ─────────────────────────────────────────
-
     private void startArrowOscillation() {
         Runnable oscillate = new Runnable() {
             boolean right = true;
@@ -308,8 +270,6 @@ public class Home extends BaseActivity {
         };
         oscillate.run();
     }
-
-    // ─── Logo flota suavemente ─────────────────────────────────
 
     private void startLogoFloat() {
         Runnable floater = new Runnable() {
@@ -327,10 +287,6 @@ public class Home extends BaseActivity {
         floater.run();
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  TEXTO DEL BOTÓN
-    // ═══════════════════════════════════════════════════════════
-
     private void animateBtnLabel(String newLabel) {
         txtBtnLabel.animate().alpha(0f).setDuration(100)
                 .withEndAction(() -> {
@@ -339,23 +295,17 @@ public class Home extends BaseActivity {
                 }).start();
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  NAVEGACIÓN
-    // ═══════════════════════════════════════════════════════════
-
     private void doExitAndNavigate() {
         getWindow().getDecorView()
                 .animate().alpha(0f).setDuration(280)
                 .withEndAction(() -> {
+                    // NO se hace finish() para que Home quede en el back stack
                     startActivity(new Intent(Home.this, Login.class));
                     overridePendingTransition(
                             android.R.anim.fade_in,
                             android.R.anim.fade_out);
-                    finish();
                 }).start();
     }
-
-    // ─── Util ──────────────────────────────────────────────────
 
     private int dpToPx(int dp) {
         return Math.round(dp * getResources().getDisplayMetrics().density);

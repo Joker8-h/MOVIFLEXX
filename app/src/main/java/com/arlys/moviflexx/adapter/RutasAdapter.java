@@ -114,7 +114,7 @@ public class RutasAdapter extends RecyclerView.Adapter<RutasAdapter.RutaViewHold
 
         // Título
         TextView txtTitulo = new TextView(context);
-        txtTitulo.setText("🗺️  Ruta #" + idRuta);
+        txtTitulo.setText("  Ruta #" + idRuta);
         txtTitulo.setTextSize(18f);
         txtTitulo.setTypeface(null, Typeface.BOLD);
         txtTitulo.setTextColor(Color.parseColor("#1A2035"));
@@ -127,7 +127,7 @@ public class RutasAdapter extends RecyclerView.Adapter<RutasAdapter.RutaViewHold
         // Subtítulo origen → destino
         if (!origen.isEmpty()) {
             TextView txtSub = new TextView(context);
-            String sub = "📍 " + origen + (destino.isEmpty() ? "" : " → " + destino);
+            String sub = " " + origen + (destino.isEmpty() ? "" : " → " + destino);
             txtSub.setText(sub);
             txtSub.setTextSize(13f);
             txtSub.setTextColor(Color.parseColor("#6B7280"));
@@ -214,7 +214,7 @@ public class RutasAdapter extends RecyclerView.Adapter<RutasAdapter.RutaViewHold
 
     private void mostrarVacioEnSheet(LinearLayout container, float dp, int p16) {
         TextView tv = new TextView(context);
-        tv.setText("🗺️  No hay viajes publicados\npara esta ruta aún");
+        tv.setText(" No hay viajes publicados\npara esta ruta aún");
         tv.setTextSize(14f);
         tv.setTextColor(Color.parseColor("#9CA3AF"));
         tv.setGravity(android.view.Gravity.CENTER);

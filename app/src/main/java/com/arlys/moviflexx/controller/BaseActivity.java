@@ -230,29 +230,41 @@ public abstract class BaseActivity extends AppCompatActivity
 
         if (id == R.id.nav_inicio) {
             if (session.isConductor()) goTo(HomeConductor.class, Transition.FADE);
+
             else                       goTo(HomePasajero.class,  Transition.FADE);
+
         } else if (id == R.id.nav_viajes) {
             goTo(MisViajesActivity.class, Transition.FADE);
+
         } else if (id == R.id.nav_reservas) {
             goTo(MisReservasActivity.class, Transition.FADE);
+
         } else if (id == R.id.nav_mapa) {
             goTo(Mapa.class, Transition.FADE);
+
         } else if (id == R.id.nav_mensajes) {
             goTo(Mensajes.class, Transition.FADE);
+
         } else if (id == R.id.nav_publicar_viaje) {
             goTo(PublicarViaje.class, Transition.SLIDE);
+
         } else if (id == R.id.nav_mis_rutas) {
             goTo(MisRutasActivity.class, Transition.SLIDE);
+
         } else if (id == R.id.nav_mis_vehiculos) {
             goTo(MisVehiculosActivity.class, Transition.SLIDE);
+
         } else if (id == R.id.nav_notificaciones) {
             goTo(Notificaciones.class, Transition.SLIDE);
+
         } else if (id == R.id.nav_perfil) {
             if (!this.getClass().equals(PerfilUsuario.class))
                 goTo(PerfilUsuario.class, Transition.FADE);
+
         } else if (id == R.id.nav_ayuda) {
             startActivity(new Intent(Intent.ACTION_VIEW,
                     Uri.parse("https://moviflexconreact-production.up.railway.app/")));
+
         } else if (id == R.id.nav_cerrar_sesion) {
             session.logout();
             Intent intent = new Intent(this, Login.class);

@@ -22,65 +22,163 @@
             android:layout_marginBottom="4dp"
             android:background="@drawable/bg_handle_gray"/>
 
-        <!-- Título -->
+        <!-- ══════════════════════════════════════════════
+             CABECERA: título + AVATAR del calificado
+        ══════════════════════════════════════════════ -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
             android:paddingStart="22dp"
             android:paddingEnd="22dp"
             android:paddingTop="16dp"
             android:paddingBottom="4dp">
 
-            <FrameLayout
-                android:layout_width="34dp"
-                android:layout_height="34dp"
-                android:background="@drawable/bg_icon_circle_teal_sm">
-                <TextView
-                    android:layout_width="wrap_content"
+            <!-- Título con ícono -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="20dp">
+
+                <FrameLayout
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:background="@drawable/bg_icon_circle_teal_sm">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="⭐"
+                        android:textSize="16sp"/>
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="12dp">
+
+                    <TextView
+                        android:id="@+id/txtTituloSheet"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Califica al conductor"
+                        android:textSize="17sp"
+                        android:textColor="#1A2F4A"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/txtSubtituloSheet"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="¿Cómo fue tu experiencia?"
+                        android:textSize="12sp"
+                        android:textColor="#7A9BAA"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ── AVATAR del calificado ── -->
+            <FrameLayout
+                android:layout_width="90dp"
+                android:layout_height="90dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="10dp">
+
+
+                <!-- Card con FOTO real (Cloudinary) — visible cuando hay URL -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardAvatarFotoSheet"
+                    android:layout_width="78dp"
+                    android:layout_height="78dp"
                     android:layout_gravity="center"
-                    android:text="⭐"
-                    android:textSize="16sp"/>
+                    android:visibility="gone"
+                    app:cardCornerRadius="39dp"
+                    app:cardElevation="4dp"
+                    app:strokeColor="#00CED1"
+                    app:strokeWidth="2dp">
+
+                    <ImageView
+                        android:id="@+id/ivAvatarSheet"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:contentDescription="Foto del usuario"/>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Card con INICIAL (fallback) — visible cuando no hay foto -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardAvatarInicialSheet"
+                    android:layout_width="78dp"
+                    android:layout_height="78dp"
+                    android:layout_gravity="center"
+                    android:visibility="visible"
+                    app:cardBackgroundColor="#E0FFFE"
+                    app:cardCornerRadius="39dp"
+                    app:cardElevation="4dp"
+                    app:strokeColor="#00CED1"
+                    app:strokeWidth="2dp">
+
+                    <TextView
+                        android:id="@+id/tvInicialSheet"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text=""
+                        android:textSize="30sp"
+                        android:textColor="#00868A"
+                        android:textStyle="bold"/>
+                </com.google.android.material.card.MaterialCardView>
+
             </FrameLayout>
 
-            <LinearLayout
-                android:layout_width="0dp"
+            <!-- Nombre del calificado debajo del avatar -->
+            <TextView
+                android:id="@+id/tvNombreCalificadoSheet"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:layout_marginStart="12dp">
+                android:layout_gravity="center_horizontal"
+                android:text="Nombre"
+                android:textSize="15sp"
+                android:textColor="#1A2F4A"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginBottom="4dp"/>
 
-                <TextView
-                    android:id="@+id/txtTituloSheet"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Califica a tu pasajero"
-                    android:textSize="17sp"
-                    android:textColor="#1A2F4A"
-                    android:textStyle="bold"/>
+            <!-- Rol: "Conductor" o "Pasajero" -->
+            <TextView
+                android:id="@+id/tvRolCalificadoSheet"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="Conductor"
+                android:textSize="11sp"
+                android:textColor="#1A2F4A"
+                android:textStyle="bold"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:background="@drawable/bg_chip_teal"
+                android:layout_marginBottom="6dp"/>
 
-                <TextView
-                    android:id="@+id/txtSubtituloSheet"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="¿Cómo fue tu experiencia?"
-                    android:textSize="12sp"
-                    android:textColor="#7A9BAA"/>
-            </LinearLayout>
         </LinearLayout>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#EEF5F5"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:layout_marginStart="22dp"
             android:layout_marginEnd="22dp"/>
 
-        <!-- Estrellas -->
+        <!-- ══════════════════════════════════════════════
+             ESTRELLAS
+        ══════════════════════════════════════════════ -->
         <LinearLayout
             android:id="@+id/layoutEstrellas"
             android:layout_width="wrap_content"
@@ -137,7 +235,9 @@
             android:layout_marginEnd="22dp"
             android:layout_marginBottom="14dp"/>
 
-        <!-- Sugerencias -->
+        <!-- ══════════════════════════════════════════════
+             SUGERENCIAS / CHIPS
+        ══════════════════════════════════════════════ -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -165,8 +265,11 @@
                 android:gravity="center_vertical"/>
         </HorizontalScrollView>
 
-        <!-- Comentario -->
+        <!-- ══════════════════════════════════════════════
+             COMENTARIO (opcional)
+        ══════════════════════════════════════════════ -->
         <TextView
+            android:id="@+id/lblComentario"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="22dp"
@@ -198,7 +301,9 @@
                 android:background="@android:color/transparent"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Botón enviar -->
+        <!-- ══════════════════════════════════════════════
+             BOTÓN ENVIAR
+        ══════════════════════════════════════════════ -->
         <Button
             android:id="@+id/btnEnviarCalificacion"
             android:layout_width="match_parent"
@@ -230,7 +335,9 @@
             android:paddingStart="16dp" android:paddingEnd="16dp"
             android:clickable="true" android:focusable="true"/>
 
-        <!-- Panel éxito -->
+        <!-- ══════════════════════════════════════════════
+             PANEL ÉXITO
+        ══════════════════════════════════════════════ -->
         <LinearLayout
             android:id="@+id/layoutExito"
             android:layout_width="match_parent"
