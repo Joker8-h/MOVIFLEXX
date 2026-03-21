@@ -18,7 +18,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RutasFrecuentes extends AppCompatActivity {
+public class RutasFrecuentes extends BaseActivity {
 
     private RecyclerView rvViajes;
     private ViajesAdapter adapter;

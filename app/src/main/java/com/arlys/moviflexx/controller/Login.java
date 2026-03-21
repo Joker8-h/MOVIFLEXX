@@ -1010,4 +1010,17 @@ public class Login extends BaseActivity {
             loadingDialog = null;
         }
     }
+
+    // ─── SCREEN DESCRIPTOR ────────────────────────────────────────────────────
+    @Override public String getNombrePantalla() { return "Inicio de Sesión"; }
+    @Override public String getDescripcionPantalla() {
+        return "Estás en la pantalla de inicio de sesión. "
+             + "Hay campos para correo y contraseña, botón de login, "
+             + "login con Google y reconocimiento facial.";
+    }
+    @Override public String getOpcionesPantalla() {
+        return "Puedes iniciar sesión con correo y contraseña, "
+             + "con Google, o con reconocimiento facial. "
+             + "También puedes ir a registrarte si no tienes cuenta.";
+    }
 }

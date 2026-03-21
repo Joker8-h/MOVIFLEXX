@@ -2,6 +2,7 @@ package com.arlys.moviflexx.model;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -16,6 +17,8 @@ import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
 
+import com.arlys.moviflexx.MyApplication;
+import com.arlys.moviflexx.controller.BuscarRuta;
 import com.arlys.moviflexx.controller.Mapa;
 import com.arlys.moviflexx.controller.Mensajes;
 import com.arlys.moviflexx.controller.MisReservasActivity;
@@ -25,6 +28,8 @@ import com.arlys.moviflexx.controller.PerfilUsuario;
 import com.arlys.moviflexx.controller.HomeConductor;
 import com.arlys.moviflexx.controller.HomePasajero;
 import com.arlys.moviflexx.controller.PublicarRuta;
+import com.arlys.moviflexx.model.voice.ScreenDescriptor;
+import com.arlys.moviflexx.model.voice.VoiceFlowManager;
 import com.arlys.moviflexx.model.voice.VoskModelManager;
 
 import org.vosk.Model;
@@ -32,6 +37,11 @@ import org.vosk.Recognizer;
 
 import java.util.Locale;
 
+/**
+ * Cerebro del asistente de voz Movi.
+ * Singleton que maneja: reconocimiento de voz (Vosk), TTS, wake word,
+ * lectura de pantalla, ayuda contextual, flujos guiados y navegación por voz.
+ */
 public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
 
     private static final String TAG = "VoiceAssistant";
@@ -49,17 +59,32 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
     private Recognizer recognizer;
     private AudioRecord audioRecord;
 
+    /** Estado de activación del asistente. */
+    private volatile boolean assistantEnabled = true;
+
+    // ── Modos del reconocedor ───────────────────────────────────────────
     private enum Mode { WAKE, COMMAND }
     private volatile Mode mode = Mode.WAKE;
     private long commandModeUntilMs = 0L;
     private long lastWakeMs = 0L;
 
     private static final long WAKE_COOLDOWN_MS  = 2500L;
-    private static final long COMMAND_WINDOW_MS = 9000L;
+    private static final long COMMAND_WINDOW_MS = 12000L; // Ampliado de 9s a 12s
+
+    // ── Último mensaje (para "Repite") ──────────────────────────────────
+    private String ultimoMensaje = "";
+
+    // ── Flujo guiado de reserva ─────────────────────────────────────────
+    private VoiceFlowManager voiceFlow;
+
+    // =====================================================================
+    //  CONSTRUCTOR & SINGLETON
+    // =====================================================================
 
     private VoiceAssistantManager(Context context) {
         this.context = context.getApplicationContext();
         tts = new TextToSpeech(this.context, this);
+        voiceFlow = new VoiceFlowManager(this.context, this);
     }
 
     public static synchronized VoiceAssistantManager getInstance(Context context) {
@@ -70,6 +95,10 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
     public static synchronized void destruirInstancia() {
         if (instance != null) { instance.shutdown(); instance = null; }
     }
+
+    // =====================================================================
+    //  TTS INIT
+    // =====================================================================
 
     @Override
     public void onInit(int status) {
@@ -113,19 +142,37 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
         });
     }
 
+    // =====================================================================
+    //  HABLAR (TTS) — guarda último mensaje para "Repite"
+    // =====================================================================
+
     public void hablar(String texto) {
         if (!isInitialized || tts == null || texto == null || texto.trim().isEmpty()) return;
+        ultimoMensaje = texto;
         tts.speak(texto, TextToSpeech.QUEUE_FLUSH, null, "nav_" + System.currentTimeMillis());
     }
 
     public void hablarEnCola(String texto) {
         if (!isInitialized || tts == null || texto == null || texto.trim().isEmpty()) return;
+        ultimoMensaje = texto;
         tts.speak(texto, TextToSpeech.QUEUE_ADD, null, "navq_" + System.currentTimeMillis());
     }
 
     public void detener()  { if (tts != null && isInitialized) tts.stop(); }
     public boolean isListo() { return isInitialized; }
     public void liberar()  { shutdown(); }
+
+    public VoiceFlowManager getFlowManager() {
+        return voiceFlow;
+    }
+
+    public Activity getCurrentActivity() {
+        return MyApplication.getCurrentActivity();
+    }
+
+    // =====================================================================
+    //  SALUDO CON DATO CURIOSO
+    // =====================================================================
 
     public void saludarConDatoCurioso(String nombre) {
         String[] datos = {
@@ -141,6 +188,10 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
         int i = (int)(Math.random() * datos.length);
         hablarEnCola("¡Hola, " + nombre + "! Soy Movi, qué gusto verte. " + datos[i]);
     }
+
+    // =====================================================================
+    //  ESCUCHA (VOSK STT)
+    // =====================================================================
 
     public void escuchar() { start(); }
 
@@ -208,6 +259,20 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
                 if (txt.isEmpty()) continue;
                 Log.d(TAG, "Vosk: " + txt);
 
+                // Lógica de Activación Especial cuando está DESACTIVADO
+                if (!assistantEnabled) {
+                    if (txt.toLowerCase(Locale.ROOT).contains("activar")) {
+                        assistantEnabled = true;
+                        lastWakeMs = now;
+                        mode = Mode.COMMAND;
+                        commandModeUntilMs = now + COMMAND_WINDOW_MS;
+                        recognizer.reset();
+                        hablar("Asistente reactivado. Hola de nuevo, ¿en qué puedo ayudarte?");
+                        showToast("Movi activada 🎙️");
+                    }
+                    continue; 
+                }
+
                 if (mode == Mode.WAKE) {
                     if (containsWakeWord(txt) && (now - lastWakeMs) > WAKE_COOLDOWN_MS) {
                         lastWakeMs = now;
@@ -222,8 +287,21 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
                     continue;
                 }
 
+                // Extender ventana de comando si hay flujo activo
+                if (voiceFlow.isActive()) {
+                    commandModeUntilMs = now + COMMAND_WINDOW_MS;
+                }
+
                 if (now > commandModeUntilMs) { mode = Mode.WAKE; continue; }
-                if (procesarComando(txt)) { mode = Mode.WAKE; recognizer.reset(); }
+                if (procesarComando(txt)) {
+                    // Si hay flujo activo, mantener modo comando
+                    if (!voiceFlow.isActive()) {
+                        mode = Mode.WAKE;
+                    } else {
+                        commandModeUntilMs = now + COMMAND_WINDOW_MS;
+                    }
+                    recognizer.reset();
+                }
             }
         } catch (Exception e) {
             Log.e(TAG, "runLoop error: " + e.getMessage()); running = false;
@@ -240,16 +318,114 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
         }
     }
 
+    // =====================================================================
+    //  PROCESAMIENTO DE COMANDOS
+    // =====================================================================
+
     private boolean procesarComando(String c) {
         Log.d(TAG, "Comando: " + c);
         String lc = c.toLowerCase(Locale.ROOT);
 
-        if ((lc.trim().equals("movi") || lc.contains("desactivar")
-                || lc.contains("adiós") || lc.contains("adios")) && mode == Mode.COMMAND) {
+        // ── 1. Si hay flujo guiado activo, delegar primero ──
+        if (voiceFlow.isActive() && voiceFlow.procesarComando(lc)) {
+            return true;
+        }
+
+        // ── 2. ACTIVAR / DESACTIVAR ──
+        if (lc.contains("desactivar") || lc.contains("apagar asistente") || lc.contains("silencio movi")) {
+            hablar("Entendido, me desactivaré. Estaré en silencio hasta que digas la palabra activar.");
+            assistantEnabled = false;
+            if (voiceFlow.isActive()) voiceFlow.cancelar();
+            mode = Mode.WAKE;
+            return true;
+        }
+
+        if (lc.contains("activar") && !assistantEnabled) {
+            // Este caso ya se maneja en el runLoop, pero por seguridad:
+            assistantEnabled = true;
+            hablar("Asistente activado. ¿Qué necesitas?");
+            return true;
+        }
+
+        // ── 2b. Ir a dormir (Modo WAKE sin desactivar) ──
+        if ((lc.trim().equals("movi") || lc.contains("adiós") || lc.contains("adios")) && mode == Mode.COMMAND) {
             hablar("Entendido, estaré atenta. Solo di Movi cuando me necesites.");
             return true;
         }
-        // Cerrar sesión / cerrar perfil
+
+        // ── 3. ¿Dónde estoy? (Lectura de pantalla actual) ──
+        if (lc.contains("dónde estoy") || lc.contains("donde estoy")
+                || lc.contains("en qué pantalla") || lc.contains("en que pantalla")) {
+            leerNombrePantalla();
+            return true;
+        }
+
+        // ── 4. Léeme la pantalla / Lee la pantalla ──
+        if (lc.contains("léeme la pantalla") || lc.contains("lee la pantalla")
+                || lc.contains("leeme la pantalla") || lc.contains("leer pantalla")
+                || lc.contains("describe la pantalla") || lc.contains("describir pantalla")) {
+            leerDescripcionPantalla();
+            return true;
+        }
+
+        // ── 5. ¿Qué puedo hacer aquí? ──
+        if (lc.contains("qué puedo hacer") || lc.contains("que puedo hacer")
+                || lc.contains("opciones") || lc.contains("qué hay aquí")
+                || lc.contains("que hay aqui")) {
+            leerOpcionesPantalla();
+            return true;
+        }
+
+        // ── 6. Repite / Repetir ──
+        if (lc.contains("repite") || lc.contains("repetir") || lc.contains("repítelo")
+                || lc.contains("otra vez") || lc.contains("no escuché") || lc.contains("no escuche")) {
+            if (ultimoMensaje != null && !ultimoMensaje.isEmpty()) {
+                tts.speak(ultimoMensaje, TextToSpeech.QUEUE_FLUSH, null, "rep_" + System.currentTimeMillis());
+            } else {
+                hablar("No tengo nada que repetir.");
+            }
+            return true;
+        }
+
+        // ── 7. Ir atrás / Volver ──
+        if (lc.contains("ir atrás") || lc.contains("ir atras") || lc.contains("volver atrás")
+                || lc.contains("volver atras") || lc.contains("regresar")
+                || (lc.contains("atrás") && !lc.contains("puedo"))) {
+            hablar("Volviendo atrás.");
+            irAtras();
+            return true;
+        }
+
+        // ── 8. Búsqueda de viajes por lenguaje natural ──
+        if (lc.contains("quiero ir a") || lc.contains("llévame a") || lc.contains("llevame a")
+                || lc.contains("viaje a") || lc.contains("viaje al")
+                || lc.contains("viaje hacia") || lc.contains("quiero viajar")
+                || lc.contains("buscar viaje a") || lc.contains("ir a")) {
+            String destino = extraerDestino(lc);
+            if (!destino.isEmpty()) {
+                voiceFlow.iniciarBusquedaViaje(destino);
+                return true;
+            }
+        }
+
+        // ── 9. "Ayúdame a reservar un viaje" ──
+        if (lc.contains("reservar un viaje") || lc.contains("ayúdame a reservar")
+                || lc.contains("ayudame a reservar") || lc.contains("quiero reservar")) {
+            hablar("¡Claro! ¿A dónde quieres ir? Di por ejemplo: quiero ir al centro.");
+            return true;
+        }
+
+        // ── 10. Selección por voz (primero, segundo, etc.) — fuera de flujo ──
+        if (lc.contains("primer") || lc.contains("segund") || lc.contains("tercer")
+                || lc.contains("cuart") || lc.contains("quint")) {
+            if (voiceFlow.isActive()) {
+                return voiceFlow.procesarComando(lc);
+            }
+            hablar("No hay opciones para seleccionar en este momento.");
+            return true;
+        }
+
+        // ── 11. Cerrar sesión ──
         if (lc.contains("cerrar sesión") || lc.contains("cerrar sesion")
                 || lc.contains("cerrar perfil") || lc.contains("salir de la cuenta")
                 || lc.contains("cerrar cuenta") || lc.contains("salir de mi cuenta")
@@ -258,13 +434,15 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
             cerrarSesion();
             return true;
         }
+
+        // ── 12. Navegación por voz a secciones ──
         if (lc.contains("buscar viaje") || lc.contains("buscar viajes") || lc.contains("quiero buscar")) {
             hablar("Abriendo búsqueda de viajes."); intentarAbrir(HomePasajero.class); return true; }
         if (lc.contains("mis reservas") || (lc.contains("reserva") && !lc.contains("reservar"))) {
             hablar("Abriendo tus reservas."); intentarAbrir(MisReservasActivity.class); return true; }
         if (lc.contains("publicar") || lc.contains("nuevo viaje") || lc.contains("crear viaje")) {
             hablar("Abriendo publicación de viajes."); intentarAbrir(PublicarRuta.class); return true; }
-        if (lc.contains("mis rutas") || lc.contains("rutas")) {
+        if (lc.contains("mis rutas") || (lc.contains("rutas") && !lc.contains("ruta"))) {
             hablar("Abriendo tus rutas."); intentarAbrir(MisRutasActivity.class); return true; }
         if (lc.contains("mis vehiculos") || lc.contains("vehículos") || lc.contains("vehiculos")) {
             hablar("Abriendo tus vehículos."); intentarAbrir(MisVehiculosActivity.class); return true; }
@@ -272,7 +450,7 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
             hablar("Abriendo tu perfil."); intentarAbrir(PerfilUsuario.class); return true; }
         if (lc.contains("mensajes") || lc.contains("chat")) {
             hablar("Abriendo mensajes."); intentarAbrir(Mensajes.class); return true; }
-        if (lc.contains("mapa") || lc.contains("ir al mapa") || lc.contains("donde estoy")) {
+        if (lc.contains("mapa")) {
             hablar("Abriendo el mapa."); intentarAbrir(Mapa.class); return true; }
         if (lc.contains("inicio") || lc.contains("pantalla principal") || lc.contains("home")) {
             SessionManager s = new SessionManager(context);
@@ -280,6 +458,8 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
             else { hablar("Volviendo al inicio."); intentarAbrir(HomePasajero.class); }
             return true;
         }
+
+        // ── 13. Conversación ──
         if (lc.contains("hola") || lc.contains("buenos días") || lc.contains("buenas tardes")) {
             hablar("¡Hola! Soy Movi. ¿En qué puedo ayudarte?"); return true; }
         if (lc.contains("cómo estás") || lc.contains("como estas")) {
@@ -294,8 +474,39 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
             hablar("Los precios se acuerdan antes del viaje. MoviFlex te ayuda a ahorrar compartiendo gastos."); return true; }
         if (lc.contains("seguridad") || lc.contains("es seguro")) {
             hablar("En MoviFlex todos los conductores pasan verificación y los pasajeros pueden calificar cada viaje."); return true; }
-        if (lc.contains("ayuda") || lc.contains("qué puedes hacer") || lc.contains("que puedes hacer")) {
-            hablar("Puedo abrirte secciones de la app, darte info sobre MoviFlex o guiarte. Di Movi y lo que necesites."); return true; }
+
+        // ── 14. Selección de paradas (desde DetalleViajeActivity) ──
+        if (lc.contains("donde me subo") || lc.contains("punto de recogida")
+                || lc.contains("seleccionar subida") || lc.contains("donde subo")) {
+            Activity act = getCurrentActivity();
+            if (act instanceof com.arlys.moviflexx.controller.DetalleViajeActivity) {
+                voiceFlow.iniciarSeleccionParada(true);
+                return true;
+            }
+        }
+        if (lc.contains("donde me bajo") || lc.contains("punto de bajada")
+                || lc.contains("seleccionar bajada") || lc.contains("donde bajo")) {
+            Activity act = getCurrentActivity();
+            if (act instanceof com.arlys.moviflexx.controller.DetalleViajeActivity) {
+                voiceFlow.iniciarSeleccionParada(false);
+                return true;
+            }
+        }
+
+        // ── 15. Ayuda general ──
+        if (lc.contains("ayuda") || lc.contains("qué puedes hacer") || lc.contains("que puedes hacer")
+                || lc.contains("comandos")) {
+            hablar("Puedo hacer muchas cosas. "
+                    + "Di: ¿dónde estoy? para saber en qué pantalla estás. "
+                    + "Di: léeme la pantalla, para que te describa lo que hay. "
+                    + "Di: ¿qué puedo hacer aquí? para conocer las opciones. "
+                    + "Di: quiero ir al centro, para buscar viajes. "
+                    + "Di: ir atrás, para regresar. "
+                    + "Di: repite, para escuchar de nuevo. "
+                    + "O di el nombre de una sección como: mis reservas, perfil, mensajes.");
+            return true;
+        }
+
         if (lc.contains("gracias")) {
             hablar("Con gusto. ¿Necesitas algo más?"); return true; }
         if (lc.contains("cancelar") || lc.contains("nada") || lc.contains("salir")) {
@@ -304,8 +515,100 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
         return false;
     }
 
+    // =====================================================================
+    //  LECTURA DE PANTALLA Y AYUDA CONTEXTUAL
+    // =====================================================================
+
+    /**
+     * Lee el nombre de la pantalla actual usando ScreenDescriptor.
+     */
+    private void leerNombrePantalla() {
+        Activity current = MyApplication.getCurrentActivity();
+        if (current instanceof ScreenDescriptor) {
+            String nombre = ((ScreenDescriptor) current).getNombrePantalla();
+            hablar("Estás en la pantalla de " + nombre + ".");
+        } else if (current != null) {
+            hablar("Estás en " + current.getClass().getSimpleName() + ".");
+        } else {
+            hablar("No puedo detectar la pantalla actual.");
+        }
+    }
+
+    /**
+     * Lee la descripción completa de lo que hay en la pantalla.
+     */
+    private void leerDescripcionPantalla() {
+        Activity current = MyApplication.getCurrentActivity();
+        if (current instanceof ScreenDescriptor) {
+            ScreenDescriptor sd = (ScreenDescriptor) current;
+            String nombre = sd.getNombrePantalla();
+            String desc = sd.getDescripcionPantalla();
+            hablar("Estás en " + nombre + ". " + desc);
+        } else if (current != null) {
+            hablar("Estás en " + current.getClass().getSimpleName()
+                    + ". No tengo una descripción detallada de esta pantalla.");
+        } else {
+            hablar("No puedo detectar la pantalla actual.");
+        }
+    }
+
+    /**
+     * Lee las opciones disponibles en la pantalla actual.
+     */
+    private void leerOpcionesPantalla() {
+        Activity current = MyApplication.getCurrentActivity();
+        if (current instanceof ScreenDescriptor) {
+            String opciones = ((ScreenDescriptor) current).getOpcionesPantalla();
+            hablar(opciones);
+        } else {
+            hablar("Puedes decir: ir atrás, ir al inicio, buscar viaje, o ayuda.");
+        }
+    }
+
+    // =====================================================================
+    //  ACCIONES DE NAVEGACIÓN
+    // =====================================================================
+
+    /**
+     * Simula el botón atrás en la Activity visible.
+     */
+    private void irAtras() {
+        new Handler(Looper.getMainLooper()).post(() -> {
+            Activity current = MyApplication.getCurrentActivity();
+            if (current != null) {
+                current.onBackPressed();
+            }
+        });
+    }
+
+    /**
+     * Extrae el destino de una frase como "quiero ir al centro" → "centro"
+     */
+    private String extraerDestino(String lc) {
+        String[] prefijos = {
+                "quiero ir a ", "quiero ir al ", "quiero viajar a ", "quiero viajar al ",
+                "llévame a ", "llévame al ", "llevame a ", "llevame al ",
+                "viaje a ", "viaje al ", "viaje hacia ", "viaje hacia el ",
+                "buscar viaje a ", "buscar viaje al ",
+                "ir a ", "ir al "
+        };
+        for (String p : prefijos) {
+            int idx = lc.indexOf(p);
+            if (idx >= 0) {
+                String dest = lc.substring(idx + p.length()).trim();
+                // Limpiar posibles sufijos
+                dest = dest.replace("por favor", "").replace("gracias", "").trim();
+                if (!dest.isEmpty()) return dest;
+            }
+        }
+        return "";
+    }
+
+    // =====================================================================
+    //  ACCIONES EXISTENTES
+    // =====================================================================
+
     private void cerrarSesion() {
-        // 1. Limpiar sesión usando SessionManager.logout() (igual que PerfilUsuario)
         try {
             SessionManager session = new SessionManager(context);
             session.logout();
@@ -313,7 +616,6 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
         } catch (Exception e) {
             Log.w(TAG, "cerrarSesion error: " + e.getMessage());
         }
-        // 2. Ir a Login.class después de que el TTS termine de hablar
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             try {
                 Intent i = new Intent(context,
@@ -341,6 +643,10 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
                 () -> Toast.makeText(context, msg, Toast.LENGTH_SHORT).show());
     }
 
+    // =====================================================================
+    //  UTILIDADES VOSK
+    // =====================================================================
+
     private static String normalizeVoskText(String s) {
         if (s == null) return "";
         String low = s.toLowerCase(Locale.ROOT);
@@ -364,6 +670,18 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
                 .replace("é","e").replace("á","a");
         return n.contains("movi") || n.contains("mobi") || n.contains("movy");
     }
+
+    // =====================================================================
+    //  FLUJO GUIADO — acceso público
+    // =====================================================================
+
+    public VoiceFlowManager getVoiceFlow() {
+        return voiceFlow;
+    }
+
+    // =====================================================================
+    //  SHUTDOWN
+    // =====================================================================
 
     public void shutdown() {
         stop();

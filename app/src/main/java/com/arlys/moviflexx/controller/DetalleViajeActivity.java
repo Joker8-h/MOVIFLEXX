@@ -26,7 +26,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+
 import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -75,7 +75,7 @@ import java.util.List;
 import java.util.Locale;
 
 
-public class DetalleViajeActivity extends AppCompatActivity {
+public class DetalleViajeActivity extends BaseActivity {
 
     // ── Constantes ────────────────────────────────────────────────────────────
     private static final String TAG        = "DetalleViaje";
@@ -258,6 +258,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
     private GeoPoint                    gpConductorActual = null;
     private Marker marcadorConductor = null;
     private GeoPoint gpConductorAnterior = null;
+    private long     lastRenderId      = 0; // Para sincronizar hilos de dibujo asíncronos
 
     // =========================================================================
     //  GPS CONDUCTOR (envío de posición desde el dispositivo del conductor)
@@ -2281,6 +2282,9 @@ public class DetalleViajeActivity extends AppCompatActivity {
     //  MAPA — renderizado principal
     // =========================================================================
     private void renderizarMapa() {
+        lastRenderId++;
+        final long currentId = lastRenderId;
+
         limpiarOverlays();
         boolean viajeIniciado   = "INICIADO".equals(estadoViaje) || "EN_CURSO".equals(estadoViaje);
         boolean viajeFinalizado = "FINALIZADO".equals(estadoViaje) || "COMPLETADO".equals(estadoViaje);
@@ -2294,10 +2298,10 @@ public class DetalleViajeActivity extends AppCompatActivity {
         }
 
         if (!esConductor) {
-            renderizarMapaPasajero(viajeIniciado);
+            renderizarMapaPasajero(viajeIniciado, currentId);
         } else {
             if (viajeIniciado) {
-                renderizarMapaConductorIniciado();
+                renderizarMapaConductorIniciado(currentId);
             } else {
                 if (rutaActiva != null && rutaActiva.size() >= 2)
                     dibujarPolilinea(rutaActiva, COLOR_RUTA);
@@ -2321,7 +2325,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
     // =========================================================================
 
 
-    private void renderizarMapaPasajero(boolean viajeIniciado) {
+    private void renderizarMapaPasajero(boolean viajeIniciado, long requestId) {
         boolean pasajeroRecogido = EST_RECOGIDO.equals(estadoReserva)
                 || EST_COMPLETADO.equals(estadoReserva);
 
@@ -2345,7 +2349,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
             if (!puntosRutaWaypoint.isEmpty()) {
                 dibujarPolilineaWaypoint(puntosRutaWaypoint);
             } else {
-                pedirRutaConWaypoint();
+                pedirRutaConWaypoint(requestId);
             }
 
             // ── Conductor: mover suavemente, no recrear ──
@@ -2354,7 +2358,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
                     actualizarMarcadorConductorSuave(gpConductorActual);
                 }
                 if (gpParada != null)
-                    pedirSegmentoConductorAParada(gpConductorActual, gpParada);
+                    pedirSegmentoConductorAParada(gpConductorActual, gpParada, requestId);
             }
             return;
         }
@@ -2396,13 +2400,42 @@ public class DetalleViajeActivity extends AppCompatActivity {
             if (marcadorConductor == null || !map.getOverlays().contains(marcadorConductor)) {
                 actualizarMarcadorConductorSuave(gpConductorActual);
             }
-            GeoPoint puntoSubida = gpSubida != null ? gpSubida : gpOrigen;
-            if (puntoSubida != null)
-                pedirSegmentoConductorAParada(gpConductorActual, puntoSubida);
+            if (gpSubida != null)
+                pedirSegmentoConductorAParada(gpConductorActual, gpSubida, requestId);
+            else if (gpParada != null)
+                pedirSegmentoConductorAParada(gpConductorActual, gpParada, requestId);
         }
     }
 
-    private void renderizarMapaConductorIniciado() {
+    private void pedirRutaConWaypoint(long requestId) {
+        if (gpOrigen == null || gpDestino == null) return;
+        new Thread(() -> {
+            try {
+                String seg = lngOrigen + "," + latOrigen + ";"
+                        + lngDestino + "," + latDestino
+                        + "?overview=full&geometries=geojson";
+                ArrayList<GeoPoint> pts = null;
+                try { pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL + "/route/v1/driving/" + seg)); }
+                catch (Exception ignored) {}
+                if (pts == null || pts.size() < 2)
+                    try { pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL_PUBLIC + "/route/v1/driving/" + seg)); }
+                    catch (Exception ignored) {}
+                if (pts != null && pts.size() >= 2) {
+                    if (lastRenderId != requestId) return; // Validación de hilo
+                    puntosRutaWaypoint = pts;
+                    final ArrayList<GeoPoint> fPts = pts;
+                    runOnUiThread(() -> {
+                        if (lastRenderId == requestId) {
+                            dibujarPolilineaWaypoint(fPts);
+                            map.invalidate();
+                        }
+                    });
+                }
+            } catch (Exception e) { Log.w(TAG, "pedirRutaConWaypoint: " + e.getMessage()); }
+        }).start();
+    }
+
+    private void renderizarMapaConductorIniciado(long requestId) {
         GeoPoint posConductor = (gpConductorActual != null) ? gpConductorActual : gpOrigen;
 
         if (rutaActiva != null && rutaActiva.size() >= 2)
@@ -2420,7 +2453,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
                 || EST_COMPLETADO.equals(estadoReserva);
 
         if (algunRecogido) {
-            pedirSegmentoConductorADestino(posConductor);
+            pedirSegmentoConductorADestino(posConductor, requestId);
         } else if (!paradasPasajeros.isEmpty()) {
             GeoPoint primeraParada = null;
             for (int i = 0; i < paradasPasajeros.size(); i++) {
@@ -2433,10 +2466,10 @@ public class DetalleViajeActivity extends AppCompatActivity {
                 if (primeraParada == null) primeraParada = pp;
             }
             if (primeraParada != null)
-                pedirSegmentoConductorAParada(posConductor, primeraParada);
+                pedirSegmentoConductorAParada(posConductor, primeraParada, requestId);
         }
     }
-    private void pedirSegmentoConductorAParada(GeoPoint desde, GeoPoint hasta) {
+    private void pedirSegmentoConductorAParada(GeoPoint desde, GeoPoint hasta, long requestId) {
         if (desde == null || hasta == null) return;
 
         // Extraer waypoints intermedios de la ruta activa que estén
@@ -2476,8 +2509,14 @@ public class DetalleViajeActivity extends AppCompatActivity {
                 }
 
                 if (pts != null && pts.size() >= 2) {
+                    if (lastRenderId != requestId) return; // Validación de hilo
                     final ArrayList<GeoPoint> fPts = pts;
-                    runOnUiThread(() -> { dibujarPolilineaSegmento(fPts); map.invalidate(); });
+                    runOnUiThread(() -> {
+                        if (lastRenderId == requestId) {
+                            dibujarPolilineaSegmento(fPts);
+                            map.invalidate();
+                        }
+                    });
                 }
             } catch (Exception e) {
                 Log.w(TAG, "pedirSegmentoConductorAParada: " + e.getMessage());
@@ -2493,14 +2532,22 @@ public class DetalleViajeActivity extends AppCompatActivity {
         // Encontrar el índice más cercano a `hasta` en la ruta
         int idxHasta = indiceMasCercano(rutaActiva, hasta);
 
-        // Asegurarse que desde < hasta en la ruta
-        if (idxDesde >= idxHasta) return resultado;
+        // Si están invertidos u ocurren en el mismo punto, intentar forzarlos a avanzar
+        if (idxDesde >= idxHasta) {
+            // Buscamos un índice válido para "hasta" más adelante en la ruta
+            int newIdxHasta = indiceMasCercanoDespuesDe(rutaActiva, hasta, idxDesde);
+            if (newIdxHasta > idxDesde) {
+                idxHasta = newIdxHasta;
+            } else {
+                return resultado; // No hay forma lógica de avanzar
+            }
+        }
 
-        // Extraer hasta 4 waypoints intermedios equiespaciados
+        // Extraer hasta 8 waypoints intermedios equiespaciados para asegurar un calcado perfecto
         int rango = idxHasta - idxDesde;
         if (rango <= 2) return resultado; // muy cerca, no hace falta
 
-        int numWp = Math.min(4, rango - 1);
+        int numWp = Math.min(8, rango - 1); // Aumentado a 8 para mejor precisión
         double paso = (double) rango / (numWp + 1);
         for (int i = 1; i <= numWp; i++) {
             int idx = idxDesde + (int)(i * paso);
@@ -2509,6 +2556,19 @@ public class DetalleViajeActivity extends AppCompatActivity {
             }
         }
         return resultado;
+    }
+
+    private int indiceMasCercanoDespuesDe(List<GeoPoint> ruta, GeoPoint punto, int idxMinimo) {
+        int mejor = -1;
+        double menorDist = Double.MAX_VALUE;
+        for (int i = idxMinimo; i < ruta.size(); i++) {
+            GeoPoint p = ruta.get(i);
+            double dLat = p.getLatitude()  - punto.getLatitude();
+            double dLng = p.getLongitude() - punto.getLongitude();
+            double dist = dLat * dLat + dLng * dLng;
+            if (dist < menorDist) { menorDist = dist; mejor = i; }
+        }
+        return mejor;
     }
 
     private int indiceMasCercano(List<GeoPoint> ruta, GeoPoint punto) {
@@ -2524,23 +2584,49 @@ public class DetalleViajeActivity extends AppCompatActivity {
         return mejor;
     }
 
-    private void pedirSegmentoConductorADestino(GeoPoint desde) {
+    private void pedirSegmentoConductorADestino(GeoPoint desde, long requestId) {
         if (desde == null || gpDestino == null) return;
+        
+        final ArrayList<GeoPoint> waypoints = extraerWaypointsEntrePuntos(desde, gpDestino);
+        
         new Thread(() -> {
             try {
-                String seg = desde.getLongitude() + "," + desde.getLatitude() + ";"
-                        + lngDestino + "," + latDestino
-                        + "?overview=full&geometries=geojson";
+                StringBuilder coordsB = new StringBuilder();
+                coordsB.append(desde.getLongitude()).append(",").append(desde.getLatitude());
+                for (GeoPoint wp : waypoints) {
+                    coordsB.append(";").append(wp.getLongitude()).append(",").append(wp.getLatitude());
+                }
+                coordsB.append(";").append(lngDestino).append(",").append(latDestino);
+                String params = "?overview=full&geometries=geojson";
+                
                 ArrayList<GeoPoint> pts = null;
-                try { pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL + "/route/v1/driving/" + seg)); }
-                catch (Exception ignored) {}
-                if (pts == null || pts.size() < 2)
-                    try { pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL_PUBLIC + "/route/v1/driving/" + seg)); }
-                    catch (Exception ignored) {}
+                
+                // Fallback directo si no hay waypoints
+                if (waypoints.isEmpty()) {
+                    String seg = desde.getLongitude() + "," + desde.getLatitude() + ";"
+                            + lngDestino + "," + latDestino + params;
+                    try { pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL + "/route/v1/driving/" + seg)); } catch (Exception ignored) {}
+                    if (pts == null || pts.size() < 2)
+                        try { pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL_PUBLIC + "/route/v1/driving/" + seg)); } catch (Exception ignored) {}
+                } else {
+                    String urlConWp = OSRM_URL + "/route/v1/driving/" + coordsB + params;
+                    try { pts = parsearRutaSimpleOSRM(peticionHttp(urlConWp)); } catch (Exception ignored) {}
+                    if (pts == null || pts.size() < 2) {
+                        String urlConWpPub = OSRM_URL_PUBLIC + "/route/v1/driving/" + coordsB + params;
+                        try { pts = parsearRutaSimpleOSRM(peticionHttp(urlConWpPub)); } catch (Exception ignored) {}
+                    }
+                }
+
                 if (pts != null && pts.size() >= 2) {
+                    if (lastRenderId != requestId) return; // Validación de hilo
                     puntosRutaWaypoint = pts;
                     final ArrayList<GeoPoint> fPts = pts;
-                    runOnUiThread(() -> { dibujarPolilineaSegmento(fPts); map.invalidate(); });
+                    runOnUiThread(() -> {
+                        if (lastRenderId == requestId) {
+                            dibujarPolilineaSegmento(fPts);
+                            map.invalidate();
+                        }
+                    });
                 }
             } catch (Exception e) { Log.w(TAG, "segmento conductor→destino: " + e.getMessage()); }
         }).start();
@@ -3247,8 +3333,12 @@ public class DetalleViajeActivity extends AppCompatActivity {
                     || "COMPLETADO".equals(estadoViaje);
 
             if (viajeTerminado) {
-                final double montoFinal = precioCalculadoPasajero > 0 ? precioCalculadoPasajero : pre;
-                mostrarBotonPago(montoFinal, nombreConductorViaje);
+                double montoFinal = precioViaje;
+                if (precioCalculadoPasajero > 0) montoFinal = precioCalculadoPasajero;
+                else if (precioCalculadoPersistente > 0) montoFinal = precioCalculadoPersistente;
+                
+                final double finalM = montoFinal;
+                mostrarBotonPago(finalM, nombreConductorViaje);
                 View divider = findViewById(R.id.divider_pago);
                 if (divider != null) divider.setVisibility(View.VISIBLE);
             } else {
@@ -3777,8 +3867,8 @@ public class DetalleViajeActivity extends AppCompatActivity {
                     }
 
                     if (precioGuardado > 0) {
-                        // ── 1. Precio ya guardado en la reserva ──────────────
-                        final double fPrecio = precioGuardado;
+                        // ── 1. Precio ya guardado en la reserva (Forzar redondeo para consistencia) ──
+                        final double fPrecio = com.arlys.moviflexx.model.Manager.PrecioTramoPasajeroManager.redondear(precioGuardado);
                         resolverNombreParada(fLatP, fLngP, fNp, fAsi, fPar, fEst, fIdRes,
                                 fTieneParada ? "P" + (fColorIdx + 1) : "?",
                                 fPasColor, fPasColorHex, fTieneParada,
@@ -3792,6 +3882,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
                         double lngSubidaFinal = fLngS != 0 ? fLngS : lngOrigen;
 
                         PrecioTramoPasajeroManager.calcular(
+                                this, viajeId,
                                 latSubidaFinal, lngSubidaFinal,
                                 fLatP, fLngP,
                                 distanciaKm,
@@ -5849,10 +5940,14 @@ public class DetalleViajeActivity extends AppCompatActivity {
                                 && !"COMPLETADO".equals(estadoAnterior);
 
                         if (ahora_finalizado && antes_no_era && !esConductor) {
-                            // ← Solo para pasajero: mostrar botón de pago directo
-                            // sin esperar a que cargarDetalleViaje() lo dispare
+                            // ← Usar precio calculado del tramo si existe, sino el base
+                            double montoF = precioViaje;
+                            if (precioCalculadoPasajero > 0) montoF = precioCalculadoPasajero;
+                            else if (precioCalculadoPersistente > 0) montoF = precioCalculadoPersistente;
+
+                            final double finalM = montoF;
                             runOnUiThread(() -> {
-                                mostrarBotonPago(precioViaje, nombreConductorViaje);
+                                mostrarBotonPago(finalM, nombreConductorViaje);
                                 View divider = findViewById(R.id.divider_pago);
                                 if (divider != null) divider.setVisibility(View.VISIBLE);
                             });
@@ -6808,7 +6903,22 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
     private void mostrarBotonPagoRecibido(JSONObject pago) {
         if (btnPagarViaje == null) return;
-        double monto = pago.optDouble("monto", precioViaje);
+        
+        // Priorizar el precio acordado (Bruto) sobre el monto del pago (que puede traer comisión/Neto)
+        double monto = 0;
+        // Buscar primero en el objeto de pago (si trae la reserva anidada)
+        for (String k : new String[]{"precioFinal", "precioTramo", "costoPorPasajero", "precio"}) {
+            monto = pago.optDouble(k, 0);
+            if (monto > 0) break;
+        }
+        // Fallback al monto del pago o al precio base del viaje
+        if (monto <= 0) monto = pago.optDouble("monto", precioViaje);
+
+        // Aplicar redondeo para consistencia visual (múltiplos de 100, min 500)
+        if (monto > 0) {
+            monto = Math.ceil(monto / 100.0) * 100.0;
+            if (monto < 500) monto = 500;
+        }
         String modo  = pago.optString("metodoPago", "");
         java.text.NumberFormat nf = java.text.NumberFormat
                 .getNumberInstance(new java.util.Locale("es", "CO"));
@@ -7120,6 +7230,18 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
         // Siempre agregar destino al final
         paradasDin.add(new ParadaDinamica(destinoActual, latDestino, lngDestino, -1));
+
+        enviarParadasAlAsistente();
+    }
+
+    private void enviarParadasAlAsistente() {
+        if (voiceAssistant != null && voiceAssistant.getFlowManager() != null) {
+            ArrayList<String> nombres = new ArrayList<>();
+            for (ParadaDinamica pd : paradasDin) {
+                nombres.add(pd.nombre);
+            }
+            voiceAssistant.getFlowManager().setNombresParadas(nombres);
+        }
     }
 
     private void geocodificarEnBackground(List<Integer> indices, List<GeoPoint> base){
@@ -7256,6 +7378,7 @@ public class DetalleViajeActivity extends AppCompatActivity {
         }
 
         PrecioTramoPasajeroManager.calcular(
+                this, viajeId,
                 latSubida,               lngSubida,
                 gpParada.getLatitude(),  gpParada.getLongitude(),
                 distanciaKm,
@@ -7671,6 +7794,70 @@ public class DetalleViajeActivity extends AppCompatActivity {
 
         @Override public int getItemCount() { return items.size(); }
         static class VH extends RecyclerView.ViewHolder { final LinearLayout root; VH(View v){super(v);root=(LinearLayout)v;} }
+    }
+
+    // ─── SCREEN DESCRIPTOR ────────────────────────────────────────────────────
+    @Override public String getNombrePantalla() { return "Detalle del Viaje"; }
+    @Override public String getDescripcionPantalla() {
+        return "Estás en el detalle de un viaje. "
+             + "Puedes ver el mapa con la ruta, información del conductor, "
+             + "las paradas, el precio y los pasajeros reservados. "
+             + "Si es un viaje disponible puedes reservar.";
+    }
+    @Override public String getOpcionesPantalla() {
+        return "Puedes decir: reservar, confirmar, ir atrás, "
+             + "o preguntar: ¿cuánto cuesta?, ¿cuántos cupos hay?";
+    }
+
+    // ─── VOICE ASSISTANT BRIDGE ──────────────────────────────────────────────
+    
+    /**
+     * Devuelve una lista con los nombres de todas las paradas (puntos de subida y bajada).
+     */
+    public java.util.List<String> getNombresParadas() {
+        java.util.ArrayList<String> nombres = new java.util.ArrayList<>();
+        if (paradasDin != null) {
+            for (ParadaDinamica pd : paradasDin) {
+                nombres.add(pd.nombre);
+            }
+        }
+        return nombres;
+    }
+
+    /**
+     * Llamado por VoiceFlowManager cuando el usuario selecciona una parada por voz.
+     */
+    public void seleccionarParadaPorVoz(int index, boolean esSubida) {
+        if (index < 0 || index >= paradasDin.size()) return;
+        ParadaDinamica pd = paradasDin.get(index);
+        if (esSubida) {
+            gpSubida = pd.toGeoPoint();
+            nombreSubidaPasajero = pd.nombre;
+            subidaTemp = pd;
+        } else {
+            // Nota: en el flujo normal, gpParada es la bajada
+            gpParada = pd.toGeoPoint();
+            nombreParada = pd.nombre;
+        }
+    }
+
+    /**
+     * Llamado por VoiceFlowManager cuando el usuario confirma la reserva por voz.
+     */
+    public void confirmarReservaPorVoz() {
+        if (subidaTemp == null) {
+            subidaTemp = new ParadaDinamica(origenActual, latOrigen, lngOrigen, 0);
+        }
+        // Buscar la bajada seleccionada (gpParada/nombreParada)
+        ParadaDinamica bajadaElegida = null;
+        if (gpParada != null) {
+            bajadaElegida = new ParadaDinamica(nombreParada, gpParada.getLatitude(), gpParada.getLongitude(), -99);
+        } else {
+            // Fallback: usar el destino
+            bajadaElegida = paradasDin.get(paradasDin.size() - 1);
+        }
+
+        publicarParadaYReservarConSubida(subidaTemp, bajadaElegida);
     }
 
 } // ← Única llave de cierre de DetalleViajeActivity

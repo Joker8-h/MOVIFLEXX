@@ -23,7 +23,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.arlys.moviflexx.R;
@@ -48,7 +47,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Locale;
 
-public class BuscarRuta extends AppCompatActivity {
+public class BuscarRuta extends BaseActivity {
 
     private static final String TAG          = "BuscarRutaActivity";
     private static final int    REQ_LOCATION = 2001;
@@ -425,5 +424,25 @@ public class BuscarRuta extends AppCompatActivity {
         p.setTypeface(Typeface.DEFAULT_BOLD); p.setTextAlign(Paint.Align.CENTER);
         c.drawText(letra, size / 2f, size / 2f + 7, p);
         return bmp;
+    }
+
+    // ─── SCREEN DESCRIPTOR ────────────────────────────────────────────────────
+
+    @Override
+    public String getNombrePantalla() {
+        return "Búsqueda de Rutas";
+    }
+
+    @Override
+    public String getDescripcionPantalla() {
+        return "Hay un campo para escribir tu destino o parada. "
+                + "También hay un mini mapa que muestra tu ubicación actual. "
+                + "Abajo aparecerán los viajes disponibles cuando busques.";
+    }
+
+    @Override
+    public String getOpcionesPantalla() {
+        return "Puedes decir: quiero ir al centro, buscar viaje, "
+                + "o decir el nombre de un destino. También puedes decir: ir atrás.";
     }
 }

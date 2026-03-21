@@ -24,7 +24,7 @@ import org.json.JSONObject;
 import java.text.NumberFormat;
 import java.util.Locale;
 
-public class PagoActivity extends AppCompatActivity {
+public class PagoActivity extends BaseActivity {
 
     private static final String TAG        = "PagoActivity";
     private static final int    POLLING_MS = 5_000;

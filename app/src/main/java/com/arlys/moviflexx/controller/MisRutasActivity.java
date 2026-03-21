@@ -9,7 +9,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -27,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class MisRutasActivity extends AppCompatActivity {
+public class MisRutasActivity extends BaseActivity {
 
     // ── Tabs ──────────────────────────────────────────────────────────────────
     private TextView     tabRutas, tabHistorial;
@@ -322,5 +321,15 @@ public class MisRutasActivity extends AppCompatActivity {
         if (txtContadorCalificados != null)
             txtContadorCalificados.setText(viajesCalificados.size()
                     + (viajesCalificados.size() == 1 ? " viaje" : " viajes"));
+    }
+
+    // ─── SCREEN DESCRIPTOR ────────────────────────────────────────────────────
+    @Override public String getNombrePantalla() { return "Mis Rutas"; }
+    @Override public String getDescripcionPantalla() {
+        int total = rutas.size();
+        return "Tienes " + total + (total == 1 ? " ruta creada." : " rutas creadas.") + " También puedes ver el historial de viajes.";
+    }
+    @Override public String getOpcionesPantalla() {
+        return "Puedes decir: ir atrás, ir al inicio, crear ruta, o ver historial.";
     }
 }

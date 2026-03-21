@@ -47,7 +47,7 @@ import com.google.zxing.PlanarYUVLuminanceSource;
 import com.google.zxing.Result;
 import com.google.zxing.common.HybridBinarizer;
 
-public class QrScanner extends AppCompatActivity {
+public class QrScanner extends BaseActivity {
 
     private static final String TAG = "QR_SCANNER";
     private static final int REQUEST_CAMERA_PERM = 300;

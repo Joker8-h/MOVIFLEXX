@@ -50,7 +50,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MapaPasajero extends AppCompatActivity {
+public class MapaPasajero extends BaseActivity {
 
     private static final String TAG = "MapaPasajero";
 
