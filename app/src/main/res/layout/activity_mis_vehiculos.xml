@@ -167,17 +167,6 @@
             android:lineSpacingMultiplier="1.4"/>
     </LinearLayout>
 
-    <!-- FAB teal -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAgregarVehiculo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="20dp"
-        android:src="@drawable/ic_add"
-        app:backgroundTint="#00CED1"
-        app:tint="#FFFFFF"
-        app:elevation="8dp"
-        android:contentDescription="Agregar vehículo"/>
+
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

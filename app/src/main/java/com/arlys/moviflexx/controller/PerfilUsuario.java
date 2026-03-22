@@ -142,8 +142,9 @@ public class PerfilUsuario extends BaseActivity {
 
     // ─── REEMPLAZA el método sincronizarHeaderDrawer() en PerfilUsuario.java ───
 // El resto del archivo NO cambia.
+    @Override
+    protected void sincronizarHeaderDrawer() {
 
-    private void sincronizarHeaderDrawer() {
         if (navView == null) return;
         View header = navView.getHeaderView(0);
         if (header == null) return;

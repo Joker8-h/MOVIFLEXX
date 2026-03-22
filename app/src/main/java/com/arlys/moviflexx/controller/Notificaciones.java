@@ -179,7 +179,8 @@ public class Notificaciones extends BaseActivity {
         rvNotificaciones = findViewById(R.id.rv_notificaciones);
         progressBar      = findViewById(R.id.progress_notificaciones);
         layoutEmpty      = findViewById(R.id.layout_empty_notif);
-        btnBack          = findViewById(R.id.btn_back);
+        View btnBack = findViewById(R.id.btn_back);
+        if (btnBack != null) btnBack.setOnClickListener(v -> onBackPressed());
         btnMarcarTodas   = findViewById(R.id.btn_marcar_todas);
     }
 

@@ -7,49 +7,52 @@
     android:orientation="vertical"
     android:background="#EEF9F7">
 
-    <!-- HEADER -->
+    <!-- HEADER — altura automática + padding status bar -->
     <LinearLayout
         android:id="@+id/card_header"
         android:layout_width="match_parent"
-        android:layout_height="68dp"
-        android:orientation="horizontal"
+        android:layout_height="101dp"
+        android:background="@drawable/fondooomoviflex"
+        android:elevation="6dp"
         android:gravity="center_vertical"
-        android:background="#9FE0D8"
+        android:orientation="horizontal"
         android:paddingStart="8dp"
+        android:paddingTop="40dp"
         android:paddingEnd="12dp"
-        android:elevation="4dp">
+        android:paddingBottom="12dp">
 
+        <!-- Botón atrás -->
         <FrameLayout
             android:id="@+id/btnBack"
             android:layout_width="42dp"
             android:layout_height="42dp"
-            android:layout_marginEnd="14dp"
+            android:layout_marginEnd="10dp"
             android:background="@drawable/bg_icon_circle_white_alpha"
             android:clickable="true"
             android:focusable="true">
+
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:layout_gravity="center"
                 android:contentDescription="Volver"
                 android:src="@drawable/ic_arrow_back"
-                app:tint="#FFFFFF"/>
+                app:tint="#2C3E50" />
         </FrameLayout>
-        <!-- ════════════════════════════════════════════
-             AVATAR — foto real o inicial de fallback
-        ════════════════════════════════════════════ -->
+
+        <!-- AVATAR -->
         <FrameLayout
-            android:layout_width="42dp"
-            android:layout_height="42dp"
-            android:layout_marginStart="10dp">
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginEnd="12dp">
 
             <!-- Inicial (visible por defecto) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_mi_inicial_chat"
-                android:layout_width="42dp"
-                android:layout_height="42dp"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
                 app:cardBackgroundColor="@android:color/transparent"
-                app:cardCornerRadius="21dp"
+                app:cardCornerRadius="23dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="0dp">
 
@@ -57,86 +60,88 @@
                     android:id="@+id/tvAvatarHeader"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:background="@drawable/bg_circle_teal_dark"
                     android:gravity="center"
                     android:text="C"
-                    android:textSize="17sp"
-                    android:textStyle="bold"
-                    android:textColor="#1AB99F"
-                    android:background="@drawable/bg_circle_teal_dark"/>
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Foto real Cloudinary (oculta por defecto) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_mi_foto_chat"
-                android:layout_width="42dp"
-                android:layout_height="42dp"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
                 android:visibility="gone"
-                app:cardCornerRadius="21dp"
+                app:cardCornerRadius="23dp"
                 app:cardElevation="0dp"
                 app:strokeColor="#FFFFFF"
-                app:strokeWidth="1.5dp">
+                app:strokeWidth="2dp">
 
                 <ImageView
                     android:id="@+id/iv_mi_foto_chat"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    android:contentDescription="Mi foto de perfil"/>
+                    android:contentDescription="Foto de perfil"
+                    android:scaleType="centerCrop" />
             </com.google.android.material.card.MaterialCardView>
 
         </FrameLayout>
 
+        <!-- Nombre + estado -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginStart="10dp">
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tvNombreChat"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Conductor"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
+                android:ellipsize="end"
                 android:maxLines="1"
-                android:ellipsize="end"/>
+                android:text="Conductor"
+                android:textColor="#2C3E50"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:layout_marginTop="3dp"
                 android:gravity="center_vertical"
-                android:layout_marginTop="3dp">
+                android:orientation="horizontal">
 
                 <View
                     android:id="@+id/dotEstado"
                     android:layout_width="7dp"
                     android:layout_height="7dp"
-                    android:background="@drawable/circle_offline"
-                    android:layout_marginEnd="5dp"/>
+                    android:layout_marginEnd="5dp"
+                    android:background="@drawable/circle_offline" />
 
                 <TextView
                     android:id="@+id/tvEstado"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text=""
-                    android:textSize="11sp"
-                    android:textColor="#CCF5F1"/>
+                    android:textColor="#D0F5F0"
+                    android:textSize="11sp" />
             </LinearLayout>
         </LinearLayout>
 
+        <!-- Menú opciones -->
         <ImageButton
             android:id="@+id/btnMenuOpciones"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:src="@drawable/ic_menu_more"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Más opciones"
-            app:tint="#FFFFFF"
-            android:padding="6dp"/>
+            android:padding="6dp"
+            android:src="@drawable/ic_menu_more"
+            app:tint="#2C3E50" />
+
     </LinearLayout>
 
     <!-- LISTA DE MENSAJES -->

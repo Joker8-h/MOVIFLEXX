@@ -85,10 +85,11 @@ public class Chat extends BaseActivity {
     private ImageButton       btnEnviar;
     private ImageButton       btnAudio;
     private ImageButton       btnMenuOpciones;
+
     private TextView          tvNombreChat;
     private TextView          tvEstado;
     private View              dotEstado;
-    private ImageButton       btnBack;
+    private View btnBack;
     private LinearLayout      panelSugerencias;
     private ChipGroup         chipGroupSugerencias;
     private boolean           sugerenciasOcultas = false;
@@ -153,7 +154,6 @@ public class Chat extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         getWindow().setStatusBarColor(
                 android.graphics.Color.parseColor("#0ABFA3"));
         getWindow().getDecorView().setSystemUiVisibility(

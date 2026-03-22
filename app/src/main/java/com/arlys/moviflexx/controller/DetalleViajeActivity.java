@@ -339,11 +339,11 @@ public class DetalleViajeActivity extends BaseActivity {
                     || EST_COMPLETADO.equals(estadoReserva);
 
             if (pasajeroRecogido && gpParada != null) {
-                pedirSegmentoConductorAParada(nuevaPos, gpParada);
+                pedirSegmentoConductorAParada(nuevaPos, gpParada, lastRenderId);
             } else if (!pasajeroRecogido) {
                 GeoPoint puntoSubida = gpSubida != null ? gpSubida : gpOrigen;
                 if (puntoSubida != null)
-                    pedirSegmentoConductorAParada(nuevaPos, puntoSubida);
+                    pedirSegmentoConductorAParada(nuevaPos, puntoSubida, lastRenderId);
             }
         }
 
@@ -3057,6 +3057,14 @@ public class DetalleViajeActivity extends BaseActivity {
                 if(pts.size()>=2){puntosRutaWaypoint=pts; runOnUiThread(this::renderizarMapa);}
             } catch(Exception e){Log.w(TAG,"Ruta waypoint falló",e);fallbackOsrmWaypoint();}
         }).start();
+    }
+
+    private void pedirSegmentoConductorAParada(GeoPoint desde, GeoPoint hasta) {
+        pedirSegmentoConductorAParada(desde, hasta, lastRenderId);
+    }
+
+    private void pedirSegmentoConductorADestino(GeoPoint desde) {
+        pedirSegmentoConductorADestino(desde, lastRenderId);
     }
 
     private void fallbackOsrmWaypoint() {
