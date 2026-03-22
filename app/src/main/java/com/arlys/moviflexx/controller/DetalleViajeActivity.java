@@ -2586,9 +2586,9 @@ public class DetalleViajeActivity extends BaseActivity {
 
     private void pedirSegmentoConductorADestino(GeoPoint desde, long requestId) {
         if (desde == null || gpDestino == null) return;
-        
+
         final ArrayList<GeoPoint> waypoints = extraerWaypointsEntrePuntos(desde, gpDestino);
-        
+
         new Thread(() -> {
             try {
                 StringBuilder coordsB = new StringBuilder();
@@ -2598,9 +2598,9 @@ public class DetalleViajeActivity extends BaseActivity {
                 }
                 coordsB.append(";").append(lngDestino).append(",").append(latDestino);
                 String params = "?overview=full&geometries=geojson";
-                
+
                 ArrayList<GeoPoint> pts = null;
-                
+
                 // Fallback directo si no hay waypoints
                 if (waypoints.isEmpty()) {
                     String seg = desde.getLongitude() + "," + desde.getLatitude() + ";"
@@ -3344,7 +3344,7 @@ public class DetalleViajeActivity extends BaseActivity {
                 double montoFinal = precioViaje;
                 if (precioCalculadoPasajero > 0) montoFinal = precioCalculadoPasajero;
                 else if (precioCalculadoPersistente > 0) montoFinal = precioCalculadoPersistente;
-                
+
                 final double finalM = montoFinal;
                 mostrarBotonPago(finalM, nombreConductorViaje);
                 View divider = findViewById(R.id.divider_pago);
@@ -6911,7 +6911,7 @@ public class DetalleViajeActivity extends BaseActivity {
 
     private void mostrarBotonPagoRecibido(JSONObject pago) {
         if (btnPagarViaje == null) return;
-        
+
         // Priorizar el precio acordado (Bruto) sobre el monto del pago (que puede traer comisión/Neto)
         double monto = 0;
         // Buscar primero en el objeto de pago (si trae la reserva anidada)
@@ -7808,17 +7808,17 @@ public class DetalleViajeActivity extends BaseActivity {
     @Override public String getNombrePantalla() { return "Detalle del Viaje"; }
     @Override public String getDescripcionPantalla() {
         return "Estás en el detalle de un viaje. "
-             + "Puedes ver el mapa con la ruta, información del conductor, "
-             + "las paradas, el precio y los pasajeros reservados. "
-             + "Si es un viaje disponible puedes reservar.";
+                + "Puedes ver el mapa con la ruta, información del conductor, "
+                + "las paradas, el precio y los pasajeros reservados. "
+                + "Si es un viaje disponible puedes reservar.";
     }
     @Override public String getOpcionesPantalla() {
         return "Puedes decir: reservar, confirmar, ir atrás, "
-             + "o preguntar: ¿cuánto cuesta?, ¿cuántos cupos hay?";
+                + "o preguntar: ¿cuánto cuesta?, ¿cuántos cupos hay?";
     }
 
     // ─── VOICE ASSISTANT BRIDGE ──────────────────────────────────────────────
-    
+
     /**
      * Devuelve una lista con los nombres de todas las paradas (puntos de subida y bajada).
      */
@@ -7868,4 +7868,4 @@ public class DetalleViajeActivity extends BaseActivity {
         publicarParadaYReservarConSubida(subidaTemp, bajadaElegida);
     }
 
-} // ← Única llave de cierre de DetalleViajeActivity
+}

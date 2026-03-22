@@ -660,7 +660,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="📅 Toca el campo para elegir fecha y hora de salida"
+                        android:text="Toca el campo para elegir fecha y hora de salida"
                         android:textSize="11sp"
                         android:textColor="@color/gray_400"
                         android:layout_marginBottom="20dp"
