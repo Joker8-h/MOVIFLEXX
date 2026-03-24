@@ -117,6 +117,7 @@ public class Chat extends BaseActivity {
     private long   idConversacion  = -1;
     private String nombreContacto  = "Chat";
     private String fotoContactoUrl = "";
+    private String fcmTokenContacto = "";
 
     // ── Presencia ─────────────────────────────────────────────────────────────
     private long    timestampUltimoMensajeContacto = 0L;
@@ -325,6 +326,7 @@ public class Chat extends BaseActivity {
     private void cargarNombreDesdeConversacion() {
         ConexionApi.getInstance(this).getObject(Constantes.CHAT_CONVERSACIONES + "/" + idConversacion,
                 response -> {
+                    extraerTokenContacto(response);
                     String nom = resolverNombreContacto(response);
                     if (nom != null && !nom.isEmpty()) {
                         nombreContacto = nom;
@@ -351,6 +353,25 @@ public class Chat extends BaseActivity {
 
     private long   leerIdSeguroChat(JSONObject o) { if(o==null) return -1; for(String c:new String[]{"id","idUsuarios","idUsuario","userId","user_id"}){long v=o.optLong(c,-1);if(v>0)return v;} return -1; }
     private String extraerNombreChat(JSONObject o) { if(o==null)return null; for(String c:new String[]{"nombre","nombreCompleto","name","nombres"}){String v=o.optString(c,"");if(!v.isEmpty()&&!v.equals("null"))return v;} String n=o.optString("nombres",""),a=o.optString("apellidos",""); if(!n.isEmpty()||!a.isEmpty())return(n+" "+a).trim(); return null; }
+
+    private void extraerTokenContacto(JSONObject conv) {
+        if (conv == null) return;
+        long idPas = conv.optLong("idPasajero",-1), idCond = conv.optLong("idConductor",-1);
+        JSONObject pasObj = conv.optJSONObject("pasajero"), condObj = conv.optJSONObject("conductor");
+        JSONObject targetObj = null;
+        if (idPas > 0 && idCond > 0) {
+            targetObj = (idPas == idUsuarioActual) ? condObj : (idCond == idUsuarioActual ? pasObj : null);
+        } else if (pasObj != null && condObj != null) {
+            long idP = leerIdSeguroChat(pasObj), idC = leerIdSeguroChat(condObj);
+            targetObj = (idP == idUsuarioActual) ? condObj : (idC == idUsuarioActual ? pasObj : null);
+        } else {
+            JSONObject u1 = conv.optJSONObject("usuario1"), u2 = conv.optJSONObject("usuario2");
+            if (u1 != null && u2 != null) targetObj = leerIdSeguroChat(u1) == idUsuarioActual ? u2 : u1;
+        }
+        if (targetObj != null) {
+            fcmTokenContacto = targetObj.optString("fcmToken", targetObj.optString("tokenFCM", ""));
+        }
+    }
 
     // ── ESCRIBIENDO EN TIEMPO REAL ────────────────────────────────────────────
     private void enviarEstadoEscribiendo(boolean escribiendo) {
@@ -603,7 +624,7 @@ public class Chat extends BaseActivity {
 
     // ── ENVIAR MENSAJE ────────────────────────────────────────────────────────
     private void enviarMensaje(){if(etMensaje.getText()==null)return;String texto=etMensaje.getText().toString().trim();if(texto.isEmpty())return;enviarEstadoEscribiendo(false);ocultarSugerencias(true);etMensaje.setText("");btnEnviar.setEnabled(false);btnEnviar.setAlpha(0.35f);Mensaje opt=new Mensaje();opt.setId(-System.currentTimeMillis());opt.setContenido(texto);opt.setIdEmisor(idUsuarioActual);opt.setEsPropio(true);opt.setEnviando(true);opt.setLeido(false);opt.setFechaEnvio(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",Locale.getDefault()).format(new Date()));listaMensajes.add(opt);adapter.notifyItemInserted(listaMensajes.size()-1);scrollAbajo();JSONObject body=new JSONObject();try{body.put("idConversacion",idConversacion);body.put("idRemitente",idUsuarioActual);body.put("mensaje",texto);body.put("tipo","TEXTO");body.put("conversacionId",idConversacion);body.put("emisorId",idUsuarioActual);body.put("contenido",texto);}catch(JSONException e){Log.e(TAG,"❌ JSON body",e);marcarFallido(opt);return;}ConexionApi.getInstance(this).post(Constantes.CHAT_MENSAJES,body,response->runOnUiThread(()->confirmarEnvio(opt,response)),error->runOnUiThread(()->marcarFallido(opt)));}
-    private void confirmarEnvio(Mensaje opt,JSONObject response){try{Mensaje real=Mensaje.fromJson(response,idUsuarioActual);real.setLeido(false);int idx=listaMensajes.indexOf(opt);if(idx>=0){listaMensajes.set(idx,real);adapter.notifyItemChanged(idx);}if(real.getId()>ultimoIdVisto)ultimoIdVisto=real.getId();}catch(Exception e){marcarFallido(opt);}}
+    private void confirmarEnvio(Mensaje opt,JSONObject response){try{Mensaje real=Mensaje.fromJson(response,idUsuarioActual);real.setLeido(false);int idx=listaMensajes.indexOf(opt);if(idx>=0){listaMensajes.set(idx,real);adapter.notifyItemChanged(idx);}if(real.getId()>ultimoIdVisto)ultimoIdVisto=real.getId(); if (!fcmTokenContacto.isEmpty()) { com.arlys.moviflexx.model.PushNotificationHelper.enviarPush(this, fcmTokenContacto, "Nuevo mensaje", opt.getContenido(), "MENSAJE"); } }catch(Exception e){marcarFallido(opt);}}
     private void marcarFallido(Mensaje m){m.setEnviando(false);m.setFallido(true);adapter.notifyDataSetChanged();Toast.makeText(this,"No se pudo enviar el mensaje",Toast.LENGTH_SHORT).show();}
 
     // ── MENÚ ──────────────────────────────────────────────────────────────────

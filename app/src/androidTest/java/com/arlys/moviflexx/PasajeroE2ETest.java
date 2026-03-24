@@ -26,6 +26,8 @@ import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.*;
 import static org.hamcrest.Matchers.containsString;
 
+import java.util.List;
+
 /**
  * TEST E2E PASAJERO (V1 — Flujo de Reserva Completo)
  * 

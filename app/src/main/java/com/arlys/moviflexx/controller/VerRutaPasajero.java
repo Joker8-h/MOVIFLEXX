@@ -505,6 +505,7 @@ public class VerRutaPasajero extends BaseActivity {
             ConexionApi.getInstance(this).post(endpoint, body,
                     response -> {
                         mostrarDialogoExito();
+                        notificarConductorNuevaReserva();
                     },
                     error -> {
                         Log.e(TAG, "Error paradas: " + error.toString());
@@ -641,6 +642,7 @@ public class VerRutaPasajero extends BaseActivity {
             ConexionApi.getInstance(this).post(Constantes.RESERVAS, body,
                     response -> {
                         mostrarDialogoExito();
+                        notificarConductorNuevaReserva();
                         btnSolicitarViaje.setEnabled(true);
                         btnSolicitarViaje.setText("SOLICITAR VIAJE");
                     },
@@ -670,6 +672,30 @@ public class VerRutaPasajero extends BaseActivity {
         return R * c;
     }
 
+    /* ═══════════════════════════════════════════════════════
+       NOTIFICAR AL CONDUCTOR DE UNA NUEVA RESERVA
+    ═══════════════════════════════════════════════════════ */
+    private void notificarConductorNuevaReserva() {
+        ConexionApi.getInstance(this).getObject(
+                Constantes.viajePorId((long) idViaje),
+                viaje -> {
+                    JSONObject cond = viaje.optJSONObject("conductor");
+                    if (cond == null && viaje.optJSONObject("vehiculo") != null) {
+                        cond = viaje.optJSONObject("vehiculo").optJSONObject("usuario");
+                    }
+                    if (cond != null) {
+                        String token = cond.optString("fcmToken", cond.optString("tokenFCM", ""));
+                        if (!token.isEmpty()) {
+                            com.arlys.moviflexx.model.PushNotificationHelper.enviarPush(
+                                    this, token, "Nueva Reserva 🚗",
+                                    "Un pasajero quiere unirse a tu viaje en: " + paradaPasajero, "RESERVA"
+                            );
+                        }
+                    }
+                },
+                error -> Log.e(TAG, "No se pudo obtener el conductor para notificar.")
+        );
+    }
 
     /* ═══════════════════════════════════════════════════════
        DIÁLOGO DE ÉXITO

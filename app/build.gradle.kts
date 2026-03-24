@@ -31,6 +31,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
     // ✅ Resuelve conflicto de archivos duplicados entre android-mail y android-activation
     packaging {
         resources {

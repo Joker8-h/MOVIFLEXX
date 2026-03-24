@@ -86,7 +86,8 @@ public class RouteManager {
     }
 
     // ── Parser manual de JSON → RouteOptionsResponse ──────────────────────────
-    private RouteOptionsResponse parseResponse(String json) throws Exception {
+    @androidx.annotation.VisibleForTesting
+    RouteOptionsResponse parseResponse(String json) throws Exception {
         JSONObject root = new JSONObject(json);
 
         RouteOptionsResponse response = new RouteOptionsResponse();

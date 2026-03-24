@@ -2184,6 +2184,10 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
                 r2 -> new Handler(Looper.getMainLooper()).post(() -> {
                     Toast.makeText(context, "Viaje finalizado correctamente", Toast.LENGTH_SHORT).show();
                     notifyDataSetChanged();
+
+                    com.arlys.moviflexx.model.PushNotificationHelper.notificarPasajerosViaje(context, viajeId,
+                            "Viaje Finalizado 🏁", "Has llegado a tu destino. ¡No olvides calificar!");
+
                     // Tras finalizar: muestra el sheet de pagos (que luego lleva a calificaciones)
                     new Handler(Looper.getMainLooper()).postDelayed(
                             () -> mostrarSheetPagosConductor(viajeId), 800);
@@ -2252,6 +2256,14 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
                 r -> {
                     Toast.makeText(context, "Viaje " + accion, Toast.LENGTH_SHORT).show();
                     notifyDataSetChanged();
+                    
+                    if ("iniciado".equalsIgnoreCase(accion)) {
+                        com.arlys.moviflexx.model.PushNotificationHelper.notificarPasajerosViaje(context, viajeId,
+                            "Viaje Iniciado 🚙", "Tu conductor ha iniciado el viaje. ¡Ve al punto de encuentro!");
+                    } else if ("cancelado".equalsIgnoreCase(accion)) {
+                        com.arlys.moviflexx.model.PushNotificationHelper.notificarPasajerosViaje(context, viajeId,
+                            "Viaje Cancelado ⚠️", "El conductor ha cancelado este viaje.");
+                    }
                 },
                 e -> Toast.makeText(context, "Error al " + accion, Toast.LENGTH_SHORT).show());
     }
