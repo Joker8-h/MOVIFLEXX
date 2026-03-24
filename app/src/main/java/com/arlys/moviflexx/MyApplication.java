@@ -22,6 +22,9 @@ public class MyApplication extends Application {
     /** Activity actualmente visible (foreground). */
     private static Activity currentActivity = null;
 
+    /** Flag para detectar si la app se acaba de abrir */
+    public static boolean isAppJustOpened = true;
+
     @Override
     public void onCreate() {
         super.onCreate();

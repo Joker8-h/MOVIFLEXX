@@ -59,6 +59,13 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
     private Recognizer recognizer;
     private AudioRecord audioRecord;
 
+    /** 
+     * Flag crítico para Espresso E2E: 
+     * Si es true, NUNCA activa el micrófono ni procesa comandos 
+     * para evitar que el ruido ambiental reviente la UI del test. 
+     */
+    public static boolean isTestMode = false;
+
     /** Estado de activación del asistente. */
     private volatile boolean assistantEnabled = true;
 
@@ -108,13 +115,11 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
                 r = tts.setLanguage(new Locale("es"));
             if (r == TextToSpeech.LANG_MISSING_DATA || r == TextToSpeech.LANG_NOT_SUPPORTED)
                 tts.setLanguage(Locale.getDefault());
-            tts.setSpeechRate(0.95f);
-            tts.setPitch(1.1f);
             isInitialized = true;
             setupUtteranceListener();
             configurarVoz();
-            Log.d(TAG, "TTS inicializado.");
-            showToast("Movi está lista 🎙️");
+            Log.d(TAG, "TTS inicializado (Modo JARVIS).");
+            showToast("Asistente listo");
         } else {
             Log.e(TAG, "TTS falló: " + status);
         }
@@ -123,15 +128,28 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
     private void configurarVoz() {
         if (tts == null) return;
         try {
-            android.speech.tts.Voice best = null;
+            android.speech.tts.Voice bestMale = null;
             for (android.speech.tts.Voice v : tts.getVoices()) {
                 String n = v.getName().toLowerCase();
                 if (!n.contains("es")) continue;
-                if (v.isNetworkConnectionRequired()) { best = v; break; }
-                if (n.contains("female") || n.contains("femenina") || n.contains("soft")) best = v;
+                // Priorizar voces masculinas para simular a JARVIS
+                if (n.contains("male") && !n.contains("female") || n.contains("masculina")) {
+                    bestMale = v;
+                    if (!v.isNetworkConnectionRequired()) break; // Voz local masculina es ideal
+                }
             }
-            if (best != null) tts.setVoice(best);
-        } catch (Exception e) { Log.w(TAG, "Voz: " + e.getMessage()); }
+            if (bestMale != null) {
+                tts.setVoice(bestMale);
+                Log.d(TAG, "Voz seleccionada (JARVIS): " + bestMale.getName());
+            } else {
+                Log.d(TAG, "No se encontró voz masculina explícita.");
+            }
+            
+            // Tono ligeramente grave, no en exceso (0.85f) para evitar que suene robótico/"feo"
+            tts.setPitch(0.85f); 
+            tts.setSpeechRate(0.95f);
+            
+        } catch (Exception e) { Log.w(TAG, "Error configurando voz: " + e.getMessage()); }
     }
 
     private void setupUtteranceListener() {
@@ -186,7 +204,21 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
                 "Compartir viaje con MoviFlex ayuda a descongestionar el tráfico de la ciudad."
         };
         int i = (int)(Math.random() * datos.length);
-        hablarEnCola("¡Hola, " + nombre + "! Soy Movi, qué gusto verte. " + datos[i]);
+        
+        String saludoBase = "Saludos, " + nombre + ". Sistemas en línea. " + datos[i];
+        String clima = obtenerClimaSimulado();
+        
+        hablarEnCola(saludoBase + " Además, " + clima + " ¿A dónde nos dirigimos hoy?");
+    }
+
+    private String obtenerClimaSimulado() {
+        String[] climas = {
+            "el clima actual es despejado con una agradable temperatura de 22 grados centígrados.",
+            "hoy tenemos un día soleado, perfecto para iniciar la ruta.",
+            "actualmente el cielo está parcialmente nublado con 19 grados.",
+            "el clima se percibe un poco fresco hoy con 16 grados. Sugiero llevar abrigo."
+        };
+        return climas[(int)(Math.random() * climas.length)];
     }
 
     // =====================================================================
@@ -196,6 +228,12 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
     public void escuchar() { start(); }
 
     public synchronized void start() {
+        // En tests E2E, bloqueamos la activación del micrófono
+        if (isTestMode) {
+            Log.d(TAG, "Test E2E en curso: Asistente de voz bloqueado.");
+            return;
+        }
+        
         if (running) return;
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -267,8 +305,8 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
                         mode = Mode.COMMAND;
                         commandModeUntilMs = now + COMMAND_WINDOW_MS;
                         recognizer.reset();
-                        hablar("Asistente reactivado. Hola de nuevo, ¿en qué puedo ayudarte?");
-                        showToast("Movi activada 🎙️");
+                        hablar("Sistemas reactivados. ¿En qué puedo asistirle?");
+                        showToast("Asistente activado 🎙️");
                     }
                     continue; 
                 }
@@ -279,8 +317,8 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
                         mode = Mode.COMMAND;
                         commandModeUntilMs = now + COMMAND_WINDOW_MS;
                         recognizer.reset();
-                        hablar("Hola, soy Movi. ¿En qué puedo ayudarte?");
-                        showToast("Movi te escucha 🎙️");
+                        hablar("A su servicio. ¿Qué necesita?");
+                        showToast("Escuchando comandos 🎙️");
                         continue;
                     }
                     if (procesarComando(txt)) { lastWakeMs = now; recognizer.reset(); }
@@ -332,8 +370,8 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
         }
 
         // ── 2. ACTIVAR / DESACTIVAR ──
-        if (lc.contains("desactivar") || lc.contains("apagar asistente") || lc.contains("silencio movi")) {
-            hablar("Entendido, me desactivaré. Estaré en silencio hasta que digas la palabra activar.");
+        if (lc.contains("desactivar") || lc.contains("apagar asistente") || lc.contains("silencio")) {
+            hablar("Entendido, apagando sistemas de voz. Estaré en silencio hasta que ordene activar.");
             assistantEnabled = false;
             if (voiceFlow.isActive()) voiceFlow.cancelar();
             mode = Mode.WAKE;
@@ -341,15 +379,14 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
         }
 
         if (lc.contains("activar") && !assistantEnabled) {
-            // Este caso ya se maneja en el runLoop, pero por seguridad:
             assistantEnabled = true;
-            hablar("Asistente activado. ¿Qué necesitas?");
+            hablar("Sistemas de voz en línea. ¿Qué orden de navegación tiene en mente?");
             return true;
         }
 
         // ── 2b. Ir a dormir (Modo WAKE sin desactivar) ──
-        if ((lc.trim().equals("movi") || lc.contains("adiós") || lc.contains("adios")) && mode == Mode.COMMAND) {
-            hablar("Entendido, estaré atenta. Solo di Movi cuando me necesites.");
+        if ((containsWakeWord(lc) && lc.contains("adiós") || lc.contains("adios")) && mode == Mode.COMMAND) {
+            hablar("Entendido. Quedo a la espera de sus órdenes.");
             return true;
         }
 
@@ -459,21 +496,21 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
             return true;
         }
 
-        // ── 13. Conversación ──
-        if (lc.contains("hola") || lc.contains("buenos días") || lc.contains("buenas tardes")) {
-            hablar("¡Hola! Soy Movi. ¿En qué puedo ayudarte?"); return true; }
+        // ── 13. Conversación Formal (Estilo JARVIS) ──
+        if (lc.contains("hola") || lc.contains("buenos días") || lc.contains("buenas tardes") || lc.contains("buenas noches")) {
+            hablar("Saludos. Estoy a su entera disposición."); return true; }
         if (lc.contains("cómo estás") || lc.contains("como estas")) {
-            hablar("¡Excelente! Movi lista para acompañarte. ¿Qué necesitas?"); return true; }
+            hablar("Todos los sistemas operan en óptimas condiciones. ¿Cuál es nuestro destino?"); return true; }
         if (lc.contains("quién eres") || lc.contains("quien eres") || lc.contains("como te llamas")) {
-            hablar("Soy Movi, tu asistente inteligente de MoviFlex."); return true; }
+            hablar("Soy su asistente virtual integrado en MoviFlex, programado para garantizar una navegación sin contratiempos."); return true; }
         if (lc.contains("qué es moviflex") || lc.contains("que es moviflex")) {
-            hablar("MoviFlex conecta conductores y pasajeros que van al mismo destino para compartir gastos y reducir emisiones."); return true; }
+            hablar("MoviFlex es una plataforma diseñada para optimizar los viajes diarios, conectando conductores y pasajeros para reducir la huella de carbono térmica urbana."); return true; }
         if (lc.contains("cómo funciona") || lc.contains("como funciona")) {
-            hablar("Si eres pasajero busca y reserva viajes. Si eres conductor publica tu ruta para que otros se unan."); return true; }
+            hablar("Analizo las rutas disponibles y gestiono su itinerario, ya sea reservando un viaje seguro o habilitando uno propio."); return true; }
         if (lc.contains("pagos") || lc.contains("cómo pago") || lc.contains("cuánto cuesta")) {
-            hablar("Los precios se acuerdan antes del viaje. MoviFlex te ayuda a ahorrar compartiendo gastos."); return true; }
+            hablar("Los arreglos financieros se acuerdan previamente, maximizando el ahorro de recursos."); return true; }
         if (lc.contains("seguridad") || lc.contains("es seguro")) {
-            hablar("En MoviFlex todos los conductores pasan verificación y los pasajeros pueden calificar cada viaje."); return true; }
+            hablar("Mis protocolos de seguridad incluyen verificación rigurosa de cada participante en la plataforma. Puede estar tranquilo."); return true; }
 
         // ── 14. Selección de paradas (desde DetalleViajeActivity) ──
         if (lc.contains("donde me subo") || lc.contains("punto de recogida")
@@ -668,7 +705,7 @@ public class VoiceAssistantManager implements TextToSpeech.OnInitListener {
         String n = t.toLowerCase(Locale.ROOT)
                 .replace(" ","").replace("ó","o").replace("í","i")
                 .replace("é","e").replace("á","a");
-        return n.contains("movi") || n.contains("mobi") || n.contains("movy");
+        return n.contains("movi") || n.contains("mobi") || n.contains("movy") || n.contains("jarvis") || n.contains("asistente");
     }
 
     // =====================================================================

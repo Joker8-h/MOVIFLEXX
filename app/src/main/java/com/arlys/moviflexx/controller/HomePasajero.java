@@ -293,7 +293,7 @@ public class HomePasajero extends BaseActivity {
     private void configurarListeners() {
         if (btnBuscarViaje != null)
             btnBuscarViaje.setOnClickListener(v ->
-                    startActivity(new Intent(this, MisReservasActivity.class)));
+                    startActivity(new Intent(this, BuscarRuta.class)));
 
         if (btnMisViajesFrame != null)
             btnMisViajesFrame.setOnClickListener(v -> abrirBottomSheetMisViajes());

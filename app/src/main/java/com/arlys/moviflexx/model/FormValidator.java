@@ -58,7 +58,7 @@ public class FormValidator {
             til.setError("El correo es obligatorio");
             return false;
         }
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(valor).matches()) {
+        if (!valor.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
             til.setError("Ingresa un correo válido (ej: usuario@correo.com)");
             return false;
         }

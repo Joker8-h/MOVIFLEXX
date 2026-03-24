@@ -32,7 +32,7 @@ import android.os.Looper;
  * Proporciona transiciones, animaciones de botones y entrada de vistas.
  */
 public abstract class BaseActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, com.arlys.moviflexx.model.voice.ScreenDescriptor {
 
     // ─── SCREEN DESCRIPTOR ────────────────────────────────────────────────────
     public String getNombrePantalla()    { return "Pantalla de MoviFlexx"; }
@@ -96,8 +96,9 @@ public abstract class BaseActivity extends AppCompatActivity
 
     private void verificarSaludoPendiente() {
         SessionManager session = new SessionManager(this);
-        if (session.isPendingWelcome()) {
+        if (session.isPendingWelcome() || com.arlys.moviflexx.MyApplication.isAppJustOpened) {
             session.setPendingWelcome(false);
+            com.arlys.moviflexx.MyApplication.isAppJustOpened = false;
             String nombre = session.getNombre();
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 if (voiceAssistant != null) voiceAssistant.saludarConDatoCurioso(nombre);

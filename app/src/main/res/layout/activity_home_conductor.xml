@@ -6,17 +6,6 @@
     android:layout_height="match_parent"
     android:background="#F0FAFA">
 
-    <!-- ════════════════════════════════════════════════════
-         BOTTOM NAVIGATION
-    ════════════════════════════════════════════════════ -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_navigation"
-        style="@style/BottomNav.Moviflexx"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        app:elevation="16dp"
-        app:menu="@menu/bottom_navigation_menu" />
 
     <!-- ════════════════════════════════════════════════════
          APP BAR — HEADER
@@ -604,4 +593,5 @@
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
+    <com.google.android.material.bottomnavigation.BottomNavigationView android:id="@+id/bottom_navigation" style="@style/BottomNav.Moviflexx" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="bottom" app:elevation="16dp" app:menu="@menu/bottom_navigation_menu" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
