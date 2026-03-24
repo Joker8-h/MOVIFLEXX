@@ -241,6 +241,12 @@ public class Mapa extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Configuration.getInstance().setUserAgentValue(getPackageName());
+        getWindow().setStatusBarColor(
+                android.graphics.Color.parseColor("#0ABFA3"));
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+
         setContentView(R.layout.activity_mapa);
 
         session      = new SessionManager(this);

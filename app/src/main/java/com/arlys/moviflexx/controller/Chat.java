@@ -66,16 +66,16 @@ public class Chat extends BaseActivity {
     private static final long   TYPING_POLL_MS         = 2000L;
 
     private static final String[] SUGERENCIAS_PASAJERO = {
-            "👋 ¡Hola! ¿Ya saliste hacia el punto de recogida?",
-            "📍 ¿Dónde exactamente me recoges?",
-            "⏱️ ¿Cuánto tardas en llegar?",
-            "💺 ¿Cuántos pasajeros van en el viaje?",
-            "🅿️ ¿Puedes recogerme en otro punto?",
-            "💰 ¿El precio incluye el trayecto completo?",
-            "🧳 ¿Puedo llevar equipaje?",
-            "🔔 Avísame cuando estés cerca, por favor",
-            "🛣️ ¿Cuál es la ruta que tomarás?",
-            "✅ Perfecto, te espero en el punto acordado"
+            "¡Hola! ¿Ya saliste hacia el punto de recogida?",
+            "¿Dónde exactamente me recoges?",
+            "¿Cuánto tardas en llegar?",
+            "¿Cuántos pasajeros van en el viaje?",
+            "¿Puedes recogerme en otro punto?",
+            "¿El precio incluye el trayecto completo?",
+            "¿Puedo llevar equipaje?",
+            "Avísame cuando estés cerca, por favor",
+            "¿Cuál es la ruta que tomarás?",
+            "Perfecto, te espero en el punto acordado"
     };
 
     // ── UI ────────────────────────────────────────────────────────────────────

@@ -71,7 +71,7 @@ public class VehiculosAdapter extends RecyclerView.Adapter<VehiculosAdapter.Vehi
                 h.txtEstado.setBackgroundResource(R.drawable.bg_estado_cancelado);
                 break;
             default:
-                h.txtEstado.setText("📌 " + estado);
+                h.txtEstado.setText("" + estado);
                 break;
         }
     }

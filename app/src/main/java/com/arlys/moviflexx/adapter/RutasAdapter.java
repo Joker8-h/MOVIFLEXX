@@ -283,7 +283,7 @@ public class RutasAdapter extends RecyclerView.Adapter<RutasAdapter.RutaViewHold
         fila1.addView(txtEstado);
 
         TextView txtFecha = new TextView(context);
-        txtFecha.setText(fecha.isEmpty() ? "Sin fecha" : "🕒 " + fecha);
+        txtFecha.setText(fecha.isEmpty() ? "Sin fecha" : "" + fecha);
         txtFecha.setTextSize(12f);
         txtFecha.setTextColor(Color.parseColor("#6B7280"));
         txtFecha.setLayoutParams(new LinearLayout.LayoutParams(0,
@@ -353,7 +353,7 @@ public class RutasAdapter extends RecyclerView.Adapter<RutasAdapter.RutaViewHold
             case "INICIADO":    return "En curso";
             case "FINALIZADO":  return "Finalizado";
             case "CANCELADO":   return "❌ Cancelado";
-            default:            return "📌 " + e;
+            default:            return "" + e;
         }
     }
 

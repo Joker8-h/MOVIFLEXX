@@ -146,7 +146,7 @@ public class BuscarRuta extends BaseActivity {
             if (miUbicacion == null) return;
 
             myLocationOverlay.disableFollowLocation();
-            txtMiUbicacion.setText("📍 " + obtenerDireccion(miUbicacion));
+            txtMiUbicacion.setText("" + obtenerDireccion(miUbicacion));
 
             if (txtEstadoGps != null) {
                 txtEstadoGps.setText("GPS ✓");
@@ -157,7 +157,7 @@ public class BuscarRuta extends BaseActivity {
                 miniMap.getController().setZoom(15.0);
                 ponerMarcadorMiUbicacion();
             }
-            mostrarSnackbar("📍 Ubicación detectada", false);
+            mostrarSnackbar("Ubicación detectada", false);
         }));
     }
 
@@ -351,7 +351,7 @@ public class BuscarRuta extends BaseActivity {
         if (!hora.isEmpty()) {
             String horaCorta = hora.replace("T", " ");
             if (horaCorta.length() > 16) horaCorta = horaCorta.substring(0, 16);
-            setTxt(view, R.id.txt_hora_salida, "🕐 " + horaCorta);
+            setTxt(view, R.id.txt_hora_salida, "" + horaCorta);
         }
 
         // ── Borde de color alternado ──

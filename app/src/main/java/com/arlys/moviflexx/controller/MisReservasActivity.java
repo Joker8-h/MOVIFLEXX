@@ -216,7 +216,7 @@ public class MisReservasActivity extends BaseActivity {
         layoutSugerencias.setVisibility(View.VISIBLE);
         float d=getResources().getDisplayMetrics().density;
         for(String s:sugs){
-            TextView tv=new TextView(this);tv.setText("📍 "+s);tv.setTextSize(13f);tv.setTextColor(Color.parseColor("#004D40"));tv.setPadding((int)(12*d),(int)(10*d),(int)(12*d),(int)(10*d));tv.setClickable(true);tv.setFocusable(true);
+            TextView tv=new TextView(this);tv.setText(""+s);tv.setTextSize(13f);tv.setTextColor(Color.parseColor("#004D40"));tv.setPadding((int)(12*d),(int)(10*d),(int)(12*d),(int)(10*d));tv.setClickable(true);tv.setFocusable(true);
             tv.setOnClickListener(v->{if(editDestino!=null){editDestino.setText(s);editDestino.setSelection(s.length());}layoutSugerencias.setVisibility(View.GONE);});
             layoutSugerencias.addView(tv);
             View sep=new View(this);sep.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,1));sep.setBackgroundColor(Color.parseColor("#E0E0E0"));layoutSugerencias.addView(sep);
@@ -306,7 +306,7 @@ public class MisReservasActivity extends BaseActivity {
 
     private void actualizarEstadoBusqueda(){
         if(tieneReservaActiva){
-            if(btnBuscar!=null){btnBuscar.setEnabled(false);btnBuscar.setAlpha(0.5f);btnBuscar.setText("🔒 Ya tienes un viaje activo");}
+            if(btnBuscar!=null){btnBuscar.setEnabled(false);btnBuscar.setAlpha(0.5f);btnBuscar.setText("Ya tienes un viaje activo");}
             if(editDestino!=null){editDestino.setEnabled(false);editDestino.setAlpha(0.6f);}
             if(editOrigen!=null){editOrigen.setEnabled(false);editOrigen.setAlpha(0.6f);}
             if(layoutBloqueoBusqueda!=null){layoutBloqueoBusqueda.setVisibility(View.VISIBLE);}else{mostrarBannerBloqueo();}
@@ -314,7 +314,7 @@ public class MisReservasActivity extends BaseActivity {
             if(layoutLabelResultados!=null)layoutLabelResultados.setVisibility(View.GONE);
             if(layoutVacio!=null)layoutVacio.setVisibility(View.GONE);
         }else{
-            if(btnBuscar!=null){btnBuscar.setEnabled(true);btnBuscar.setAlpha(1f);btnBuscar.setText("🔍  Buscar viajes disponibles");}
+            if(btnBuscar!=null){btnBuscar.setEnabled(true);btnBuscar.setAlpha(1f);btnBuscar.setText("Buscar viajes disponibles");}
             if(editDestino!=null){editDestino.setEnabled(true);editDestino.setAlpha(1f);}
             if(editOrigen!=null){editOrigen.setEnabled(true);editOrigen.setAlpha(1f);}
             if(layoutBloqueoBusqueda!=null)layoutBloqueoBusqueda.setVisibility(View.GONE);
@@ -497,7 +497,7 @@ public class MisReservasActivity extends BaseActivity {
         tvO.setEllipsize(android.text.TextUtils.TruncateAt.END); colR.addView(tvO);
         if (!nombrePar.isEmpty() && !nombrePar.equals(destino)) {
             TextView tvP = new TextView(this);
-            tvP.setText("🚏 Bajas en: " + nombrePar); tvP.setTextSize(12f);
+            tvP.setText("Bajas en: " + nombrePar); tvP.setTextSize(12f);
             tvP.setTextColor(Color.parseColor("#0097A7"));
             LinearLayout.LayoutParams lpP = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -526,7 +526,7 @@ public class MisReservasActivity extends BaseActivity {
 
         TextView tvC = new TextView(this);
         tvC.setTag("tv_conductor_" + idViajeFinal);   // ← tag para poder actualizar después
-        tvC.setText("🚗 " + conductorFinal);
+        tvC.setText("" + conductorFinal);
         tvC.setTextSize(12f); tvC.setTextColor(Color.parseColor("#00695C"));
         tvC.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         tvC.setMaxLines(1); tvC.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -545,7 +545,7 @@ public class MisReservasActivity extends BaseActivity {
         if (!fechaSal.isEmpty()) {
             String fl = fechaSal.length() > 10 ? fechaSal.substring(0, 16).replace("T", " ") : fechaSal;
             TextView tvF = new TextView(this);
-            tvF.setText("🕐 " + fl); tvF.setTextSize(11f);
+            tvF.setText("" + fl); tvF.setTextSize(11f);
             tvF.setTextColor(Color.parseColor("#90A4AE"));
             LinearLayout.LayoutParams lpF = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -612,7 +612,7 @@ public class MisReservasActivity extends BaseActivity {
 
                     if (!nombre.isEmpty()) {
                         final String nomFinal = nombre;
-                        runOnUiThread(() -> tvConductor.setText("🚗 " + nomFinal));
+                        runOnUiThread(() -> tvConductor.setText("" + nomFinal));
                     }
                 },
                 error -> Log.w(TAG, "No se pudo cargar viaje " + idViaje + " para nombre conductor")
@@ -630,7 +630,7 @@ public class MisReservasActivity extends BaseActivity {
                     String nombre = extractNombreCompleto(perfil);
                     if (!nombre.isEmpty()) {
                         final String nomFinal = nombre;
-                        runOnUiThread(() -> tvConductor.setText("🚗 " + nomFinal));
+                        runOnUiThread(() -> tvConductor.setText("" + nomFinal));
                     }
                 },
                 error -> Log.w(TAG, "No se pudo cargar perfil conductor id=" + idConductor)
@@ -706,7 +706,7 @@ public class MisReservasActivity extends BaseActivity {
         return "";
     }
 
-    private String etiquetaReserva(String e){switch(e.toUpperCase()){case"ACTIVA":case"CONFIRMADA":return"✅ Confirmada";case"EN_CURSO":case"INICIADO":return"En curso";case"ESPERANDO_RECOGIDA":return"⏳ Esperando recogida";case"RECOGIDO":return"🚗 ¡Te recogieron!";case"PENDIENTE":return"⏳ Pendiente";default:return"📌 "+e;}}
+    private String etiquetaReserva(String e){switch(e.toUpperCase()){case"ACTIVA":case"CONFIRMADA":return"✅ Confirmada";case"EN_CURSO":case"INICIADO":return"En curso";case"ESPERANDO_RECOGIDA":return"⏳ Esperando recogida";case"RECOGIDO":return"¡Te recogieron!";case"PENDIENTE":return"⏳ Pendiente";default:return""+e;}}
     private int badgeColorReserva(String e){switch(e.toUpperCase()){case"ACTIVA":case"CONFIRMADA":return Color.parseColor("#2E7D32");case"EN_CURSO":case"INICIADO":return Color.parseColor("#00838F");case"ESPERANDO_RECOGIDA":return Color.parseColor("#E65100");case"RECOGIDO":return Color.parseColor("#1565C0");case"PENDIENTE":return Color.parseColor("#F57F17");default:return Color.parseColor("#546E7A");}}
 
     // =========================================================================
@@ -908,17 +908,17 @@ public class MisReservasActivity extends BaseActivity {
         // Fila conductor + precio + cupos
         LinearLayout filaI=new LinearLayout(this);filaI.setOrientation(LinearLayout.HORIZONTAL);filaI.setGravity(android.view.Gravity.CENTER_VERTICAL);
         TextView tvCd=new TextView(this);
-        tvCd.setText("🚗 " + condFinal);
+        tvCd.setText("" + condFinal);
         tvCd.setTextSize(12f);tvCd.setTextColor(Color.parseColor("#00695C"));
         tvCd.setLayoutParams(new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f));
         tvCd.setMaxLines(1);tvCd.setEllipsize(android.text.TextUtils.TruncateAt.END);
         filaI.addView(tvCd);
 
         if(precio>0){TextView tvPr=new TextView(this);tvPr.setText("$"+String.format("%.0f",precio));tvPr.setTextSize(13f);tvPr.setTypeface(null,Typeface.BOLD);tvPr.setTextColor(Color.parseColor("#FF6F00"));LinearLayout.LayoutParams lpPr=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpPr.setMargins(p8,0,p8,0);tvPr.setLayoutParams(lpPr);filaI.addView(tvPr);}
-        TextView tvCu=new TextView(this);tvCu.setText(cupos>0?"💺 "+cupos+" libres":"💺 Sin cupos");tvCu.setTextSize(12f);tvCu.setTypeface(null,Typeface.BOLD);tvCu.setTextColor(cupos>0?Color.parseColor("#2E7D32"):Color.parseColor("#C62828"));tvCu.setPadding(p8,p4,p8,p4);GradientDrawable bgCu=new GradientDrawable();bgCu.setShape(GradientDrawable.RECTANGLE);bgCu.setCornerRadius(12*d);bgCu.setColor(cupos>0?Color.parseColor("#E8F5E9"):Color.parseColor("#FFEBEE"));tvCu.setBackground(bgCu);filaI.addView(tvCu);
+        TextView tvCu=new TextView(this);tvCu.setText(cupos>0?""+cupos+" libres":"Sin cupos");tvCu.setTextSize(12f);tvCu.setTypeface(null,Typeface.BOLD);tvCu.setTextColor(cupos>0?Color.parseColor("#2E7D32"):Color.parseColor("#C62828"));tvCu.setPadding(p8,p4,p8,p4);GradientDrawable bgCu=new GradientDrawable();bgCu.setShape(GradientDrawable.RECTANGLE);bgCu.setCornerRadius(12*d);bgCu.setColor(cupos>0?Color.parseColor("#E8F5E9"):Color.parseColor("#FFEBEE"));tvCu.setBackground(bgCu);filaI.addView(tvCu);
         cont.addView(filaI);
 
-        if(!fecha.isEmpty()){String fl=fecha.length()>10?fecha.substring(0,16).replace("T"," "):fecha;TextView tvF=new TextView(this);tvF.setText("🕐 Salida: "+fl);tvF.setTextSize(11f);tvF.setTextColor(Color.parseColor("#90A4AE"));LinearLayout.LayoutParams lpF=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpF.topMargin=p8;tvF.setLayoutParams(lpF);cont.addView(tvF);}
+        if(!fecha.isEmpty()){String fl=fecha.length()>10?fecha.substring(0,16).replace("T"," "):fecha;TextView tvF=new TextView(this);tvF.setText("Salida: "+fl);tvF.setTextSize(11f);tvF.setTextColor(Color.parseColor("#90A4AE"));LinearLayout.LayoutParams lpF=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpF.topMargin=p8;tvF.setLayoutParams(lpF);cont.addView(tvF);}
 
         inner.addView(cont);card.addView(inner);
         card.setOnClickListener(v -> abrirDetalle(idVFinal));
