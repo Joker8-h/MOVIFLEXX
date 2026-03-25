@@ -19,7 +19,7 @@
         app:menu="@menu/bottom_navigation_menu" />
 
     <!-- ════════════════════════════════════════
-         HEADER — mismo teal sólido
+         HEADER
     ════════════════════════════════════════ -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -58,7 +58,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <!-- ── Fila: Título + Campana + Badge ── -->
+                    <!-- ── Fila: Back + Avatar + Título | Badge + Campana ── -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -66,6 +66,76 @@
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
+                        <!-- Botón atrás -->
+                        <FrameLayout
+                            android:id="@+id/btnBack"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/bg_icon_circle_white_alpha"
+                            android:clickable="true"
+                            android:focusable="true">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="Volver"
+                                android:src="@drawable/ic_arrow_back"
+                                app:tint="#2C3E50" />
+                        </FrameLayout>
+
+                        <!-- ── Avatar: foto encima, inicial debajo ── -->
+                        <FrameLayout
+                            android:layout_width="46dp"
+                            android:layout_height="46dp"
+                            android:layout_marginEnd="12dp">
+
+                            <!-- Inicial (visible por defecto) -->
+                            <com.google.android.material.card.MaterialCardView
+                                android:id="@+id/cardAvatarInicial"
+                                android:layout_width="46dp"
+                                android:layout_height="46dp"
+                                android:visibility="visible"
+                                app:cardBackgroundColor="#00CED1"
+                                app:cardCornerRadius="23dp"
+                                app:cardElevation="2dp"
+                                app:strokeWidth="0dp">
+
+                                <TextView
+                                    android:id="@+id/tvInicialUsuario"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:gravity="center"
+                                    android:text="C"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold" />
+
+                            </com.google.android.material.card.MaterialCardView>
+
+                            <!-- Foto de perfil (oculta hasta que cargue) -->
+                            <com.google.android.material.card.MaterialCardView
+                                android:id="@+id/cardAvatarFoto"
+                                android:layout_width="46dp"
+                                android:layout_height="46dp"
+                                android:visibility="gone"
+                                app:cardCornerRadius="23dp"
+                                app:cardElevation="2dp"
+                                app:strokeWidth="0dp">
+
+                                <ImageView
+                                    android:id="@+id/ivAvatarFoto"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:contentDescription="Foto perfil"
+                                    android:scaleType="centerCrop" />
+
+                            </com.google.android.material.card.MaterialCardView>
+
+                        </FrameLayout>
+
+                        <!-- Títulos -->
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -123,9 +193,9 @@
                             android:layout_width="46dp"
                             android:layout_height="46dp"
                             android:background="@drawable/bg_icon_circle_white_alpha"
+                            android:backgroundTint="#00CED1"
                             android:clickable="true"
-                            android:focusable="true"
-                            android:backgroundTint="#00CED1">
+                            android:focusable="true">
 
                             <ImageView
                                 android:layout_width="22dp"
@@ -149,7 +219,6 @@
                     </LinearLayout>
 
                     <!-- ── BUSCADOR ── -->
-                    <!-- Fondo blanco redondeado — mismo estilo que bg_btn_white_rounded -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
@@ -198,7 +267,6 @@
                             android:gravity="center_vertical"
                             android:orientation="horizontal">
 
-                            <!-- Chip Todos — activo: blanco sólido con texto teal -->
                             <TextView
                                 android:id="@+id/chipTodos"
                                 android:layout_width="wrap_content"
@@ -213,7 +281,6 @@
                                 android:textSize="13sp"
                                 android:textStyle="bold" />
 
-                            <!-- Chip No leídos — inactivo: blanco translúcido -->
                             <TextView
                                 android:id="@+id/chipNoLeidos"
                                 android:layout_width="wrap_content"
@@ -227,7 +294,6 @@
                                 android:textColor="#FFFFFF"
                                 android:textSize="13sp" />
 
-                            <!-- Chip Favoritos -->
                             <TextView
                                 android:id="@+id/chipFavoritos"
                                 android:layout_width="wrap_content"
@@ -274,7 +340,7 @@
                 android:paddingTop="8dp"
                 android:paddingBottom="8dp"
                 android:overScrollMode="never"
-                android:visibility="gone"/>
+                android:visibility="gone" />
 
             <!-- ════════════════════════════
                  EMPTY STATE
@@ -284,49 +350,48 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:orientation="vertical"
                 android:gravity="center"
-                android:visibility="gone"
-                android:padding="40dp">
+                android:orientation="vertical"
+                android:padding="40dp"
+                android:visibility="gone">
 
-                <!-- Círculo teal claro con ícono — mismo estilo empty state conductor -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="96dp"
                     android:layout_height="96dp"
                     android:layout_gravity="center_horizontal"
                     android:layout_marginBottom="20dp"
+                    app:cardBackgroundColor="#E0FFFE"
                     app:cardCornerRadius="48dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="#E0FFFE"
                     app:strokeWidth="0dp">
 
                     <ImageView
                         android:layout_width="42dp"
                         android:layout_height="42dp"
                         android:layout_gravity="center"
-                        android:src="@android:drawable/ic_dialog_email"
-                        android:contentDescription="Sin mensajes"/>
+                        android:contentDescription="Sin mensajes"
+                        android:src="@android:drawable/ic_dialog_email" />
                 </com.google.android.material.card.MaterialCardView>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Sin conversaciones"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="#1A2F4A"
+                    android:layout_marginBottom="8dp"
                     android:gravity="center"
-                    android:layout_marginBottom="8dp"/>
+                    android:text="Sin conversaciones"
+                    android:textColor="#1A2F4A"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/txtEmptySubtitle"
                     android:layout_width="210dp"
                     android:layout_height="wrap_content"
-                    android:text="Los chats aparecerán aquí cuando reserves un viaje"
-                    android:textSize="13sp"
-                    android:textColor="#7A9BAA"
                     android:gravity="center"
-                    android:lineSpacingExtra="3dp"/>
+                    android:lineSpacingExtra="3dp"
+                    android:text="Los chats aparecerán aquí cuando reserves un viaje"
+                    android:textColor="#7A9BAA"
+                    android:textSize="13sp" />
 
             </LinearLayout>
 
@@ -347,9 +412,9 @@
                     android:layout_height="96dp"
                     android:layout_gravity="center_horizontal"
                     android:layout_marginBottom="20dp"
+                    app:cardBackgroundColor="#FFFFFF"
                     app:cardCornerRadius="48dp"
                     app:cardElevation="4dp"
-                    app:cardBackgroundColor="#FFFFFF"
                     app:strokeWidth="0dp">
 
                     <ImageView
@@ -358,7 +423,7 @@
                         android:layout_height="60dp"
                         android:layout_gravity="center"
                         android:contentDescription="Cargando"
-                        android:src="@drawable/ic_loading_moviflexx"/>
+                        android:src="@drawable/ic_loading_moviflexx" />
                 </com.google.android.material.card.MaterialCardView>
 
                 <TextView
@@ -369,7 +434,7 @@
                     android:text="MOVIFLEX"
                     android:textColor="#00CED1"
                     android:textSize="11sp"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvLoadingMsg"
@@ -377,7 +442,7 @@
                     android:layout_height="wrap_content"
                     android:text="Cargando mensajes..."
                     android:textColor="#7A9BAA"
-                    android:textSize="13sp"/>
+                    android:textSize="13sp" />
 
             </LinearLayout>
 

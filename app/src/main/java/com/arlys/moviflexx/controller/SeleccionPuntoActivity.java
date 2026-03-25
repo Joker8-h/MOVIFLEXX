@@ -38,28 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Activity dedicada a seleccionar el punto de subida del pasajero.
- *
- * Cómo usarla desde DetalleViajeActivity:
- *
- *   Intent i = new Intent(this, SeleccionPuntoActivity.class);
- *   i.putExtra(EXTRA_LAT_ORIGEN,  latOrigen);
- *   i.putExtra(EXTRA_LNG_ORIGEN,  lngOrigen);
- *   i.putExtra(EXTRA_LAT_DESTINO, latDestino);
- *   i.putExtra(EXTRA_LNG_DESTINO, lngDestino);
- *   i.putExtra(EXTRA_GEOJSON,     geojsonRuta);       // opcional
- *   i.putExtra(EXTRA_VIAJE_ID,    viajeId);            // para posicion conductor
- *   i.putExtra(EXTRA_MODO,        MODO_SUBIDA);        // o MODO_BAJADA
- *   startActivityForResult(i, REQ_SELECCION_PUNTO);
- *
- * Resultado en onActivityResult:
- *   if (resultCode == RESULT_OK) {
- *       double lat  = data.getDoubleExtra(RESULT_LAT, 0);
- *       double lng  = data.getDoubleExtra(RESULT_LNG, 0);
- *       String addr = data.getStringExtra(RESULT_DIRECCION);
- *   }
- */
+
 public class SeleccionPuntoActivity extends BaseActivity {
 
     // ── Claves de Intent ──────────────────────────────────────────────────────

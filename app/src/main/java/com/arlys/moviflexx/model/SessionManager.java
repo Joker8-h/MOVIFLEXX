@@ -216,6 +216,13 @@ public class SessionManager {
             SesionUsuario.setToken(getToken());
         }
     }
+    public void setTotalViajesPublicados(int total) {
+        prefs.edit().putInt("total_viajes_publicados_" + getIdUsuario(), total).apply();
+    }
+
+    public int getTotalViajesPublicados() {
+        return prefs.getInt("total_viajes_publicados_" + getIdUsuario(), 0);
+    }
 
     // ================= LOGOUT =================
 

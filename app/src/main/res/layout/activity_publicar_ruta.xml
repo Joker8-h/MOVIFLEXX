@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:background="@color/bg_screen">
 
-    <!-- BottomNavigationView anclado abajo — igual que HomeConductor -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         style="@style/BottomNav.Moviflexx"
@@ -16,7 +15,6 @@
         app:elevation="12dp"
         app:menu="@menu/bottom_navigation_menu" />
 
-    <!-- ScrollView desplazable que respeta el espacio del BottomNav -->
     <ScrollView
         android:id="@+id/scroll_view"
         android:layout_width="match_parent"
@@ -31,9 +29,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- ══════════════════════════════════════════
-                 HEADER TEAL BOLD
-                 ══════════════════════════════════════════ -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="192dp"
@@ -44,26 +39,61 @@
                 android:paddingEnd="22dp"
                 android:paddingBottom="26dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <!-- ── Fila: Back + Títulos ── -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="4dp"
-                    android:letterSpacing="0.14"
-                    android:text="MOVIFLEXX · CONDUCTOR"
-                    android:textColor="#1A2F4A"
-                    android:textSize="10sp" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="18dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="18dp"
-                    android:letterSpacing="-0.01"
-                    android:text="Planifica tu ruta"
-                    android:textColor="#1A2F4A"
-                    android:textSize="28sp"
-                    android:textStyle="bold" />
+                    <!-- Botón atrás -->
+                    <FrameLayout
+                        android:id="@+id/btnBack"
+                        android:layout_width="42dp"
+                        android:layout_height="42dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="@drawable/bg_icon_circle_white_alpha"
+                        android:clickable="true"
+                        android:focusable="true">
 
-                <!-- Chips GPS + contador -->
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="Volver"
+                            android:src="@drawable/ic_arrow_back"
+                            app:tint="#2C3E50" />
+                    </FrameLayout>
+
+                    <!-- Títulos -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="4dp"
+                            android:letterSpacing="0.14"
+                            android:text="MOVIFLEXX · CONDUCTOR"
+                            android:textColor="#1A2F4A"
+                            android:textSize="10sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:letterSpacing="-0.01"
+                            android:text="Planifica tu ruta"
+                            android:textColor="#1A2F4A"
+                            android:textSize="28sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Chips GPS + contador (sin cambios) -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -120,11 +150,12 @@
                             android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
+
             </LinearLayout>
 
             <!-- ══════════════════════════════════════════
                  CUERPO
-                 ══════════════════════════════════════════ -->
+            ══════════════════════════════════════════ -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

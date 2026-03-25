@@ -137,6 +137,9 @@ public class MisReservasActivity extends BaseActivity {
         initViews();
         verificarPermisosGPS();
         cargarMisReservas();
+
+        View btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null) btnBack.setOnClickListener(v -> onBackPressed());
     }
 
     @Override protected void onResume() {
@@ -336,7 +339,7 @@ public class MisReservasActivity extends BaseActivity {
     }
 
     // =========================================================================
-    //  CARD MI RESERVA — con carga robusta del nombre del conductor
+    //  CARD MI RESERVA
     // =========================================================================
     private void agregarCardMiReserva(JSONObject reserva) {
         float d = getResources().getDisplayMetrics().density;
@@ -345,18 +348,16 @@ public class MisReservasActivity extends BaseActivity {
         int    idViaje   = extraerIdViaje(reserva);
         String origen    = "Origen";
         String destino   = "Destino";
-        String conductor = "";          // ← vacío al principio, se llena abajo
-        double precio    = 0;
+        String conductor = "";
         String estado    = reserva.optString("estado", "ACTIVA");
         String fechaSal  = "";
         int    asientos  = reserva.optInt("numeroAsientos", reserva.optInt("asientos", 1));
         String nombrePar = reserva.optString("nombreParada", "");
-        int    idConductorViaje = -1;   // ← para fallback por API
+        int    idConductorViaje = -1;
 
         JSONObject viajeObj = reserva.optJSONObject("viaje");
         if (viajeObj != null) {
             if (idViaje == 0) idViaje = extraerIdViaje(viajeObj);
-            precio   = viajeObj.optDouble("precio", 0);
             fechaSal = viajeObj.optString("fechaHoraSalida", "");
 
             JSONObject ruta = viajeObj.optJSONObject("ruta");
@@ -365,18 +366,18 @@ public class MisReservasActivity extends BaseActivity {
                 destino = extraerDestinoDeRuta(ruta);
             }
 
-            // ── Extracción robusta del conductor ─────────────────────────────
-            // Intento 1: objeto "conductor" dentro del viaje
+            // Log completo del viaje para diagnóstico
+            logViajeCompleto(viajeObj);
+
+            // Extracción robusta del conductor
             JSONObject condObj = viajeObj.optJSONObject("conductor");
             if (condObj != null) {
                 conductor = extractNombreCompleto(condObj);
-                // Guardar id para fallback por API
                 idConductorViaje = condObj.optInt("id",
                         condObj.optInt("idUsuarios",
                                 condObj.optInt("idUsuario", -1)));
             }
 
-            // Intento 2: campo plano "nombreConductor" / "conductorNombre" en el viaje
             if (conductor.isEmpty()) {
                 conductor = primeraNoVacia(
                         viajeObj.optString("nombreConductor",   ""),
@@ -386,7 +387,6 @@ public class MisReservasActivity extends BaseActivity {
                 );
             }
 
-            // Intento 3: id del conductor en el viaje (para fallback por API)
             if (idConductorViaje <= 0) {
                 idConductorViaje = viajeObj.optInt("idConductor",
                         viajeObj.optInt("conductorId",
@@ -394,7 +394,6 @@ public class MisReservasActivity extends BaseActivity {
             }
         }
 
-        // Intento 4: campo plano directo en la reserva
         if (conductor.isEmpty()) {
             conductor = primeraNoVacia(
                     reserva.optString("nombreConductor", ""),
@@ -403,7 +402,6 @@ public class MisReservasActivity extends BaseActivity {
             );
         }
 
-        // Intento 5: objeto "conductor" directamente en la reserva (sin viaje)
         if (conductor.isEmpty()) {
             JSONObject condReserva = reserva.optJSONObject("conductor");
             if (condReserva != null) {
@@ -414,8 +412,7 @@ public class MisReservasActivity extends BaseActivity {
             }
         }
 
-        // Placeholder mientras carga por API
-        final String conductorFinal  = conductor.isEmpty() ? "Cargando..." : conductor;
+        final String conductorFinal  = conductor;
         final int    idCondFinal     = idConductorViaje;
         final int    idViajeFinal    = idViaje;
 
@@ -450,7 +447,7 @@ public class MisReservasActivity extends BaseActivity {
         esp.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         filaE.addView(esp);
         TextView tvA = new TextView(this);
-        tvA.setText("💺 " + asientos + (asientos == 1 ? " asiento" : " asientos"));
+        tvA.setText("" + asientos + (asientos == 1 ? " asiento" : " asientos"));
         tvA.setTextSize(11f); tvA.setTextColor(Color.parseColor("#1565C0"));
         tvA.setTypeface(null, Typeface.BOLD); tvA.setPadding(p8, p4, p8, p4);
         GradientDrawable bgA = new GradientDrawable();
@@ -519,28 +516,17 @@ public class MisReservasActivity extends BaseActivity {
         lps2.setMargins(0, p8, 0, p8); sep2.setLayoutParams(lps2);
         sep2.setBackgroundColor(Color.parseColor("#E0F2F1")); inner.addView(sep2);
 
-        // Fila conductor + precio — TextView del conductor con tag para actualizar luego
-        LinearLayout filaI = new LinearLayout(this);
-        filaI.setOrientation(LinearLayout.HORIZONTAL);
-        filaI.setGravity(android.view.Gravity.CENTER_VERTICAL);
 
         TextView tvC = new TextView(this);
-        tvC.setTag("tv_conductor_" + idViajeFinal);   // ← tag para poder actualizar después
-        tvC.setText("" + conductorFinal);
+        tvC.setTag("tv_conductor_" + idViajeFinal);
+        // Mostrar nombre si ya lo tenemos, o placeholder mientras carga
+        tvC.setText(conductorFinal.isEmpty() ? "Cargando..." : "" + conductorFinal);
         tvC.setTextSize(12f); tvC.setTextColor(Color.parseColor("#00695C"));
         tvC.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         tvC.setMaxLines(1); tvC.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        filaI.addView(tvC);
 
-        if (precio > 0) {
-            TextView tvP2 = new TextView(this);
-            tvP2.setText(" $" + String.format("%.0f", precio)); tvP2.setTextSize(13f);
-            tvP2.setTypeface(null, Typeface.BOLD); tvP2.setTextColor(Color.parseColor("#FF6F00"));
-            LinearLayout.LayoutParams lpP2 = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            lpP2.setMargins(p8, 0, 0, 0); tvP2.setLayoutParams(lpP2); filaI.addView(tvP2);
-        }
-        inner.addView(filaI);
+
+
 
         if (!fechaSal.isEmpty()) {
             String fl = fechaSal.length() > 10 ? fechaSal.substring(0, 16).replace("T", " ") : fechaSal;
@@ -556,54 +542,145 @@ public class MisReservasActivity extends BaseActivity {
         card.setOnClickListener(v -> abrirDetalle(idViajeFinal));
         if (layoutMisReservas != null) layoutMisReservas.addView(card);
 
-        // ── Fallback por API: si el nombre sigue vacío o es "Cargando..." ────
-        // Intentar cargar el nombre del conductor directamente desde el endpoint del viaje
-        if (conductor.isEmpty() && idViajeFinal > 0) {
-            cargarNombreConductorDesdeViaje(idViajeFinal, tvC);
-        } else if (conductor.isEmpty() && idCondFinal > 0) {
+
+        if (idViajeFinal > 0) {
+            if (conductorFinal.isEmpty()) {
+                cargarNombreConductorDesdeViaje(idViajeFinal, tvC);
+            } else if (!conductorFinal.isEmpty()) {
+                // Ya tenemos nombre, pero verificar si hay uno más completo
+                tvC.setText("" + conductorFinal);
+            }
+        } else if (idCondFinal > 0 && conductorFinal.isEmpty()) {
             cargarNombreConductorPorId(idCondFinal, tvC);
         }
     }
 
-    /**
-     * Carga el nombre del conductor consultando el detalle del viaje.
-     * Actualiza el TextView una vez que llega la respuesta.
-     */
-    private void cargarNombreConductorDesdeViaje(int idViaje, TextView tvConductor) {
-        ConexionApi.getInstance(this).getObject(
-                Constantes.viajePorId((long) idViaje),
-                viajeObj -> {
-                    String nombre = "";
 
-                    // Extraer desde objeto conductor del viaje
+    private void cargarNombreConductorPorId(int idConductor, TextView tvConductor) {
+        if (idConductor <= 0) return;
+
+        String[] endpoints = {
+                Constantes.BASE_URL + "/api/auth/" + idConductor,
+                Constantes.BASE_URL + "/api/usuarios/" + idConductor,
+                Constantes.USUARIOS + "/" + idConductor,
+                Constantes.authPorId((long) idConductor)
+        };
+
+        intentarCargaNombreDesdeEndpoints(endpoints, 0, idConductor, tvConductor);
+    }
+
+    private void intentarCargaNombreDesdeEndpoints(String[] endpoints, int idx,
+                                                   int idConductor, TextView tvConductor) {
+        if (idx >= endpoints.length) {
+            runOnUiThread(() -> tvConductor.setText("Conductor #" + idConductor));
+            return;
+        }
+
+        ConexionApi.getInstance(this).getObjectNoCache(endpoints[idx],
+                perfil -> {
+                    Log.d(TAG, "cargarNombreConductorPorId endpoint[" + idx + "]: "
+                            + perfil.toString().substring(0, Math.min(300, perfil.toString().length())));
+
+                    String nombre = extraerNombreDePerfilCompleto(perfil);
+
+                    if (!nombre.isEmpty()) {
+                        final String nomFinal = nombre;
+                        runOnUiThread(() -> tvConductor.setText("" + nomFinal));
+                    } else {
+                        intentarCargaNombreDesdeEndpoints(endpoints, idx + 1, idConductor, tvConductor);
+                    }
+                },
+                error -> {
+                    int code = (error != null && error.networkResponse != null)
+                            ? error.networkResponse.statusCode : 0;
+                    Log.w(TAG, "cargarNombreConductorPorId endpoint[" + idx + "] falló código=" + code);
+                    intentarCargaNombreDesdeEndpoints(endpoints, idx + 1, idConductor, tvConductor);
+                }
+        );
+    }
+
+    private String extraerNombreDePerfilCompleto(JSONObject perfil) {
+        if (perfil == null) return "";
+
+        // Campos directos
+        for (String k : new String[]{"nombre", "nombreCompleto", "name", "fullName",
+                "nombreUsuario", "displayName"}) {
+            String v = perfil.optString(k, "");
+            if (!v.isEmpty() && !v.equals("null")) return v;
+        }
+
+        // nombres + apellidos
+        String n = perfil.optString("nombres", perfil.optString("primerNombre", ""));
+        String a = perfil.optString("apellidos", perfil.optString("primerApellido", ""));
+        if (!n.isEmpty() || !a.isEmpty()) return (n + " " + a).trim();
+
+        // Sub-objetos anidados
+        for (String sub : new String[]{"usuario", "persona", "perfil", "conductor", "data"}) {
+            JSONObject obj = perfil.optJSONObject(sub);
+            if (obj != null) {
+                for (String k : new String[]{"nombre", "nombreCompleto", "name"}) {
+                    String v = obj.optString(k, "");
+                    if (!v.isEmpty() && !v.equals("null")) return v;
+                }
+                String sn = obj.optString("nombres", "");
+                String sa = obj.optString("apellidos", "");
+                if (!sn.isEmpty() || !sa.isEmpty()) return (sn + " " + sa).trim();
+            }
+        }
+        return "";
+    }
+
+
+    private void cargarNombreConductorDesdeViaje(int idViaje, TextView tvConductor) {
+        if (idViaje <= 0) return;
+
+        String url = Constantes.BASE_URL + "/api/viajes/" + idViaje
+                + "?t=" + System.currentTimeMillis(); // evitar caché
+
+        ConexionApi.getInstance(this).getObjectNoCache(url,
+                viajeObj -> {
+                    logViajeCompleto(viajeObj);
+                    String nombre = "";
+                    int idCond = -1;
+
+                    // Intento 1: objeto "conductor" dentro del viaje
                     JSONObject condObj = viajeObj.optJSONObject("conductor");
                     if (condObj != null) {
                         nombre = extractNombreCompleto(condObj);
-                        // Si conductor tiene sub-objeto usuario
                         if (nombre.isEmpty()) {
                             JSONObject u = condObj.optJSONObject("usuario");
                             if (u != null) nombre = extractNombreCompleto(u);
                         }
+                        if (idCond <= 0)
+                            idCond = condObj.optInt("id",
+                                    condObj.optInt("idUsuarios",
+                                            condObj.optInt("idUsuario", -1)));
                     }
 
-                    // Campos planos del viaje
+                    // Intento 2: campos planos
                     if (nombre.isEmpty()) {
                         nombre = primeraNoVacia(
-                                viajeObj.optString("nombreConductor",  ""),
-                                viajeObj.optString("conductorNombre",  ""),
-                                viajeObj.optString("conductor",        "")
+                                viajeObj.optString("nombreConductor", ""),
+                                viajeObj.optString("conductorNombre", ""),
+                                viajeObj.optString("conductor", "")
                         );
                     }
 
-                    // Si encontramos el id del conductor, intentar cargarlo por endpoint de usuario
+                    // Intento 3: buscar idConductor y cargar por endpoint
                     if (nombre.isEmpty()) {
-                        int idCond = -1;
-                        if (condObj != null)
-                            idCond = condObj.optInt("id", condObj.optInt("idUsuarios",
-                                    condObj.optInt("idUsuario", -1)));
                         if (idCond <= 0)
                             idCond = viajeObj.optInt("idConductor",
-                                    viajeObj.optInt("conductorId", -1));
+                                    viajeObj.optInt("conductorId",
+                                            viajeObj.optInt("idUsuarioConductor", -1)));
+
+                        // También revisar en vehículo
+                        if (idCond <= 0) {
+                            JSONObject veh = viajeObj.optJSONObject("vehiculo");
+                            if (veh != null)
+                                idCond = veh.optInt("idUsuario",
+                                        veh.optInt("idConductor", -1));
+                        }
+
                         if (idCond > 0) {
                             cargarNombreConductorPorId(idCond, tvConductor);
                             return;
@@ -612,93 +689,96 @@ public class MisReservasActivity extends BaseActivity {
 
                     if (!nombre.isEmpty()) {
                         final String nomFinal = nombre;
-                        runOnUiThread(() -> tvConductor.setText("" + nomFinal));
+                        runOnUiThread(() -> tvConductor.setText("️ " + nomFinal));
+                    } else {
+                        runOnUiThread(() -> tvConductor.setText(" Conductor"));
                     }
                 },
-                error -> Log.w(TAG, "No se pudo cargar viaje " + idViaje + " para nombre conductor")
+                error -> {
+                    Log.w(TAG, "No se pudo cargar viaje id=" + idViaje);
+                    runOnUiThread(() -> tvConductor.setText(" Conductor"));
+                }
         );
     }
 
-    /**
-     * Carga el nombre del conductor directamente desde el endpoint de usuario.
-     */
-    private void cargarNombreConductorPorId(int idConductor, TextView tvConductor) {
-        if (idConductor <= 0) return;
-        ConexionApi.getInstance(this).getObject(
-                Constantes.USUARIOS + "/" + idConductor,
-                perfil -> {
-                    String nombre = extractNombreCompleto(perfil);
-                    if (!nombre.isEmpty()) {
-                        final String nomFinal = nombre;
-                        runOnUiThread(() -> tvConductor.setText("" + nomFinal));
-                    }
-                },
-                error -> Log.w(TAG, "No se pudo cargar perfil conductor id=" + idConductor)
-        );
-    }
-
-    // =========================================================================
-    //  HELPERS DE EXTRACCIÓN DE NOMBRE (más robusto que antes)
-    // =========================================================================
-
-    /**
-     * Extrae el nombre de un objeto JSON probando múltiples campos y estructuras anidadas.
-     * Primero busca "nombre", "nombreCompleto", "name", luego "nombres"+"apellidos",
-     * luego sub-objetos "usuario" y "persona"/"perfil".
-     */
     private String extractNombreCompleto(JSONObject o) {
         if (o == null) return "";
 
-        // Campos directos de nombre completo
+        Log.d(TAG, "extractNombreCompleto → " + o.toString());
+
+        // 1. Campos directos de nombre completo
         String nombre = primeraNoVacia(
-                o.optString("nombre",          ""),
-                o.optString("nombreCompleto",  ""),
-                o.optString("name",            ""),
-                o.optString("fullName",        ""),
-                o.optString("nombreUsuario",   ""),
-                o.optString("displayName",     "")
+                o.optString("nombre",         ""),
+                o.optString("nombreCompleto", ""),
+                o.optString("name",           ""),
+                o.optString("fullName",       ""),
+                o.optString("nombreUsuario",  ""),
+                o.optString("displayName",    "")
         );
         if (!nombre.isEmpty()) return nombre;
 
-        // nombres + apellidos
-        String n = o.optString("nombres",   o.optString("primerNombre",   ""));
-        String a = o.optString("apellidos", o.optString("primerApellido", ""));
+        // 2. nombres + apellidos
+        String n = primeraNoVacia(
+                o.optString("nombres",       ""),
+                o.optString("primerNombre",  ""),
+                o.optString("firstName",     "")
+        );
+        String a = primeraNoVacia(
+                o.optString("apellidos",     ""),
+                o.optString("primerApellido",""),
+                o.optString("lastName",      "")
+        );
         if (!n.isEmpty() || !a.isEmpty()) return (n + " " + a).trim();
 
-        // Sub-objeto usuario
-        JSONObject u = o.optJSONObject("usuario");
-        if (u != null) {
-            nombre = primeraNoVacia(
-                    u.optString("nombre",         ""),
-                    u.optString("nombreCompleto", ""),
-                    u.optString("name",           "")
-            );
-            if (!nombre.isEmpty()) return nombre;
-            n = u.optString("nombres",   "");
-            a = u.optString("apellidos", "");
-            if (!n.isEmpty() || !a.isEmpty()) return (n + " " + a).trim();
-        }
-
-        // Sub-objeto persona / perfil
-        for (String sub : new String[]{"persona", "perfil", "profile"}) {
+        // 3. Sub-objetos anidados
+        for (String sub : new String[]{"usuario", "user", "persona", "perfil", "profile"}) {
             JSONObject p = o.optJSONObject(sub);
-            if (p != null) {
-                nombre = primeraNoVacia(
-                        p.optString("nombre",         ""),
-                        p.optString("nombreCompleto", ""),
-                        p.optString("name",           "")
-                );
-                if (!nombre.isEmpty()) return nombre;
-                n = p.optString("nombres",   "");
-                a = p.optString("apellidos", "");
-                if (!n.isEmpty() || !a.isEmpty()) return (n + " " + a).trim();
+            if (p == null) continue;
+            Log.d(TAG, "  sub-objeto [" + sub + "] → " + p.toString());
+            String nom = extractNombreDeObjeto(p);
+            if (!nom.isEmpty()) return nom;
+
+            // Un nivel más profundo
+            for (String sub2 : new String[]{"persona", "perfil", "profile"}) {
+                JSONObject p2 = p.optJSONObject(sub2);
+                if (p2 == null) continue;
+                nom = extractNombreDeObjeto(p2);
+                if (!nom.isEmpty()) return nom;
             }
         }
 
         return "";
     }
 
-    /** Devuelve el primer String no vacío de la lista. */
+    /** Extrae nombre de un objeto plano sin recursión adicional. */
+    private String extractNombreDeObjeto(JSONObject o) {
+        if (o == null) return "";
+        String nombre = primeraNoVacia(
+                o.optString("nombre",         ""),
+                o.optString("nombreCompleto", ""),
+                o.optString("name",           ""),
+                o.optString("fullName",       ""),
+                o.optString("nombreUsuario",  ""),
+                o.optString("displayName",    "")
+        );
+        if (!nombre.isEmpty()) return nombre;
+        String n = primeraNoVacia(o.optString("nombres", ""), o.optString("primerNombre", ""));
+        String a = primeraNoVacia(o.optString("apellidos", ""), o.optString("primerApellido", ""));
+        return (n + " " + a).trim();
+    }
+
+    /** Log completo del JSON del viaje para diagnóstico. */
+    private void logViajeCompleto(JSONObject viaje) {
+        try {
+            Log.d(TAG, "══════ VIAJE JSON ══════");
+            Log.d(TAG, viaje.toString(2));
+            Log.d(TAG, "═══════════════════════");
+        } catch (Exception e) {
+            Log.e(TAG, "logViajeCompleto: " + e.getMessage());
+        }
+    }
+
+    /** Devuelve el primer String no nulo, no vacío y distinto de "null". */
     private String primeraNoVacia(String... valores) {
         for (String v : valores) {
             if (v != null && !v.isEmpty() && !v.equals("null")) return v;
@@ -706,8 +786,27 @@ public class MisReservasActivity extends BaseActivity {
         return "";
     }
 
-    private String etiquetaReserva(String e){switch(e.toUpperCase()){case"ACTIVA":case"CONFIRMADA":return"✅ Confirmada";case"EN_CURSO":case"INICIADO":return"En curso";case"ESPERANDO_RECOGIDA":return"⏳ Esperando recogida";case"RECOGIDO":return"¡Te recogieron!";case"PENDIENTE":return"⏳ Pendiente";default:return""+e;}}
-    private int badgeColorReserva(String e){switch(e.toUpperCase()){case"ACTIVA":case"CONFIRMADA":return Color.parseColor("#2E7D32");case"EN_CURSO":case"INICIADO":return Color.parseColor("#00838F");case"ESPERANDO_RECOGIDA":return Color.parseColor("#E65100");case"RECOGIDO":return Color.parseColor("#1565C0");case"PENDIENTE":return Color.parseColor("#F57F17");default:return Color.parseColor("#546E7A");}}
+    private String etiquetaReserva(String e){
+        switch(e.toUpperCase()){
+            case "ACTIVA": case "CONFIRMADA":   return "✅ Confirmada";
+            case "EN_CURSO": case "INICIADO":   return " En curso";
+            case "ESPERANDO_RECOGIDA":          return "⏳ Esperando recogida";
+            case "RECOGIDO":                    return "✅ ¡Te recogieron!";
+            case "PENDIENTE":                   return "⏳ Pendiente";
+            default:                            return " " + e;
+        }
+    }
+
+    private int badgeColorReserva(String e){
+        switch(e.toUpperCase()){
+            case "ACTIVA": case "CONFIRMADA":   return Color.parseColor("#2E7D32");
+            case "EN_CURSO": case "INICIADO":   return Color.parseColor("#00838F");
+            case "ESPERANDO_RECOGIDA":          return Color.parseColor("#E65100");
+            case "RECOGIDO":                    return Color.parseColor("#1565C0");
+            case "PENDIENTE":                   return Color.parseColor("#F57F17");
+            default:                            return Color.parseColor("#546E7A");
+        }
+    }
 
     // =========================================================================
     //  BÚSQUEDA
@@ -769,36 +868,77 @@ public class MisReservasActivity extends BaseActivity {
     private JSONArray filtrarParaPasajero(JSONArray viajes) {
         JSONArray res = new JSONArray();
         if (viajes == null) return res;
-        boolean tengoGps = latOrigen != 0 && lngOrigen != 0;
+
+        boolean tengoGps     = latOrigen  != 0 && lngOrigen  != 0;
+        boolean tengoDestino = latDestino != 0 && lngDestino != 0;
+
         for (int i = 0; i < viajes.length(); i++) {
             try {
                 JSONObject v = viajes.getJSONObject(i);
+
+                // 1. Filtro de estado
                 String est = v.optString("estado", "").toUpperCase();
                 if (!est.equals("EN_CURSO") && !est.equals("INICIADO") &&
                         !est.equals("DISPONIBLE") && !est.equals("PROGRAMADO") &&
                         !est.equals("CREADO")) continue;
+
+                // 2. Filtro de cupos
                 int cupos = v.optInt("cuposDisponibles", v.optInt("cupos", -1));
                 if (cupos == 0) continue;
+
+                // 3. Filtro geográfico
                 if (tengoGps) {
                     double loR = 0, lgR = 0, ldR = 0, gdR = 0;
+
                     JSONObject ruta = v.optJSONObject("ruta");
-                    if (ruta != null) {loR=ruta.optDouble("latOrigen",0);lgR=ruta.optDouble("lngOrigen",0);ldR=ruta.optDouble("latDestino",0);gdR=ruta.optDouble("lngDestino",0);}
-                    if (loR == 0) loR = v.optDouble("latOrigen", 0);
-                    if (lgR == 0) lgR = v.optDouble("lngOrigen", 0);
+                    if (ruta != null) {
+                        loR = ruta.optDouble("latOrigen",  0);
+                        lgR = ruta.optDouble("lngOrigen",  0);
+                        ldR = ruta.optDouble("latDestino", 0);
+                        gdR = ruta.optDouble("lngDestino", 0);
+                    }
+                    if (loR == 0) loR = v.optDouble("latOrigen",  0);
+                    if (lgR == 0) lgR = v.optDouble("lngOrigen",  0);
                     if (ldR == 0) ldR = v.optDouble("latDestino", 0);
                     if (gdR == 0) gdR = v.optDouble("lngDestino", 0);
+
                     if (loR != 0 && lgR != 0) {
                         boolean origenCerca = distKm(latOrigen, lngOrigen, loR, lgR) <= RADIO_KM;
-                        boolean rutaPasa   = ldR != 0 && distKm(latOrigen, lngOrigen, ldR, gdR) <= RADIO_KM * 2;
-                        if (!origenCerca && !rutaPasa) continue;
+                        boolean rutaPasaCercaDeMi = false;
+                        if (ldR != 0 && gdR != 0) {
+                            rutaPasaCercaDeMi = distSegmento(latOrigen, lngOrigen,
+                                    loR, lgR, ldR, gdR) <= RADIO_KM;
+                        }
+
+                        if (!origenCerca && !rutaPasaCercaDeMi) continue;
+
+                        if (tengoDestino && ldR != 0 && gdR != 0) {
+                            boolean destinoCerca = distKm(latDestino, lngDestino, ldR, gdR) <= RADIO_KM * 1.5;
+                            boolean rutaPasaCercaDeDestino = distSegmento(latDestino, lngDestino,
+                                    loR, lgR, ldR, gdR) <= RADIO_KM * 1.5;
+                            if (!destinoCerca && !rutaPasaCercaDeDestino) continue;
+                        }
                     }
                 }
+
                 res.put(v);
+
             } catch (Exception e) {
                 Log.e(TAG, "filtrar viaje: " + e.getMessage());
             }
         }
         return res;
+    }
+
+    private double distSegmento(double pLat, double pLng,
+                                double aLat, double aLng,
+                                double bLat, double bLng) {
+        double dx = bLat - aLat;
+        double dy = bLng - aLng;
+        if (dx == 0 && dy == 0) return distKm(pLat, pLng, aLat, aLng);
+        double t = ((pLat - aLat) * dx + (pLng - aLng) * dy) / (dx * dx + dy * dy);
+        t = Math.max(0, Math.min(1, t));
+        return distKm(pLat, pLng, aLat + t * dx, aLng + t * dy);
     }
 
     // =========================================================================
@@ -807,7 +947,7 @@ public class MisReservasActivity extends BaseActivity {
     private void procesarViajes(JSONArray viajes, String txtO, String txtD){
         runOnUiThread(()->{
             if(layoutBuscando!=null)layoutBuscando.setVisibility(View.GONE);
-            if(btnBuscar!=null){btnBuscar.setEnabled(true);btnBuscar.setText(" Buscar viajes disponibles");}
+            if(btnBuscar!=null){btnBuscar.setEnabled(true);btnBuscar.setText("Buscar viajes disponibles");}
             busquedaActiva=false;
             if(layoutResultadosViajes!=null)layoutResultadosViajes.removeAllViews();
 
@@ -843,7 +983,7 @@ public class MisReservasActivity extends BaseActivity {
         float d=getResources().getDisplayMetrics().density;
         int p16=(int)(16*d),p12=(int)(12*d),p8=(int)(8*d),p4=(int)(4*d);
         int    idV    = extraerIdViaje(viaje);
-        double precio = viaje.optDouble("precio", 0);
+
         int    cupos  = viaje.optInt("cuposDisponibles", viaje.optInt("cupos", 0));
         String fecha  = viaje.optString("fechaHoraSalida", viaje.optString("fecha", ""));
         String origen = "Origen", destino = "Destino", cond = "";
@@ -851,6 +991,9 @@ public class MisReservasActivity extends BaseActivity {
         JSONObject ruta = viaje.optJSONObject("ruta");
         if (ruta != null) { origen = extraerOrigenDeRuta(ruta); destino = extraerDestinoDeRuta(ruta); }
         else { origen = viaje.optString("origen", origen); destino = viaje.optString("destino", destino); }
+
+        // Log completo del viaje para diagnóstico del conductor
+        logViajeCompleto(viaje);
 
         // Extracción robusta del conductor en resultados de búsqueda
         JSONObject co = viaje.optJSONObject("conductor");
@@ -861,7 +1004,9 @@ public class MisReservasActivity extends BaseActivity {
                 viaje.optString("conductor",       "")
         );
 
-        final String condFinal = cond.isEmpty() ? "Conductor" : cond;
+
+
+        final String condFinal = cond;
         final int    idVFinal  = idV;
         int col = COLORES_INT[idx % COLORES_INT.length];
 
@@ -905,34 +1050,42 @@ public class MisReservasActivity extends BaseActivity {
 
         View div=new View(this);LinearLayout.LayoutParams lpDiv=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,(int)(1*d));lpDiv.setMargins(0,p12,0,p12);div.setLayoutParams(lpDiv);div.setBackgroundColor(Color.parseColor("#E0F2F1"));cont.addView(div);
 
-        // Fila conductor + precio + cupos
+
         LinearLayout filaI=new LinearLayout(this);filaI.setOrientation(LinearLayout.HORIZONTAL);filaI.setGravity(android.view.Gravity.CENTER_VERTICAL);
+
         TextView tvCd=new TextView(this);
-        tvCd.setText("" + condFinal);
+        // Mostrar nombre si ya lo tenemos, o placeholder mientras carga
+        tvCd.setText(condFinal.isEmpty() ? "Cargando..." : "" + condFinal);
         tvCd.setTextSize(12f);tvCd.setTextColor(Color.parseColor("#00695C"));
         tvCd.setLayoutParams(new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f));
         tvCd.setMaxLines(1);tvCd.setEllipsize(android.text.TextUtils.TruncateAt.END);
         filaI.addView(tvCd);
 
-        if(precio>0){TextView tvPr=new TextView(this);tvPr.setText("$"+String.format("%.0f",precio));tvPr.setTextSize(13f);tvPr.setTypeface(null,Typeface.BOLD);tvPr.setTextColor(Color.parseColor("#FF6F00"));LinearLayout.LayoutParams lpPr=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpPr.setMargins(p8,0,p8,0);tvPr.setLayoutParams(lpPr);filaI.addView(tvPr);}
-        TextView tvCu=new TextView(this);tvCu.setText(cupos>0?""+cupos+" libres":"Sin cupos");tvCu.setTextSize(12f);tvCu.setTypeface(null,Typeface.BOLD);tvCu.setTextColor(cupos>0?Color.parseColor("#2E7D32"):Color.parseColor("#C62828"));tvCu.setPadding(p8,p4,p8,p4);GradientDrawable bgCu=new GradientDrawable();bgCu.setShape(GradientDrawable.RECTANGLE);bgCu.setCornerRadius(12*d);bgCu.setColor(cupos>0?Color.parseColor("#E8F5E9"):Color.parseColor("#FFEBEE"));tvCu.setBackground(bgCu);filaI.addView(tvCu);
+
+        TextView tvCu=new TextView(this);tvCu.setText(cupos>0?""+cupos+" libres":"Sin cupos");tvCu.setTextSize(12f);tvCu.setTypeface(null,Typeface.BOLD);tvCu.setTextColor(cupos>0?Color.parseColor("#2E7D32"):Color.parseColor("#C62828"));tvCu.setPadding(p8,p4,p8,p4);
+        GradientDrawable bgCu=new GradientDrawable();bgCu.setShape(GradientDrawable.RECTANGLE);bgCu.setCornerRadius(12*d);bgCu.setColor(cupos>0?Color.parseColor("#E8F5E9"):Color.parseColor("#FFEBEE"));tvCu.setBackground(bgCu);filaI.addView(tvCu);
         cont.addView(filaI);
 
-        if(!fecha.isEmpty()){String fl=fecha.length()>10?fecha.substring(0,16).replace("T"," "):fecha;TextView tvF=new TextView(this);tvF.setText("Salida: "+fl);tvF.setTextSize(11f);tvF.setTextColor(Color.parseColor("#90A4AE"));LinearLayout.LayoutParams lpF=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpF.topMargin=p8;tvF.setLayoutParams(lpF);cont.addView(tvF);}
+        if(!fecha.isEmpty()){
+            String fl=fecha.length()>10?fecha.substring(0,16).replace("T"," "):fecha;
+            TextView tvF=new TextView(this);tvF.setText("Salida: "+fl);tvF.setTextSize(11f);tvF.setTextColor(Color.parseColor("#90A4AE"));
+            LinearLayout.LayoutParams lpF=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);lpF.topMargin=p8;tvF.setLayoutParams(lpF);cont.addView(tvF);
+        }
 
         inner.addView(cont);card.addView(inner);
         card.setOnClickListener(v -> abrirDetalle(idVFinal));
         if(layoutResultadosViajes!=null)layoutResultadosViajes.addView(card);
 
-        // Fallback nombre conductor en resultados si quedó vacío
-        if (cond.isEmpty() && idV > 0) {
+        // Fallback: siempre cargar por API si el nombre quedó vacío
+        if (condFinal.isEmpty() && idV > 0) {
             cargarNombreConductorDesdeViaje(idV, tvCd);
         }
     }
 
     // =========================================================================
-    //  HELPERS
+    //  HELPERS GENERALES
     // =========================================================================
+
     private String extraerOrigenDeRuta(JSONObject ruta) {
         if (ruta == null) return "Origen";
         for (String k : new String[]{"origen","puntoOrigen","inicio","nombreOrigen","lugarOrigen"}) {
@@ -954,20 +1107,62 @@ public class MisReservasActivity extends BaseActivity {
         }
         String nombre = ruta.optString("nombre", ruta.optString("descripcion", "")).trim();
         String[] partes = null;
-        if (nombre.contains("→"))  partes = nombre.split("→",  2);
-        else if (nombre.contains("->")) partes = nombre.split("->", 2);
+        if (nombre.contains("→"))   partes = nombre.split("→",  2);
+        else if (nombre.contains("->"))  partes = nombre.split("->", 2);
         else if (nombre.contains(" - ")) partes = nombre.split(" - ", 2);
         if (partes != null && partes.length > 1) return partes[1].trim();
         if (!nombre.isEmpty()) return nombre;
         return "Destino";
     }
 
-    private int extraerIdViaje(JSONObject o){if(o==null)return 0;for(String k:new String[]{"idViajes","idViaje","id","viajeId"}){int v=o.optInt(k,0);if(v>0)return v;}JSONObject va=o.optJSONObject("viaje");if(va!=null)for(String k:new String[]{"idViajes","idViaje","id"}){int v=va.optInt(k,0);if(v>0)return v;}return 0;}
-    private void abrirDetalle(int idViaje){if(idViaje==0){Toast.makeText(this,"No se puede abrir este viaje",Toast.LENGTH_SHORT).show();return;}Intent i=new Intent(this,DetalleViajeActivity.class);i.putExtra("ID_VIAJE",idViaje);startActivity(i);}
-    private double[] geocodificar(String dir)throws Exception{String q=dir.toLowerCase().contains("popay")?dir:dir+", Popayán, Colombia";String url="https://nominatim.openstreetmap.org/search?q="+java.net.URLEncoder.encode(q,"UTF-8")+"&format=json&limit=1&countrycodes=co";JSONArray arr=new JSONArray(petHttp(url));if(arr.length()==0){url="https://nominatim.openstreetmap.org/search?q="+java.net.URLEncoder.encode(dir+", Colombia","UTF-8")+"&format=json&limit=1";arr=new JSONArray(petHttp(url));}if(arr.length()==0)throw new Exception("No encontrado: "+dir);JSONObject o=arr.getJSONObject(0);return new double[]{o.getDouble("lat"),o.getDouble("lon")};}
-    private String petHttp(String urlStr)throws Exception{HttpURLConnection c=null;try{URL u=new URL(urlStr);c=(HttpURLConnection)u.openConnection();c.setRequestProperty("User-Agent","Moviflexx-App/1.0");c.setConnectTimeout(15000);c.setReadTimeout(15000);BufferedReader r=new BufferedReader(new InputStreamReader(c.getInputStream()));StringBuilder sb=new StringBuilder();String l;while((l=r.readLine())!=null)sb.append(l);r.close();return sb.toString();}finally{if(c!=null)c.disconnect();}}
-    private double distKm(double la1,double lo1,double la2,double lo2){double R=6371,dLa=Math.toRadians(la2-la1),dLo=Math.toRadians(lo2-lo1);double a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(Math.toRadians(la1))*Math.cos(Math.toRadians(la2))*Math.sin(dLo/2)*Math.sin(dLo/2);return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+    private int extraerIdViaje(JSONObject o){
+        if(o==null)return 0;
+        for(String k:new String[]{"idViajes","idViaje","id","viajeId"}){int v=o.optInt(k,0);if(v>0)return v;}
+        JSONObject va=o.optJSONObject("viaje");
+        if(va!=null)for(String k:new String[]{"idViajes","idViaje","id"}){int v=va.optInt(k,0);if(v>0)return v;}
+        return 0;
+    }
 
-    // extractNombre se mantiene por compatibilidad con agregarCardViaje anterior
+    private void abrirDetalle(int idViaje){
+        if(idViaje==0){Toast.makeText(this,"No se puede abrir este viaje",Toast.LENGTH_SHORT).show();return;}
+        Intent i=new Intent(this,DetalleViajeActivity.class);
+        i.putExtra("ID_VIAJE",idViaje);
+        startActivity(i);
+    }
+
+    private double[] geocodificar(String dir) throws Exception {
+        String q=dir.toLowerCase().contains("popay")?dir:dir+", Popayán, Colombia";
+        String url="https://nominatim.openstreetmap.org/search?q="+java.net.URLEncoder.encode(q,"UTF-8")+"&format=json&limit=1&countrycodes=co";
+        JSONArray arr=new JSONArray(petHttp(url));
+        if(arr.length()==0){
+            url="https://nominatim.openstreetmap.org/search?q="+java.net.URLEncoder.encode(dir+", Colombia","UTF-8")+"&format=json&limit=1";
+            arr=new JSONArray(petHttp(url));
+        }
+        if(arr.length()==0) throw new Exception("No encontrado: "+dir);
+        JSONObject o=arr.getJSONObject(0);
+        return new double[]{o.getDouble("lat"),o.getDouble("lon")};
+    }
+
+    private String petHttp(String urlStr) throws Exception {
+        HttpURLConnection c=null;
+        try{
+            URL u=new URL(urlStr);
+            c=(HttpURLConnection)u.openConnection();
+            c.setRequestProperty("User-Agent","Moviflexx-App/1.0");
+            c.setConnectTimeout(15000);c.setReadTimeout(15000);
+            BufferedReader r=new BufferedReader(new InputStreamReader(c.getInputStream()));
+            StringBuilder sb=new StringBuilder();String l;
+            while((l=r.readLine())!=null)sb.append(l);
+            r.close();return sb.toString();
+        }finally{if(c!=null)c.disconnect();}
+    }
+
+    private double distKm(double la1,double lo1,double la2,double lo2){
+        double R=6371,dLa=Math.toRadians(la2-la1),dLo=Math.toRadians(lo2-lo1);
+        double a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(Math.toRadians(la1))*Math.cos(Math.toRadians(la2))*Math.sin(dLo/2)*Math.sin(dLo/2);
+        return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+    }
+
+    // Alias por compatibilidad
     private String extractNombre(JSONObject o){ return extractNombreCompleto(o); }
 }

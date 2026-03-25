@@ -454,10 +454,11 @@ public class PublicarViaje extends BaseActivity {
                         //   · inicio automático   → POST /viajes/{id}/iniciar
                         //     + notificación push a los pasajeros
                         if (idViajeCreado > 0) {
-                            ViajeAlertaManager.programarAlertas(
+                            ViajeAlertaManager.programarInicioAutomatico(
                                     PublicarViaje.this,
                                     idViajeCreado,
-                                    fechaHoraParaAlertas
+                                    fechaHoraParaAlertas,
+                                    response
                             );
                             Log.d(TAG, "Alertas programadas para viaje " + idViajeCreado);
                         } else {

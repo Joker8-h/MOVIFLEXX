@@ -57,13 +57,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * VerRutaPasajeroActivity
- *
- * Muestra la ruta del conductor en el mapa, localiza la parada que
- * escribió el pasajero y permite enviarla al backend con
- * Constantes.rutaParadas(idRuta)  →  POST /api/rutas/{idRuta}/paradas
- */
+
 public class VerRutaPasajero extends BaseActivity {
 
     private static final String TAG = "VerRutaPasajero";

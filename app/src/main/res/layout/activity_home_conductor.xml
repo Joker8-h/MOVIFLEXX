@@ -547,6 +547,7 @@
                         android:contentDescription="Sin viajes"/>
 
                     <TextView
+                        android:id="@+id/txt_empty_titulo"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="No tienes viajes activos"
@@ -557,6 +558,7 @@
                         android:layout_marginBottom="8dp"/>
 
                     <TextView
+                        android:id="@+id/txt_empty_subtitulo"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Publica tu primer viaje y empieza&#10;a conectar con pasajeros"

@@ -902,30 +902,39 @@ public class PerfilUsuario extends BaseActivity {
     // =========================================================================
 
     private void mostrarTodasCalificaciones(JSONArray calificaciones, double promedio) {
-        android.app.AlertDialog.Builder builder =
-                new android.app.AlertDialog.Builder(this);
-        builder.setTitle("Todas mis calificaciones  ⭐ "
-                + String.format("%.1f", promedio));
+        android.view.View dialogView = android.view.LayoutInflater.from(this)
+                .inflate(R.layout.dialog_todas_calificaciones, null);
 
-        float d   = getResources().getDisplayMetrics().density;
-        int p16   = (int)(16*d), p8 = (int)(8*d), p6 = (int)(6*d);
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this, 0)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
 
-        android.widget.ScrollView sv = new android.widget.ScrollView(this);
-        LinearLayout lista = new LinearLayout(this);
-        lista.setOrientation(LinearLayout.VERTICAL);
-        lista.setPadding(p16, p8, p16, p8);
+        if (dialog.getWindow() != null)
+            dialog.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
 
-        for (int i = 0; i < calificaciones.length(); i++) {
-            JSONObject cal = calificaciones.optJSONObject(i);
-            if (cal == null) continue;
-            lista.addView(crearFilaCalificacion(
-                    cal, d, p8, p6, i < calificaciones.length() - 1));
+        // Título dinámico
+        android.widget.TextView tvTitulo = dialogView.findViewById(R.id.tv_dialog_cal_titulo);
+        if (tvTitulo != null)
+            tvTitulo.setText("⭐ " + String.format("%.1f", promedio) + " — Todas mis calificaciones");
+
+        // Inyectar lista en el ScrollView
+        android.widget.LinearLayout lista = dialogView.findViewById(R.id.layout_dialog_cal_lista);
+        float d  = getResources().getDisplayMetrics().density;
+        int p8   = (int)(8*d), p6 = (int)(6*d);
+        if (lista != null) {
+            for (int i = 0; i < calificaciones.length(); i++) {
+                org.json.JSONObject cal = calificaciones.optJSONObject(i);
+                if (cal == null) continue;
+                lista.addView(crearFilaCalificacion(cal, d, p8, p6, i < calificaciones.length() - 1));
+            }
         }
 
-        sv.addView(lista);
-        builder.setView(sv);
-        builder.setPositiveButton("Cerrar", null);
-        builder.show();
+        dialogView.findViewById(R.id.btn_dialog_cerrar_cal).setOnClickListener(v -> dialog.dismiss());
+        dialogView.findViewById(R.id.btn_dialog_close_cal).setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
     // =========================================================================
@@ -1069,25 +1078,121 @@ public class PerfilUsuario extends BaseActivity {
     }
 
     private void mostrarDialogoSelectorVehiculo() {
-        String[] opciones = new String[listaVehiculos.size()];
-        for (int i = 0; i < listaVehiculos.size(); i++) {
-            JSONObject v  = listaVehiculos.get(i);
-            String marca  = v.optString("marca",  "");
-            String modelo = v.optString("modelo", "");
-            String placa  = v.optString("placa",  "—");
-            String nombre = modelo.isEmpty() ? marca : (marca + " " + modelo).trim();
-            opciones[i]   = nombre + "  ·  " + placa;
+        android.view.View dialogView = android.view.LayoutInflater.from(this)
+                .inflate(R.layout.dialog_selector_vehiculo, null);
+
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this, 0)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null)
+            dialog.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+
+        // Inyectar opciones dinámicamente
+        android.widget.LinearLayout listaVehiculos = dialogView.findViewById(R.id.layout_lista_vehiculos);
+        float d = getResources().getDisplayMetrics().density;
+
+        for (int i = 0; i < this.listaVehiculos.size(); i++) {
+            JSONObject v    = this.listaVehiculos.get(i);
+            String marca    = v.optString("marca",  "");
+            String modelo   = v.optString("modelo", "");
+            String placa    = v.optString("placa",  "—");
+            String nombre   = modelo.isEmpty() ? marca : (marca + " " + modelo).trim();
+            if (nombre.isEmpty()) nombre = "Vehículo sin nombre";
+
+            boolean seleccionado = (i == vehiculoSeleccionadoIndex);
+            final int index = i;
+            final String nombreFinal = nombre;
+
+            // Card por vehículo
+            android.widget.LinearLayout fila = new android.widget.LinearLayout(this);
+            fila.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+            fila.setGravity(android.view.Gravity.CENTER_VERTICAL);
+            fila.setPadding((int)(16*d), (int)(14*d), (int)(16*d), (int)(14*d));
+            android.widget.LinearLayout.LayoutParams lpFila =
+                    new android.widget.LinearLayout.LayoutParams(
+                            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+            lpFila.bottomMargin = (int)(8*d);
+            fila.setLayoutParams(lpFila);
+
+            android.graphics.drawable.GradientDrawable bgFila =
+                    new android.graphics.drawable.GradientDrawable();
+            bgFila.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+            bgFila.setCornerRadius(14 * d);
+            bgFila.setColor(seleccionado
+                    ? android.graphics.Color.parseColor("#E0F7FA")
+                    : android.graphics.Color.parseColor("#F9F9F9"));
+            bgFila.setStroke((int)(1.5f*d), seleccionado
+                    ? android.graphics.Color.parseColor("#0ABFA3")
+                    : android.graphics.Color.parseColor("#E0E0E0"));
+            fila.setBackground(bgFila);
+
+            // Ícono auto
+            android.widget.TextView tvIcono = new android.widget.TextView(this);
+            tvIcono.setText("");
+            tvIcono.setTextSize(22f);
+            android.widget.LinearLayout.LayoutParams lpIcono =
+                    new android.widget.LinearLayout.LayoutParams(
+                            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+            lpIcono.rightMargin = (int)(12*d);
+            tvIcono.setLayoutParams(lpIcono);
+            fila.addView(tvIcono);
+
+            // Columna nombre + placa
+            android.widget.LinearLayout col = new android.widget.LinearLayout(this);
+            col.setOrientation(android.widget.LinearLayout.VERTICAL);
+            col.setLayoutParams(new android.widget.LinearLayout.LayoutParams(
+                    0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+            android.widget.TextView tvNombre = new android.widget.TextView(this);
+            tvNombre.setText(nombreFinal);
+            tvNombre.setTextSize(14f);
+            tvNombre.setTypeface(null, android.graphics.Typeface.BOLD);
+            tvNombre.setTextColor(android.graphics.Color.parseColor(
+                    seleccionado ? "#007A6E" : "#1A1A2E"));
+            col.addView(tvNombre);
+
+            android.widget.TextView tvPlaca = new android.widget.TextView(this);
+            tvPlaca.setText("Placa: " + placa);
+            tvPlaca.setTextSize(12f);
+            tvPlaca.setTextColor(android.graphics.Color.parseColor("#78909C"));
+            android.widget.LinearLayout.LayoutParams lpPlaca =
+                    new android.widget.LinearLayout.LayoutParams(
+                            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+            lpPlaca.topMargin = (int)(2*d);
+            tvPlaca.setLayoutParams(lpPlaca);
+            col.addView(tvPlaca);
+            fila.addView(col);
+
+            // Check si está seleccionado
+            if (seleccionado) {
+                android.widget.TextView tvCheck = new android.widget.TextView(this);
+                tvCheck.setText("✓");
+                tvCheck.setTextSize(18f);
+                tvCheck.setTypeface(null, android.graphics.Typeface.BOLD);
+                tvCheck.setTextColor(android.graphics.Color.parseColor("#0ABFA3"));
+                fila.addView(tvCheck);
+            }
+
+            fila.setOnClickListener(vw -> {
+                vehiculoSeleccionadoIndex = index;
+                mostrarVehiculo(index);
+                actualizarTextoSelector();
+                dialog.dismiss();
+            });
+
+            listaVehiculos.addView(fila);
         }
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("Seleccionar vehículo")
-                .setSingleChoiceItems(opciones, vehiculoSeleccionadoIndex, (d, which) -> {
-                    vehiculoSeleccionadoIndex = which;
-                    mostrarVehiculo(which);
-                    actualizarTextoSelector();
-                    d.dismiss();
-                })
-                .setNegativeButton("Cancelar", null)
-                .show();
+
+        dialogView.findViewById(R.id.btn_dialog_close_vehiculo).setOnClickListener(v -> dialog.dismiss());
+        dialogView.findViewById(R.id.btn_dialog_cancelar_vehiculo).setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
     // =========================================================================
@@ -1106,26 +1211,49 @@ public class PerfilUsuario extends BaseActivity {
     }
 
     private void mostrarDialogoEditarWeb() {
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("Editar perfil")
-                .setMessage("La edición de tu perfil está disponible únicamente desde nuestra web.\n\n"
-                        + "Visita el siguiente enlace para actualizar tu nombre, teléfono y contraseña:\n\n"
-                        + WEB_URL)
-                .setPositiveButton("🌐 Ir a la web", (d, w) -> abrirWeb(WEB_URL))
-                .setNegativeButton("Cancelar", null)
-                .show();
+        android.view.View dialogView = android.view.LayoutInflater.from(this)
+                .inflate(R.layout.dialog_editar_web, null);
+
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this, 0)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null)
+            dialog.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+
+        dialogView.findViewById(R.id.btn_dialog_ir_web).setOnClickListener(v -> {
+            dialog.dismiss();
+            abrirWeb(WEB_URL);
+        });
+        dialogView.findViewById(R.id.btn_dialog_cancelar_web).setOnClickListener(v -> dialog.dismiss());
+        dialogView.findViewById(R.id.btn_dialog_close_web).setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
     private void confirmarCerrarSesion() {
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("Cerrar sesión")
-                .setMessage("¿Estás seguro de que quieres cerrar tu sesión?")
-                .setPositiveButton("Cerrar sesión", (d, w) -> {
-                    d.dismiss();
-                    cerrarSesionYRedirigir();
-                })
-                .setNegativeButton("Cancelar", null)
-                .show();
+        android.view.View dialogView = android.view.LayoutInflater.from(this)
+                .inflate(R.layout.dialog_cerrar_sesion, null);
+
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this, 0)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null)
+            dialog.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+
+        dialogView.findViewById(R.id.btn_dialog_no_sesion).setOnClickListener(v -> dialog.dismiss());
+        dialogView.findViewById(R.id.btn_dialog_si_sesion).setOnClickListener(v -> {
+            dialog.dismiss();
+            cerrarSesionYRedirigir();
+        });
+        dialogView.findViewById(R.id.btn_dialog_close_sesion).setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
     private void cerrarSesionYRedirigir() {

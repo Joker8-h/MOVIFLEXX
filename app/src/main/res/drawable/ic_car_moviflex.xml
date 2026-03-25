@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- Sombra/base -->
+    <path
+        android:fillColor="#1A000000"
+        android:pathData="M8,38 Q24,42 40,38 L38,44 Q24,47 10,44 Z"/>
+
+    <!-- Carrocería principal -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M10,28 L10,36 Q10,38 12,38 L36,38 Q38,38 38,36 L38,28 Z"/>
+
+    <!-- Techo / cabina -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M15,28 L16,18 Q17,14 20,13 L28,13 Q31,14 32,18 L33,28 Z"/>
+
+    <!-- Parabrisas delantero -->
+    <path
+        android:fillColor="#B3E0F7"
+        android:strokeColor="#CCCCCC"
+        android:strokeWidth="0.5"
+        android:pathData="M17,27 L17.5,19 Q18,16 20.5,15.5 L27.5,15.5 Q30,16 30.5,19 L31,27 Z"/>
+
+    <!-- Ventana trasera -->
+    <path
+        android:fillColor="#B3E0F7"
+        android:strokeColor="#CCCCCC"
+        android:strokeWidth="0.5"
+        android:pathData="M17,27 L17.5,22 L30.5,22 L31,27 Z"/>
+
+    <!-- Franja lateral izquierda -->
+    <path
+        android:fillColor="#0ABFA3"
+        android:pathData="M10,30 L10,34 L15,34 L15,30 Z"/>
+
+    <!-- Franja lateral derecha -->
+    <path
+        android:fillColor="#0ABFA3"
+        android:pathData="M33,30 L33,34 L38,34 L38,30 Z"/>
+
+    <!-- Capó frontal -->
+    <path
+        android:fillColor="#F0F0F0"
+        android:pathData="M10,28 L38,28 L36,32 L12,32 Z"/>
+
+    <!-- Rueda izquierda -->
+    <path
+        android:fillColor="#222222"
+        android:pathData="M13,38 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0"/>
+    <path
+        android:fillColor="#888888"
+        android:pathData="M13,38 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0"/>
+    <path
+        android:fillColor="#DDDDDD"
+        android:pathData="M13,38 m-1,0 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0"/>
+
+    <!-- Rueda derecha -->
+    <path
+        android:fillColor="#222222"
+        android:pathData="M35,38 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0"/>
+    <path
+        android:fillColor="#888888"
+        android:pathData="M35,38 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0"/>
+    <path
+        android:fillColor="#DDDDDD"
+        android:pathData="M35,38 m-1,0 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0"/>
+
+    <!-- Faros delanteros -->
+    <path
+        android:fillColor="#FFF176"
+        android:pathData="M10,29 L10,31 L13,31 L13,29 Z"/>
+    <path
+        android:fillColor="#FFF176"
+        android:pathData="M35,29 L35,31 L38,31 L38,29 Z"/>
+
+    <!-- Luces traseras -->
+    <path
+        android:fillColor="#EF5350"
+        android:pathData="M10,34 L10,36 L13,36 L13,34 Z"/>
+    <path
+        android:fillColor="#EF5350"
+        android:pathData="M35,34 L35,36 L38,36 L38,34 Z"/>
+
+    <!-- Logo / detalle central capó -->
+    <path
+        android:fillColor="#0ABFA3"
+        android:pathData="M22,29.5 L24,27.5 L26,29.5 L24,31.5 Z"/>
+
+</vector>

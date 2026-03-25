@@ -139,11 +139,17 @@ public class PublicarRuta extends BaseActivity {
         verificarPermisosUbicacion();
         configurarAutocompletado();
 
+        View btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null) btnBack.setOnClickListener(v -> {
+            goTo(HomeConductor.class, Transition.NONE);
+            finish();
+        });
         routeManager = new RouteManager();
         configurarBottomNav();
 
         animateButton(btnCalcular, this::buscarRutasMultiples);
         animateButton(btnPublicar, this::crearRuta);
+
     }
 
     @Override
@@ -189,6 +195,7 @@ public class PublicarRuta extends BaseActivity {
         cardContadorHeader  = findViewById(R.id.card_contador_rutas);
         txtContadorHeader   = findViewById(R.id.txt_contador_header);
         bottomNav           = findViewById(R.id.bottom_navigation);
+
     }
 
     /* ═══════════ BOTTOM NAV ═══════════ */

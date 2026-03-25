@@ -54,10 +54,6 @@ public class HomeConductor extends BaseActivity {
     private MaterialCardView btnMisRutas;
     private MaterialCardView btnMisVehiculos;
 
-    private Handler  pollingPagosHandler;
-    private Runnable pollingPagosRunnable;
-    private int      pollingViajeId = -1;
-
     // ── Calificaciones pendientes ─────────────────────────────────────────────
     private LinearLayout                    layoutCalificacionesPendientes;
     private View                            dividerCalificaciones;
@@ -66,7 +62,7 @@ public class HomeConductor extends BaseActivity {
     private CalificacionesPendientesAdapter adapterCalificaciones;
 
     private int viajeActivoId = -1;
-    private final List<PasajeroPendiente>   listaPendientes = new ArrayList<>();
+    private final List<PasajeroPendiente> listaPendientes = new ArrayList<>();
 
     private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh;
 
@@ -137,7 +133,6 @@ public class HomeConductor extends BaseActivity {
         BottomNavigationView nav = findViewById(R.id.bottom_navigation);
         if (nav != null) nav.setSelectedItemId(R.id.nav_inicio);
 
-        // Verificar si hay viaje activo para habilitar/deshabilitar el botón Mapa
         ConexionApi.getInstance(this).getArrayNoCache(
                 Constantes.MIS_VIAJES,
                 response -> {
@@ -180,6 +175,11 @@ public class HomeConductor extends BaseActivity {
         if (adapter != null) adapter.detenerPollingPagosConductor();
     }
 
+    @Override
+    public void onBackPressed() {
+        goTo(HomeConductor.class, Transition.NONE);
+        finish();
+    }
 
     // =========================================================================
     //  ENLAZAR VISTAS
@@ -219,8 +219,7 @@ public class HomeConductor extends BaseActivity {
         }
 
         String fotoUrl = session.getFotoPerfil();
-        android.widget.ImageView ivAvatar = findViewById(R.id.iv_avatar_header);
-        android.widget.TextView  tvInicial = findViewById(R.id.tv_inicial_avatar);
+        android.widget.ImageView ivAvatar  = findViewById(R.id.iv_avatar_header);
         com.google.android.material.card.MaterialCardView cardFoto =
                 findViewById(R.id.card_avatar_foto_header);
         com.google.android.material.card.MaterialCardView cardInicial =
@@ -257,42 +256,182 @@ public class HomeConductor extends BaseActivity {
     }
 
     private void configurarBotones() {
+        // ── Publicar nuevo viaje (header) ──────────────────────────────────────
         if (btnPublicarViaje != null)
-            btnPublicarViaje.setOnClickListener(v -> goTo(PublicarRuta.class, Transition.SLIDE));
+            btnPublicarViaje.setOnClickListener(v -> verificarLimiteYPublicar());
+
         if (btnMisRutas != null)
             animateButton(btnMisRutas, () -> goTo(MisRutasActivity.class, Transition.SLIDE));
         if (btnMisVehiculos != null)
             animateButton(btnMisVehiculos, () -> goTo(MisVehiculosActivity.class, Transition.SLIDE));
 
+        // ── Publicar ahora (empty state) ───────────────────────────────────────
+        com.google.android.material.button.MaterialButton btnPublicarEmpty =
+                findViewById(R.id.btn_publicar_empty);
+        if (btnPublicarEmpty != null)
+            btnPublicarEmpty.setOnClickListener(v -> verificarLimiteYPublicar());
+
         if (swipeRefresh != null) {
             swipeRefresh.setColorSchemeResources(R.color.teal_500);
-            swipeRefresh.setOnRefreshListener(() -> cargarMisViajes());
+            swipeRefresh.setOnRefreshListener(this::cargarMisViajes);
         }
     }
 
+    // =========================================================================
+    //  VERIFICAR LÍMITE DE 1 VIAJE ACTIVO ANTES DE PUBLICAR
+    // =========================================================================
+    private void verificarLimiteYPublicar() {
+        mostrarCargando(true);
+        ConexionApi.getInstance(this).getArrayNoCache(
+                Constantes.MIS_VIAJES,
+                response -> {
+                    mostrarCargando(false);
+                    boolean tieneViajeActivo = false;
+                    int idViajeActivo = -1;
+
+                    if (response != null) {
+                        for (int i = 0; i < response.length(); i++) {
+                            JSONObject v = response.optJSONObject(i);
+                            if (v == null) continue;
+                            String est = v.optString("estado", "").trim().toUpperCase();
+                            if ("CREADO".equals(est) || "PROGRAMADO".equals(est)
+                                    || "DISPONIBLE".equals(est) || "EN_CURSO".equals(est)
+                                    || "INICIADO".equals(est)) {
+                                tieneViajeActivo = true;
+                                idViajeActivo = v.optInt("idViajes", v.optInt("id", -1));
+                                break;
+                            }
+                        }
+                    }
+
+                    if (tieneViajeActivo) {
+                        final int fIdViaje = idViajeActivo;
+                        runOnUiThread(() -> mostrarAlertaLimiteViaje(fIdViaje));
+                    } else {
+                        runOnUiThread(() -> goTo(PublicarRuta.class, Transition.SLIDE));
+                    }
+                },
+                error -> {
+                    mostrarCargando(false);
+                    // Si falla la verificación, dejamos pasar al conductor
+                    runOnUiThread(() -> goTo(PublicarRuta.class, Transition.SLIDE));
+                }
+        );
+    }
+
+    private void mostrarAlertaLimiteViaje(int idViajeActivo) {
+
+        // ── Inflar layout personalizado ───────────────────────────────────────────
+        android.view.LayoutInflater inflater = android.view.LayoutInflater.from(this);
+        android.view.View dialogView = inflater.inflate(R.layout.dialog_limite_viaje, null);
+
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this, 0)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        // ── Referencias a vistas del layout ──────────────────────────────────────
+        android.widget.TextView  btnVerViaje    = dialogView.findViewById(R.id.btn_dialog_ver_viaje);
+        android.widget.TextView  btnCancelar    = dialogView.findViewById(R.id.btn_dialog_cancelar);
+        android.widget.TextView  btnCerrar      = dialogView.findViewById(R.id.btn_dialog_cerrar);
+        android.widget.ImageView btnClose       = dialogView.findViewById(R.id.btn_dialog_close);
+
+        btnVerViaje.setOnClickListener(v -> {
+            dialog.dismiss();
+            rvViajes.scrollToPosition(0);
+        });
+
+        btnCancelar.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (idViajeActivo > 0) confirmarCancelarViaje(idViajeActivo);
+        });
+
+        btnCerrar.setOnClickListener(v -> dialog.dismiss());
+        if (btnClose != null) btnClose.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+
+        // Animación de entrada
+        if (dialogView.getParent() instanceof android.view.View) {
+            android.view.View parent = (android.view.View) dialogView.getParent();
+            parent.setScaleX(0.85f);
+            parent.setScaleY(0.85f);
+            parent.setAlpha(0f);
+            parent.animate().scaleX(1f).scaleY(1f).alpha(1f)
+                    .setDuration(280)
+                    .setInterpolator(new android.view.animation.OvershootInterpolator(1.1f))
+                    .start();
+        }
+    }
+
+    private void confirmarCancelarViaje(int viajeId) {
+        android.view.View dialogView = android.view.LayoutInflater.from(this)
+                .inflate(R.layout.dialog_confirmar_cancelar, null);
+
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this, 0)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null)
+            dialog.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+
+        dialogView.findViewById(R.id.btn_dialog_no).setOnClickListener(v -> dialog.dismiss());
+        dialogView.findViewById(R.id.btn_dialog_si_cancelar).setOnClickListener(v -> {
+            dialog.dismiss();
+            ejecutarCancelarViaje(viajeId);
+        });
+        dialogView.findViewById(R.id.btn_dialog_close_cancelar).setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+    }
+
+    private void ejecutarCancelarViaje(int viajeId) {
+        mostrarCargando(true);
+        ConexionApi.getInstance(this).post(
+                Constantes.viajeCancelar((long) viajeId),
+                null,
+                response -> runOnUiThread(() -> {
+                    mostrarCargando(false);
+                    Toast.makeText(this, "✅ Viaje cancelado", Toast.LENGTH_SHORT).show();
+                    viajeActivoId = -1;
+                    cargarMisViajes();
+                }),
+                error -> runOnUiThread(() -> {
+                    mostrarCargando(false);
+                    int code = (error != null && error.networkResponse != null)
+                            ? error.networkResponse.statusCode : 0;
+                    String msg = "❌ Error al cancelar el viaje";
+                    if (code == 400) msg = "❌ No se puede cancelar (estado inválido)";
+                    else if (code == 403) msg = "❌ Sin permisos para cancelar";
+                    else if (code == 404) msg = "❌ Viaje no encontrado";
+                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+                })
+        );
+    }
+
+    // =========================================================================
+    //  BOTTOM NAV
+    // =========================================================================
     private void configurarBottomNav() {
         BottomNavigationView nav = findViewById(R.id.bottom_navigation);
         if (nav == null) return;
 
-
-        if (nav != null) {
-            nav.setSelectedItemId(R.id.nav_inicio);
-        }
-
-        // 🔥 Asistente de Voz (Iniciado automáticamente por BaseActivity)
-
-        nav.getMenu().findItem(R.id.nav_mapa).setEnabled(false); // deshabilitado por defecto
-
         nav.setSelectedItemId(R.id.nav_inicio);
         nav.getMenu().findItem(R.id.nav_mapa).setEnabled(false);
-
 
         nav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if      (id == R.id.nav_inicio)     return true;
-            else if (id == R.id.nav_mis_viajes) { goTo(PublicarRuta.class, Transition.NONE); finish(); return true; }
+            else if (id == R.id.nav_mis_viajes) { verificarLimiteYPublicar(); return true; }  // ← CAMBIO
             else if (id == R.id.nav_mapa)       { verificarViajeActivoYAbrirMapa(); return true; }
-            else if (id == R.id.nav_mensajes)   { goTo(Mensajes.class, Transition.NONE); finish(); return true; }
+            else if (id == R.id.nav_mensajes)   { goTo(Mensajes.class,      Transition.NONE); finish(); return true; }
             else if (id == R.id.nav_perfil)     { goTo(PerfilUsuario.class, Transition.NONE); finish(); return true; }
             return false;
         });
@@ -330,7 +469,7 @@ public class HomeConductor extends BaseActivity {
                                         .setTitle("Sin viaje activo")
                                         .setMessage("Primero debes publicar e iniciar un viaje para acceder al mapa.")
                                         .setCancelable(true)
-                                        .setPositiveButton("Publicar viaje", (d, w) -> goTo(PublicarRuta.class, Transition.SLIDE))
+                                        .setPositiveButton("Publicar viaje", (d, w) -> verificarLimiteYPublicar())
                                         .setNegativeButton("Cancelar", null)
                                         .show()
                         );
@@ -350,14 +489,10 @@ public class HomeConductor extends BaseActivity {
 
                     JSONObject ruta = viajeActivo.optJSONObject("ruta");
                     if (ruta != null) {
-                        if (latO == 0) latO = ruta.optDouble("latOrigen",
-                                ruta.optDouble("latitudOrigen", 0));
-                        if (lngO == 0) lngO = ruta.optDouble("lngOrigen",
-                                ruta.optDouble("longitudOrigen", 0));
-                        if (latD == 0) latD = ruta.optDouble("latDestino",
-                                ruta.optDouble("latitudDestino", 0));
-                        if (lngD == 0) lngD = ruta.optDouble("lngDestino",
-                                ruta.optDouble("longitudDestino", 0));
+                        if (latO == 0) latO = ruta.optDouble("latOrigen",  ruta.optDouble("latitudOrigen", 0));
+                        if (lngO == 0) lngO = ruta.optDouble("lngOrigen",  ruta.optDouble("longitudOrigen", 0));
+                        if (latD == 0) latD = ruta.optDouble("latDestino", ruta.optDouble("latitudDestino", 0));
+                        if (lngD == 0) lngD = ruta.optDouble("lngDestino", ruta.optDouble("longitudDestino", 0));
                         if (origen.isEmpty())  origen  = ruta.optString("origen",  "");
                         if (destino.isEmpty()) destino = ruta.optString("destino", "");
                         if (origen.isEmpty())  origen  = ruta.optString("nombre",  "");
@@ -368,41 +503,28 @@ public class HomeConductor extends BaseActivity {
                     if (paradasArr == null) paradasArr = viajeActivo.optJSONArray("paradas");
 
                     String paradasJson = "";
-                    if (paradasArr != null && paradasArr.length() > 0) {
+                    if (paradasArr != null && paradasArr.length() > 0)
                         paradasJson = paradasArr.toString();
-                    }
 
-                    // ── Nivel 3: desde paradas filtrando tipo BAJADA ────────────
                     if (latO == 0 || latD == 0) {
                         try {
                             JSONArray paradas = paradasArr;
                             if (paradas != null && paradas.length() >= 2) {
-
-                                JSONObject pOrigen  = null;
-                                JSONObject pDestino = null;
+                                JSONObject pOrigen = null, pDestino = null;
                                 int maxOrden = -1;
-
                                 for (int j = 0; j < paradas.length(); j++) {
                                     JSONObject p = paradas.optJSONObject(j);
                                     if (p == null) continue;
                                     String tipo = p.optString("tipo", "").toUpperCase().trim();
                                     double pLat = p.optDouble("lat", p.optDouble("latitud", 0));
-                                    if (pLat == 0) continue;
-                                    // Saltar paradas de bajada de pasajero
-                                    if ("BAJADA".equals(tipo)) continue;
+                                    if (pLat == 0 || "BAJADA".equals(tipo)) continue;
                                     int orden = p.optInt("orden", j);
                                     if (pOrigen == null) pOrigen = p;
-                                    if (orden > maxOrden) {
-                                        maxOrden = orden;
-                                        pDestino = p;
-                                    }
+                                    if (orden > maxOrden) { maxOrden = orden; pDestino = p; }
                                 }
-
-                                // Fallback si todo era BAJADA
                                 if (pOrigen  == null) pOrigen  = paradas.getJSONObject(0);
                                 if (pDestino == null || pDestino == pOrigen)
                                     pDestino = paradas.getJSONObject(paradas.length() - 1);
-
                                 if (latO == 0 && pOrigen != null) {
                                     latO = pOrigen.optDouble("lat", pOrigen.optDouble("latitud", 0));
                                     lngO = pOrigen.optDouble("lng", pOrigen.optDouble("longitud", 0));
@@ -418,12 +540,6 @@ public class HomeConductor extends BaseActivity {
                             Log.w(TAG, "Error leyendo paradas: " + e.getMessage());
                         }
                     }
-
-                    Log.d(TAG, "Viaje activo → id=" + idViaje
-                            + " latO=" + latO + " lngO=" + lngO
-                            + " latD=" + latD + " lngD=" + lngD
-                            + " origen=" + origen + " destino=" + destino
-                            + " paradas=" + paradasJson.length() + " chars");
 
                     if ((latO == 0 || latD == 0) && idViaje > 0) {
                         cargarViajeCompletoYAbrirMapa(idViaje);
@@ -451,87 +567,58 @@ public class HomeConductor extends BaseActivity {
                         startActivity(intent);
                     });
                 },
-                error -> runOnUiThread(() ->
-                        startActivity(new Intent(this, Mapa.class)))
+                error -> runOnUiThread(() -> startActivity(new Intent(this, Mapa.class)))
         );
     }
 
-    // =========================================================================
-    //  FIX — cargarViajeCompletoYAbrirMapa con filtro tipo BAJADA
-    // =========================================================================
     private void cargarViajeCompletoYAbrirMapa(int idViaje) {
         Log.d(TAG, "Cargando viaje completo id=" + idViaje);
         ConexionApi.getInstance(this).getObject(
                 Constantes.viajePorId((long) idViaje),
                 viajeCompleto -> {
-                    double latO = 0, lngO = 0, latD = 0, lngD = 0;
-                    String origen = "", destino = "";
+                    double latO = viajeCompleto.optDouble("latOrigen",  0);
+                    double lngO = viajeCompleto.optDouble("lngOrigen",  0);
+                    double latD = viajeCompleto.optDouble("latDestino", 0);
+                    double lngD = viajeCompleto.optDouble("lngDestino", 0);
+                    String origen  = viajeCompleto.optString("origen",  "");
+                    String destino = viajeCompleto.optString("destino", "");
 
-                    // Nivel 1: desde raíz
-                    latO    = viajeCompleto.optDouble("latOrigen",  0);
-                    lngO    = viajeCompleto.optDouble("lngOrigen",  0);
-                    latD    = viajeCompleto.optDouble("latDestino", 0);
-                    lngD    = viajeCompleto.optDouble("lngDestino", 0);
-                    origen  = viajeCompleto.optString("origen",  "");
-                    destino = viajeCompleto.optString("destino", "");
-
-                    // Nivel 2: desde objeto "ruta"
                     JSONObject ruta = viajeCompleto.optJSONObject("ruta");
                     if (ruta != null) {
-                        if (latO == 0) latO = ruta.optDouble("latOrigen",
-                                ruta.optDouble("latitudOrigen", 0));
-                        if (lngO == 0) lngO = ruta.optDouble("lngOrigen",
-                                ruta.optDouble("longitudOrigen", 0));
-                        if (latD == 0) latD = ruta.optDouble("latDestino",
-                                ruta.optDouble("latitudDestino", 0));
-                        if (lngD == 0) lngD = ruta.optDouble("lngDestino",
-                                ruta.optDouble("longitudDestino", 0));
-                        if (origen.isEmpty())
-                            origen  = ruta.optString("origen",  ruta.optString("nombre", ""));
-                        if (destino.isEmpty())
-                            destino = ruta.optString("destino", "");
+                        if (latO == 0) latO = ruta.optDouble("latOrigen",  ruta.optDouble("latitudOrigen", 0));
+                        if (lngO == 0) lngO = ruta.optDouble("lngOrigen",  ruta.optDouble("longitudOrigen", 0));
+                        if (latD == 0) latD = ruta.optDouble("latDestino", ruta.optDouble("latitudDestino", 0));
+                        if (lngD == 0) lngD = ruta.optDouble("lngDestino", ruta.optDouble("longitudDestino", 0));
+                        if (origen.isEmpty())  origen  = ruta.optString("origen",  ruta.optString("nombre", ""));
+                        if (destino.isEmpty()) destino = ruta.optString("destino", "");
                     }
 
-                    // Nivel 3: paradas
                     JSONArray paradasArr = null;
                     if (ruta != null) paradasArr = ruta.optJSONArray("paradas");
                     if (paradasArr == null) paradasArr = viajeCompleto.optJSONArray("paradas");
 
                     String paradasJson = "";
-                    if (paradasArr != null && paradasArr.length() > 0) {
+                    if (paradasArr != null && paradasArr.length() > 0)
                         paradasJson = paradasArr.toString();
-                    }
 
-                    // ── FIX: filtrar tipo BAJADA al buscar destino ──────────────
                     try {
                         JSONArray paradas = paradasArr;
                         if (paradas != null && paradas.length() >= 2) {
-
-                            JSONObject pOrigen  = null;
-                            JSONObject pDestino = null;
+                            JSONObject pOrigen = null, pDestino = null;
                             int maxOrden = -1;
-
                             for (int j = 0; j < paradas.length(); j++) {
                                 JSONObject p = paradas.optJSONObject(j);
                                 if (p == null) continue;
                                 String tipo = p.optString("tipo", "").toUpperCase().trim();
                                 double pLat = p.optDouble("lat", p.optDouble("latitud", 0));
-                                if (pLat == 0) continue;
-                                // Saltar paradas de bajada de pasajero
-                                if ("BAJADA".equals(tipo)) continue;
+                                if (pLat == 0 || "BAJADA".equals(tipo)) continue;
                                 int orden = p.optInt("orden", j);
                                 if (pOrigen == null) pOrigen = p;
-                                if (orden > maxOrden) {
-                                    maxOrden = orden;
-                                    pDestino = p;
-                                }
+                                if (orden > maxOrden) { maxOrden = orden; pDestino = p; }
                             }
-
-                            // Fallback si todo era BAJADA
                             if (pOrigen  == null) pOrigen  = paradas.getJSONObject(0);
                             if (pDestino == null || pDestino == pOrigen)
                                 pDestino = paradas.getJSONObject(paradas.length() - 1);
-
                             if (latO == 0 && pOrigen != null) {
                                 latO = pOrigen.optDouble("lat", pOrigen.optDouble("latitud", 0));
                                 lngO = pOrigen.optDouble("lng", pOrigen.optDouble("longitud", 0));
@@ -546,9 +633,6 @@ public class HomeConductor extends BaseActivity {
                     } catch (Exception e) {
                         Log.w(TAG, "cargarViajeCompleto paradas: " + e.getMessage());
                     }
-
-                    Log.d(TAG, "Viaje completo → latO=" + latO + " latD=" + latD
-                            + " paradas=" + paradasJson.length() + " chars");
 
                     final double fLatO    = latO, fLngO = lngO;
                     final double fLatD    = latD, fLngD = lngD;
@@ -594,31 +678,64 @@ public class HomeConductor extends BaseActivity {
                     mostrarCargando(false);
                     if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
                     viajes.clear();
+                    viajeActivoId = -1;
+
+                    // Log para diagnosticar estados que llegan del servidor
                     for (int i = 0; i < response.length(); i++) {
                         JSONObject viaje = response.optJSONObject(i);
                         if (viaje == null) continue;
                         String estado = viaje.optString("estado", "").trim().toUpperCase();
+                        Log.d(TAG, "Viaje id=" + viaje.optInt("idViajes", viaje.optInt("id", 0))
+                                + " estado='" + estado + "'");
+
                         boolean esActivo = estado.equals("CREADO")
                                 || estado.equals("PROGRAMADO")
                                 || estado.equals("DISPONIBLE")
                                 || estado.equals("EN_CURSO")
-                                || estado.equals("INICIADO");
+                                || estado.equals("INICIADO")
+                                || estado.equals("ACTIVO");
                         if (esActivo) viajes.add(viaje);
                         if (viajeActivoId == -1 &&
                                 (estado.equals("EN_CURSO") || estado.equals("INICIADO"))) {
                             viajeActivoId = viaje.optInt("idViajes", viaje.optInt("id", -1));
                         }
                     }
+
                     adapter.notifyDataSetChanged();
                     actualizarContadorViajes();
+
                     boolean vacio = viajes.isEmpty();
-                    if (layoutEmpty != null)
-                        layoutEmpty.setVisibility(vacio ? View.VISIBLE : View.GONE);
-                    if (rvViajes != null)
-                        rvViajes.setVisibility(vacio ? View.GONE : View.VISIBLE);
-                    if (viajeActivoId > 0) {
+                    if (layoutEmpty != null) layoutEmpty.setVisibility(vacio ? View.VISIBLE : View.GONE);
+                    if (rvViajes    != null) rvViajes.setVisibility(vacio ? View.GONE : View.VISIBLE);
+
+                    // ── Mensajes del empty state ───────────────────────────────
+                    if (vacio && layoutEmpty != null) {
+                        int historial = session.getTotalViajesPublicados();
+                        TextView txtTitulo    = layoutEmpty.findViewById(R.id.txt_empty_titulo);
+                        TextView txtSubtitulo = layoutEmpty.findViewById(R.id.txt_empty_subtitulo);
+
+                        if (historial > 0) {
+                            // Segunda vez en adelante: mostrar contador
+                            if (txtTitulo    != null)
+                                txtTitulo.setText("¡Sigue así, " + session.getNombre() + "!");
+                            if (txtSubtitulo != null)
+                                txtSubtitulo.setText(
+                                        "Ya tienes " + historial
+                                                + (historial == 1 ? " viaje publicado." : " viajes publicados.")
+                                                + "\nPublica otro y sigue conectando.");
+                        } else {
+                            // Primera vez: mensaje de bienvenida
+                            if (txtTitulo    != null)
+                                txtTitulo.setText("No tienes viajes activos");
+                            if (txtSubtitulo != null)
+                                txtSubtitulo.setText(
+                                        "Publica tu primer viaje y empieza\na conectar con pasajeros");
+                        }
+                    }
+
+                    if (viajeActivoId > 0 && adapter != null) {
                         adapter.iniciarPollingPagosConductor(viajeActivoId);
-                    } else {
+                    } else if (adapter != null) {
                         adapter.detenerPollingPagosConductor();
                     }
                 },
@@ -634,6 +751,12 @@ public class HomeConductor extends BaseActivity {
         int total = viajes.size();
         if (chipTotal != null)
             chipTotal.setText(total + (total == 1 ? " activo" : " activos"));
+
+        // Guardar historial máximo en SessionManager
+        int historial = session.getTotalViajesPublicados();
+        if (total > historial) {
+            session.setTotalViajesPublicados(total);
+        }
     }
 
     private void mostrarCargando(boolean cargando) {
@@ -655,9 +778,8 @@ public class HomeConductor extends BaseActivity {
     }
 
     private void agregarPendienteEnLayout(int viajeId, int pasajeroId, String nombre) {
-        for (PasajeroPendiente p : listaPendientes) {
+        for (PasajeroPendiente p : listaPendientes)
             if (p.viajeId == viajeId && p.pasajeroId == pasajeroId) return;
-        }
         listaPendientes.add(new PasajeroPendiente(viajeId, pasajeroId, nombre));
         runOnUiThread(() -> {
             if (adapterCalificaciones != null) adapterCalificaciones.notifyDataSetChanged();
@@ -697,7 +819,7 @@ public class HomeConductor extends BaseActivity {
                 pendiente.viajeId,
                 pendiente.pasajeroId,
                 pendiente.nombrePasajero,
-                "",              // ← fotoCalificado vacío, no tienes URL aquí
+                "",
                 conductorId,
                 true,
                 (puntuacion, comentario) -> {
@@ -861,7 +983,7 @@ public class HomeConductor extends BaseActivity {
                                 CalificacionController.mostrarBottomSheetCalificar(
                                         HomeConductor.this,
                                         viajeId, idPasajero, nomPasajero,
-                                        "",              // ← fotoCalificado vacío
+                                        "",
                                         idCalificador, true, (puntuacion, comentario) -> {
                                             quitarPendienteDelLayout(viajeId, idPasajero);
                                             new Handler(Looper.getMainLooper()).postDelayed(
@@ -898,16 +1020,18 @@ public class HomeConductor extends BaseActivity {
     // ─── SCREEN DESCRIPTOR ────────────────────────────────────────────────────
     @Override
     public String getNombrePantalla() { return "Inicio del Conductor"; }
+
     @Override
     public String getDescripcionPantalla() {
         int total = viajes.size();
         return "Estás en la pantalla principal de conductor. "
-             + "Tienes " + total + (total == 1 ? " viaje activo." : " viajes activos.")
-             + " Puedes publicar viajes, ver tus rutas y vehículos.";
+                + "Tienes " + total + (total == 1 ? " viaje activo." : " viajes activos.")
+                + " Puedes publicar viajes, ver tus rutas y vehículos.";
     }
+
     @Override
     public String getOpcionesPantalla() {
         return "Puedes decir: publicar viaje, mis rutas, mis vehículos, "
-             + "perfil, mensajes, mapa, o ayuda.";
+                + "perfil, mensajes, mapa, o ayuda.";
     }
 }

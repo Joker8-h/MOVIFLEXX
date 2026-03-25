@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="24dp"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="16dp"
+    app:cardBackgroundColor="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- HEADER turquesa -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_dialog_header_turquesa"
+            android:paddingStart="24dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_toStartOf="@+id/btn_dialog_close_finalizar"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Confirmar acción"
+                        android:textColor="#FFFFFF"
+                        android:textSize="10sp"
+                        android:textAllCaps="true"
+                        android:letterSpacing="0.15"
+                        android:fontFamily="sans-serif-medium"
+                        android:alpha="0.85"/>
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Finalizar viaje"
+                    android:textColor="#FFFFFF"
+                    android:textSize="22sp"
+                    android:fontFamily="sans-serif-bold"
+                    android:layout_marginTop="4dp"/>
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/btn_dialog_close_finalizar"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:src="@drawable/ic_close"
+                android:background="@drawable/bg_circle_white_alpha"
+                android:padding="8dp"
+                android:contentDescription="Cerrar"/>
+        </RelativeLayout>
+
+        <!-- CUERPO -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="¿Finalizar el viaje?"
+                android:textColor="#1A1A2E"
+                android:textSize="15sp"
+                android:fontFamily="sans-serif-medium"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Se liberarán todos los cupos y el viaje quedará como completado."
+                android:textColor="#555577"
+                android:textSize="14sp"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="6dp"/>
+
+            <View
+                android:layout_width="40dp"
+                android:layout_height="3dp"
+                android:layout_marginTop="16dp"
+                android:background="#0ABFA3"/>
+        </LinearLayout>
+
+        <!-- BOTONES -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="20dp"
+            android:weightSum="2">
+
+            <TextView
+                android:id="@+id/btn_dialog_no_finalizar"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="Cancelar"
+                android:textColor="#0ABFA3"
+                android:textSize="15sp"
+                android:fontFamily="sans-serif-medium"
+                android:background="@drawable/bg_btn_turquesa_outline"
+                android:layout_marginEnd="8dp"/>
+
+            <TextView
+                android:id="@+id/btn_dialog_si_finalizar"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="Finalizar"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:fontFamily="sans-serif-bold"
+                android:background="@drawable/bg_btn_turquesa_filled"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

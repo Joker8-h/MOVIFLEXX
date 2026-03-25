@@ -31,6 +31,7 @@ import com.arlys.moviflexx.model.ConversacionAdapter;
 import com.arlys.moviflexx.model.Manager.FavoritosManager;
 import com.arlys.moviflexx.model.NotificacionesHelper;
 import com.arlys.moviflexx.model.SessionManager;
+import com.bumptech.glide.Glide;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.card.MaterialCardView;
 
@@ -72,6 +73,13 @@ public class Mensajes extends BaseActivity {
     private ImageView           ivLoadingAnim;
     private ObjectAnimator      loadingRotator;
 
+    // ── Avatar usuario sesión ──────────────────────────────────────
+    private FrameLayout      btnBack;
+    private MaterialCardView cardAvatarFoto;
+    private ImageView        ivAvatarFoto;
+    private MaterialCardView cardAvatarInicial;
+    private TextView         tvInicialUsuario;
+
     // ── Datos ──────────────────────────────────────────────────────
     private final List<Conversacion>     listaCompleta     = new ArrayList<>();
     private final List<Conversacion>     listaFiltrada     = new ArrayList<>();
@@ -111,6 +119,7 @@ public class Mensajes extends BaseActivity {
         favoritosManager = new FavoritosManager(this);
 
         bindViews();
+        configurarAvatar(sm);
         configurarRecycler();
         configurarSwipe();
         configurarBuscador();
@@ -165,6 +174,76 @@ public class Mensajes extends BaseActivity {
         chipFavoritos     = findViewById(R.id.chipFavoritos);
         loadingOverlay    = findViewById(R.id.loadingOverlay);
         ivLoadingAnim     = findViewById(R.id.ivLoadingAnim);
+        btnBack           = findViewById(R.id.btnBack);
+        cardAvatarFoto    = findViewById(R.id.cardAvatarFoto);
+        ivAvatarFoto      = findViewById(R.id.ivAvatarFoto);
+        cardAvatarInicial = findViewById(R.id.cardAvatarInicial);
+        tvInicialUsuario  = findViewById(R.id.tvInicialUsuario);
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    //  AVATAR — igual que Chat.java: foto si existe, inicial si no
+    // ═════════════════════════════════════════════════════════════
+    private void configurarAvatar(SessionManager sm) {
+        if (btnBack != null)
+            btnBack.setOnClickListener(v -> {
+                if (esConductor) goTo(HomeConductor.class, Transition.NONE);
+                else             goTo(HomePasajero.class,  Transition.NONE);
+                finish();
+            });
+
+        // Botón back
+        if (btnBack != null)
+            btnBack.setOnClickListener(v -> onBackPressed());
+
+        // Inicial por defecto mientras carga
+        String nombre = sm.getNombre();
+        if (tvInicialUsuario != null && nombre != null && !nombre.isEmpty())
+            tvInicialUsuario.setText(String.valueOf(nombre.charAt(0)).toUpperCase());
+
+        // Mostrar inicial, ocultar foto hasta que llegue
+        mostrarInicial();
+
+        // Cargar foto del perfil propio desde la API
+        cargarFotoPerfilPropio();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (esConductor) goTo(HomeConductor.class, Transition.NONE);
+        else             goTo(HomePasajero.class,  Transition.NONE);
+        finish();
+    }
+
+    private void mostrarFoto(String url) {
+        if (ivAvatarFoto == null || cardAvatarFoto == null || cardAvatarInicial == null) return;
+        cardAvatarFoto.setVisibility(View.VISIBLE);
+        cardAvatarInicial.setVisibility(View.GONE);
+        Glide.with(this)
+                .load(url)
+                .circleCrop()
+                .placeholder(R.drawable.logomo)
+                .error(R.drawable.logomo)
+                .into(ivAvatarFoto);
+    }
+
+    private void mostrarInicial() {
+        if (cardAvatarFoto == null || cardAvatarInicial == null) return;
+        cardAvatarFoto.setVisibility(View.GONE);
+        cardAvatarInicial.setVisibility(View.VISIBLE);
+    }
+
+    private void cargarFotoPerfilPropio() {
+        String url = Constantes.authPorId((long) idUsuarioActual);
+        ConexionApi.getInstance(this).getObject(url,
+                perfil -> {
+                    String foto = extraerFotoDeJson(perfil);
+                    if (!foto.isEmpty()) {
+                        runOnUiThread(() -> mostrarFoto(foto));
+                    }
+                },
+                error -> Log.w(TAG, "cargarFotoPerfilPropio → sin foto")
+        );
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -201,7 +280,7 @@ public class Mensajes extends BaseActivity {
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  CARGAR ÚLTIMO MENSAJE — solo una vez por conversación
+    //  CARGAR ÚLTIMO MENSAJE
     // ═════════════════════════════════════════════════════════════
     private void cargarUltimoMensaje(Conversacion conv) {
         if (idsMensajeCargado.contains(conv.getId())) return;
@@ -459,11 +538,10 @@ public class Mensajes extends BaseActivity {
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  PROCESAR ARRAY — deduplicar por idContacto (fix duplicados)
+    //  PROCESAR ARRAY
     // ═════════════════════════════════════════════════════════════
     private void procesarArray(JSONArray arr) {
         try {
-            // ── Paso 1: parsear todas las conversaciones del backend ───────────
             List<Conversacion> todasLasConversaciones = new ArrayList<>();
 
             if (arr != null) {
@@ -476,20 +554,12 @@ public class Mensajes extends BaseActivity {
                 }
             }
 
-            // ── Paso 2: deduplicar por idContacto ────────────────────────────
-            // Clave = idContacto. Si el mismo usuario tiene múltiples
-            // conversaciones (un viaje distinto cada una), se fusionan en una sola
-            // mostrando siempre el mensaje más reciente y acumulando no leídos.
-            //
-            // Clave negativa = conversaciones sin contacto identificable
-            // (se conservan individualmente para no perder datos).
             Map<Integer, Conversacion> mapaPorContacto = new LinkedHashMap<>();
 
             for (Conversacion c : todasLasConversaciones) {
                 int idContacto = c.getIdContacto();
 
                 if (idContacto <= 0) {
-                    // Sin contacto identificable → clave única basada en id de conversación
                     mapaPorContacto.put(-(int) c.getId(), c);
                     continue;
                 }
@@ -497,36 +567,26 @@ public class Mensajes extends BaseActivity {
                 Conversacion existente = mapaPorContacto.get(idContacto);
 
                 if (existente == null) {
-                    // Primera vez que vemos este contacto
                     mapaPorContacto.put(idContacto, c);
                 } else {
-                    // Ya teníamos una conversación con este contacto:
-                    // conservar la más reciente y acumular no leídos
                     boolean cEsMasReciente =
                             c.getTimestampOrden() > existente.getTimestampOrden();
 
                     if (cEsMasReciente) {
-                        // La nueva es más reciente: usarla como principal
-                        // heredar foto si la existente ya la tenía cargada
                         if (!existente.getFotoContacto().isEmpty()
                                 && c.getFotoContacto().isEmpty()) {
                             c.setFotoContacto(existente.getFotoContacto());
                         }
-                        // heredar mensaje si la nueva no tiene pero la existente sí
                         if (c.getUltimoMensaje().isEmpty()
                                 && !existente.getUltimoMensaje().isEmpty()) {
                             c.setUltimoMensaje(existente.getUltimoMensaje());
                         }
-                        // acumular no leídos de ambas conversaciones
                         c.setMensajesNoLeidos(
                                 c.getMensajesNoLeidos() + existente.getMensajesNoLeidos());
                         mapaPorContacto.put(idContacto, c);
                     } else {
-                        // La existente sigue siendo más reciente: conservarla
-                        // acumular no leídos de la que descartamos
                         existente.setMensajesNoLeidos(
                                 existente.getMensajesNoLeidos() + c.getMensajesNoLeidos());
-                        // si la existente no tiene mensaje pero la nueva sí, heredar
                         if (existente.getUltimoMensaje().isEmpty()
                                 && !c.getUltimoMensaje().isEmpty()) {
                             existente.setUltimoMensaje(c.getUltimoMensaje());
@@ -537,15 +597,12 @@ public class Mensajes extends BaseActivity {
 
             List<Conversacion> nuevaCompleta = new ArrayList<>(mapaPorContacto.values());
 
-            // ── Paso 3: propagar datos ya cargados (foto, mensaje, timestamp) ─
             for (Conversacion c : nuevaCompleta) {
                 Conversacion anterior = buscarEnListaCompleta(c.getIdContacto());
                 if (anterior == null) {
-                    // Es nueva: lanzar cargas
                     cargarFotoContacto(c);
                     if (c.getUltimoMensaje().isEmpty()) cargarUltimoMensaje(c);
                 } else {
-                    // Ya la teníamos: propagar datos ya cargados
                     if (!anterior.getFotoContacto().isEmpty() && c.getFotoContacto().isEmpty())
                         c.setFotoContacto(anterior.getFotoContacto());
                     if (!anterior.getUltimoMensaje().isEmpty() && c.getUltimoMensaje().isEmpty())
@@ -556,7 +613,6 @@ public class Mensajes extends BaseActivity {
                 }
             }
 
-            // ── Paso 4: calcular badge total ──────────────────────────────────
             int totalNoLeidos = 0;
             for (Conversacion c : nuevaCompleta) totalNoLeidos += c.getMensajesNoLeidos();
 
@@ -583,7 +639,6 @@ public class Mensajes extends BaseActivity {
         }
     }
 
-    /** Busca en listaCompleta por idContacto (para propagar datos entre ciclos de polling) */
     private Conversacion buscarEnListaCompleta(int idContacto) {
         if (idContacto <= 0) return null;
         for (Conversacion c : listaCompleta) {
@@ -602,7 +657,7 @@ public class Mensajes extends BaseActivity {
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  FILTRO — más reciente primero + no redibujar si no cambió
+    //  FILTRO
     // ═════════════════════════════════════════════════════════════
     @SuppressLint("NotifyDataSetChanged")
     private void aplicarFiltroCompleto(String query) {
@@ -620,11 +675,9 @@ public class Mensajes extends BaseActivity {
             nuevaLista.add(c);
         }
 
-        // Ordenar más reciente primero (igual que WhatsApp)
         Collections.sort(nuevaLista, (a, b) ->
                 Long.compare(b.getTimestampOrden(), a.getTimestampOrden()));
 
-        // No redibujar si los datos son idénticos
         if (!listaCambio(listaFiltrada, nuevaLista)) {
             actualizarEstadoVacio(query);
             return;
@@ -665,7 +718,7 @@ public class Mensajes extends BaseActivity {
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  FOTO CONTACTO
+    //  FOTO CONTACTO (conversaciones)
     // ═════════════════════════════════════════════════════════════
     private void cargarFotoContacto(Conversacion conv) {
         if (conv.getIdContacto() <= 0) return;

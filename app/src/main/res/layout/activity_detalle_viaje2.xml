@@ -51,6 +51,25 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
+                    <!-- ✅ BOTÓN VOLVER -->
+                    <FrameLayout
+                        android:id="@+id/btnBack"
+                        android:layout_width="42dp"
+                        android:layout_height="42dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/bg_icon_circle_white_alpha"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="Volver"
+                            android:src="@drawable/ic_arrow_back"
+                            app:tint="#2C3E50" />
+                    </FrameLayout>
+
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -125,7 +144,7 @@
                         <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="44dp"
-                            android:layout_marginEnd="8dp"
+                            android:layout_marginEnd="40dp"
                             android:background="@drawable/bg_btn_white_rounded"
                             android:gravity="center_vertical"
                             android:orientation="vertical"
@@ -158,7 +177,7 @@
                         <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="44dp"
-                            android:layout_marginEnd="8dp"
+                            android:layout_marginEnd="40dp"
                             android:background="@drawable/bg_btn_white_rounded"
                             android:gravity="center_vertical"
                             android:orientation="vertical"
@@ -188,7 +207,7 @@
                         <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="44dp"
-                            android:layout_marginEnd="8dp"
+                            android:layout_marginEnd="40dp"
                             android:background="@drawable/bg_btn_white_rounded"
                             android:gravity="center_vertical"
                             android:orientation="vertical"
@@ -214,34 +233,6 @@
                                 android:textStyle="bold" />
                         </LinearLayout>
 
-                        <!-- Pill PRECIO -->
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="44dp"
-                            android:background="@drawable/bg_btn_white_rounded"
-                            android:gravity="center_vertical"
-                            android:orientation="vertical"
-                            android:paddingStart="14dp"
-                            android:paddingEnd="14dp">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:letterSpacing="0.08"
-                                android:text="PRECIO"
-                                android:textColor="#00CED1"
-                                android:textSize="8sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:id="@+id/txt_precio"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="$ --"
-                                android:textColor="#1A2F4A"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
 
                     </LinearLayout>
                 </HorizontalScrollView>
@@ -762,7 +753,7 @@
                         app:strokeColor="#00CED1"
                         app:strokeWidth="1.5dp"
                         app:cornerRadius="12dp"
-                        app:icon="@drawable/ic_notifications"
+                        app:icon="@drawable/ic_message"
                         app:iconGravity="textStart"
                         app:iconTint="#00CED1"
                         app:iconPadding="8dp"

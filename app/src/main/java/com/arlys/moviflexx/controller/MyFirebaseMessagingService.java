@@ -117,7 +117,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     }
 
     private int iconoPorTipo(String tipo) {
-        if (tipo == null) return R.drawable.ic_notifications;
+        if (tipo == null) return R.drawable.logomo;
         switch (tipo.toUpperCase()) {
             case "MENSAJE":
             case "CHAT":    return R.drawable.ic_chat;

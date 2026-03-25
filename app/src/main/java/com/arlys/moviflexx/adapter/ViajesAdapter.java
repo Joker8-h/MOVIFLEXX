@@ -2155,20 +2155,55 @@ public class ViajesAdapter extends RecyclerView.Adapter<ViajesAdapter.ViajeViewH
     //  PERO estos pasos solo ocurren al finalizar, no al presionar btnCalificar
     // =========================================================================
     private void confirmarCancelar(int viajeId) {
-        new AlertDialog.Builder(context)
-                .setTitle("Cancelar viaje")
-                .setMessage("¿Estás seguro de que quieres cancelar este viaje?")
-                .setPositiveButton("Sí, cancelar", (d, w) ->
-                        cambiarEstado(viajeId, Constantes.viajeCancelar((long) viajeId), "cancelado"))
-                .setNegativeButton("No", null).show();
+        Activity activity = resolveActivity(context);
+        if (activity == null || activity.isFinishing()) return;
+
+        android.view.View dialogView = android.view.LayoutInflater.from(context)
+                .inflate(R.layout.dialog_confirmar_cancelar, null);
+
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(context, 0)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null)
+            dialog.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+
+        dialogView.findViewById(R.id.btn_dialog_no).setOnClickListener(v -> dialog.dismiss());
+        dialogView.findViewById(R.id.btn_dialog_si_cancelar).setOnClickListener(v -> {
+            dialog.dismiss();
+            cambiarEstado(viajeId, Constantes.viajeCancelar((long) viajeId), "cancelado");
+        });
+        dialogView.findViewById(R.id.btn_dialog_close_cancelar).setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
     private void confirmarYFinalizar(int viajeId) {
-        new AlertDialog.Builder(context)
-                .setTitle("Finalizar viaje")
-                .setMessage("¿Finalizar el viaje? Se liberarán todos los cupos.")
-                .setPositiveButton("Finalizar", (d, w) -> ejecutarFlujoFinalizar(viajeId))
-                .setNegativeButton("Cancelar", null).show();
+        Activity activity = resolveActivity(context);
+        if (activity == null || activity.isFinishing()) return;
+
+        android.view.View dialogView = android.view.LayoutInflater.from(context)
+                .inflate(R.layout.dialog_confirmar_finalizar, null);
+
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(context, 0)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null)
+            dialog.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+
+        dialogView.findViewById(R.id.btn_dialog_no_finalizar).setOnClickListener(v -> dialog.dismiss());
+        dialogView.findViewById(R.id.btn_dialog_si_finalizar).setOnClickListener(v -> {
+            dialog.dismiss();
+            ejecutarFlujoFinalizar(viajeId);
+        });
+        dialogView.findViewById(R.id.btn_dialog_close_finalizar).setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
     private void ejecutarFlujoFinalizar(int viajeId) {
