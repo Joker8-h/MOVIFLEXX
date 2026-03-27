@@ -12,6 +12,10 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
+import android.widget.ScrollView;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Typeface;
@@ -1360,10 +1364,10 @@ public class Mapa extends BaseActivity {
                 viajeYaFinalizado = true;
                 runOnUiThread(() -> {
                     mostrarBannerEstado("¡Llegaste al destino!", 0xFF1565C0);
-                    new Handler(Looper.getMainLooper()).postDelayed(this::ejecutarFinalizarViaje, 1200);
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        ejecutarFinalizarViaje(); // esto llama paso2FinalizarMapa → sheet
+                    }, 1200);
                 });
-                break;
-            default:
                 break;
         }
     }
@@ -1410,7 +1414,8 @@ public class Mapa extends BaseActivity {
         GeoPoint miPBajada = null;
         for (PasajeroInfo p : pasajeros) {
             if (p.idUsuario == session.getIdUsuario() && p.pBajada != null) {
-                miPBajada = p.pBajada; break;
+                miPBajada = p.pBajada;
+                break;
             }
         }
         if (miPBajada == null && pBajada != null) miPBajada = pBajada;
@@ -1420,12 +1425,849 @@ public class Mapa extends BaseActivity {
         if (dist <= UMBRAL_BAJADA_M) {
             pagoYaLanzado = true;
             runOnUiThread(() -> {
-                if (tvEta != null) tvEta.setVisibility(View.GONE);
+                if (tvEta != null)     tvEta.setVisibility(View.GONE);
                 if (tvDistEta != null) tvDistEta.setVisibility(View.GONE);
-                mostrarBannerEstado("Llegaste a tu parada — ¡Registra tu pago!", 0xFF2E7D32);
-                new Handler(Looper.getMainLooper())
-                        .postDelayed(this::abrirPagoDesdeProximidad, 1800);
+                mostrarBannerEstado(
+                        "Llegaste a tu parada — ¡Registra tu pago!", 0xFF2E7D32);
+                // Mostrar sheet de pago del pasajero
+                new Handler(Looper.getMainLooper()).postDelayed(
+                        this::mostrarSheetPagoPasajeroDesdeProximidad, 1800);
             });
+        }
+    }
+
+    private void mostrarSheetPagoPasajeroDesdeProximidad() {
+        if (isFinishing() || isDestroyed() || idViaje <= 0) return;
+
+        // Buscar el idConductor del viaje
+        ConexionApi.getInstance(this).getObjectNoCache(
+                Constantes.viajePorId((long) idViaje),
+                viajeObj -> {
+                    int idCond = viajeObj.optInt("idConductor",
+                            viajeObj.optInt("conductorId", -1));
+                    if (idCond <= 0) {
+                        JSONObject condObj = viajeObj.optJSONObject("conductor");
+                        if (condObj != null)
+                            for (String k : new String[]{"id", "idUsuarios", "idUsuario"}) {
+                                int id = condObj.optInt(k, -1);
+                                if (id > 0) { idCond = id; break; }
+                            }
+                    }
+
+                    double montoBase = viajeObj.optDouble("precio", 0);
+                    if (montoBase <= 0) {
+                        JSONObject ruta = viajeObj.optJSONObject("ruta");
+                        if (ruta != null)
+                            montoBase = ruta.optDouble("precio",
+                                    ruta.optDouble("costoCombustible", 0));
+                    }
+
+                    // Intentar obtener el monto del tramo del pasajero
+                    double montoTramo = 0;
+                    JSONArray usuarios = viajeObj.optJSONArray("usuarios");
+                    int miId = session.getIdUsuario();
+                    if (usuarios != null) {
+                        for (int i = 0; i < usuarios.length(); i++) {
+                            JSONObject u = usuarios.optJSONObject(i);
+                            if (u == null) continue;
+                            int idU = -1;
+                            JSONObject uo = u.optJSONObject("usuario");
+                            if (uo != null)
+                                for (String k : new String[]{"idUsuarios", "id", "idUsuario"}) {
+                                    int id = uo.optInt(k, -1);
+                                    if (id > 0) { idU = id; break; }
+                                }
+                            if (idU != miId) continue;
+                            montoTramo = u.optDouble("precioFinal",
+                                    u.optDouble("precio",
+                                            u.optDouble("costoPorPasajero", 0)));
+                            break;
+                        }
+                    }
+
+                    final double fMonto = montoTramo > 0 ? montoTramo : montoBase;
+                    final int    fIdCond = idCond;
+
+                    runOnUiThread(() ->
+                            construirSheetPagoPasajeroMapa(fMonto, fIdCond));
+                },
+                err -> runOnUiThread(() -> construirSheetPagoPasajeroMapa(0, -1))
+        );
+    }
+
+    private void construirSheetPagoPasajeroMapa(double montoBase, int idConductor) {
+        if (isFinishing() || isDestroyed()) return;
+
+        BottomSheetDialog sheet = new BottomSheetDialog(this,
+                com.google.android.material.R.style.Theme_MaterialComponents_BottomSheetDialog);
+
+        float d = density();
+        int p16 = px(16), p12 = px(12), p8 = px(8), p6 = px(6), p4 = px(4);
+
+        android.widget.ScrollView sv = new android.widget.ScrollView(this);
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(p16, p12, p16, px(32));
+        sv.addView(root);
+
+        // Tirón
+        View tiron = new View(this);
+        LinearLayout.LayoutParams lpT = new LinearLayout.LayoutParams(px(40), px(4));
+        lpT.gravity = Gravity.CENTER_HORIZONTAL;
+        lpT.bottomMargin = p12;
+        tiron.setLayoutParams(lpT);
+        GradientDrawable tBg = new GradientDrawable();
+        tBg.setShape(GradientDrawable.RECTANGLE);
+        tBg.setCornerRadius(px(4));
+        tBg.setColor(Color.parseColor("#BDBDBD"));
+        tiron.setBackground(tBg);
+        root.addView(tiron);
+
+        // Título
+        TextView tvTit = new TextView(this);
+        tvTit.setText("Pagar tu viaje");
+        tvTit.setTextSize(20f);
+        tvTit.setTypeface(null, Typeface.BOLD);
+        tvTit.setTextColor(Color.parseColor("#004D40"));
+        LinearLayout.LayoutParams lpTit = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpTit.bottomMargin = p4;
+        tvTit.setLayoutParams(lpTit);
+        root.addView(tvTit);
+
+        TextView tvSub = new TextView(this);
+        tvSub.setText("Elige cómo le pagas al conductor");
+        tvSub.setTextSize(13f);
+        tvSub.setTextColor(Color.parseColor("#546E7A"));
+        LinearLayout.LayoutParams lpSub = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpSub.bottomMargin = p16;
+        tvSub.setLayoutParams(lpSub);
+        root.addView(tvSub);
+
+        // Card monto
+        MaterialCardView cardMonto = new MaterialCardView(this);
+        LinearLayout.LayoutParams lpCM = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpCM.bottomMargin = p16;
+        cardMonto.setLayoutParams(lpCM);
+        cardMonto.setRadius(px(16));
+        cardMonto.setCardElevation(0);
+        cardMonto.setCardBackgroundColor(Color.parseColor("#E0F7FA"));
+        cardMonto.setStrokeWidth(px(1));
+        cardMonto.setStrokeColor(Color.parseColor("#80DEEA"));
+
+        LinearLayout innerMonto = new LinearLayout(this);
+        innerMonto.setOrientation(LinearLayout.HORIZONTAL);
+        innerMonto.setGravity(Gravity.CENTER_VERTICAL);
+        innerMonto.setPadding(p16, p12, p16, p12);
+
+        TextView tvMontoLbl = new TextView(this);
+        tvMontoLbl.setText("Total a pagar");
+        tvMontoLbl.setTextSize(14f);
+        tvMontoLbl.setTextColor(Color.parseColor("#00695C"));
+        tvMontoLbl.setLayoutParams(new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        innerMonto.addView(tvMontoLbl);
+
+        java.text.NumberFormat nf =
+                java.text.NumberFormat.getNumberInstance(new java.util.Locale("es", "CO"));
+        TextView tvMontoVal = new TextView(this);
+        tvMontoVal.setText(montoBase > 0
+                ? "$" + nf.format(montoBase) + " COP"
+                : "Consultar con conductor");
+        tvMontoVal.setTextSize(16f);
+        tvMontoVal.setTypeface(null, Typeface.BOLD);
+        tvMontoVal.setTextColor(Color.parseColor("#004D40"));
+        innerMonto.addView(tvMontoVal);
+        cardMonto.addView(innerMonto);
+        root.addView(cardMonto);
+
+        // Método pago
+        TextView tvMetLbl = new TextView(this);
+        tvMetLbl.setText("¿Cómo vas a pagar?");
+        tvMetLbl.setTextSize(14f);
+        tvMetLbl.setTypeface(null, Typeface.BOLD);
+        tvMetLbl.setTextColor(Color.parseColor("#1A2035"));
+        LinearLayout.LayoutParams lpML = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpML.bottomMargin = p8;
+        tvMetLbl.setLayoutParams(lpML);
+        root.addView(tvMetLbl);
+
+        final String[] metodo = {""};
+        LinearLayout filaM = new LinearLayout(this);
+        filaM.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams lpFM = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpFM.bottomMargin = p16;
+        filaM.setLayoutParams(lpFM);
+
+        MaterialButton btnEf = new MaterialButton(this);
+        btnEf.setText("Efectivo");
+        btnEf.setTextSize(13f);
+        btnEf.setTextColor(Color.parseColor("#004D40"));
+        btnEf.setCornerRadius(px(12));
+        btnEf.setBackgroundColor(Color.parseColor("#E0F2F1"));
+        LinearLayout.LayoutParams lpBE = new LinearLayout.LayoutParams(0, px(52), 1f);
+        lpBE.rightMargin = p8;
+        btnEf.setLayoutParams(lpBE);
+
+        MaterialButton btnTr = new MaterialButton(this);
+        btnTr.setText("Transferencia");
+        btnTr.setTextSize(13f);
+        btnTr.setTextColor(Color.parseColor("#004D40"));
+        btnTr.setCornerRadius(px(12));
+        btnTr.setBackgroundColor(Color.parseColor("#E0F2F1"));
+        btnTr.setLayoutParams(new LinearLayout.LayoutParams(0, px(52), 1f));
+        filaM.addView(btnEf);
+        filaM.addView(btnTr);
+        root.addView(filaM);
+
+        MaterialButton btnConf = new MaterialButton(this);
+        btnConf.setText("CONFIRMAR QUE PAGUÉ");
+        btnConf.setTextSize(15f);
+        btnConf.setTextColor(Color.WHITE);
+        btnConf.setEnabled(false);
+        btnConf.setAlpha(0.5f);
+        btnConf.setBackgroundColor(Color.parseColor("#B0BEC5"));
+        btnConf.setCornerRadius(px(14));
+        LinearLayout.LayoutParams lpBtn = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, px(54));
+        lpBtn.bottomMargin = p4;
+        btnConf.setLayoutParams(lpBtn);
+        root.addView(btnConf);
+
+        MaterialButton btnSaltar = new MaterialButton(this);
+        btnSaltar.setText("Saltar por ahora");
+        btnSaltar.setTextSize(12f);
+        btnSaltar.setTextColor(Color.parseColor("#90A4AE"));
+        btnSaltar.setBackgroundColor(Color.TRANSPARENT);
+        btnSaltar.setStrokeWidth(0);
+        btnSaltar.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, px(40)));
+        root.addView(btnSaltar);
+
+        Runnable actualizarUI = () -> {
+            boolean esEf = "efectivo".equals(metodo[0]);
+            boolean esTr = "transferencia".equals(metodo[0]);
+            btnEf.setBackgroundColor(
+                    esEf ? Color.parseColor("#00897B") : Color.parseColor("#E0F2F1"));
+            btnEf.setTextColor(esEf ? Color.WHITE : Color.parseColor("#004D40"));
+            btnTr.setBackgroundColor(
+                    esTr ? Color.parseColor("#00897B") : Color.parseColor("#E0F2F1"));
+            btnTr.setTextColor(esTr ? Color.WHITE : Color.parseColor("#004D40"));
+            boolean hay = !metodo[0].isEmpty();
+            btnConf.setEnabled(hay);
+            btnConf.setAlpha(hay ? 1f : 0.5f);
+            btnConf.setBackgroundColor(
+                    hay ? Color.parseColor("#00897B") : Color.parseColor("#B0BEC5"));
+        };
+
+        btnEf.setOnClickListener(v -> { metodo[0] = "efectivo";      actualizarUI.run(); });
+        btnTr.setOnClickListener(v -> { metodo[0] = "transferencia"; actualizarUI.run(); });
+
+        int idPasajero  = session.getIdUsuario();
+        String nomPas   = session.getNombre();
+        double fMonto   = montoBase;
+        final BottomSheetDialog fSheet = sheet;
+
+        btnSaltar.setOnClickListener(v -> fSheet.dismiss());
+
+        btnConf.setOnClickListener(v -> {
+            if (metodo[0].isEmpty()) return;
+            btnConf.setEnabled(false);
+            btnConf.setText("Registrando pago...");
+
+            JSONObject body = new JSONObject();
+            try {
+                body.put("idViaje",              idViaje);
+                body.put("idUsuario",            idPasajero);
+                body.put("monto",                fMonto);
+                body.put("tipoPago",             metodo[0].toUpperCase());
+                body.put("estado",               "PENDIENTE");
+                body.put("confirmacionPasajero", false);
+                body.put("confirmacionConductor",false);
+            } catch (Exception ignored) {}
+
+            // Verificar si ya existe un pago previo
+            ConexionApi.getInstance(this).getObjectNoCache(
+                    Constantes.pagoDeUsuarioEnViaje(idViaje, idPasajero),
+                    pagoExist -> {
+                        long idPago = pagoExist.optLong("idPago",
+                                pagoExist.optLong("id", -1));
+                        if (idPago > 0) {
+                            // Confirmar el existente
+                            JSONObject bc = new JSONObject();
+                            try { bc.put("confirmacionPasajero", true); }
+                            catch (Exception ignored) {}
+                            ConexionApi.getInstance(this).put(
+                                    Constantes.pagoConfirmarPasajero(idPago), bc,
+                                    r -> runOnUiThread(() -> {
+                                        fSheet.dismiss();
+                                        Toast.makeText(this,
+                                                "✅ Pago confirmado",
+                                                Toast.LENGTH_LONG).show();
+                                    }),
+                                    err -> runOnUiThread(() -> {
+                                        fSheet.dismiss();
+                                        Toast.makeText(this,
+                                                "Pago registrado",
+                                                Toast.LENGTH_SHORT).show();
+                                    })
+                            );
+                        } else {
+                            // Crear pago nuevo
+                            ConexionApi.getInstance(this).post(Constantes.PAGOS, body,
+                                    resp -> {
+                                        long newId = resp.optLong("idPago",
+                                                resp.optLong("id", -1));
+                                        if (newId > 0) {
+                                            JSONObject bc = new JSONObject();
+                                            try { bc.put("confirmacionPasajero", true); }
+                                            catch (Exception ignored) {}
+                                            ConexionApi.getInstance(this).put(
+                                                    Constantes.pagoConfirmarPasajero(newId), bc,
+                                                    r -> runOnUiThread(() -> {
+                                                        fSheet.dismiss();
+                                                        Toast.makeText(this,
+                                                                "✅ Pago confirmado — el conductor lo verá pronto",
+                                                                Toast.LENGTH_LONG).show();
+                                                    }),
+                                                    err -> runOnUiThread(() -> {
+                                                        fSheet.dismiss();
+                                                        Toast.makeText(this,
+                                                                "Pago registrado",
+                                                                Toast.LENGTH_SHORT).show();
+                                                    })
+                                            );
+                                        } else {
+                                            runOnUiThread(() -> {
+                                                fSheet.dismiss();
+                                                Toast.makeText(this, "Pago registrado",
+                                                        Toast.LENGTH_SHORT).show();
+                                            });
+                                        }
+                                    },
+                                    errCreate -> runOnUiThread(() -> {
+                                        btnConf.setEnabled(true);
+                                        btnConf.setText("CONFIRMAR QUE PAGUÉ");
+                                        Toast.makeText(this,
+                                                "Error al registrar el pago",
+                                                Toast.LENGTH_SHORT).show();
+                                    })
+                            );
+                        }
+                    },
+                    errVerif -> {
+                        // No existe → crear
+                        ConexionApi.getInstance(this).post(Constantes.PAGOS, body,
+                                resp -> {
+                                    long newId = resp.optLong("idPago",
+                                            resp.optLong("id", -1));
+                                    if (newId > 0) {
+                                        JSONObject bc = new JSONObject();
+                                        try { bc.put("confirmacionPasajero", true); }
+                                        catch (Exception ignored) {}
+                                        ConexionApi.getInstance(this).put(
+                                                Constantes.pagoConfirmarPasajero(newId), bc,
+                                                r -> runOnUiThread(() -> {
+                                                    fSheet.dismiss();
+                                                    Toast.makeText(this,
+                                                            "✅ Pago confirmado",
+                                                            Toast.LENGTH_LONG).show();
+                                                }),
+                                                err -> runOnUiThread(() -> {
+                                                    fSheet.dismiss();
+                                                    Toast.makeText(this, "Pago registrado",
+                                                            Toast.LENGTH_SHORT).show();
+                                                })
+                                        );
+                                    } else {
+                                        runOnUiThread(() -> {
+                                            fSheet.dismiss();
+                                            Toast.makeText(this, "Pago registrado",
+                                                    Toast.LENGTH_SHORT).show();
+                                        });
+                                    }
+                                },
+                                errCreate -> runOnUiThread(() -> {
+                                    btnConf.setEnabled(true);
+                                    btnConf.setText("CONFIRMAR QUE PAGUÉ");
+                                    Toast.makeText(this, "Error al registrar el pago",
+                                            Toast.LENGTH_SHORT).show();
+                                })
+                        );
+                    }
+            );
+        });
+
+        sheet.setContentView(sv);
+        sheet.show();
+    }
+
+    // =========================================================================
+//  SHEET COBRO DEL VIAJE — llamado desde el mapa al finalizar
+// =========================================================================
+
+    private void mostrarSheetCobroViaje() {
+        if (isFinishing() || isDestroyed() || idViaje <= 0) return;
+
+        ConexionApi.getInstance(this).getObjectNoCache(
+                Constantes.viajePorId((long) idViaje),
+                viajeObj -> {
+                    double montoFallback = viajeObj.optDouble("precio", 0);
+                    if (montoFallback <= 0) {
+                        JSONObject ruta = viajeObj.optJSONObject("ruta");
+                        if (ruta != null)
+                            montoFallback = ruta.optDouble("precio",
+                                    ruta.optDouble("costoCombustible", 0));
+                    }
+                    final double fMontoFallback = montoFallback;
+
+                    java.util.ArrayList<JSONObject> listaPasajeros = new java.util.ArrayList<>();
+                    JSONArray usuarios = viajeObj.optJSONArray("usuarios");
+                    if (usuarios != null) {
+                        for (int i = 0; i < usuarios.length(); i++) {
+                            JSONObject u = usuarios.optJSONObject(i);
+                            if (u == null) continue;
+                            String est = u.optString("estado", "").toUpperCase();
+                            if ("CANCELADO".equals(est) || "CANCELADA".equals(est)) continue;
+                            listaPasajeros.add(u);
+                        }
+                    }
+
+                    if (listaPasajeros.isEmpty()) {
+                        runOnUiThread(() -> irAResumenViaje());
+                        return;
+                    }
+
+                    runOnUiThread(() ->
+                            construirSheetCobroMapa(listaPasajeros, fMontoFallback));
+                },
+                err -> runOnUiThread(() -> irAResumenViaje())
+        );
+    }
+
+    private void construirSheetCobroMapa(java.util.ArrayList<JSONObject> pasajeros,
+                                         double montoBase) {
+        if (isFinishing() || isDestroyed()) return;
+
+        BottomSheetDialog sheet = new BottomSheetDialog(this,
+                com.google.android.material.R.style.Theme_MaterialComponents_BottomSheetDialog);
+
+        float d   = density();
+        int p16   = px(16), p12 = px(12), p8 = px(8), p6 = px(6), p4 = px(4);
+
+        android.widget.ScrollView sv = new android.widget.ScrollView(this);
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(p16, p12, p16, px(32));
+        sv.addView(root);
+
+        // ── Tirón ────────────────────────────────────────────────────────────
+        View tiron = new View(this);
+        LinearLayout.LayoutParams lpT =
+                new LinearLayout.LayoutParams(px(40), px(4));
+        lpT.gravity      = Gravity.CENTER_HORIZONTAL;
+        lpT.bottomMargin = p12;
+        tiron.setLayoutParams(lpT);
+        GradientDrawable tBg = new GradientDrawable();
+        tBg.setShape(GradientDrawable.RECTANGLE);
+        tBg.setCornerRadius(px(4));
+        tBg.setColor(Color.parseColor("#BDBDBD"));
+        tiron.setBackground(tBg);
+        root.addView(tiron);
+
+        // ── Título ───────────────────────────────────────────────────────────
+        TextView tvTitulo = new TextView(this);
+        tvTitulo.setText("Cobro del viaje");
+        tvTitulo.setTextSize(20f);
+        tvTitulo.setTypeface(null, Typeface.BOLD);
+        tvTitulo.setTextColor(Color.parseColor("#004D40"));
+        LinearLayout.LayoutParams lpTit = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpTit.bottomMargin = p4;
+        tvTitulo.setLayoutParams(lpTit);
+        root.addView(tvTitulo);
+
+        // ── Subtítulo ─────────────────────────────────────────────────────────
+        TextView tvSub = new TextView(this);
+        tvSub.setText("Confirma el pago de cada pasajero antes de calificar");
+        tvSub.setTextSize(13f);
+        tvSub.setTextColor(Color.parseColor("#546E7A"));
+        LinearLayout.LayoutParams lpSub = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpSub.bottomMargin = p16;
+        tvSub.setLayoutParams(lpSub);
+        root.addView(tvSub);
+
+        // ── Separador ─────────────────────────────────────────────────────────
+        View sep = new View(this);
+        LinearLayout.LayoutParams lpSep = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, px(1));
+        lpSep.bottomMargin = p12;
+        sep.setLayoutParams(lpSep);
+        sep.setBackgroundColor(Color.parseColor("#E0F2F1"));
+        root.addView(sep);
+
+        // ── Botón "Continuar a calificar" (se habilita cuando todos paguen) ──
+        MaterialButton btnContinuar = new MaterialButton(this);
+        btnContinuar.setText("CONTINUAR A CALIFICAR");
+        btnContinuar.setTextSize(15f);
+        btnContinuar.setTextColor(Color.WHITE);
+        btnContinuar.setEnabled(false);
+        btnContinuar.setAlpha(0.5f);
+        btnContinuar.setBackgroundColor(Color.parseColor("#B0BEC5"));
+        LinearLayout.LayoutParams lpBtn = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, px(54));
+        lpBtn.topMargin = p16;
+        btnContinuar.setLayoutParams(lpBtn);
+        btnContinuar.setCornerRadius(px(14));
+
+        final int[] pagosConfirmados = {0};
+        final int   totalPasajeros   = pasajeros.size();
+        java.text.NumberFormat nf    =
+                java.text.NumberFormat.getNumberInstance(new java.util.Locale("es", "CO"));
+
+        for (int i = 0; i < pasajeros.size(); i++) {
+            JSONObject u           = pasajeros.get(i);
+            int        idPasajero  = -1;
+            String     nomPasajero = "Pasajero";
+
+            JSONObject usuObj = u.optJSONObject("usuario");
+            if (usuObj == null) usuObj = u.optJSONObject("pasajero");
+            if (usuObj != null) {
+                for (String k : new String[]{"idUsuarios", "id", "idUsuario"}) {
+                    int id = usuObj.optInt(k, -1);
+                    if (id > 0) { idPasajero = id; break; }
+                }
+                for (String k : new String[]{"nombre", "nombreCompleto", "nombres"}) {
+                    String n = usuObj.optString(k, "");
+                    if (!n.isEmpty() && !n.equals("null")) { nomPasajero = n; break; }
+                }
+                if (nomPasajero.equals("Pasajero")) {
+                    String n = usuObj.optString("nombres", ""),
+                            a = usuObj.optString("apellidos", "");
+                    if (!n.isEmpty() || !a.isEmpty()) nomPasajero = (n + " " + a).trim();
+                }
+            }
+            if (idPasajero <= 0)
+                for (String k : new String[]{"idUsuarios", "idUsuario", "idPasajero"}) {
+                    int id = u.optInt(k, -1);
+                    if (id > 0) { idPasajero = id; break; }
+                }
+
+            // Monto del tramo del pasajero
+            double montoP = u.optDouble("precioFinal",
+                    u.optDouble("precioTramo",
+                            u.optDouble("precio",
+                                    u.optDouble("costoPorPasajero", montoBase))));
+            if (montoP <= 0) montoP = montoBase;
+            final double fMontoP     = montoP;
+            final int    fIdPasajero = idPasajero;
+            final String fNomPasajero = nomPasajero;
+
+            // ── Card por pasajero ─────────────────────────────────────────────
+            MaterialCardView card = new MaterialCardView(this);
+            LinearLayout.LayoutParams lpCard = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            lpCard.bottomMargin = p8;
+            card.setLayoutParams(lpCard);
+            card.setRadius(px(16));
+            card.setCardElevation(0);
+            card.setCardBackgroundColor(Color.parseColor("#FAFAFA"));
+            card.setStrokeWidth(px(1));
+            card.setStrokeColor(Color.parseColor("#E0E0E0"));
+
+            LinearLayout inner = new LinearLayout(this);
+            inner.setOrientation(LinearLayout.VERTICAL);
+            inner.setPadding(p12, p12, p12, p12);
+
+            // Fila avatar + nombre + monto + badge
+            LinearLayout filaNom = new LinearLayout(this);
+            filaNom.setOrientation(LinearLayout.HORIZONTAL);
+            filaNom.setGravity(Gravity.CENTER_VERTICAL);
+            LinearLayout.LayoutParams lpFN = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            lpFN.bottomMargin = p8;
+            filaNom.setLayoutParams(lpFN);
+
+            // Avatar
+            TextView tvAv = new TextView(this);
+            LinearLayout.LayoutParams lpAv =
+                    new LinearLayout.LayoutParams(px(36), px(36));
+            lpAv.rightMargin = p8;
+            tvAv.setLayoutParams(lpAv);
+            tvAv.setGravity(Gravity.CENTER);
+            tvAv.setText(nomPasajero.isEmpty() ? "P"
+                    : nomPasajero.substring(0, 1).toUpperCase());
+            tvAv.setTextColor(Color.WHITE);
+            tvAv.setTextSize(15f);
+            tvAv.setTypeface(null, Typeface.BOLD);
+            int[] avCols = {0xFF009688, 0xFF1565C0, 0xFFE65100, 0xFF6A1B9A};
+            GradientDrawable avBg = new GradientDrawable();
+            avBg.setShape(GradientDrawable.OVAL);
+            avBg.setColor(avCols[i % avCols.length]);
+            tvAv.setBackground(avBg);
+            filaNom.addView(tvAv);
+
+            // Col info
+            LinearLayout colInfo = new LinearLayout(this);
+            colInfo.setOrientation(LinearLayout.VERTICAL);
+            colInfo.setLayoutParams(
+                    new LinearLayout.LayoutParams(0,
+                            LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            TextView tvNom = new TextView(this);
+            tvNom.setText(nomPasajero);
+            tvNom.setTextSize(14.5f);
+            tvNom.setTypeface(null, Typeface.BOLD);
+            tvNom.setTextColor(Color.parseColor("#1A2035"));
+            colInfo.addView(tvNom);
+            TextView tvMonto = new TextView(this);
+            tvMonto.setText("$" + nf.format(fMontoP) + " COP");
+            tvMonto.setTextSize(12f);
+            tvMonto.setTextColor(Color.parseColor("#00897B"));
+            tvMonto.setTypeface(null, Typeface.BOLD);
+            colInfo.addView(tvMonto);
+            filaNom.addView(colInfo);
+
+            // Badge estado
+            TextView tvBadge = new TextView(this);
+            tvBadge.setText("Pendiente");
+            tvBadge.setTextSize(10f);
+            tvBadge.setTextColor(Color.WHITE);
+            tvBadge.setTypeface(null, Typeface.BOLD);
+            tvBadge.setPadding(p6, px(3), p6, px(3));
+            GradientDrawable badgeBg = new GradientDrawable();
+            badgeBg.setShape(GradientDrawable.RECTANGLE);
+            badgeBg.setCornerRadius(px(20));
+            badgeBg.setColor(Color.parseColor("#F57F17"));
+            tvBadge.setBackground(badgeBg);
+            filaNom.addView(tvBadge);
+            inner.addView(filaNom);
+
+            // Label método
+            TextView tvMetLabel = new TextView(this);
+            tvMetLabel.setText("¿Cómo te pagó?");
+            tvMetLabel.setTextSize(12f);
+            tvMetLabel.setTextColor(Color.parseColor("#546E7A"));
+            LinearLayout.LayoutParams lpML = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            lpML.bottomMargin = p6;
+            tvMetLabel.setLayoutParams(lpML);
+            inner.addView(tvMetLabel);
+
+            // Botones método
+            final String[] metodo = {""};
+            LinearLayout filaMetodos = new LinearLayout(this);
+            filaMetodos.setOrientation(LinearLayout.HORIZONTAL);
+            LinearLayout.LayoutParams lpFM = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            lpFM.bottomMargin = p8;
+            filaMetodos.setLayoutParams(lpFM);
+
+            MaterialButton btnEfectivo = new MaterialButton(this);
+            btnEfectivo.setText("Efectivo");
+            btnEfectivo.setTextSize(12f);
+            btnEfectivo.setTextColor(Color.parseColor("#004D40"));
+            btnEfectivo.setCornerRadius(px(10));
+            btnEfectivo.setBackgroundColor(Color.parseColor("#E0F2F1"));
+            LinearLayout.LayoutParams lpBE =
+                    new LinearLayout.LayoutParams(0, px(40), 1f);
+            lpBE.rightMargin = p6;
+            btnEfectivo.setLayoutParams(lpBE);
+
+            MaterialButton btnTransfer = new MaterialButton(this);
+            btnTransfer.setText("Transferencia");
+            btnTransfer.setTextSize(12f);
+            btnTransfer.setTextColor(Color.parseColor("#004D40"));
+            btnTransfer.setCornerRadius(px(10));
+            btnTransfer.setBackgroundColor(Color.parseColor("#E0F2F1"));
+            btnTransfer.setLayoutParams(
+                    new LinearLayout.LayoutParams(0, px(40), 1f));
+            filaMetodos.addView(btnEfectivo);
+            filaMetodos.addView(btnTransfer);
+            inner.addView(filaMetodos);
+
+            // Botón confirmar
+            MaterialButton btnConf = new MaterialButton(this);
+            btnConf.setText("CONFIRMAR PAGO RECIBIDO");
+            btnConf.setTextSize(13f);
+            btnConf.setTextColor(Color.WHITE);
+            btnConf.setCornerRadius(px(12));
+            btnConf.setBackgroundColor(Color.parseColor("#B0BEC5"));
+            btnConf.setEnabled(false);
+            btnConf.setAlpha(0.5f);
+            btnConf.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, px(46)));
+
+            // Lógica selección método
+            final MaterialCardView fCard   = card;
+            final TextView         fBadge  = tvBadge;
+            final GradientDrawable fBgBadge = badgeBg;
+            final GradientDrawable fAvBg   = avBg;
+            final TextView         fAvTv   = tvAv;
+
+            Runnable actualizarMetodo = () -> {
+                boolean esEf = "efectivo".equals(metodo[0]);
+                boolean esTr = "transferencia".equals(metodo[0]);
+                btnEfectivo.setBackgroundColor(
+                        esEf ? Color.parseColor("#00897B") : Color.parseColor("#E0F2F1"));
+                btnEfectivo.setTextColor(
+                        esEf ? Color.WHITE : Color.parseColor("#004D40"));
+                btnTransfer.setBackgroundColor(
+                        esTr ? Color.parseColor("#00897B") : Color.parseColor("#E0F2F1"));
+                btnTransfer.setTextColor(
+                        esTr ? Color.WHITE : Color.parseColor("#004D40"));
+                boolean hay = !metodo[0].isEmpty();
+                btnConf.setEnabled(hay);
+                btnConf.setAlpha(hay ? 1f : 0.5f);
+                btnConf.setBackgroundColor(
+                        hay ? Color.parseColor("#00897B") : Color.parseColor("#B0BEC5"));
+            };
+            btnEfectivo.setOnClickListener(v -> { metodo[0] = "efectivo";      actualizarMetodo.run(); });
+            btnTransfer.setOnClickListener(v -> { metodo[0] = "transferencia"; actualizarMetodo.run(); });
+
+            btnConf.setOnClickListener(v -> {
+                if (metodo[0].isEmpty()) return;
+                btnConf.setEnabled(false);
+                btnConf.setText("Verificando...");
+
+                // Verificar si el pasajero ya confirmó su pago
+                ConexionApi.getInstance(this).getObjectNoCache(
+                        Constantes.pagoDeUsuarioEnViaje(idViaje, fIdPasajero),
+                        pagoFound -> {
+                            long    idPago     = pagoFound.optLong("idPago",
+                                    pagoFound.optLong("id", -1));
+                            boolean pasConfirmo = pagoFound.optBoolean(
+                                    "confirmacionPasajero", false);
+
+                            if (idPago > 0 && pasConfirmo) {
+                                // Pasajero ya confirmó → confirmar lado conductor
+                                JSONObject bodyC = new JSONObject();
+                                try { bodyC.put("confirmacionConductor", true); }
+                                catch (Exception ignored) {}
+                                ConexionApi.getInstance(this).put(
+                                        Constantes.pagoConfirmarConductor(idPago), bodyC,
+                                        r -> runOnUiThread(() ->
+                                                marcarCardPagadoEnMapa(fCard, fBadge, fBgBadge,
+                                                        fAvTv, fAvBg, tvMetLabel,
+                                                        btnEfectivo, btnTransfer, btnConf,
+                                                        pagosConfirmados, totalPasajeros,
+                                                        btnContinuar)),
+                                        err -> runOnUiThread(() -> {
+                                            btnConf.setEnabled(true);
+                                            btnConf.setText("CONFIRMAR PAGO RECIBIDO");
+                                            Toast.makeText(this,
+                                                    "Error al confirmar el pago",
+                                                    Toast.LENGTH_SHORT).show();
+                                        })
+                                );
+                            } else {
+                                // Pasajero aún no confirma
+                                runOnUiThread(() -> {
+                                    btnConf.setEnabled(true);
+                                    btnConf.setText("CONFIRMAR PAGO RECIBIDO");
+                                    fBadge.setText("Esperando pasajero");
+                                    fBgBadge.setColor(Color.parseColor("#F57F17"));
+                                    fBadge.setBackground(fBgBadge);
+                                    Toast.makeText(this,
+                                            "⏳ El pasajero aún no ha confirmado. Pídele que lo confirme desde su app.",
+                                            Toast.LENGTH_LONG).show();
+                                });
+                            }
+                        },
+                        errVerif -> runOnUiThread(() -> {
+                            btnConf.setEnabled(true);
+                            btnConf.setText("CONFIRMAR PAGO RECIBIDO");
+                            Toast.makeText(this,
+                                    "⏳ El pasajero aún no ha registrado su pago.",
+                                    Toast.LENGTH_LONG).show();
+                        })
+                );
+            });
+            inner.addView(btnConf);
+            card.addView(inner);
+            root.addView(card);
+        }
+
+        // Nota al pie
+        TextView tvNota = new TextView(this);
+        tvNota.setText("Una vez confirmados los pagos podrás calificar a los pasajeros");
+        tvNota.setTextSize(11.5f);
+        tvNota.setTextColor(Color.parseColor("#78909C"));
+        LinearLayout.LayoutParams lpNota = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpNota.topMargin = p8;
+        tvNota.setLayoutParams(lpNota);
+        root.addView(tvNota);
+        root.addView(btnContinuar);
+
+        // Botón saltar
+        MaterialButton btnSaltar = new MaterialButton(this);
+        btnSaltar.setText("Saltar y calificar directamente");
+        btnSaltar.setTextSize(13f);
+        btnSaltar.setTextColor(Color.parseColor("#78909C"));
+        btnSaltar.setBackgroundColor(Color.TRANSPARENT);
+        btnSaltar.setStrokeWidth(0);
+        LinearLayout.LayoutParams lpSalt = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, px(44));
+        lpSalt.topMargin = p4;
+        btnSaltar.setLayoutParams(lpSalt);
+        root.addView(btnSaltar);
+
+        final BottomSheetDialog fSheet = sheet;
+        btnContinuar.setOnClickListener(v -> {
+            fSheet.dismiss();
+            new Handler(Looper.getMainLooper()).postDelayed(
+                    this::buscarPasajerosYCalificarMapa, 400);
+        });
+        btnSaltar.setOnClickListener(v -> {
+            fSheet.dismiss();
+            new Handler(Looper.getMainLooper()).postDelayed(
+                    this::buscarPasajerosYCalificarMapa, 400);
+        });
+
+        sheet.setContentView(sv);
+        sheet.show();
+    }
+
+    private void marcarCardPagadoEnMapa(MaterialCardView card, TextView tvBadge,
+                                        GradientDrawable badgeBg, TextView tvAv,
+                                        GradientDrawable avBg, TextView tvMetLabel,
+                                        MaterialButton btnEf, MaterialButton btnTr,
+                                        MaterialButton btnConf,
+                                        int[] pagosConf, int total,
+                                        MaterialButton btnContinuar) {
+        card.setCardBackgroundColor(Color.parseColor("#E8F5E9"));
+        card.setStrokeColor(Color.parseColor("#A5D6A7"));
+        tvBadge.setText("Pagado ✓");
+        badgeBg.setColor(Color.parseColor("#2E7D32"));
+        tvBadge.setBackground(badgeBg);
+        avBg.setColor(0xFF2E7D32);
+        tvAv.setBackground(avBg);
+        btnEf.setVisibility(View.GONE);
+        btnTr.setVisibility(View.GONE);
+        btnConf.setVisibility(View.GONE);
+        tvMetLabel.setVisibility(View.GONE);
+        pagosConf[0]++;
+        if (pagosConf[0] >= total) {
+            btnContinuar.setEnabled(true);
+            btnContinuar.setAlpha(1f);
+            btnContinuar.setBackgroundColor(Color.parseColor("#00897B"));
         }
     }
 
@@ -1591,18 +2433,21 @@ public class Mapa extends BaseActivity {
     }
 
     private void paso2FinalizarMapa() {
-        ConexionApi.getInstance(this).post(Constantes.viajeFinalizar((long)idViaje), null,
+        ConexionApi.getInstance(this).post(Constantes.viajeFinalizar((long) idViaje), null,
                 r2 -> runOnUiThread(() -> {
-                    Toast.makeText(this,"✅ Viaje finalizado",Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "✅ Viaje finalizado", Toast.LENGTH_LONG).show();
                     notificarFinViajeAFirebase();
                     limpiarLineas(lineasPintadas);
                     limpiarLineas(lineasEta);
                     restaurarUiNormal();
-                    new Handler(Looper.getMainLooper())
-                            .postDelayed(this::buscarPasajerosYCalificarMapa, 1200);
+                    // ── Mostrar sheet de cobro antes de calificar ──
+                    new Handler(Looper.getMainLooper()).postDelayed(
+                            this::mostrarSheetCobroViaje, 800);
                 }),
                 e2 -> runOnUiThread(() -> {
-                    Toast.makeText(this,"❌ Error al finalizar. Inténtalo de nuevo.",Toast.LENGTH_LONG).show();
+                    Toast.makeText(this,
+                            "❌ Error al finalizar. Inténtalo de nuevo.",
+                            Toast.LENGTH_LONG).show();
                     viajeYaFinalizado = false;
                 }));
     }
@@ -2104,9 +2949,9 @@ public class Mapa extends BaseActivity {
                     runOnUiThread(() -> {
                         if (tvEta!=null) tvEta.setVisibility(View.GONE);
                         if (tvDistEta!=null) tvDistEta.setVisibility(View.GONE);
-                        mostrarBannerEstado("🚏 Llegaste a tu parada — ¡Registra tu pago!", 0xFF2E7D32);
+                        mostrarBannerEstado(" Llegaste a tu parada — ¡Registra tu pago!", 0xFF2E7D32);
                         new Handler(Looper.getMainLooper())
-                                .postDelayed(Mapa.this::abrirPagoDesdeProximidad, 1800);
+                                .postDelayed(Mapa.this::mostrarSheetPagoPasajeroDesdeProximidad, 1800);
                     });
                 }
             }
@@ -2814,12 +3659,12 @@ public class Mapa extends BaseActivity {
     private void mostrarMapaBloqueado(boolean esConductor) {
         if (isFinishing()||isDestroyed()) return;
         new AlertDialog.Builder(this)
-                .setTitle(esConductor?"🚗 Sin viaje activo":"🗺️ Sin reserva activa")
+                .setTitle(esConductor?"Sin viaje activo":"Sin reserva activa")
                 .setMessage(esConductor
                         ?"Primero debes publicar e iniciar un viaje para acceder al mapa en tiempo real."
                         :"Primero debes hacer una reserva en un viaje para acceder al mapa en tiempo real.")
                 .setCancelable(false)
-                .setPositiveButton(esConductor?"📋 Publicar viaje":"🔍 Buscar viajes",(d,w) -> {
+                .setPositiveButton(esConductor?"Publicar viaje":"Buscar viajes",(d,w) -> {
                     Intent intent=esConductor?new Intent(this,PublicarRuta.class):new Intent(this,HomePasajero.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(intent); finish();
