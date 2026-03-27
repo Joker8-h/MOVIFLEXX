@@ -293,17 +293,55 @@ public class MisReservasActivity extends BaseActivity {
     private void procesarMisReservas(JSONArray reservas){
         if(layoutMisReservas==null)return;
         layoutMisReservas.removeAllViews();
-        tieneReservaActiva=false;idViajeReservaActiva=0;
-        if(reservas==null||reservas.length()==0){if(layoutLabelMisReservas!=null)layoutLabelMisReservas.setVisibility(View.GONE);actualizarEstadoBusqueda();return;}
+        tieneReservaActiva=false; idViajeReservaActiva=0;
+        if(reservas==null||reservas.length()==0){
+            if(layoutLabelMisReservas!=null)layoutLabelMisReservas.setVisibility(View.GONE);
+            actualizarEstadoBusqueda();
+            return;
+        }
         int count=0;
         for(int i=0;i<reservas.length();i++){
-            JSONObject r=reservas.optJSONObject(i);if(r==null)continue;
-            String estado=r.optString("estado","").toUpperCase();
-            if(estado.equals("CANCELADA")||estado.equals("CANCELADO")||estado.equals("COMPLETADO")||estado.equals("FINALIZADO"))continue;
-            if(RESERVA_ACTIVA_ESTADOS.contains(estado)){tieneReservaActiva=true;int idV=r.optInt("idViaje",0);if(idV==0){JSONObject vo=r.optJSONObject("viaje");if(vo!=null)idV=extraerIdViaje(vo);}idViajeReservaActiva=idV;}
-            agregarCardMiReserva(r);count++;
+            JSONObject r=reservas.optJSONObject(i); if(r==null) continue;
+            String estadoReserva = r.optString("estado","").toUpperCase().trim();
+
+            // ── Excluir reservas canceladas o completadas ──
+            if("CANCELADA".equals(estadoReserva) || "CANCELADO".equals(estadoReserva)
+                    || "COMPLETADO".equals(estadoReserva) || "FINALIZADO".equals(estadoReserva))
+                continue;
+
+            // ── NUEVO: verificar también el estado del viaje asociado ──
+            JSONObject viajeObj = r.optJSONObject("viaje");
+            if(viajeObj != null){
+                String estadoViaje = viajeObj.optString("estado","").toUpperCase().trim();
+                // Si el viaje ya finalizó, no mostrar la reserva en "activas"
+                if("FINALIZADO".equals(estadoViaje) || "COMPLETADO".equals(estadoViaje)
+                        || "CANCELADO".equals(estadoViaje) || "CANCELADA".equals(estadoViaje))
+                    continue;
+            }
+
+            // ── Detectar reserva activa para bloquear búsqueda ──
+            if(RESERVA_ACTIVA_ESTADOS.contains(estadoReserva)
+                    || "RESERVADO".equals(estadoReserva)){
+                // Solo bloquear si el viaje está activo (no finalizado)
+                boolean viajeActivo = true;
+                if(viajeObj != null){
+                    String ev = viajeObj.optString("estado","").toUpperCase().trim();
+                    viajeActivo = !("FINALIZADO".equals(ev) || "COMPLETADO".equals(ev)
+                            || "CANCELADO".equals(ev));
+                }
+                if(viajeActivo){
+                    tieneReservaActiva = true;
+                    int idV = r.optInt("idViaje",0);
+                    if(idV == 0 && viajeObj != null) idV = extraerIdViaje(viajeObj);
+                    idViajeReservaActiva = idV;
+                }
+            }
+
+            agregarCardMiReserva(r);
+            count++;
         }
-        if(layoutLabelMisReservas!=null)layoutLabelMisReservas.setVisibility(count>0?View.VISIBLE:View.GONE);
+        if(layoutLabelMisReservas!=null)
+            layoutLabelMisReservas.setVisibility(count>0 ? View.VISIBLE : View.GONE);
         actualizarEstadoBusqueda();
     }
 

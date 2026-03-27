@@ -83,6 +83,7 @@ public class DetalleViajeActivity extends BaseActivity {
     private static final int GPS_CONDUCTOR_POLLING_MS = 3000; // ← cada 3 seg para pasajero
     private static final int LOCATION_PERMISSION_REQUEST = 1001;
     private static final int REQUEST_MAPA_SUBIDA = 2001;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
 
     private static final int COLOR_RUTA = 0xFF009B8D;
@@ -2936,6 +2937,7 @@ public class DetalleViajeActivity extends BaseActivity {
                             JSONObject p = arr.getJSONObject(i);
                             paradasRuta.add(p);
                         }
+                        generarParadasDinamicas();
                         if (!esConductor) {
                             mostrarParadaPasajero();
                         } else {
@@ -3082,9 +3084,11 @@ public class DetalleViajeActivity extends BaseActivity {
     }
 
     private void iniciarTrazadoRuta() {
+        // Primero intentar con el geojson guardado en el backend
         if (!geojsonRuta.isEmpty()) {
             ArrayList<GeoPoint> pts = parsearGeoJsonString(geojsonRuta);
             if (pts != null && pts.size() >= 2) {
+                Log.d(TAG, "Usando geojsonRuta del backend: " + pts.size() + " pts");
                 todasLasRutas.clear();
                 listaRouteOptions.clear();
                 todasLasRutas.add(pts);
@@ -3096,23 +3100,27 @@ public class DetalleViajeActivity extends BaseActivity {
                 });
                 return;
             }
+            // Si el geojson no se pudo parsear, ignorarlo y pedir OSRM
+            Log.w(TAG, "geojsonRuta no se pudo parsear, pidiendo OSRM...");
+            geojsonRuta = "";
         }
+
+        // Geocodificar si las coords son inválidas, luego pedir ruta a OSRM
         if (coordsOrigenInvalidas || coordsDestinoInvalidas) {
             new Thread(() -> {
                 if (coordsOrigenInvalidas) {
                     double[] c = geocodificarTexto(origenActual);
                     if (c != null) {
-                        latOrigen = c[0];
-                        lngOrigen = c[1];
+                        latOrigen = c[0]; lngOrigen = c[1];
                         coordsOrigenInvalidas = false;
                         gpOrigen = new GeoPoint(latOrigen, lngOrigen);
                     }
                 }
-                if (coordsDestinoInvalidas || sonIguales(latOrigen, lngOrigen, latDestino, lngDestino)) {
+                if (coordsDestinoInvalidas
+                        || sonIguales(latOrigen, lngOrigen, latDestino, lngDestino)) {
                     double[] c = geocodificarTexto(destinoActual);
                     if (c != null) {
-                        latDestino = c[0];
-                        lngDestino = c[1];
+                        latDestino = c[0]; lngDestino = c[1];
                         coordsDestinoInvalidas = false;
                         gpDestino = new GeoPoint(latDestino, lngDestino);
                     }
@@ -3124,32 +3132,106 @@ public class DetalleViajeActivity extends BaseActivity {
         }
     }
 
+
     private void pedirRutaPrincipal() {
         new Thread(() -> {
             try {
+                // Construir waypoints intermedios desde paradasRuta del backend
                 StringBuilder wpsB = new StringBuilder();
                 for (JSONObject p : paradasRuta) {
                     double pLat = p.optDouble("lat", 0), pLng = p.optDouble("lng", 0);
-                    if (pLat != 0) wpsB.append(";").append(pLng).append(",").append(pLat);
-                }
-                String params = "?overview=full&geometries=geojson&alternatives=true";
-                String segmento = lngOrigen + "," + latOrigen + wpsB + ";" + lngDestino + "," + latDestino + params;
-                ArrayList<ArrayList<GeoPoint>> rutasEncontradas = new ArrayList<>();
-                ArrayList<double[]> metricas = new ArrayList<>();
-                try {
-                    parsearRutasOSRM(peticionHttp(OSRM_URL + "/route/v1/driving/" + segmento), rutasEncontradas, metricas);
-                } catch (Exception ignored) {
-                }
-                if (rutasEncontradas.isEmpty()) {
-                    try {
-                        parsearRutasOSRM(peticionHttp(OSRM_URL_PUBLIC + "/route/v1/driving/" + segmento), rutasEncontradas, metricas);
-                    } catch (Exception ignored) {
+                    if (pLat != 0 && pLng != 0
+                            && !sonIguales(pLat, pLng, latOrigen, lngOrigen)
+                            && !sonIguales(pLat, pLng, latDestino, lngDestino)) {
+                        wpsB.append(";").append(pLng).append(",").append(pLat);
                     }
                 }
+
+                String segmentoBase = lngOrigen + "," + latOrigen
+                        + wpsB
+                        + ";" + lngDestino + "," + latDestino;
+                String params = "?overview=full&geometries=geojson&alternatives=true";
+
+                ArrayList<ArrayList<GeoPoint>> rutasEncontradas = new ArrayList<>();
+                ArrayList<double[]> metricas = new ArrayList<>();
+
+                // ── 1. OSRM Popayán propio (igual que PublicarRuta) ──────────────
+                mainHandler.post(() -> Log.d(TAG, "Intentando OSRM Popayán propio..."));
+                try {
+                    String urlPropio = "https://osrm-popayan-production.up.railway.app"
+                            + "/route/v1/driving/" + segmentoBase + params;
+                    String jsonPropio = peticionHttp(urlPropio);
+                    if (jsonPropio != null && !jsonPropio.isEmpty()) {
+                        parsearRutasOSRM(jsonPropio, rutasEncontradas, metricas);
+                        Log.d(TAG, "OSRM Popayán: " + rutasEncontradas.size() + " rutas");
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "OSRM Popayán no disponible: " + e.getMessage());
+                }
+
+                // ── 2. OSRM público (si el propio no dio resultados) ────────────
                 if (rutasEncontradas.isEmpty()) {
+                    try {
+                        String urlPublico = "https://router.project-osrm.org"
+                                + "/route/v1/driving/" + segmentoBase + params;
+                        String jsonPublico = peticionHttp(urlPublico);
+                        if (jsonPublico != null && !jsonPublico.isEmpty()) {
+                            parsearRutasOSRM(jsonPublico, rutasEncontradas, metricas);
+                            Log.d(TAG, "OSRM público: " + rutasEncontradas.size() + " rutas");
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "OSRM público no disponible: " + e.getMessage());
+                    }
+                }
+
+                // ── 3. Intentar sin waypoints intermedios si aún no hay rutas ───
+                if (rutasEncontradas.isEmpty()) {
+                    String segSimple = lngOrigen + "," + latOrigen
+                            + ";" + lngDestino + "," + latDestino + params;
+                    try {
+                        String j1 = peticionHttp(
+                                "https://osrm-popayan-production.up.railway.app"
+                                        + "/route/v1/driving/" + segSimple);
+                        if (j1 != null && !j1.isEmpty())
+                            parsearRutasOSRM(j1, rutasEncontradas, metricas);
+                    } catch (Exception ignored) {}
+
+                    if (rutasEncontradas.isEmpty()) {
+                        try {
+                            String j2 = peticionHttp(
+                                    "https://router.project-osrm.org"
+                                            + "/route/v1/driving/" + segSimple);
+                            if (j2 != null && !j2.isEmpty())
+                                parsearRutasOSRM(j2, rutasEncontradas, metricas);
+                        } catch (Exception ignored) {}
+                    }
+                }
+
+                // ── Sin rutas: línea recta como último recurso ───────────────────
+                if (rutasEncontradas.isEmpty()) {
+                    Log.w(TAG, "Todos los OSRM fallaron → línea recta");
                     runOnUiThread(this::usarLineaRecta);
                     return;
                 }
+
+                // ── Guardar geojson de la primera ruta para no repetir petición ──
+                if (geojsonRuta.isEmpty()) {
+                    try {
+                        ArrayList<GeoPoint> primeraRuta = rutasEncontradas.get(0);
+                        JSONArray coords = new JSONArray();
+                        for (GeoPoint gp : primeraRuta) {
+                            JSONArray par = new JSONArray();
+                            par.put(gp.getLongitude());
+                            par.put(gp.getLatitude());
+                            coords.put(par);
+                        }
+                        JSONObject geo = new JSONObject();
+                        geo.put("type", "LineString");
+                        geo.put("coordinates", coords);
+                        geojsonRuta = geo.toString();
+                    } catch (Exception ignored) {}
+                }
+
                 todasLasRutas.clear();
                 listaRouteOptions.clear();
                 for (int ri = 0; ri < rutasEncontradas.size(); ri++) {
@@ -3160,8 +3242,12 @@ public class DetalleViajeActivity extends BaseActivity {
                     ro.durationMin = met[1];
                     listaRouteOptions.add(ro);
                 }
-                final int idx = (indiceRuta >= 0 && indiceRuta < todasLasRutas.size()) ? indiceRuta : 0;
-                runOnUiThread(() -> seleccionarRuta(idx, listaRouteOptions.get(idx)));
+
+                final int idx = (indiceRuta >= 0 && indiceRuta < todasLasRutas.size())
+                        ? indiceRuta : 0;
+                runOnUiThread(() -> seleccionarRuta(idx,
+                        listaRouteOptions.isEmpty() ? null : listaRouteOptions.get(idx)));
+
             } catch (Exception e) {
                 Log.e(TAG, "pedirRutaPrincipal error", e);
                 runOnUiThread(this::usarLineaRecta);
@@ -5075,7 +5161,7 @@ public class DetalleViajeActivity extends BaseActivity {
         ParadaDinamica pdOrigen = new ParadaDinamica(origenActual, latOrigen, lngOrigen, 0);
         paradasConOrigen.add(pdOrigen);
         for (ParadaDinamica pd : paradasDin) {
-            if (pd.idxEnRuta != -1) paradasConOrigen.add(pd);
+            paradasConOrigen.add(pd);  // ← incluir todas, incluyendo destino
         }
 
         // Si hay una subida previa (tocada en el mapa), mostrarla ya seleccionada
@@ -7794,51 +7880,111 @@ public class DetalleViajeActivity extends BaseActivity {
     private void generarParadasDinamicas() {
         paradasDin.clear();
 
-        // Si hay paradas reales del backend con nombres válidos, usarlas
+        Log.d(TAG, "generarParadasDinamicas → paradasRuta=" + paradasRuta.size()
+                + " rutaActiva=" + (rutaActiva != null ? rutaActiva.size() : "null"));
+
+        // ── 1. Paradas del backend: tomar TODAS las que tengan coordenadas válidas,
+        //       sin importar si el nombre parece genérico. Solo saltar origen y destino
+        //       exactos, y paradas sin coordenadas. ──────────────────────────────────
         if (!paradasRuta.isEmpty()) {
             for (JSONObject p : paradasRuta) {
-                double lat = p.optDouble("lat", 0), lng = p.optDouble("lng", 0);
-                if (lat == 0) continue;
+                double lat = p.optDouble("lat", 0);
+                double lng = p.optDouble("lng", 0);
+                if (lat == 0 || lng == 0) continue;
+
+                // Saltar si es exactamente el origen
+                if (sonIguales(lat, lng, latOrigen, lngOrigen)) continue;
+                // Saltar si es exactamente el destino
+                if (sonIguales(lat, lng, latDestino, lngDestino)) continue;
+
                 String nombre = p.optString("nombre", "").trim();
-                // Saltar genéricas, origen y destino
-                if (nombre.isEmpty() || nombre.equals("null")
-                        || nombre.matches("(?i)parada\\s*\\d+")
-                        || nombre.equalsIgnoreCase(origenActual)
-                        || nombre.equalsIgnoreCase(destinoActual)) continue;
-                ParadaDinamica pd = new ParadaDinamica(nombre, lat, lng, 0);
+
+                // Si el nombre es genérico o vacío → geocodificar en background
+                boolean nombreGenerico = nombre.isEmpty()
+                        || nombre.equals("null")
+                        || nombre.matches("(?i)parada\\s*\\d+");
+
+                ParadaDinamica pd = new ParadaDinamica(
+                        nombreGenerico ? "k Cargando..." : nombre,
+                        lat, lng, 0);
                 pd.idParadaBD = p.optInt("idParada", p.optInt("id", 0));
                 paradasDin.add(pd);
+
+                // Si el nombre era genérico, geocodificar en background
+                if (nombreGenerico) {
+                    final ParadaDinamica pdFinal = pd;
+                    final GeoPoint gpParada = new GeoPoint(lat, lng);
+                    new Thread(() -> {
+                        try {
+                            String url = "https://nominatim.openstreetmap.org/reverse?lat=" + lat
+                                    + "&lon=" + lng
+                                    + "&format=json&addressdetails=1&zoom=16&accept-language=es";
+                            String resp = peticionHttp(url);
+                            if (resp != null && !resp.isEmpty()) {
+                                JSONObject geo = new JSONObject(resp);
+                                String nomReal = extraerNombreNominatim(
+                                        geo.optJSONObject("address"), geo);
+                                if (nomReal != null && !nomReal.isEmpty()) {
+                                    runOnUiThread(() -> pdFinal.nombre = nomReal);
+                                }
+                            }
+                            Thread.sleep(400);
+                        } catch (Exception ignored) {}
+                    }).start();
+                }
             }
+            Log.d(TAG, "generarParadasDinamicas → paradas del backend cargadas: "
+                    + paradasDin.size());
         }
 
-        // Si no hay paradas reales válidas, generar desde la ruta activa con geocodificación
+        // ── 2. Fallback OSRM: SOLO si el backend no dio ninguna parada intermedia ──
         if (paradasDin.isEmpty() && rutaActiva != null && rutaActiva.size() >= 2) {
+            Log.d(TAG, "generarParadasDinamicas → fallback a ruta geométrica OSRM");
+
             final List<GeoPoint> base = new ArrayList<>(rutaActiva);
             int total = base.size();
             int num = Math.min(6, Math.max(3, total / 20));
             List<Integer> indices = new ArrayList<>();
             double paso = (double) (total - 2) / (num + 1);
+
             for (int i = 1; i <= num; i++) {
                 int idx = 1 + (int) (i * paso);
                 if (idx < total - 1) indices.add(idx);
             }
+
             for (int i = 0; i < indices.size(); i++) {
                 int idx = indices.get(i);
                 GeoPoint gp = base.get(idx);
                 double pct = (double) idx / (total - 1) * 100;
-                // Nombre provisional mientras geocodifica
                 paradasDin.add(new ParadaDinamica(
-                        String.format("📍 Cargando... (%.0f%% ruta)", pct),
+                        String.format(" Cargando... (%.0f%% ruta)", pct),
                         gp.getLatitude(), gp.getLongitude(), idx));
             }
-            // Geocodificar en background y actualizar nombres
             geocodificarEnBackground(indices, base);
         }
 
-        // Siempre agregar destino al final
+        // ── 3. Siempre agregar destino al final ───────────────────────────────────
         paradasDin.add(new ParadaDinamica(destinoActual, latDestino, lngDestino, -1));
 
+        Log.d(TAG, "generarParadasDinamicas → total paradasDin: " + paradasDin.size());
         enviarParadasAlAsistente();
+    }
+
+    // ── Helper: geocodificación síncrona (llamar solo desde Thread, no desde UI) ──
+    private String geocodificarPuntoSync(GeoPoint gp) {
+        try {
+            String url = "https://nominatim.openstreetmap.org/reverse?lat=" + gp.getLatitude()
+                    + "&lon=" + gp.getLongitude()
+                    + "&format=json&addressdetails=1&zoom=16&accept-language=es";
+            String resp = peticionHttp(url);
+            if (resp == null || resp.isEmpty()) return "";
+            JSONObject geo = new JSONObject(resp);
+            String nombre = extraerNombreNominatim(geo.optJSONObject("address"), geo);
+            Thread.sleep(400); // Respetar rate limit de Nominatim
+            return nombre == null ? "" : nombre;
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     private void enviarParadasAlAsistente() {
@@ -8153,8 +8299,8 @@ public class DetalleViajeActivity extends BaseActivity {
         try {
             c = (HttpURLConnection) new URL(urlStr).openConnection();
             c.setRequestProperty("User-Agent", "Moviflexx-App/1.0");
-            c.setConnectTimeout(15000);
-            c.setReadTimeout(15000);
+            c.setConnectTimeout(25000);
+            c.setReadTimeout(25000);
             BufferedReader r = new BufferedReader(new InputStreamReader(c.getInputStream()));
             StringBuilder sb = new StringBuilder();
             String l;

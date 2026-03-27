@@ -1,8 +1,12 @@
 package com.arlys.moviflexx.controller;
 
 import android.app.DatePickerDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -11,6 +15,8 @@ import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.core.app.NotificationCompat;
 
 import com.arlys.moviflexx.R;
 import com.arlys.moviflexx.model.AnimUtils;
@@ -121,8 +127,6 @@ public class PublicarViaje extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Si el usuario sale sin publicar, no hay jobs que cancelar todavía.
-        // Los jobs se crean solo al publicar exitosamente.
     }
 
     /* ════════════════════════════════════════════════════════════════════════
@@ -407,7 +411,7 @@ public class PublicarViaje extends BaseActivity {
     }
 
     /* ════════════════════════════════════════════════════════════════════════
-       PUBLICAR VIAJE  ←  AQUÍ ESTÁ LA INTEGRACIÓN CON ViajeAlertaManager
+       PUBLICAR VIAJE
     ════════════════════════════════════════════════════════════════════════ */
 
     private void publicarViaje() {
@@ -417,7 +421,7 @@ public class PublicarViaje extends BaseActivity {
         mostrarLoader(true);
 
         try {
-            int    cupos    = Integer.parseInt(spinnerCupos.getSelectedItem().toString());
+            int    cupos     = Integer.parseInt(spinnerCupos.getSelectedItem().toString());
             String fechaHora = fechaHoraFinal.isEmpty()
                     ? editFechaHora.getText().toString().trim()
                     : fechaHoraFinal;
@@ -439,7 +443,6 @@ public class PublicarViaje extends BaseActivity {
                     response -> {
                         mostrarLoader(false);
 
-                        // Extraer el id del viaje recién creado
                         int idViajeCreado = response.optInt("idViajes",
                                 response.optInt("id",
                                         response.optInt("idViaje", 0)));
@@ -448,11 +451,6 @@ public class PublicarViaje extends BaseActivity {
                                 + " | fechaSalida=" + fechaHoraParaAlertas);
 
                         // ── PROGRAMAR ALERTAS Y INICIO AUTOMÁTICO ──────────
-                        // Si el servidor devolvió el id del viaje, programamos:
-                        //   · alerta 5 min antes  → modal + notif local
-                        //   · alerta 1 min antes  → modal + notif local
-                        //   · inicio automático   → POST /viajes/{id}/iniciar
-                        //     + notificación push a los pasajeros
                         if (idViajeCreado > 0) {
                             ViajeAlertaManager.programarInicioAutomatico(
                                     PublicarViaje.this,
@@ -462,11 +460,12 @@ public class PublicarViaje extends BaseActivity {
                             );
                             Log.d(TAG, "Alertas programadas para viaje " + idViajeCreado);
                         } else {
-                            // El servidor no devolvió id: las alertas no se pueden
-                            // programar en esta sesión, pero el viaje sí se creó.
                             Log.w(TAG, "Viaje creado pero sin id en la respuesta. "
                                     + "Alertas no programadas.");
                         }
+
+                        // ── NOTIFICACIÓN LOCAL: viaje publicado ────────────
+                        mostrarNotificacionViajePublicado(origenRuta, destinoRuta, precioCalculado);
 
                         Toast.makeText(PublicarViaje.this,
                                 "¡Viaje publicado correctamente!", Toast.LENGTH_LONG).show();
@@ -510,10 +509,6 @@ public class PublicarViaje extends BaseActivity {
        VIAJE ACTIVO
     ════════════════════════════════════════════════════════════════════════ */
 
-    /**
-     * Muestra card_viaje_activo y oculta el formulario.
-     * Llámalo cuando detectes que el conductor ya tiene un viaje en curso.
-     */
     public void mostrarCardViajeActivo(String ruta, String estado,
                                        String cupos, String precio, String hora) {
         if (cardViajeActivo == null) return;
@@ -531,7 +526,6 @@ public class PublicarViaje extends BaseActivity {
     }
 
     private void confirmarFinalizarViaje() {
-        // Lógica de finalizar viaje aquí.
         // Al terminar puedes restaurar el formulario así:
         //   AnimUtils.fadeOut(cardViajeActivo, () -> cardViajeActivo.setVisibility(View.GONE));
         //   mainCard.setVisibility(View.VISIBLE);
@@ -611,6 +605,149 @@ public class PublicarViaje extends BaseActivity {
         if (statsCard    != null) AnimUtils.fadeSlideIn(statsCard,    640);
 
         AnimUtils.fadeSlideIn(btnPublicar, 700);
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       NOTIFICACIONES
+    ════════════════════════════════════════════════════════════════════════ */
+
+    /**
+     * Notificación local al conductor cuando publica el viaje exitosamente.
+     * Se muestra en la barra de estado del sistema.
+     */
+    private void mostrarNotificacionViajePublicado(String origen, String destino, int precio) {
+        String channelId = "moviflexx_viajes";
+        NotificationManager manager =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel canal = new NotificationChannel(
+                    channelId, "Viajes MoviFlexx",
+                    NotificationManager.IMPORTANCE_HIGH);
+            canal.setDescription("Confirmaciones y alertas de viajes");
+            canal.enableVibration(true);
+            manager.createNotificationChannel(canal);
+        }
+
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(this, channelId)
+                        .setSmallIcon(R.drawable.logomo)
+                        .setContentTitle("¡Viaje publicado!")
+                        .setContentText(origen + " → " + destino)
+                        .setStyle(new NotificationCompat.BigTextStyle()
+                                .bigText("Tu viaje de " + origen + " a " + destino
+                                        + " por $" + String.format(Locale.getDefault(), "%,d", precio)
+                                        + " COP ya está visible para los pasajeros."))
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setAutoCancel(true)
+                        .setDefaults(NotificationCompat.DEFAULT_ALL);
+
+        manager.notify(2001, builder.build());
+    }
+
+    /**
+     * Notificación al conductor cuando un pasajero reserva un cupo.
+     * Método estático: llámalo desde MyFirebaseMessagingService cuando tipo == "RESERVA".
+     *
+     * Ejemplo desde MyFirebaseMessagingService:
+     *   PublicarViaje.mostrarNotificacionReserva(this, nombrePasajero, origen, destino);
+     */
+    public static void mostrarNotificacionReserva(android.content.Context ctx,
+                                                  String nombrePasajero,
+                                                  String origen,
+                                                  String destino) {
+        String channelId = "moviflexx_reservas";
+        NotificationManager manager =
+                (NotificationManager) ctx.getSystemService(NOTIFICATION_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel canal = new NotificationChannel(
+                    channelId, "Reservas MoviFlexx",
+                    NotificationManager.IMPORTANCE_HIGH);
+            canal.setDescription("Avisos de nuevas reservas de pasajeros");
+            canal.enableVibration(true);
+            manager.createNotificationChannel(canal);
+        }
+
+        // Al tocar la notificación abre HomeConductor
+        Intent intent = new Intent(ctx, HomeConductor.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                ctx, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(ctx, channelId)
+                        .setSmallIcon(R.drawable.logomo)
+                        .setContentTitle("¡Nueva reserva!")
+                        .setContentText(nombrePasajero + " reservó un cupo")
+                        .setStyle(new NotificationCompat.BigTextStyle()
+                                .bigText(nombrePasajero + " ha reservado un cupo en tu viaje\n"
+                                        + origen + " → " + destino))
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setAutoCancel(true)
+                        .setDefaults(NotificationCompat.DEFAULT_ALL)
+                        .setContentIntent(pendingIntent);
+
+        // Usar timestamp como id para que múltiples reservas no se sobreescriban
+        manager.notify((int) System.currentTimeMillis(), builder.build());
+    }
+
+    /**
+     * Alerta al conductor X minutos antes de la salida programada.
+     * Método estático: llámalo desde ViajeAlertaManager cuando llegue la hora.
+     *
+     * Ejemplo desde ViajeAlertaManager:
+     *   PublicarViaje.mostrarAlertaAntesDePartir(context, 5, origen, destino, idViaje);
+     *   PublicarViaje.mostrarAlertaAntesDePartir(context, 1, origen, destino, idViaje);
+     */
+    public static void mostrarAlertaAntesDePartir(android.content.Context ctx,
+                                                  int minutosRestantes,
+                                                  String origen,
+                                                  String destino,
+                                                  int idViaje) {
+        String channelId = "moviflexx_alertas_salida";
+        NotificationManager manager =
+                (NotificationManager) ctx.getSystemService(NOTIFICATION_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel canal = new NotificationChannel(
+                    channelId, "Alertas de salida",
+                    NotificationManager.IMPORTANCE_HIGH);
+            canal.setDescription("Recordatorios antes de partir");
+            canal.enableVibration(true);
+            canal.setLockscreenVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+            manager.createNotificationChannel(canal);
+        }
+
+        String titulo = minutosRestantes <= 1
+                ? "¡Es hora de partir!"
+                : "Salida en " + minutosRestantes + " minutos ";
+        String cuerpo = "Tu viaje " + origen + " → " + destino + " sale pronto.\n"
+                + "Confirma que estás listo.";
+
+        // Al tocar abre el mapa del viaje
+        Intent intent = new Intent(ctx, Mapa.class);
+        intent.putExtra("ID_VIAJE", idViaje);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                ctx, idViaje, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(ctx, channelId)
+                        .setSmallIcon(R.drawable.logomo)
+                        .setContentTitle(titulo)
+                        .setContentText(origen + " → " + destino)
+                        .setStyle(new NotificationCompat.BigTextStyle().bigText(cuerpo))
+                        .setPriority(NotificationCompat.PRIORITY_MAX)
+                        .setAutoCancel(true)
+                        .setDefaults(NotificationCompat.DEFAULT_ALL)
+                        .setContentIntent(pendingIntent)
+                        .setCategory(NotificationCompat.CATEGORY_REMINDER);
+
+        // Id fijo por viaje: 3000+id — evita que alerta de 5min y 1min se apilen
+        manager.notify(3000 + idViaje, builder.build());
     }
 
     /* ════════════════════════════════════════════════════════════════════════

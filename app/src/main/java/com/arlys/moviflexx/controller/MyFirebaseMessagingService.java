@@ -32,6 +32,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         String mensaje = "";
         String tipo    = null;
 
+        // ── Leer bloque notification (FCM desde consola) ──────────────────────
         if (remoteMessage.getNotification() != null) {
             String t = remoteMessage.getNotification().getTitle();
             String b = remoteMessage.getNotification().getBody();
@@ -39,6 +40,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             if (b != null && !b.isEmpty()) mensaje = b;
         }
 
+        // ── Leer bloque data (FCM desde backend) ──────────────────────────────
         if (!remoteMessage.getData().isEmpty()) {
             if (remoteMessage.getData().containsKey("titulo"))
                 titulo  = remoteMessage.getData().get("titulo");
@@ -47,10 +49,60 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             tipo = remoteMessage.getData().get("tipo");
         }
 
-        // 1. Mostrar la notificación en la barra de estado
-        mostrarNotificacion(titulo, mensaje, tipo);
+        // ── 1. Despachar notificación especializada según tipo ────────────────
+        if (tipo != null) {
+            switch (tipo.toUpperCase()) {
 
-        // 2. Avisar a Notificaciones.java si está abierta para que recargue
+                case "RESERVA":
+                    // El backend debe enviar en el payload: nombrePasajero, origen, destino
+                    String nombrePasajero = remoteMessage.getData().containsKey("nombrePasajero")
+                            ? remoteMessage.getData().get("nombrePasajero") : "Un pasajero";
+                    String origenReserva  = remoteMessage.getData().containsKey("origen")
+                            ? remoteMessage.getData().get("origen")  : "Origen";
+                    String destinoReserva = remoteMessage.getData().containsKey("destino")
+                            ? remoteMessage.getData().get("destino") : "Destino";
+
+                    // Mostrar notificación enriquecida de reserva
+                    PublicarViaje.mostrarNotificacionReserva(
+                            this, nombrePasajero, origenReserva, destinoReserva);
+                    break;
+
+                case "ALERTA_SALIDA":
+                    // El backend debe enviar: minutosRestantes, origen, destino, idViaje
+                    int minutosRestantes = 5;
+                    int idViaje          = 0;
+                    String origenAlerta  = "Origen";
+                    String destinoAlerta = "Destino";
+
+                    try {
+                        if (remoteMessage.getData().containsKey("minutosRestantes"))
+                            minutosRestantes = Integer.parseInt(
+                                    remoteMessage.getData().get("minutosRestantes"));
+                        if (remoteMessage.getData().containsKey("idViaje"))
+                            idViaje = Integer.parseInt(
+                                    remoteMessage.getData().get("idViaje"));
+                        if (remoteMessage.getData().containsKey("origen"))
+                            origenAlerta  = remoteMessage.getData().get("origen");
+                        if (remoteMessage.getData().containsKey("destino"))
+                            destinoAlerta = remoteMessage.getData().get("destino");
+                    } catch (NumberFormatException ignored) {}
+
+                    // Mostrar alerta de salida
+                    PublicarViaje.mostrarAlertaAntesDePartir(
+                            this, minutosRestantes, origenAlerta, destinoAlerta, idViaje);
+                    break;
+
+                default:
+                    // Para cualquier otro tipo usar la notificación genérica
+                    mostrarNotificacion(titulo, mensaje, tipo);
+                    break;
+            }
+        } else {
+            // Sin tipo → notificación genérica
+            mostrarNotificacion(titulo, mensaje, null);
+        }
+
+        // ── 2. Avisar a Notificaciones.java si está abierta para que recargue ─
         Intent broadcast = new Intent(ACTION_NUEVA_NOTIF);
         broadcast.putExtra("titulo",  titulo);
         broadcast.putExtra("mensaje", mensaje);
@@ -63,6 +115,10 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         super.onNewToken(token);
         enviarTokenAlBackend(token);
     }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       NOTIFICACIÓN GENÉRICA (barra de estado)
+    ════════════════════════════════════════════════════════════════════════ */
 
     private void mostrarNotificacion(String titulo, String mensaje, String tipo) {
         NotificationManager manager =
@@ -97,6 +153,10 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         manager.notify((int) System.currentTimeMillis(), builder.build());
     }
 
+    /* ════════════════════════════════════════════════════════════════════════
+       ENVIAR TOKEN FCM AL BACKEND
+    ════════════════════════════════════════════════════════════════════════ */
+
     private void enviarTokenAlBackend(String token) {
         SessionManager session   = new SessionManager(this);
         int            idUsuario = session.getIdUsuario();
@@ -116,15 +176,20 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         } catch (Exception ignored) {}
     }
 
+    /* ════════════════════════════════════════════════════════════════════════
+       ÍCONO POR TIPO
+    ════════════════════════════════════════════════════════════════════════ */
+
     private int iconoPorTipo(String tipo) {
         if (tipo == null) return R.drawable.logomo;
         switch (tipo.toUpperCase()) {
             case "MENSAJE":
-            case "CHAT":    return R.drawable.ic_chat;
-            case "VIAJE":   return R.drawable.ic_directions_car;
-            case "RESERVA": return R.drawable.ic_description;
-            case "PAGO":    return R.drawable.ic_credit_card;
-            default:        return R.drawable.ic_notifications;
+            case "CHAT":         return R.drawable.ic_chat;
+            case "VIAJE":        return R.drawable.ic_directions_car;
+            case "RESERVA":      return R.drawable.ic_description;
+            case "PAGO":         return R.drawable.ic_credit_card;
+            case "ALERTA_SALIDA":return R.drawable.ic_directions_car;
+            default:             return R.drawable.ic_notifications;
         }
     }
 }

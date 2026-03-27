@@ -551,8 +551,8 @@ public class Login extends BaseActivity {
 
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(this, channelId)
-                        .setSmallIcon(R.drawable.ic_notifications)
-                        .setContentTitle("¡Bienvenido a Moviflexx! 👋")
+                        .setSmallIcon(R.drawable.logomo)
+                        .setContentTitle("¡Bienvenido a Moviflexx!")
                         .setContentText("Hola " + nombre + ", has iniciado sesión correctamente.")
                         .setPriority(NotificationCompat.PRIORITY_HIGH)
                         .setAutoCancel(true)
