@@ -237,6 +237,15 @@ public class Register extends BaseActivity {
         FieldTooltip.attach(tilNombreEmergencia,    "Nombre del contacto de emergencia");
         FieldTooltip.attach(tilTelefonoEmergencia,  "Teléfono de emergencia");
 
+        String emailGoogle = getIntent().getStringExtra("EMAIL_GOOGLE");
+        if (emailGoogle != null && !emailGoogle.isEmpty()) {
+            if (edtEmailPaso1 != null) {
+                edtEmailPaso1.setText(emailGoogle);
+                edtEmailPaso1.setEnabled(false); // ya validado por Google
+                edtEmailPaso1.setAlpha(0.85f);
+            }
+        }
+
         cameraExecutor = Executors.newSingleThreadExecutor();
     }
 

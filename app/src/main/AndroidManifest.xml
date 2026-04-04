@@ -16,6 +16,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
@@ -82,6 +83,8 @@
         <activity
             android:name=".controller.EmailVerificacion"
             android:exported="false" />
+
+
 
         <!-- ═══════════════════════════════════════════════════════
              HOME — CONDUCTOR Y PASAJERO
@@ -184,6 +187,14 @@
         <!-- ═══════════════════════════════════════════════════════
              SERVICIO FCM — NOTIFICACIONES PUSH
         ═══════════════════════════════════════════════════════ -->
+        <service
+            android:name=".controller.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <service
             android:name=".controller.MyFirebaseMessagingService"
             android:exported="false">

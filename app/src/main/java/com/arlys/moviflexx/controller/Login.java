@@ -82,22 +82,20 @@ public class Login extends BaseActivity {
 
     private volatile Bitmap ultimoFrameBitmap = null;
 
-    // ── Vistas del formulario (IDs exactos del XML) ───────────────────────────
-    private View              layoutLogin;       // ScrollView  @+id/layoutLogin
+    private View              layoutLogin;
     private TextInputEditText edtEmail, edtPassword;
     private TextInputLayout   tilEmail, tilPassword;
-    private View              btnLogin;          // @+id/btnLogin
-    private View              btnGoogle;         // @+id/btnGoogle
-    private View              btnFaceLogin;      // @+id/btnFaceLogin
-    private View              btnQrLogin;        // @+id/btnQrLogin
-    private View              tvRegister;        // @+id/tvRegister
+    private View              btnLogin;
+    private View              btnGoogle;
+    private View              btnFaceLogin;
+    private View              btnQrLogin;
+    private View              tvRegister;
 
-    // ── Vistas de la cámara ───────────────────────────────────────────────────
-    private ConstraintLayout layoutFace;         // @+id/layoutFace
-    private PreviewView      previewView;        // @+id/previewView
-    private TextView         txtEstado;          // @+id/txtEstado
+    private ConstraintLayout layoutFace;
+    private PreviewView      previewView;
+    private TextView         txtEstado;
 
-    private ExecutorService  cameraExecutor;
+    private ExecutorService    cameraExecutor;
     private FirebaseAuth       mAuth;
     private GoogleSignInClient googleSignInClient;
     private SessionManager     sessionManager;
@@ -136,12 +134,10 @@ public class Login extends BaseActivity {
         // No iniciar el asistente de voz en Login
     }
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // ── Forzar status bar teal igual que Home ──────────────
         getWindow().setStatusBarColor(
                 android.graphics.Color.parseColor("#0ABFA3"));
         getWindow().getDecorView().setSystemUiVisibility(
@@ -150,7 +146,6 @@ public class Login extends BaseActivity {
 
         setContentView(R.layout.activity_login);
 
-        // ── Enlazar vistas con IDs reales del XML ─────────────────────────────
         layoutLogin  = findViewById(R.id.layoutLogin);
         tilEmail     = findViewById(R.id.til_email);
         tilPassword  = findViewById(R.id.til_password);
@@ -160,7 +155,6 @@ public class Login extends BaseActivity {
         previewView  = findViewById(R.id.previewView);
         txtEstado    = findViewById(R.id.txtEstado);
 
-        // Botones — IDs exactos del XML
         btnLogin     = findViewById(R.id.btnLogin);
         btnGoogle    = findViewById(R.id.btnGoogle);
         btnFaceLogin = findViewById(R.id.btnFaceLogin);
@@ -178,10 +172,6 @@ public class Login extends BaseActivity {
 
         configurarValidacionesEnTiempoReal();
         configurarGoogle();
-
-        // ══════════════════════════════════════════════════════════════════════
-        //  ANIMACIONES DE ENTRADA — siempre al final de onCreate
-        // ══════════════════════════════════════════════════════════════════════
         animarEntradaLogin();
     }
 
@@ -193,34 +183,22 @@ public class Login extends BaseActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  ANIMACIONES DE ENTRADA
-    //  Cascada: ilustración → logo → campos → botones → registro
-    //  Delay acumulado de 80ms por elemento para efecto stagger natural
+    //  ANIMACIONES
     // ══════════════════════════════════════════════════════════════════════════
 
     private void animarEntradaLogin() {
-        // Ilustración del van (ImageView dentro del ScrollView, no tiene ID)
-        // La animamos via el contenedor del scroll con un delay mínimo
         AnimUtils.fadeSlideIn(layoutLogin, 0);
-
-        // Campos de texto — entran ligeramente después
         AnimUtils.fadeSlideIn(tilEmail,    180);
         AnimUtils.fadeSlideIn(tilPassword, 260);
-
-        // Botón principal — el más importante, entra con ligero bounce
-        if (btnLogin != null)     AnimUtils.bounceIn(btnLogin,     340);
-
-        // Fila QR + Facial
-        if (btnQrLogin != null)   AnimUtils.fadeSlideIn(btnQrLogin,   420);
+        if (btnLogin     != null) AnimUtils.bounceIn(btnLogin,     340);
+        if (btnQrLogin   != null) AnimUtils.fadeSlideIn(btnQrLogin,   420);
         if (btnFaceLogin != null) AnimUtils.fadeSlideIn(btnFaceLogin, 420);
-
-        // Google y registro — últimos
-        if (btnGoogle != null)    AnimUtils.fadeSlideIn(btnGoogle,    500);
-        if (tvRegister != null)   AnimUtils.fadeSlideIn(tvRegister,   560);
+        if (btnGoogle    != null) AnimUtils.fadeSlideIn(btnGoogle,    500);
+        if (tvRegister   != null) AnimUtils.fadeSlideIn(tvRegister,   560);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  VALIDACIONES EN TIEMPO REAL
+    //  VALIDACIONES
     // ══════════════════════════════════════════════════════════════════════════
 
     private void configurarValidacionesEnTiempoReal() {
@@ -237,10 +215,6 @@ public class Login extends BaseActivity {
             }
         });
     }
-
-    // ══════════════════════════════════════════════════════════════════════════
-    //  VALIDADORES — shake cuando hay error
-    // ══════════════════════════════════════════════════════════════════════════
 
     private boolean validarEmail(String valor) {
         valor = valor.trim();
@@ -287,17 +261,15 @@ public class Login extends BaseActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  NAVEGACIÓN — fade suave entre formulario y cámara
+    //  NAVEGACIÓN
     // ══════════════════════════════════════════════════════════════════════════
 
     private void mostrarFaceLogin() {
-        // Fade out del formulario completo → mostrar cámara con fade in
         AnimUtils.fadeOut(layoutLogin, () -> {
             layoutLogin.setVisibility(View.GONE);
             layoutFace.setVisibility(View.VISIBLE);
             AnimUtils.fadeSlideIn(layoutFace, 0);
         });
-
         yaCapturado.set(false);
         cuentaRegresivaIniciada.set(false);
         txtEstado.setText("📷 Coloca tu rostro dentro del óvalo...");
@@ -306,12 +278,9 @@ public class Login extends BaseActivity {
     }
 
     private void mostrarLoginNormal() {
-        // Fade out de la cámara → re-animar los elementos del formulario
         AnimUtils.fadeOut(layoutFace, () -> {
             layoutFace.setVisibility(View.GONE);
             layoutLogin.setVisibility(View.VISIBLE);
-
-            // Re-animar en cascada al volver (delays más cortos)
             AnimUtils.fadeSlideIn(tilEmail,    0);
             AnimUtils.fadeSlideIn(tilPassword, 80);
             if (btnLogin     != null) AnimUtils.bounceIn(btnLogin,     160);
@@ -319,7 +288,6 @@ public class Login extends BaseActivity {
             if (btnFaceLogin != null) AnimUtils.fadeSlideIn(btnFaceLogin, 220);
             if (btnGoogle    != null) AnimUtils.fadeSlideIn(btnGoogle,    280);
         });
-
         yaCapturado.set(false);
         cuentaRegresivaIniciada.set(false);
     }
@@ -441,8 +409,6 @@ public class Login extends BaseActivity {
         }
     }
 
-
-
     // ══════════════════════════════════════════════════════════════════════════
     //  FACE LOGIN
     // ══════════════════════════════════════════════════════════════════════════
@@ -455,7 +421,7 @@ public class Login extends BaseActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  GOOGLE
+    //  GOOGLE — solo permite login si ya tiene cuenta en la app
     // ══════════════════════════════════════════════════════════════════════════
 
     private void configurarGoogle() {
@@ -465,7 +431,6 @@ public class Login extends BaseActivity {
                 .requestEmail().build();
         googleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        // tapPulse en el botón de Google antes de lanzar el intent
         findViewById(R.id.btnGoogle).setOnClickListener(v -> {
             AnimUtils.tapPulse(v);
             v.postDelayed(() ->
@@ -513,17 +478,61 @@ public class Login extends BaseActivity {
                     runOnUiThread(() -> {
                         dismissLoading();
                         if (response.isSuccessful()) {
+                            // ── Tiene cuenta en la app — login normal ──
                             String emailFallback = mAuth.getCurrentUser() != null
                                     ? mAuth.getCurrentUser().getEmail() : "";
                             procesarRespuestaLogin(body, emailFallback);
                         } else {
-                            String msg = "Error inesperado (código " + response.code() + ").";
-                            try {
-                                JSONObject err = new JSONObject(body);
-                                if (err.has("message"))    msg = err.getString("message");
-                                else if (err.has("error")) msg = err.getString("error");
-                            } catch (Exception ignored) {}
-                            MoviAlert.error(Login.this, "Error con Google", msg);
+                            // ── Limpiar sesión de Google en Firebase ──
+                            googleSignInClient.signOut();
+                            mAuth.signOut();
+
+                            if (response.code() == 404 || response.code() == 401
+                                    || response.code() == 403) {
+                                // ── No tiene cuenta — ofrecer crear una ──
+                                String emailGoogle = "";
+                                try {
+                                    // Intentar extraer el email del body de error
+                                    JSONObject err = new JSONObject(body);
+                                    emailGoogle = err.optString("email", "");
+                                } catch (Exception ignored) {}
+
+                                // Usar el email de Firebase como fallback
+                                if (emailGoogle.isEmpty() && mAuth.getCurrentUser() != null) {
+                                    emailGoogle = mAuth.getCurrentUser().getEmail() != null
+                                            ? mAuth.getCurrentUser().getEmail() : "";
+                                }
+
+                                final String emailParaRegistro = emailGoogle;
+
+                                new android.app.AlertDialog.Builder(Login.this)
+                                        .setTitle("Cuenta no encontrada")
+                                        .setMessage("No encontramos una cuenta de MoviFlex "
+                                                + "asociada a este correo de Google.\n\n"
+                                                + "¿Deseas crear una cuenta nueva?")
+                                        .setCancelable(false)
+                                        .setPositiveButton("Crear cuenta", (dialog, which) -> {
+                                            Intent intent = new Intent(Login.this, Register.class);
+                                            if (!emailParaRegistro.isEmpty())
+                                                intent.putExtra("EMAIL_GOOGLE", emailParaRegistro);
+                                            startActivity(intent);
+                                            overridePendingTransition(
+                                                    R.anim.slide_in_bottom, R.anim.fade_out);
+                                        })
+                                        .setNegativeButton("Cancelar", (dialog, which) ->
+                                                dialog.dismiss())
+                                        .show();
+
+                            } else {
+                                // ── Otro error ──
+                                String msg = "Error inesperado (código " + response.code() + ").";
+                                try {
+                                    JSONObject err = new JSONObject(body);
+                                    if (err.has("message"))    msg = err.getString("message");
+                                    else if (err.has("error")) msg = err.getString("error");
+                                } catch (Exception ignored) {}
+                                MoviAlert.error(Login.this, "Error con Google", msg);
+                            }
                         }
                     });
                 }
@@ -539,11 +548,9 @@ public class Login extends BaseActivity {
         NotificationManager manager =
                 (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
-        // Canal obligatorio Android 8+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel canal = new NotificationChannel(
-                    channelId,
-                    "Moviflexx Login",
+                    channelId, "Moviflexx Login",
                     NotificationManager.IMPORTANCE_HIGH);
             canal.enableVibration(true);
             manager.createNotificationChannel(canal);
@@ -562,7 +569,6 @@ public class Login extends BaseActivity {
     }
 
     public void irRegister(View view) {
-        // slide desde abajo al ir al registro — sensación de "abrir" nueva pantalla
         startActivity(new Intent(this, Register.class));
         overridePendingTransition(R.anim.slide_in_bottom, R.anim.fade_out);
     }
@@ -627,10 +633,7 @@ public class Login extends BaseActivity {
         try {
             cameraProvider.unbindAll();
             cameraProvider.bindToLifecycle(
-                    this,
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    preview,
-                    imageAnalysis);
+                    this, CameraSelector.DEFAULT_FRONT_CAMERA, preview, imageAnalysis);
             runOnUiThread(() ->
                     txtEstado.setText("📷 Coloca tu rostro frente a la cámara..."));
         } catch (Exception e) {
@@ -683,7 +686,7 @@ public class Login extends BaseActivity {
             @Override public void run() {
                 if (countdown[0] > 0) {
                     txtEstado.setText("📸 Preparando... " + countdown[0]);
-                    AnimUtils.bounceIn(txtEstado, 0);   // bounce en cada número
+                    AnimUtils.bounceIn(txtEstado, 0);
                     countdown[0]--;
                     handler.postDelayed(this, 1000);
                 } else {
@@ -780,7 +783,8 @@ public class Login extends BaseActivity {
                             dismissLoading();
                             txtEstado.setText("❌ Error subiendo imagen");
                             MoviAlert.error(Login.this, "Error al subir imagen",
-                                    "El servidor rechazó la imagen (código " + response.code() + ").",
+                                    "El servidor rechazó la imagen (código "
+                                            + response.code() + ").",
                                     () -> mostrarBotonReintentar());
                         });
                     }
@@ -822,7 +826,8 @@ public class Login extends BaseActivity {
                     });
                 }
                 @Override public void onResponse(Call call, Response response) throws IOException {
-                    String responseBody = response.body() != null ? response.body().string() : "";
+                    String responseBody = response.body() != null
+                            ? response.body().string() : "";
                     runOnUiThread(() -> {
                         dismissLoading();
                         if (response.isSuccessful()) {
@@ -892,8 +897,7 @@ public class Login extends BaseActivity {
             }
 
             txtEstado.setText("✅ ¡Bienvenido " + nombre + "!");
-            AnimUtils.bounceIn(txtEstado, 0);   // bounce en el mensaje de éxito
-
+            AnimUtils.bounceIn(txtEstado, 0);
             MoviAlert.toast(this, "¡Bienvenido, " + nombre + "!", MoviAlert.SUCCESS);
             sessionManager.setPendingWelcome(true);
             guardarSesionYNavegar(token, nombre, email, telefono, idRol, idUsuario);
@@ -937,7 +941,7 @@ public class Login extends BaseActivity {
 
         final android.widget.Button boton = btnReintentar;
         boton.setVisibility(View.VISIBLE);
-        AnimUtils.bounceIn(boton, 0);   // bounce al aparecer
+        AnimUtils.bounceIn(boton, 0);
 
         boton.setOnClickListener(v -> {
             AnimUtils.tapPulse(v);
@@ -954,11 +958,6 @@ public class Login extends BaseActivity {
     //  GUARDAR SESIÓN Y NAVEGAR
     // ══════════════════════════════════════════════════════════════════════════
 
-    // ══════════════════════════════════════════════════════════════════════════
-    //  GUARDAR SESIÓN Y NAVEGAR
-    //  ⚠️ Reemplaza el método guardarSesionYNavegar existente en Login.java
-    // ══════════════════════════════════════════════════════════════════════════
-
     private void guardarSesionYNavegar(String token, String nombre, String email,
                                        String telefono, int idRol, int idUsuario) {
         if (token != null && idUsuario != -1 && idRol != -1) {
@@ -970,7 +969,6 @@ public class Login extends BaseActivity {
             sessionManager.setLoggedIn(true);
             sessionManager.loadSessionToMemory();
 
-            // 🔔 Enviar token FCM al backend para poder recibir notificaciones push
             final int idUsuarioFinal = idUsuario;
             com.google.firebase.messaging.FirebaseMessaging.getInstance().getToken()
                     .addOnSuccessListener(fcmToken -> {
@@ -978,20 +976,19 @@ public class Login extends BaseActivity {
                             org.json.JSONObject body = new org.json.JSONObject();
                             body.put("token",     fcmToken);
                             body.put("idUsuario", idUsuarioFinal);
-
                             com.arlys.moviflexx.model.ConexionApi.getInstance(this).post(
-                                    com.arlys.moviflexx.model.Constantes.BASE_URL
-                                            + "/api/usuarios/" + idUsuarioFinal + "/fcm-token",
+                                    Constantes.BASE_URL + "/api/usuarios/"
+                                            + idUsuarioFinal + "/fcm-token",
                                     body,
-                                    response -> android.util.Log.d("FCM", "Token guardado OK"),
-                                    error    -> android.util.Log.w("FCM", "Error guardando token FCM")
+                                    response -> Log.d("FCM", "Token guardado OK"),
+                                    error    -> Log.w("FCM", "Error guardando token FCM")
                             );
                         } catch (Exception e) {
-                            android.util.Log.e("FCM", "Error preparando token: " + e.getMessage());
+                            Log.e("FCM", "Error preparando token: " + e.getMessage());
                         }
                     })
                     .addOnFailureListener(e ->
-                            android.util.Log.w("FCM", "No se pudo obtener token FCM: " + e.getMessage())
+                            Log.w("FCM", "No se pudo obtener token FCM: " + e.getMessage())
                     );
         }
 
@@ -1000,6 +997,7 @@ public class Login extends BaseActivity {
         overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
         finish();
     }
+
     // ══════════════════════════════════════════════════════════════════════════
     //  UTILIDADES
     // ══════════════════════════════════════════════════════════════════════════
@@ -1011,16 +1009,15 @@ public class Login extends BaseActivity {
         }
     }
 
-    // ─── SCREEN DESCRIPTOR ────────────────────────────────────────────────────
     @Override public String getNombrePantalla() { return "Inicio de Sesión"; }
     @Override public String getDescripcionPantalla() {
         return "Estás en la pantalla de inicio de sesión. "
-             + "Hay campos para correo y contraseña, botón de login, "
-             + "login con Google y reconocimiento facial.";
+                + "Hay campos para correo y contraseña, botón de login, "
+                + "login con Google y reconocimiento facial.";
     }
     @Override public String getOpcionesPantalla() {
         return "Puedes iniciar sesión con correo y contraseña, "
-             + "con Google, o con reconocimiento facial. "
-             + "También puedes ir a registrarte si no tienes cuenta.";
+                + "con Google, o con reconocimiento facial. "
+                + "También puedes ir a registrarte si no tienes cuenta.";
     }
 }

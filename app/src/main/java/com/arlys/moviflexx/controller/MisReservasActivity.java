@@ -555,13 +555,27 @@ public class MisReservasActivity extends BaseActivity {
         sep2.setBackgroundColor(Color.parseColor("#E0F2F1")); inner.addView(sep2);
 
 
+        // POR ESTO (se crea la fila y se agrega al inner):
+        LinearLayout filaC = new LinearLayout(this);
+        filaC.setOrientation(LinearLayout.HORIZONTAL);
+        filaC.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams lpFC = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpFC.setMargins(0, p4, 0, 0);
+        filaC.setLayoutParams(lpFC);
+
         TextView tvC = new TextView(this);
         tvC.setTag("tv_conductor_" + idViajeFinal);
-        // Mostrar nombre si ya lo tenemos, o placeholder mientras carga
-        tvC.setText(conductorFinal.isEmpty() ? "Cargando..." : "" + conductorFinal);
-        tvC.setTextSize(12f); tvC.setTextColor(Color.parseColor("#00695C"));
-        tvC.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        tvC.setMaxLines(1); tvC.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        tvC.setText(conductorFinal.isEmpty() ? "Cargando conductor..." : " " + conductorFinal);
+        tvC.setTextSize(12f);
+        tvC.setTextColor(Color.parseColor("#00695C"));
+        tvC.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        tvC.setMaxLines(1);
+        tvC.setEllipsize(android.text.TextUtils.TruncateAt.END);
+
+        filaC.addView(tvC);
+        inner.addView(filaC); // ← Esta línea es la clave que faltaba
 
 
 

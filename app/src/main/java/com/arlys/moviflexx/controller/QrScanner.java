@@ -16,7 +16,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageProxy;
@@ -27,6 +26,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.arlys.moviflexx.R;
+import com.arlys.moviflexx.model.ConexionApi;
+import com.arlys.moviflexx.model.Constantes;
 import com.arlys.moviflexx.model.SessionManager;
 import com.arlys.moviflexx.model.SesionUsuario;
 import com.google.android.material.button.MaterialButton;
@@ -52,18 +53,16 @@ public class QrScanner extends BaseActivity {
     private static final String TAG = "QR_SCANNER";
     private static final int REQUEST_CAMERA_PERM = 300;
 
-    // ── Vistas ──
     private PreviewView      previewView;
     private View             scanLine;
     private TextView         txtEstadoQr;
     private MaterialCardView cardEstado;
-    private MaterialButton   btnVolverLogin;   // header (arrow back)
-    private MaterialButton   btnVolverLoginBottom; // botón inferior
+    private MaterialButton   btnVolverLogin;
+    private MaterialButton   btnVolverLoginBottom;
     private View             overlayExito;
     private TextView         txtNombreQr;
     private TextView         txtRolQr;
 
-    // ── Lógica ──
     private ExecutorService     cameraExecutor;
     private SessionManager      sessionManager;
     private ValueAnimator       scanAnimator;
@@ -88,11 +87,8 @@ public class QrScanner extends BaseActivity {
 
         bindViews();
 
-        // Botón header (flecha atrás) — puede ser null si el layout no lo tiene
         if (btnVolverLogin != null)
             btnVolverLogin.setOnClickListener(v -> volverAlLogin());
-
-        // Botón inferior — ID real en el XML es btnQrLogin
         if (btnVolverLoginBottom != null)
             btnVolverLoginBottom.setOnClickListener(v -> volverAlLogin());
 
@@ -100,11 +96,7 @@ public class QrScanner extends BaseActivity {
         else               pedirPermisoCamara();
     }
 
-    // Necesario porque el XML tiene android:onClick="login" en btnQrLogin
-    // Si no existe este método, la app crasha al tocar el botón
-    public void login(View view) {
-        volverAlLogin();
-    }
+    public void login(View view) { volverAlLogin(); }
 
     @Override
     protected void onResume() {
@@ -137,16 +129,11 @@ public class QrScanner extends BaseActivity {
         scanLine             = findViewById(R.id.qr_scan_line);
         txtEstadoQr          = findViewById(R.id.txt_estado_qr);
         cardEstado           = findViewById(R.id.card_estado_qr);
-        btnVolverLogin       = findViewById(R.id.btn_volver_login_qr);   // header arrow — puede ser null
-        btnVolverLoginBottom = findViewById(R.id.btnQrLogin);            // botón inferior — ID real del XML
+        btnVolverLogin       = findViewById(R.id.btn_volver_login_qr);
+        btnVolverLoginBottom = findViewById(R.id.btnQrLogin);
         overlayExito         = findViewById(R.id.overlay_exito_qr);
         txtNombreQr          = findViewById(R.id.txt_nombre_qr);
         txtRolQr             = findViewById(R.id.txt_rol_qr);
-
-        Log.d(TAG, "bindViews → btnVolverLogin=" + btnVolverLogin
-                + " | btnVolverLoginBottom=" + btnVolverLoginBottom
-                + " | cardEstado=" + cardEstado
-                + " | overlayExito=" + overlayExito);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -227,7 +214,6 @@ public class QrScanner extends BaseActivity {
                 runOnUiThread(() -> procesarQr(contenido));
             }
         } catch (com.google.zxing.NotFoundException ignored) {
-            // Frame sin QR — normal, seguir escaneando
         } catch (Exception e) {
             Log.w(TAG, "Error analizando frame: " + e.getMessage());
         } finally {
@@ -278,17 +264,15 @@ public class QrScanner extends BaseActivity {
             String     payloadJson = new String(decoded, StandardCharsets.UTF_8);
             JSONObject payload     = new JSONObject(payloadJson);
 
-            // ── 3. Log diagnóstico completo ──
             Log.d(TAG, "=== QR LOGIN ===");
-            Log.d(TAG, "Payload completo: " + payloadJson);
+            Log.d(TAG, "Payload: " + payloadJson);
 
-            // ── 4. Extraer campos del payload ──
+            // ── 3. Extraer campos del JWT ──
             int    idUsuario = payload.optInt("id",    -1);
             String email     = payload.optString("email", "");
             int    idRol     = payload.optInt("idRol", -1);
             long   exp       = payload.optLong("exp",   0);
 
-            // Soporte para "rol" como objeto { idRol, nombre } o número directo
             if (idRol == -1 && payload.has("rol")) {
                 try {
                     JSONObject rolObj = payload.optJSONObject("rol");
@@ -300,10 +284,9 @@ public class QrScanner extends BaseActivity {
                 } catch (Exception ignored) {}
             }
 
-            Log.d(TAG, "idUsuario=" + idUsuario + " | idRol=" + idRol
-                    + " | email=" + email + " | nombre=" + nombre);
+            Log.d(TAG, "idUsuario=" + idUsuario + " idRol=" + idRol + " email=" + email);
 
-            // ── 5. Verificar expiración ──
+            // ── 4. Verificar expiración ──
             long ahoraSegundos = System.currentTimeMillis() / 1000L;
             if (exp > 0 && ahoraSegundos > exp) {
                 mostrarEstado("⏰ Este QR ya expiró\nGenera uno nuevo desde tu perfil", false);
@@ -311,26 +294,26 @@ public class QrScanner extends BaseActivity {
                 return;
             }
 
-            // ── 6. Validar campos mínimos ──
+            // ── 5. Validar campos mínimos ──
             if (idUsuario == -1 || idRol == -1) {
-                Log.e(TAG, "❌ QR sin datos válidos — idUsuario=" + idUsuario + " idRol=" + idRol);
                 mostrarEstado("❌ QR sin datos de usuario válidos", false);
                 reiniciarScanner(2500);
                 return;
             }
 
-            // ── 7. Limpiar memoria estática de sesión anterior ──
-            SesionUsuario.setIdUsuario(-1);
-            SesionUsuario.setIdRol(-1);
-            SesionUsuario.setToken(null);
-
-            // ── 8. Guardar nueva sesión ──
+            // ── 6. Variables finales para lambdas ──
             final String tokenFinal  = token;
             final String nombreFinal = nombre;
             final String emailFinal  = email;
             final int    idRolFinal  = idRol;
             final int    idUsFinal   = idUsuario;
 
+            // ── 7. Limpiar sesión anterior ──
+            SesionUsuario.setIdUsuario(-1);
+            SesionUsuario.setIdRol(-1);
+            SesionUsuario.setToken(null);
+
+            // ── 8. Guardar sesión base con datos del JWT ──
             sessionManager.saveToken(tokenFinal);
             SesionUsuario.setToken(tokenFinal);
             sessionManager.saveUser(nombreFinal, emailFinal, "", idRolFinal, idUsFinal);
@@ -339,19 +322,144 @@ public class QrScanner extends BaseActivity {
             sessionManager.setLoggedIn(true);
             sessionManager.loadSessionToMemory();
 
-            Log.d(TAG, "✅ Sesión guardada — idUsuario=" + idUsFinal + " | idRol=" + idRolFinal);
+            Log.d(TAG, "✅ Sesión base OK — id=" + idUsFinal + " rol=" + idRolFinal);
+            Log.d(TAG, "Token guardado: " + sessionManager.getToken());
 
-            // ── 9. Mostrar éxito y navegar ──
+            // ── 9. Mostrar overlay de éxito ──
             mostrarOverlayExito(nombreFinal, idRolFinal);
+            mostrarEstado("⏳ Cargando perfil...", true);
 
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                Toast.makeText(this, "¡Bienvenido " + nombreFinal + "! 👋",
-                        Toast.LENGTH_SHORT).show();
-                Class<?> destino = idRolFinal == 2 ? HomeConductor.class : HomePasajero.class;
-                Log.d(TAG, "Navegando a: " + destino.getSimpleName());
-                startActivity(new Intent(QrScanner.this, destino));
-                finish();
-            }, 1500);
+            // ── 10. Cargar perfil completo usando authPorId ──
+            // Usamos authPorId porque devuelve la misma estructura que el login normal
+            // (con el objeto "usuario" que contiene fotoPerfil)
+            String urlPerfil = Constantes.authPorId((long) idUsFinal);
+            Log.d(TAG, "🔍 Cargando perfil desde: " + urlPerfil);
+
+            ConexionApi.getInstance(this).getObject(
+                    urlPerfil,
+                    respuesta -> {
+                        Log.d(TAG, "✅ Respuesta perfil completa: " + respuesta.toString());
+
+                        // La respuesta puede traer los datos directos
+                        // o anidados dentro de "usuario" — igual que procesarRespuestaLogin
+                        JSONObject u = respuesta;
+                        if (respuesta.has("usuario")) {
+                            JSONObject anidado = respuesta.optJSONObject("usuario");
+                            if (anidado != null) u = anidado;
+                        }
+
+                        // Extraer nombre
+                        String nombreApi = u.optString("nombre", "");
+                        if (nombreApi.isEmpty())
+                            nombreApi = u.optString("nombres", "");
+                        if (nombreApi.isEmpty())
+                            nombreApi = u.optString("nombreCompleto", "");
+                        if (nombreApi.isEmpty())
+                            nombreApi = nombreFinal;
+
+                        // Extraer teléfono
+                        String telefono = u.optString("telefono", "");
+
+                        // Extraer foto — misma lógica que Login.java procesarRespuestaLogin
+                        String foto = u.optString("fotoPerfil",
+                                u.optString("fotoPerfi",
+                                        u.optString("foto",
+                                                u.optString("photoUrl",
+                                                        u.optString("profilePicture",
+                                                                u.optString("urlFoto",
+                                                                        u.optString("imagen",
+                                                                                u.optString("avatarUrl", ""))))))));
+
+                        Log.d(TAG, "📸 foto=" + foto
+                                + " | nombre=" + nombreApi
+                                + " | tel=" + telefono);
+
+                        final String nombreFinal2 = nombreApi;
+                        final String fotoFinal    = foto;
+                        final String telFinal     = telefono;
+
+                        // ── Guardar y navegar en hilo principal ──
+                        runOnUiThread(() -> {
+                            // Actualizar sesión con datos completos
+                            sessionManager.saveUser(
+                                    nombreFinal2, emailFinal, telFinal,
+                                    idRolFinal, idUsFinal);
+
+                            if (!fotoFinal.isEmpty() && !fotoFinal.equals("null")) {
+                                sessionManager.saveFotoPerfil(fotoFinal);
+                                Log.d(TAG, "✅ Foto guardada en sesión: " + fotoFinal);
+                            } else {
+                                // Limpiar foto anterior para no mostrar foto de otra cuenta
+                                sessionManager.saveFotoPerfil("");
+                                Log.w(TAG, "⚠️ No se encontró foto de perfil en la respuesta");
+                            }
+
+                            sessionManager.loadSessionToMemory();
+                            navegarAlHome(nombreFinal2, idRolFinal);
+                        });
+                    },
+                    error -> {
+                        // Si falla authPorId, intentar con usuarioDetalle como fallback
+                        Log.w(TAG, "⚠️ authPorId falló, intentando usuarioDetalle...");
+                        String urlFallback = Constantes.usuarioDetalle((long) idUsFinal);
+                        Log.d(TAG, "🔍 Fallback URL: " + urlFallback);
+
+                        ConexionApi.getInstance(this).getObject(
+                                urlFallback,
+                                respuestaFallback -> {
+                                    Log.d(TAG, "✅ Respuesta fallback: " + respuestaFallback.toString());
+
+                                    JSONObject u2 = respuestaFallback;
+                                    if (respuestaFallback.has("usuario")) {
+                                        JSONObject anidado = respuestaFallback.optJSONObject("usuario");
+                                        if (anidado != null) u2 = anidado;
+                                    }
+
+                                    String nombreApi2 = u2.optString("nombre", "");
+                                    if (nombreApi2.isEmpty())
+                                        nombreApi2 = u2.optString("nombres", "");
+                                    if (nombreApi2.isEmpty())
+                                        nombreApi2 = nombreFinal;
+
+                                    String telefono2 = u2.optString("telefono", "");
+
+                                    String foto2 = u2.optString("fotoPerfil",
+                                            u2.optString("fotoPerfi",
+                                                    u2.optString("foto",
+                                                            u2.optString("photoUrl",
+                                                                    u2.optString("profilePicture",
+                                                                            u2.optString("urlFoto",
+                                                                                    u2.optString("imagen",
+                                                                                            u2.optString("avatarUrl", ""))))))));
+
+                                    Log.d(TAG, "📸 Fallback foto=" + foto2 + " nombre=" + nombreApi2);
+
+                                    final String nF = nombreApi2;
+                                    final String fF = foto2;
+                                    final String tF = telefono2;
+
+                                    runOnUiThread(() -> {
+                                        sessionManager.saveUser(nF, emailFinal, tF,
+                                                idRolFinal, idUsFinal);
+                                        if (!fF.isEmpty() && !fF.equals("null")) {
+                                            sessionManager.saveFotoPerfil(fF);
+                                            Log.d(TAG, "✅ Foto guardada (fallback): " + fF);
+                                        } else {
+                                            sessionManager.saveFotoPerfil("");
+                                            Log.w(TAG, "⚠️ Sin foto en fallback tampoco");
+                                        }
+                                        sessionManager.loadSessionToMemory();
+                                        navegarAlHome(nF, idRolFinal);
+                                    });
+                                },
+                                error2 -> {
+                                    // Ambos endpoints fallaron — navegar sin foto
+                                    Log.e(TAG, "❌ Ambos endpoints fallaron. Navegando sin foto.");
+                                    runOnUiThread(() -> navegarAlHome(nombreFinal, idRolFinal));
+                                }
+                        );
+                    }
+            );
 
         } catch (Exception e) {
             Log.e(TAG, "Error procesando QR: " + e.getMessage(), e);
@@ -361,7 +469,28 @@ public class QrScanner extends BaseActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  UI
+    //  NAVEGAR AL HOME
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private void navegarAlHome(String nombre, int idRol) {
+        if (isFinishing() || isDestroyed()) return;
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (isFinishing() || isDestroyed()) return;
+            Toast.makeText(this,
+                    "¡Bienvenido " + nombre + "! 👋",
+                    Toast.LENGTH_SHORT).show();
+            Class<?> destino = idRol == 2 ? HomeConductor.class : HomePasajero.class;
+            Log.d(TAG, "🚀 Navegando a: " + destino.getSimpleName());
+            Intent intent = new Intent(QrScanner.this, destino);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        }, 800);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  UI HELPERS
     // ══════════════════════════════════════════════════════════════════════════
 
     private void mostrarEstado(String mensaje, boolean cargando) {
@@ -393,7 +522,7 @@ public class QrScanner extends BaseActivity {
     private void reiniciarScanner(long delayMs) {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             yaLeido.set(false);
-            if (cardEstado != null) cardEstado.setVisibility(View.GONE);
+            if (cardEstado  != null) cardEstado.setVisibility(View.GONE);
             if (scanAnimator != null) scanAnimator.resume();
         }, delayMs);
     }
@@ -423,11 +552,13 @@ public class QrScanner extends BaseActivity {
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CAMERA_PERM) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (grantResults.length > 0
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 iniciarCamara();
             } else {
                 mostrarEstado("❌ Se necesita permiso de cámara", false);
-                new Handler(Looper.getMainLooper()).postDelayed(this::volverAlLogin, 2000);
+                new Handler(Looper.getMainLooper()).postDelayed(
+                        this::volverAlLogin, 2000);
             }
         }
     }

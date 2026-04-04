@@ -34,6 +34,15 @@ public class Constantes {
         return BASE_URL + "/api/usuarios/" + idUsuario;
     }
 
+    /**
+     * POST /api/usuarios/{idUsuario}/fcm-token
+     * Guarda o actualiza el token FCM del usuario en la BD.
+     * Se llama al hacer login y cuando Firebase rota el token (onNewToken).
+     */
+    public static String fcmTokenUsuario(long idUsuario) {
+        return BASE_URL + "/api/usuarios/" + idUsuario + "/fcm-token";
+    }
+
 
     // ================= ROLES =================
     public static final String ROLES =
@@ -126,57 +135,26 @@ public class Constantes {
     public static final String PAGOS =
             BASE_URL + "/api/pagos";
 
-    /**
-     * GET /api/pagos/{idPago}
-     * Consulta estado y confirmaciones de un pago específico.
-     * Usado en el polling de PagoActivity cada 5 segundos.
-     */
     public static String pagoPorId(long idPago) {
         return BASE_URL + "/api/pagos/" + idPago;
     }
 
-    /**
-     * GET /api/pagos/viaje/{idViaje}/usuario/{idUsuario}
-     * Verifica si el pasajero ya tiene un pago activo para ese viaje.
-     * Retorna 404 si no existe — PagoActivity lo interpreta como "no hay pago aún".
-     * ⚠️ En Express esta ruta DEBE declararse ANTES de /api/pagos/:id
-     */
     public static String pagoDeUsuarioEnViaje(long idViaje, long idUsuario) {
         return BASE_URL + "/api/pagos/viaje/" + idViaje + "/usuario/" + idUsuario;
     }
 
-    /**
-     * GET /api/pagos/viaje/{idViaje}
-     * Devuelve TODOS los pagos de un viaje para que el conductor
-     * los vea en ResumenViajeActivity.
-     * Respuesta: { pagos: [...], totalConfirmado: 0.0 }
-     */
     public static String pagosPorViaje(long idViaje) {
         return BASE_URL + "/api/pagos/viaje/" + idViaje;
     }
 
-    /**
-     * Alias de pagosPorViaje — mismo endpoint, nombre alternativo.
-     * Usar cualquiera de los dos es equivalente.
-     */
     public static String pagosDeViaje(long idViaje) {
         return pagosPorViaje(idViaje);
     }
 
-    /**
-     * PUT /api/pagos/confirmarPasajero/{idPago}
-     * El pasajero confirma que ya realizó el pago.
-     * Cambia estado a "confirmado_pasajero" o "completado" si el conductor ya confirmó.
-     */
     public static String pagoConfirmarPasajero(long idPago) {
         return BASE_URL + "/api/pagos/confirmarPasajero/" + idPago;
     }
 
-    /**
-     * PUT /api/pagos/confirmarConductor/{idPago}
-     * El conductor confirma que recibió el pago.
-     * Cambia estado a "confirmado_conductor" o "completado" si el pasajero ya confirmó.
-     */
     public static String pagoConfirmarConductor(long idPago) {
         return BASE_URL + "/api/pagos/confirmarConductor/" + idPago;
     }
@@ -186,10 +164,6 @@ public class Constantes {
     public static final String CHAT_CONVERSACIONES =
             BASE_URL + "/api/chat/conversaciones";
 
-    /**
-     * El backend ya filtra por token JWT automáticamente (usa verificarToken).
-     * NO necesita idUsuario en la URL — el middleware lo extrae del token.
-     */
     public static String chatConversacionesPorUsuario(int idUsuario) {
         return BASE_URL + "/api/chat/conversaciones";
     }
@@ -214,7 +188,6 @@ public class Constantes {
         return BASE_URL + "/api/calificaciones/" + idUsuario + "/promedio";
     }
 
-    // ← NUEVAS
     public static String calificacionesPorUsuario(Long idUsuario) {
         return BASE_URL + "/api/calificaciones/" + idUsuario;
     }
@@ -300,6 +273,23 @@ public class Constantes {
     public static String notificacionesMarcarTodas(int idUsuario) {
         return BASE_URL + "/api/notificaciones/usuario/" + idUsuario + "/leer-todas";
     }
+
+    /**
+     * POST /api/notificaciones/push
+     * El cliente Android envía el token FCM del destinatario y el backend
+     * llama a la API de Firebase para entregar la notificación push.
+     *
+     * Body esperado:
+     * {
+     *   "token":   "<fcmToken del destinatario>",
+     *   "titulo":  "Nombre del remitente",
+     *   "mensaje": "Texto del mensaje",
+     *   "cuerpo":  "Texto del mensaje",   ← alias de mensaje
+     *   "tipo":    "MENSAJE"
+     * }
+     */
+    public static final String PUSH_ENVIAR =
+            BASE_URL + "/api/notificaciones/push";
 
     public static String pagoConfirmacion(long idPago) {
         return PAGOS + "/" + idPago + "/confirmacion";

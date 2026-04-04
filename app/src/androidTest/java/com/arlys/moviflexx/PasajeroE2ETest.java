@@ -30,38 +30,7 @@ import static androidx.test.espresso.action.ViewActions.*;
 import static androidx.test.espresso.matcher.ViewMatchers.*;
 import static org.junit.Assert.*;
 
-/**
- * ╔══════════════════════════════════════════════════════════════════════╗
- * ║   TEST E2E PASAJERO — Flujo Exhaustivo                              ║
- * ║                    MOVIFLEX · by Arlys Dev                          ║
- * ╚══════════════════════════════════════════════════════════════════════╝
- *
- * FLUJO REAL CONFIRMADO (v8):
- *
- * BottomSheet — Paso 2 BAJADA (imagen confirmada):
- *   - Stepper: ✓ 1 Subida ──── 2 Bajada (naranja activo)
- *   - Título: "¿Dónde te bajas?"
- *   - Chip verde: parada de subida confirmada
- *   - Chip naranja: parada preseleccionada ("Comuna 3")
- *   - Lista de paradas:
- *       🟢 Cra. 50 # 2-58... (Inicio)
- *       🔵 Barrio Villa de occidente
- *       🔵 Popular
- *       🔵 Comuna 3
- *       🔵 Ciudad jardin
- *       🔵 Valle Robledo
- *       🔵 Club Residencial Camino Viejo
- *       🔴 sena (Destino final)
- *   - Botón NARANJA: "🎫 RESERVAR EN: <parada>"
- *     → texto dinámico según parada elegida
- *     → este botón ES la reserva (no hay btn_confirmar separado)
- *
- * CORRECCIONES v8 — test05:
- *   - El flujo de bajada busca "RESERVAR EN:" como botón final
- *   - seleccionarParadasCompleto() eliminado; test05 hace todo inline
- *   - Filtros de ultimoItemClickeableDeBottomSheet actualizados para
- *     excluir "RESERVAR" del texto de paradas (evita confusión con el botón)
- */
+
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -71,8 +40,8 @@ public class PasajeroE2ETest {
     private static final String TAG = "E2E_PASAJERO";
     private static final String PKG = "com.arlys.moviflexx";
 
-    private static final String EMAIL    = "andrea@gmail.com";
-    private static final String PASSWORD = "Andrea123#";
+    private static final String EMAIL    = "cyascuar@gmail.com";
+    private static final String PASSWORD = "Diana123#";
 
     private static final int T_CORTO = 1_500;
     private static final int T_MEDIO = 4_000;
@@ -273,13 +242,6 @@ public class PasajeroE2ETest {
     // ═════════════════════════════════════════════════════════════════════════
     //  TEST 5 — SELECCIONAR BAJADA Y RESERVAR  [CORREGIDO v8]
     //
-    //  Flujo real (imagen confirmada):
-    //    1. Abrir BottomSheet → paso SUBIDA → seleccionar parada → CONFIRMAR SUBIDA
-    //    2. Paso BAJADA aparece automáticamente
-    //    3. Seleccionar parada de bajada de la lista
-    //    4. El botón naranja muestra "🎫 RESERVAR EN: <parada>"
-    //    5. Click en ese botón → reserva completada
-    // ═════════════════════════════════════════════════════════════════════════
 
     @Test
     public void test05_ConfirmarReserva() {
@@ -337,9 +299,7 @@ public class PasajeroE2ETest {
         paradaBajada.click();
         pausa(2000); // esperar que el botón naranja se actualice con el nombre de la parada
 
-        // ── BOTÓN "RESERVAR EN: <parada>" ────────────────────────────────────
-        // Texto dinámico: "🎫 RESERVAR EN: Ciudad jardin"
-        // UiAutomator hace getText() sin emojis, buscar solo la parte de texto
+
         UiObject2 btnReservar = device.wait(
                 Until.findObject(By.textContains("RESERVAR EN:")), 5000);
         if (btnReservar == null)
@@ -400,22 +360,12 @@ public class PasajeroE2ETest {
     // ═════════════════════════════════════════════════════════════════════════
 //  TEST 6 — MIS VIAJES  [CORREGIDO]
 //
-//  Flujo real:
-//    1. Login
-//    2. Click en nav_mis_viajes  → abre MisReservasActivity
-//    3. Verifica que la pantalla cargó (lista de reservas o estado vacío)
-//    4. Verifica que existe al menos un viaje con algún estado conocido
-//       O un layout_vacio si no hay viajes
-// ═════════════════════════════════════════════════════════════════════════
 
     @Test
     public void test06_MisViajes() {
         Log.d(TAG, "══ TEST 6: Mis Viajes Realizados ══");
         realizarLogin();
 
-        // El botón "MIS VIAJES REALIZADOS" está en HomePasajero (nav_inicio)
-        // Asegurarse de estar en el home — después del login ya estamos ahí,
-        // pero por si acaso lo forzamos
         UiObject2 navInicio = device.findObject(By.res(PKG + ":id/nav_inicio"));
         if (navInicio != null) {
             navInicio.click();
@@ -423,11 +373,10 @@ public class PasajeroE2ETest {
             limpiarDialogos();
         }
 
-        // Esperar que HomePasajero cargue — verificar que btn_mis_viajes_frame existe
         UiObject2 btnFrame = device.wait(
                 Until.findObject(By.res(PKG + ":id/btn_mis_viajes_frame")), 8000);
 
-        // Si no está visible, hacer scroll hacia arriba (está en el header)
+
         if (btnFrame == null) {
             device.swipe(
                     device.getDisplayWidth() / 2,
@@ -460,16 +409,6 @@ public class PasajeroE2ETest {
 // ═════════════════════════════════════════════════════════════════════════
 //  TEST 7 — MENSAJES → CHAT → ENVIAR  [CORREGIDO]
 //
-//  Flujo real:
-//    1. Login
-//    2. Click en nav_mensajes → abre Mensajes.java (lista de conversaciones)
-//    3. Verificar que la pantalla de mensajes cargó (rvConversaciones)
-//    4. Abrir la primera conversación disponible
-//    5. Verificar que Chat.java abrió (campo etMensaje visible)
-//    6. Escribir un mensaje y pulsar btnEnviar
-//    7. Verificar que el campo se limpió y el mensaje aparece en el chat
-//    8. Volver atrás
-// ═════════════════════════════════════════════════════════════════════════
 
     @Test
     public void test07_Mensajes() {
@@ -594,7 +533,6 @@ public class PasajeroE2ETest {
         pausa(T_MEDIO);
         limpiarDialogos();
 
-        // Verificar que cargó el perfil — layout_perfil_root o tv_nombre
         UiObject2 perfil = device.wait(
                 Until.findObject(By.res(PKG + ":id/layout_perfil_root")), 6000);
         if (perfil == null)
@@ -661,7 +599,6 @@ public class PasajeroE2ETest {
         pausa(T_MEDIO);
         limpiarDialogos();
 
-        // Si no hay reservas activas, omitir sin fallar
         UiObject2 card = device.wait(
                 Until.findObject(By.textContains("Confirmada")), 5000);
         if (card == null) card = device.findObject(By.textContains("Pendiente"));
