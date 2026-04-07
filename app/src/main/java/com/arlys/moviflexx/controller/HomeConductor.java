@@ -117,12 +117,7 @@ public class HomeConductor extends BaseActivity {
 
 
         // Arrancar servicio de notificaciones en tiempo real
-        Intent servicioNotif = new Intent(this, NotificacionPollingService.class);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            startForegroundService(servicioNotif);
-        } else {
-            startService(servicioNotif);
-        }
+
         enlazarVistas();
         configurarSaludo();
         configurarRecyclers();

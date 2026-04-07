@@ -197,10 +197,6 @@
         </service>
 
 
-
-        <!-- ═══════════════════════════════════════════════════════
-             META-DATA
-        ═══════════════════════════════════════════════════════ -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_notifications" />
