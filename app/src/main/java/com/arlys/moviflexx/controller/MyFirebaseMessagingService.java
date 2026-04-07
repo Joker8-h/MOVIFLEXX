@@ -39,9 +39,9 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     public void onMessageReceived(RemoteMessage remoteMessage) {
         Log.d(TAG, "📩 Push recibido de: " + remoteMessage.getFrom());
 
-        String titulo  = "MoviFlexx";
-        String mensaje = "";
-        String tipo    = null;
+        String titulo         = "MoviFlexx";
+        String mensaje        = "";
+        String tipo           = null;
         long   idConversacion = -1;
 
         if (remoteMessage.getNotification() != null) {
@@ -49,92 +49,75 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             String b = remoteMessage.getNotification().getBody();
             if (t != null && !t.isEmpty()) titulo  = t;
             if (b != null && !b.isEmpty()) mensaje = b;
-            Log.d(TAG, "  [notification block] titulo=" + titulo + " | body=" + mensaje);
         }
 
         if (!remoteMessage.getData().isEmpty()) {
-            Log.d(TAG, "  [data block] " + remoteMessage.getData().toString());
+            String tData = remoteMessage.getData().get("titulo");
+            if (tData != null && !tData.isEmpty()) titulo = tData;
 
-            if (remoteMessage.getData().containsKey("titulo"))
-                titulo = remoteMessage.getData().get("titulo");
-            if (remoteMessage.getData().containsKey("mensaje"))
-                mensaje = remoteMessage.getData().get("mensaje");
-            if ((mensaje == null || mensaje.isEmpty())
-                    && remoteMessage.getData().containsKey("cuerpo"))
-                mensaje = remoteMessage.getData().get("cuerpo");
-            if ((mensaje == null || mensaje.isEmpty())
-                    && remoteMessage.getData().containsKey("body"))
-                mensaje = remoteMessage.getData().get("body");
+            for (String campo : new String[]{"mensaje", "cuerpo", "body", "contenido"}) {
+                String v = remoteMessage.getData().get(campo);
+                if (v != null && !v.isEmpty()) { mensaje = v; break; }
+            }
 
             tipo = remoteMessage.getData().get("tipo");
 
-            // Extraer idConversacion si viene en el payload
             try {
-                if (remoteMessage.getData().containsKey("idConversacion"))
-                    idConversacion = Long.parseLong(
-                            remoteMessage.getData().get("idConversacion"));
-                else if (remoteMessage.getData().containsKey("conversacionId"))
-                    idConversacion = Long.parseLong(
-                            remoteMessage.getData().get("conversacionId"));
+                String convId = remoteMessage.getData().containsKey("idConversacion")
+                        ? remoteMessage.getData().get("idConversacion")
+                        : remoteMessage.getData().get("conversacionId");
+                if (convId != null && !convId.isEmpty())
+                    idConversacion = Long.parseLong(convId);
             } catch (NumberFormatException ignored) {}
         }
 
-        Log.d(TAG, "  → tipo=" + tipo + " | titulo=" + titulo
-                + " | mensaje=" + mensaje + " | idConv=" + idConversacion);
+        Log.d(TAG, "→ tipo=" + tipo + " | titulo=" + titulo
+                + " | mensaje=" + mensaje + " | conv=" + idConversacion);
 
-        if (tipo != null) {
+        if (tipo == null) {
+            mostrarNotificacion(titulo, mensaje, null, -1);
+        } else {
             switch (tipo.toUpperCase()) {
-
                 case "MENSAJE":
                 case "CHAT":
                     mostrarNotificacionMensaje(titulo, mensaje, idConversacion);
                     break;
-
                 case "RESERVA":
-                    String nombrePasajero = remoteMessage.getData().containsKey("nombrePasajero")
+                    String nombrePas = remoteMessage.getData().containsKey("nombrePasajero")
                             ? remoteMessage.getData().get("nombrePasajero") : "Un pasajero";
-                    String origenReserva  = remoteMessage.getData().containsKey("origen")
+                    String origen    = remoteMessage.getData().containsKey("origen")
                             ? remoteMessage.getData().get("origen")  : "Origen";
-                    String destinoReserva = remoteMessage.getData().containsKey("destino")
+                    String destino   = remoteMessage.getData().containsKey("destino")
                             ? remoteMessage.getData().get("destino") : "Destino";
-                    PublicarViaje.mostrarNotificacionReserva(
-                            this, nombrePasajero, origenReserva, destinoReserva);
+                    PublicarViaje.mostrarNotificacionReserva(this, nombrePas, origen, destino);
                     break;
-
                 case "ALERTA_SALIDA":
-                    int    minutosRestantes = 5;
-                    int    idViaje          = 0;
-                    String origenAlerta     = "Origen";
-                    String destinoAlerta    = "Destino";
+                    int    mins    = 5;
+                    int    idViaje = 0;
+                    String ori     = "Origen";
+                    String dest    = "Destino";
                     try {
                         if (remoteMessage.getData().containsKey("minutosRestantes"))
-                            minutosRestantes = Integer.parseInt(
-                                    remoteMessage.getData().get("minutosRestantes"));
+                            mins = Integer.parseInt(remoteMessage.getData().get("minutosRestantes"));
                         if (remoteMessage.getData().containsKey("idViaje"))
-                            idViaje = Integer.parseInt(
-                                    remoteMessage.getData().get("idViaje"));
+                            idViaje = Integer.parseInt(remoteMessage.getData().get("idViaje"));
                         if (remoteMessage.getData().containsKey("origen"))
-                            origenAlerta  = remoteMessage.getData().get("origen");
+                            ori  = remoteMessage.getData().get("origen");
                         if (remoteMessage.getData().containsKey("destino"))
-                            destinoAlerta = remoteMessage.getData().get("destino");
+                            dest = remoteMessage.getData().get("destino");
                     } catch (NumberFormatException ignored) {}
-                    PublicarViaje.mostrarAlertaAntesDePartir(
-                            this, minutosRestantes, origenAlerta, destinoAlerta, idViaje);
+                    PublicarViaje.mostrarAlertaAntesDePartir(this, mins, ori, dest, idViaje);
                     break;
-
                 default:
                     mostrarNotificacion(titulo, mensaje, tipo, -1);
                     break;
             }
-        } else {
-            mostrarNotificacion(titulo, mensaje, null, -1);
         }
 
-        // Broadcast para avisar a Notificaciones.java si está abierta
         Intent broadcast = new Intent(ACTION_NUEVA_NOTIF);
-        broadcast.putExtra("titulo",  titulo);
-        broadcast.putExtra("mensaje", mensaje);
-        broadcast.putExtra("tipo",    tipo != null ? tipo : "SISTEMA");
+        broadcast.putExtra("titulo",         titulo);
+        broadcast.putExtra("mensaje",        mensaje);
+        broadcast.putExtra("tipo",           tipo != null ? tipo : "SISTEMA");
         broadcast.putExtra("idConversacion", idConversacion);
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
     }

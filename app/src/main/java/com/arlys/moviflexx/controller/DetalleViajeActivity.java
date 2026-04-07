@@ -86,6 +86,7 @@ public class DetalleViajeActivity extends BaseActivity {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
 
+
     private static final int COLOR_RUTA = 0xFF009B8D;
     private static final int COLOR_RUTA_WAYPOINT = 0xFF7B1FA2;
     private static final int COLOR_CONDUCTOR = 0xFF1565C0;
@@ -97,7 +98,7 @@ public class DetalleViajeActivity extends BaseActivity {
 
 
     private static final String OSRM_URL =
-            "https://optimizacionofrutas-production.up.railway.app";
+            "https://osrm-popayan-production.up.railway.app";
     private static final String OSRM_URL_PUBLIC =
             "https://router.project-osrm.org";
 
@@ -2526,56 +2527,28 @@ public class DetalleViajeActivity extends BaseActivity {
     private void pedirSegmentoConductorAParada(GeoPoint desde, GeoPoint hasta, long requestId) {
         if (desde == null || hasta == null) return;
 
-        // Extraer waypoints intermedios de la ruta activa que estén
-        // entre la posición del conductor y el punto de recogida
-        final ArrayList<GeoPoint> waypoints = extraerWaypointsEntrePuntos(desde, hasta);
-
         new Thread(() -> {
             try {
-                // Construir URL con waypoints: conductor ; wp1 ; wp2 ; ... ; subida
-                StringBuilder coordsB = new StringBuilder();
-                coordsB.append(desde.getLongitude()).append(",").append(desde.getLatitude());
-                for (GeoPoint wp : waypoints) {
-                    coordsB.append(";").append(wp.getLongitude()).append(",").append(wp.getLatitude());
-                }
-                coordsB.append(";").append(hasta.getLongitude()).append(",").append(hasta.getLatitude());
                 String params = "?overview=full&geometries=geojson";
+                String seg = desde.getLongitude() + "," + desde.getLatitude() + ";"
+                        + hasta.getLongitude() + "," + hasta.getLatitude() + params;
 
                 ArrayList<GeoPoint> pts = null;
 
-                // Intentar con waypoints primero
-                if (!waypoints.isEmpty()) {
-                    String urlConWp = OSRM_URL + "/route/v1/driving/" + coordsB + params;
+                // Sin waypoints — OSRM calcula la ruta óptima directa
+                for (String base : new String[]{
+                        "https://osrm-popayan-production.up.railway.app",
+                        "https://router.project-osrm.org"
+                }) {
                     try {
-                        pts = parsearRutaSimpleOSRM(peticionHttp(urlConWp));
-                    } catch (Exception ignored) {
-                    }
-                    if (pts == null || pts.size() < 2) {
-                        String urlConWpPub = OSRM_URL_PUBLIC + "/route/v1/driving/" + coordsB + params;
-                        try {
-                            pts = parsearRutaSimpleOSRM(peticionHttp(urlConWpPub));
-                        } catch (Exception ignored) {
-                        }
-                    }
-                }
-
-                // Fallback: directo sin waypoints
-                if (pts == null || pts.size() < 2) {
-                    String seg = desde.getLongitude() + "," + desde.getLatitude() + ";"
-                            + hasta.getLongitude() + "," + hasta.getLatitude() + params;
-                    try {
-                        pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL + "/route/v1/driving/" + seg));
-                    } catch (Exception ignored) {
-                    }
-                    if (pts == null || pts.size() < 2)
-                        try {
-                            pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL_PUBLIC + "/route/v1/driving/" + seg));
-                        } catch (Exception ignored) {
-                        }
+                        pts = parsearRutaSimpleOSRM(
+                                peticionHttp(base + "/route/v1/driving/" + seg));
+                        if (pts != null && pts.size() >= 2) break;
+                    } catch (Exception ignored) {}
                 }
 
                 if (pts != null && pts.size() >= 2) {
-                    if (lastRenderId != requestId) return; // Validación de hilo
+                    if (lastRenderId != requestId) return;
                     final ArrayList<GeoPoint> fPts = pts;
                     runOnUiThread(() -> {
                         if (lastRenderId == requestId) {
@@ -2594,27 +2567,23 @@ public class DetalleViajeActivity extends BaseActivity {
         ArrayList<GeoPoint> resultado = new ArrayList<>();
         if (rutaActiva == null || rutaActiva.size() < 3) return resultado;
 
-        // Encontrar el índice más cercano a `desde` en la ruta
         int idxDesde = indiceMasCercano(rutaActiva, desde);
-        // Encontrar el índice más cercano a `hasta` en la ruta
         int idxHasta = indiceMasCercano(rutaActiva, hasta);
 
-        // Si están invertidos u ocurren en el mismo punto, intentar forzarlos a avanzar
         if (idxDesde >= idxHasta) {
-            // Buscamos un índice válido para "hasta" más adelante en la ruta
-            int newIdxHasta = indiceMasCercanoDespuesDe(rutaActiva, hasta, idxDesde);
-            if (newIdxHasta > idxDesde) {
-                idxHasta = newIdxHasta;
-            } else {
-                return resultado; // No hay forma lógica de avanzar
-            }
+            int newIdx = indiceMasCercanoDespuesDe(rutaActiva, hasta, idxDesde);
+            if (newIdx > idxDesde) idxHasta = newIdx;
+            else return resultado;
         }
 
-        // Extraer hasta 8 waypoints intermedios equiespaciados para asegurar un calcado perfecto
         int rango = idxHasta - idxDesde;
-        if (rango <= 2) return resultado; // muy cerca, no hace falta
+        if (rango <= 2) return resultado;
 
-        int numWp = Math.min(8, rango - 1); // Aumentado a 8 para mejor precisión
+        // 12 waypoints para rutas largas, menos para cortas
+        int numWp = rango < 20 ? Math.min(4, rango - 1)
+                : rango < 60 ? Math.min(8, rango - 1)
+                : Math.min(12, rango - 1);
+
         double paso = (double) rango / (numWp + 1);
         for (int i = 1; i <= numWp; i++) {
             int idx = idxDesde + (int) (i * paso);
@@ -2660,50 +2629,26 @@ public class DetalleViajeActivity extends BaseActivity {
     private void pedirSegmentoConductorADestino(GeoPoint desde, long requestId) {
         if (desde == null || gpDestino == null) return;
 
-        final ArrayList<GeoPoint> waypoints = extraerWaypointsEntrePuntos(desde, gpDestino);
-
         new Thread(() -> {
             try {
-                StringBuilder coordsB = new StringBuilder();
-                coordsB.append(desde.getLongitude()).append(",").append(desde.getLatitude());
-                for (GeoPoint wp : waypoints) {
-                    coordsB.append(";").append(wp.getLongitude()).append(",").append(wp.getLatitude());
-                }
-                coordsB.append(";").append(lngDestino).append(",").append(latDestino);
                 String params = "?overview=full&geometries=geojson";
+                String seg = desde.getLongitude() + "," + desde.getLatitude() + ";"
+                        + lngDestino + "," + latDestino + params;
 
                 ArrayList<GeoPoint> pts = null;
-
-                // Fallback directo si no hay waypoints
-                if (waypoints.isEmpty()) {
-                    String seg = desde.getLongitude() + "," + desde.getLatitude() + ";"
-                            + lngDestino + "," + latDestino + params;
+                for (String base : new String[]{
+                        "https://osrm-popayan-production.up.railway.app",
+                        "https://router.project-osrm.org"
+                }) {
                     try {
-                        pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL + "/route/v1/driving/" + seg));
-                    } catch (Exception ignored) {
-                    }
-                    if (pts == null || pts.size() < 2)
-                        try {
-                            pts = parsearRutaSimpleOSRM(peticionHttp(OSRM_URL_PUBLIC + "/route/v1/driving/" + seg));
-                        } catch (Exception ignored) {
-                        }
-                } else {
-                    String urlConWp = OSRM_URL + "/route/v1/driving/" + coordsB + params;
-                    try {
-                        pts = parsearRutaSimpleOSRM(peticionHttp(urlConWp));
-                    } catch (Exception ignored) {
-                    }
-                    if (pts == null || pts.size() < 2) {
-                        String urlConWpPub = OSRM_URL_PUBLIC + "/route/v1/driving/" + coordsB + params;
-                        try {
-                            pts = parsearRutaSimpleOSRM(peticionHttp(urlConWpPub));
-                        } catch (Exception ignored) {
-                        }
-                    }
+                        pts = parsearRutaSimpleOSRM(
+                                peticionHttp(base + "/route/v1/driving/" + seg));
+                        if (pts != null && pts.size() >= 2) break;
+                    } catch (Exception ignored) {}
                 }
 
                 if (pts != null && pts.size() >= 2) {
-                    if (lastRenderId != requestId) return; // Validación de hilo
+                    if (lastRenderId != requestId) return;
                     puntosRutaWaypoint = pts;
                     final ArrayList<GeoPoint> fPts = pts;
                     runOnUiThread(() -> {
@@ -2764,7 +2709,6 @@ public class DetalleViajeActivity extends BaseActivity {
         renderizarMapa();
     }
 
-    // REEMPLAZA limpiarOverlays() completo:
     private void limpiarOverlays() {
         if (map == null) return;
         List<Overlay> overlays = map.getOverlays();
@@ -2774,7 +2718,7 @@ public class DetalleViajeActivity extends BaseActivity {
                 overlays.remove(i);
             } else if (o instanceof Marker) {
                 Marker m = (Marker) o;
-                // ← NO borrar el marcador del conductor: se mueve suavemente
+                // NO borrar el marcador del conductor
                 if (!MID_CONDUCTOR.equals(m.getId())) {
                     overlays.remove(i);
                 }
@@ -2785,34 +2729,52 @@ public class DetalleViajeActivity extends BaseActivity {
     private void dibujarPolilinea(List<GeoPoint> pts, int color) {
         if (pts == null || pts.size() < 2) return;
         final ArrayList<GeoPoint> copia = new ArrayList<>(pts);
+
+        // Capa sombra
         Polyline sombra = new Polyline(map);
         sombra.setPoints(copia);
         sombra.setColor(Color.argb(60, 0, 0, 0));
         sombra.setWidth(24f);
         map.getOverlays().add(sombra);
+
+        // Capa borde blanco
         Polyline borde = new Polyline(map);
         borde.setPoints(copia);
         borde.setColor(Color.WHITE);
         borde.setWidth(20f);
         map.getOverlays().add(borde);
+
+        // Capa línea de color principal
         Polyline linea = new Polyline(map);
         linea.setPoints(copia);
         linea.setColor(color);
         linea.setWidth(13f);
+        linea.setOnClickListener((poly, mapView, point) -> true);
         map.getOverlays().add(linea);
     }
 
     private void dibujarPolilineaSegmento(List<GeoPoint> pts) {
         if (pts == null || pts.size() < 2) return;
         final ArrayList<GeoPoint> copia = new ArrayList<>(pts);
+
+        // Capa 1: sombra sutil
+        Polyline sombra = new Polyline(map);
+        sombra.setPoints(copia);
+        sombra.setColor(Color.argb(50, 0, 0, 0));
+        sombra.setWidth(20f);
+        map.getOverlays().add(sombra);
+
+        // Capa 2: borde blanco (halo)
         Polyline borde = new Polyline(map);
         borde.setPoints(copia);
         borde.setColor(Color.WHITE);
         borde.setWidth(14f);
         map.getOverlays().add(borde);
+
+        // Capa 3: línea naranja principal
         Polyline linea = new Polyline(map);
         linea.setPoints(copia);
-        linea.setColor(COLOR_SEGMENTO_ACTIVO);
+        linea.setColor(COLOR_SEGMENTO_ACTIVO); // 0xFFFF6F00
         linea.setWidth(9f);
         map.getOverlays().add(linea);
     }
@@ -3084,11 +3046,10 @@ public class DetalleViajeActivity extends BaseActivity {
     }
 
     private void iniciarTrazadoRuta() {
-        // Primero intentar con el geojson guardado en el backend
         if (!geojsonRuta.isEmpty()) {
             ArrayList<GeoPoint> pts = parsearGeoJsonString(geojsonRuta);
             if (pts != null && pts.size() >= 2) {
-                Log.d(TAG, "Usando geojsonRuta del backend: " + pts.size() + " pts");
+                Log.d(TAG, "GeoJSON del backend: " + pts.size() + " puntos");
                 todasLasRutas.clear();
                 listaRouteOptions.clear();
                 todasLasRutas.add(pts);
@@ -3100,12 +3061,11 @@ public class DetalleViajeActivity extends BaseActivity {
                 });
                 return;
             }
-            // Si el geojson no se pudo parsear, ignorarlo y pedir OSRM
-            Log.w(TAG, "geojsonRuta no se pudo parsear, pidiendo OSRM...");
+            Log.w(TAG, "GeoJSON no parseable, pidiendo OSRM...");
             geojsonRuta = "";
         }
 
-        // Geocodificar si las coords son inválidas, luego pedir ruta a OSRM
+        // Geocodificar si es necesario y luego pedir ruta
         if (coordsOrigenInvalidas || coordsDestinoInvalidas) {
             new Thread(() -> {
                 if (coordsOrigenInvalidas) {
@@ -3136,90 +3096,50 @@ public class DetalleViajeActivity extends BaseActivity {
     private void pedirRutaPrincipal() {
         new Thread(() -> {
             try {
-                // Construir waypoints intermedios desde paradasRuta del backend
-                StringBuilder wpsB = new StringBuilder();
-                for (JSONObject p : paradasRuta) {
-                    double pLat = p.optDouble("lat", 0), pLng = p.optDouble("lng", 0);
-                    if (pLat != 0 && pLng != 0
-                            && !sonIguales(pLat, pLng, latOrigen, lngOrigen)
-                            && !sonIguales(pLat, pLng, latDestino, lngDestino)) {
-                        wpsB.append(";").append(pLng).append(",").append(pLat);
-                    }
-                }
-
+                // ← Sin waypoints intermedios — solo origen y destino
                 String segmentoBase = lngOrigen + "," + latOrigen
-                        + wpsB
                         + ";" + lngDestino + "," + latDestino;
                 String params = "?overview=full&geometries=geojson&alternatives=true";
 
                 ArrayList<ArrayList<GeoPoint>> rutasEncontradas = new ArrayList<>();
                 ArrayList<double[]> metricas = new ArrayList<>();
 
-                // ── 1. OSRM Popayán propio (igual que PublicarRuta) ──────────────
-                mainHandler.post(() -> Log.d(TAG, "Intentando OSRM Popayán propio..."));
+                // 1. OSRM Popayán propio
                 try {
-                    String urlPropio = "https://osrm-popayan-production.up.railway.app"
+                    String url = "https://osrm-popayan-production.up.railway.app"
                             + "/route/v1/driving/" + segmentoBase + params;
-                    String jsonPropio = peticionHttp(urlPropio);
-                    if (jsonPropio != null && !jsonPropio.isEmpty()) {
-                        parsearRutasOSRM(jsonPropio, rutasEncontradas, metricas);
-                        Log.d(TAG, "OSRM Popayán: " + rutasEncontradas.size() + " rutas");
-                    }
+                    String json = peticionHttp(url);
+                    if (json != null && !json.isEmpty())
+                        parsearRutasOSRM(json, rutasEncontradas, metricas);
                 } catch (Exception e) {
                     Log.w(TAG, "OSRM Popayán no disponible: " + e.getMessage());
                 }
 
-                // ── 2. OSRM público (si el propio no dio resultados) ────────────
+                // 2. OSRM público si el propio no respondió
                 if (rutasEncontradas.isEmpty()) {
                     try {
-                        String urlPublico = "https://router.project-osrm.org"
+                        String url = "https://router.project-osrm.org"
                                 + "/route/v1/driving/" + segmentoBase + params;
-                        String jsonPublico = peticionHttp(urlPublico);
-                        if (jsonPublico != null && !jsonPublico.isEmpty()) {
-                            parsearRutasOSRM(jsonPublico, rutasEncontradas, metricas);
-                            Log.d(TAG, "OSRM público: " + rutasEncontradas.size() + " rutas");
-                        }
+                        String json = peticionHttp(url);
+                        if (json != null && !json.isEmpty())
+                            parsearRutasOSRM(json, rutasEncontradas, metricas);
                     } catch (Exception e) {
                         Log.w(TAG, "OSRM público no disponible: " + e.getMessage());
                     }
                 }
 
-                // ── 3. Intentar sin waypoints intermedios si aún no hay rutas ───
-                if (rutasEncontradas.isEmpty()) {
-                    String segSimple = lngOrigen + "," + latOrigen
-                            + ";" + lngDestino + "," + latDestino + params;
-                    try {
-                        String j1 = peticionHttp(
-                                "https://osrm-popayan-production.up.railway.app"
-                                        + "/route/v1/driving/" + segSimple);
-                        if (j1 != null && !j1.isEmpty())
-                            parsearRutasOSRM(j1, rutasEncontradas, metricas);
-                    } catch (Exception ignored) {}
-
-                    if (rutasEncontradas.isEmpty()) {
-                        try {
-                            String j2 = peticionHttp(
-                                    "https://router.project-osrm.org"
-                                            + "/route/v1/driving/" + segSimple);
-                            if (j2 != null && !j2.isEmpty())
-                                parsearRutasOSRM(j2, rutasEncontradas, metricas);
-                        } catch (Exception ignored) {}
-                    }
-                }
-
-                // ── Sin rutas: línea recta como último recurso ───────────────────
                 if (rutasEncontradas.isEmpty()) {
                     Log.w(TAG, "Todos los OSRM fallaron → línea recta");
                     runOnUiThread(this::usarLineaRecta);
                     return;
                 }
 
-                // ── Guardar geojson de la primera ruta para no repetir petición ──
+                // Guardar geojson para no repetir petición
                 if (geojsonRuta.isEmpty()) {
                     try {
-                        ArrayList<GeoPoint> primeraRuta = rutasEncontradas.get(0);
+                        ArrayList<GeoPoint> primera = rutasEncontradas.get(0);
                         JSONArray coords = new JSONArray();
-                        for (GeoPoint gp : primeraRuta) {
+                        for (GeoPoint gp : primera) {
                             JSONArray par = new JSONArray();
                             par.put(gp.getLongitude());
                             par.put(gp.getLatitude());

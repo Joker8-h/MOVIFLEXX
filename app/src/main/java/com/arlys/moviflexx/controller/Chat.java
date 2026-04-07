@@ -24,6 +24,10 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.app.NotificationManager;
+import android.app.NotificationChannel;
+import android.app.PendingIntent;
+import androidx.core.app.NotificationCompat;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -65,6 +69,9 @@ public class Chat extends BaseActivity {
     private static final int    MAX_FALLOS_PARA_OFFLINE = 2;
     private static final long   TYPING_DEBOUNCE_MS     = 2000L;
     private static final long   TYPING_POLL_MS         = 2000L;
+    private final Handler  notifHandler      = new Handler(Looper.getMainLooper());
+    private       Runnable notifRunnable     = null;
+    private       long     ultimaNotifVista  = -1;
 
     private static final String[] SUGERENCIAS_PASAJERO = {
             "¡Hola! ¿Ya saliste hacia el punto de recogida?",
@@ -215,12 +222,6 @@ public class Chat extends BaseActivity {
         handler.post(presenciaRunnable);
     }
 
-    @Override protected void onResume() {
-        super.onResume();
-        if (!pollingActivo) arrancarPolling();
-        arrancarPollingEscribiendo();
-        rvMensajes.post(this::marcarVisiblesComoLeidos);
-    }
 
     @Override protected void onPause() {
         super.onPause();
@@ -229,6 +230,8 @@ public class Chat extends BaseActivity {
         handler.removeCallbacks(presenciaRunnable);
         detenerContadorGrabacion();
         if (yoEstoyEscribiendo) enviarEstadoEscribiendo(false);
+        // ← agrega esta línea:
+        if (notifRunnable != null) notifHandler.removeCallbacks(notifRunnable);
     }
 
     @Override protected void onDestroy() {
@@ -321,6 +324,125 @@ public class Chat extends BaseActivity {
         if (bc != null) bc.setOnClickListener(v -> d.dismiss());
         d.setCanceledOnTouchOutside(true);
         d.show();
+    }
+
+    private void arrancarPollingNotificaciones() {
+        notifRunnable = new Runnable() {
+            @Override public void run() {
+                verificarNotificacionesNuevas();
+                notifHandler.postDelayed(this, 3000); // cada 3 segundos
+            }
+        };
+        notifHandler.postDelayed(notifRunnable, 3000);
+    }
+
+    private void verificarNotificacionesNuevas() {
+        String url = Constantes.BASE_URL + "/api/notificaciones/usuario/"
+                + idUsuarioActual + "/count";
+
+        ConexionApi.getInstance(this).getObject(url,
+                response -> {
+                    int total = response.optInt("noLeidas",
+                            response.optInt("count",
+                                    response.optInt("total", 0)));
+
+                    if (total > 0) {
+                        // Pedir la última notificación
+                        String urlNotifs = Constantes.BASE_URL
+                                + "/api/notificaciones/usuario/" + idUsuarioActual;
+
+                        ConexionApi.getInstance(this).getArray(urlNotifs,
+                                notifs -> {
+                                    if (notifs.length() == 0) return;
+                                    try {
+                                        // Tomar la más reciente (primera del array)
+                                        org.json.JSONObject ultima = notifs.getJSONObject(0);
+                                        long idNotif = ultima.optLong("id",
+                                                ultima.optLong("idNotificacion", -1));
+
+                                        // Solo mostrar si es nueva
+                                        if (idNotif <= ultimaNotifVista) return;
+                                        ultimaNotifVista = idNotif;
+
+                                        String titulo  = ultima.optString("titulo",  "Nuevo mensaje");
+                                        String mensaje = ultima.optString("mensaje", "");
+                                        String tipo    = ultima.optString("tipo",    "MENSAJE");
+
+                                        // Solo mostrar si es de tipo MENSAJE
+                                        if (!"MENSAJE".equalsIgnoreCase(tipo)) return;
+                                        // No mostrar si soy yo el que envió
+                                        int idEmisor = ultima.optInt("idEmisor",
+                                                ultima.optInt("idRemitente", -1));
+                                        if (idEmisor == idUsuarioActual) return;
+
+                                        runOnUiThread(() ->
+                                                mostrarNotificacionRecibida(titulo, mensaje));
+
+                                        // Marcar como leída en el backend
+                                        String urlLeida = Constantes.BASE_URL
+                                                + "/api/notificaciones/" + idNotif + "/leida";
+                                        ConexionApi.getInstance(this).put(urlLeida, null, r -> {}, e -> {});
+
+                                    } catch (Exception e) {
+                                        Log.e(TAG, "Error procesando notificación", e);
+                                    }
+                                },
+                                error -> {});
+                    }
+                },
+                error -> {});
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (!pollingActivo) arrancarPolling();
+        arrancarPollingEscribiendo();
+        arrancarPollingNotificaciones(); // ← agrega esta línea
+        rvMensajes.post(this::marcarVisiblesComoLeidos);
+    }
+
+    private void mostrarNotificacionRecibida(String titulo, String mensaje) {
+        String channelId = "moviflexx_mensajes";
+        NotificationManager manager =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (manager == null) return;
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel canal = new NotificationChannel(
+                    channelId, "Mensajes",
+                    NotificationManager.IMPORTANCE_HIGH);
+            canal.enableVibration(true);
+            canal.setVibrationPattern(new long[]{0, 250, 100, 250});
+            canal.enableLights(true);
+            canal.setLightColor(Color.parseColor("#0ABFA3"));
+            manager.createNotificationChannel(canal);
+        }
+
+        android.content.Intent intent = new android.content.Intent(this, Chat.class);
+        intent.putExtra("idConversacion", idConversacion);
+        intent.putExtra("nombre", nombreContacto);
+        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+        android.app.PendingIntent pendingIntent = android.app.PendingIntent.getActivity(
+                this,
+                (int) System.currentTimeMillis(),
+                intent,
+                android.app.PendingIntent.FLAG_ONE_SHOT
+                        | android.app.PendingIntent.FLAG_IMMUTABLE);
+
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(this, channelId)
+                        .setSmallIcon(R.drawable.logomo)
+                        .setContentTitle(titulo)
+                        .setContentText(mensaje)
+                        .setStyle(new NotificationCompat.BigTextStyle().bigText(mensaje))
+                        .setAutoCancel(true)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setDefaults(NotificationCompat.DEFAULT_ALL)
+                        .setContentIntent(pendingIntent)
+                        .setColor(Color.parseColor("#0ABFA3"));
+
+        manager.notify((int) System.currentTimeMillis(), builder.build());
     }
 
     private void cargarFotoContactoEnHeader(ImageView ivFoto,
@@ -1350,6 +1472,7 @@ public class Chat extends BaseActivity {
     //  CONFIRMAR ENVÍO Y DISPARAR PUSH
     // ══════════════════════════════════════════════════════════════════════════
 
+    // En Chat.java — reemplaza confirmarEnvio() completo
     private void confirmarEnvio(Mensaje opt, JSONObject response, String textoOriginal) {
         try {
             Mensaje real = Mensaje.fromJson(response, idUsuarioActual);
@@ -1361,8 +1484,13 @@ public class Chat extends BaseActivity {
             }
             if (real.getId() > ultimoIdVisto) ultimoIdVisto = real.getId();
 
-            // ── Disparar push al contacto ──────────────────────────────────
+            // Notificación local para el EMISOR (confirma que se envió)
+            mostrarNotificacionMensajeEnviado(textoOriginal);
+
+            // Push al receptor por Firebase
             dispararPushConReintento(textoOriginal, 0);
+            guardarNotificacionEnBackend(textoOriginal,
+                    session.getNombre() != null ? session.getNombre() : "Usuario");
 
         } catch (Exception e) {
             Log.e("PUSH_DEBUG", "Error en confirmarEnvio: " + e.getMessage());
@@ -1370,37 +1498,31 @@ public class Chat extends BaseActivity {
         }
     }
 
-    /**
-     * Dispara el push. Si el token todavía no llegó, reintenta hasta 3 veces
-     * con intervalos de 2 segundos antes de darse por vencido.
-     *
-     * @param contenido    Texto del mensaje que se va a enviar
-     * @param intento      Número de intento (0 = primero)
-     */
     private void dispararPushConReintento(String contenido, int intento) {
         if (!fcmTokenContacto.isEmpty()) {
             String miNombre = session.getNombre();
             if (miNombre == null || miNombre.isEmpty()) miNombre = "Usuario";
 
-            // Push directo via PushNotificationHelper
             PushNotificationHelper.enviarPush(
-                    this, fcmTokenContacto, miNombre, contenido, "MENSAJE");
+                    this,
+                    fcmTokenContacto,
+                    miNombre,
+                    contenido,
+                    "MENSAJE",
+                    idConversacion);   // ← ahora pasa el id de la conversación
 
-            // También guardar notificación en backend para que aparezca
-            // en la pantalla de Notificaciones del destinatario
             guardarNotificacionEnBackend(contenido, miNombre);
 
-            Log.d("PUSH_DEBUG", "✅ Push enviado a: " + fcmTokenContacto.substring(0, 20));
+            Log.d("PUSH_DEBUG", "✅ Push enviado. conv=" + idConversacion);
 
         } else if (intento < 3) {
-            Log.w("PUSH_DEBUG", "⏳ Token vacío, reintentando en 2s (intento "
-                    + (intento + 1) + "/3)");
+            Log.w("PUSH_DEBUG", "⏳ Reintento " + (intento + 1) + "/3 en 2s");
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 cargarTokenContacto();
                 dispararPushConReintento(contenido, intento + 1);
             }, 2000);
         } else {
-            Log.e("PUSH_DEBUG", "❌ Token sigue vacío tras 3 reintentos.");
+            Log.e("PUSH_DEBUG", "❌ Token vacío tras 3 reintentos");
         }
     }
 
@@ -1478,6 +1600,59 @@ public class Chat extends BaseActivity {
             return false;
         });
         s.show();
+    }
+
+    private void mostrarNotificacionMensajeEnviado(String texto) {
+        // Solo mostrar si la app está en background o el chat no está activo
+        // Si quieres que aparezca siempre, quita el return de abajo
+        // return; // ← descomenta si NO quieres notif cuando la app está abierta
+
+        String channelId = "moviflexx_mensajes";
+        NotificationManager manager =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (manager == null) return;
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            android.app.NotificationChannel canal = new android.app.NotificationChannel(
+                    channelId,
+                    "Mensajes",
+                    NotificationManager.IMPORTANCE_HIGH);
+            canal.setDescription("Mensajes de chat");
+            canal.enableVibration(true);
+            canal.setVibrationPattern(new long[]{0, 250, 100, 250});
+            canal.enableLights(true);
+            canal.setLightColor(android.graphics.Color.parseColor("#0ABFA3"));
+            manager.createNotificationChannel(canal);
+        }
+
+        // Al tocar la notificación vuelve a este mismo chat
+        android.content.Intent intent = new android.content.Intent(this, Chat.class);
+        intent.putExtra("idConversacion", idConversacion);
+        intent.putExtra("nombre", nombreContacto);
+        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        android.app.PendingIntent pendingIntent = android.app.PendingIntent.getActivity(
+                this,
+                (int) System.currentTimeMillis(),
+                intent,
+                android.app.PendingIntent.FLAG_ONE_SHOT
+                        | android.app.PendingIntent.FLAG_IMMUTABLE);
+
+        androidx.core.app.NotificationCompat.Builder builder =
+                new androidx.core.app.NotificationCompat.Builder(this, channelId)
+                        .setSmallIcon(R.drawable.logomo)
+                        .setContentTitle("Mensaje enviado a " + nombreContacto)
+                        .setContentText(texto)
+                        .setStyle(new androidx.core.app.NotificationCompat
+                                .BigTextStyle().bigText(texto))
+                        .setAutoCancel(true)
+                        .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+                        .setDefaults(androidx.core.app.NotificationCompat.DEFAULT_ALL)
+                        .setContentIntent(pendingIntent)
+                        .setColor(android.graphics.Color.parseColor("#0ABFA3"));
+
+        manager.notify((int) System.currentTimeMillis(), builder.build());
     }
 
     private void accionBuscar() {

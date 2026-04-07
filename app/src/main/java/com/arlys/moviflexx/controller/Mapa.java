@@ -85,32 +85,34 @@ import java.io.File;
 public class Mapa extends BaseActivity {
 
     // ── Interfaz interna ──────────────────────────────────────────────────────
-    private interface MarkerCallback { void onMarker(Marker marker); }
+    private interface MarkerCallback {
+        void onMarker(Marker marker);
+    }
 
     // ── Constantes ────────────────────────────────────────────────────────────
-    private static final String TAG           = "Mapa";
-    private static final int    LOCATION_PERM = 1;
+    private static final String TAG = "Mapa";
+    private static final int LOCATION_PERM = 1;
 
     private static final double UMBRAL_RECOGIDA_M = 60.0;
-    private static final double UMBRAL_DESTINO_M  = 60.0;
-    private static final double UMBRAL_BAJADA_M   = 80.0;
+    private static final double UMBRAL_DESTINO_M = 60.0;
+    private static final double UMBRAL_BAJADA_M = 80.0;
 
     // ── OSRM: 3 endpoints en cascada (igual que PublicarRuta) ────────────────
     private static final String OSRM_POPAYAN =
             "https://osrm-popayan-production.up.railway.app";
     private static final String OSRM_PUBLICO =
             "https://router.project-osrm.org";
-    private static final String OSRM_PROPIO  =
+    private static final String OSRM_PROPIO =
             "https://optimizacionofrutas-production.up.railway.app";
 
-    private static final int COL_RUTA    = 0xFF009B8D;
-    private static final int COL_TRAMO   = 0xFFFF6F00;
+    private static final int COL_RUTA = 0xFF009B8D;
+    private static final int COL_TRAMO = 0xFFFF6F00;
     private static final int COL_CONDUCT = 0xFF1565C0;
-    private static final int COL_PROPIO  = 0xFF1976D2;
+    private static final int COL_PROPIO = 0xFF1976D2;
 
     // ── Vistas ────────────────────────────────────────────────────────────────
-    private MapView  map;
-    private Marker   marcadorGpsPropio;
+    private MapView map;
+    private Marker marcadorGpsPropio;
     private TextView tvEta;
     private TextView tvDistEta;
     private TextView tvMontoHud;
@@ -122,73 +124,77 @@ public class Mapa extends BaseActivity {
 
     // ── Fused Location ────────────────────────────────────────────────────────
     private FusedLocationProviderClient fusedClient;
-    private LocationCallback            locationCallback;
-    private GeoPoint                    miUltimaPosicion = null;
+    private LocationCallback locationCallback;
+    private GeoPoint miUltimaPosicion = null;
     // Flag para saber si ya se dibujó la ruta con GPS real (evitar re-dibujos múltiples)
     private boolean rutaDibujaConGps = false;
 
+    private int indiceRecorridoMax = 0;
+    private boolean recorridoActivado = false;
+    private static final double UMBRAL_SNAP_RUTA_M = 40.0;
+
     // ── Polilíneas ────────────────────────────────────────────────────────────
     private final List<Polyline> lineasPintadas = new ArrayList<>();
-    private final List<Polyline> lineasEta      = new ArrayList<>();
+    private final List<Polyline> lineasEta = new ArrayList<>();
     private boolean rutaSolicitada = false;
 
     // ── Datos del viaje ───────────────────────────────────────────────────────
-    private double  destinoLat = 0, destinoLng = 0;
-    private int     idViaje = 0;
+    private double destinoLat = 0, destinoLng = 0;
+    private int idViaje = 0;
     private boolean desdeViajeActivo = false;
 
-    private GeoPoint pOrigen  = null;
+    private GeoPoint pOrigen = null;
     private GeoPoint pDestino = null;
-    private GeoPoint pSubida  = null;
-    private GeoPoint pBajada  = null;
+    private GeoPoint pSubida = null;
+    private GeoPoint pBajada = null;
 
-    private String nomSubida      = "";
-    private String nomBajada      = "";
-    private String nomConductor   = "";
+    private String nomSubida = "";
+    private String nomBajada = "";
+    private String nomConductor = "";
     private String nomDestinoRuta = "";
 
     private final ArrayList<GeoPoint> waypointsRuta = new ArrayList<>();
-    private ArrayList<GeoPoint> puntosRutaCompleta  = new ArrayList<>();
-    private final List<Polyline> lineasRecorridas   = new ArrayList<>();
-    private static final int COL_RECORRIDO          = 0xFF00BCD4;
+    private ArrayList<GeoPoint> puntosRutaCompleta = new ArrayList<>();
+    private final List<Polyline> lineasRecorridas = new ArrayList<>();
+    private static final int COL_RECORRIDO = 0xFF00BCD4;
 
     // ── Marcadores en tiempo real ─────────────────────────────────────────────
-    private Marker   marcadorConductorRT  = null;
+    private Marker marcadorConductorRT = null;
     private GeoPoint posAnteriorConductor = null;
-    private float    rumboConductor       = 0f;
+    private float rumboConductor = 0f;
 
     // ── Polling / fallback ────────────────────────────────────────────────────
     private final Handler hPoll = new Handler(Looper.getMainLooper());
-    private Runnable      rPoll = null;
+    private Runnable rPoll = null;
 
     // ── Estado lógico simple ──────────────────────────────────────────────────
-    private boolean pasajeroRecogido  = false;
+    private boolean pasajeroRecogido = false;
     private boolean viajeYaFinalizado = false;
-    private boolean pagoYaLanzado     = false;
-    private Marker  marcadorSubida    = null;
-    private Marker  marcadorBajada    = null;
+    private boolean pagoYaLanzado = false;
+    private Marker marcadorSubida = null;
+    private Marker marcadorBajada = null;
 
     // ── MULTIPASAJERO ────────────────────────────────────────────────────────
     private static class PasajeroInfo {
-        int      idUsuario;
-        String   nombre;
-        String   fotoUrl;
+        int idUsuario;
+        String nombre;
+        String fotoUrl;
         GeoPoint pSubida;
         GeoPoint pBajada;
-        String   nomSubida;
-        String   nomBajada;
-        double   latSubida;
-        double   lngSubida;
-        double   monto;
-        boolean  recogido;
-        boolean  yaLlegoABajada;
-        Marker   marcadorSubida;
-        Marker   marcadorBajada;
-        long     idReserva;
+        String nomSubida;
+        String nomBajada;
+        double latSubida;
+        double lngSubida;
+        double monto;
+        boolean recogido;
+        boolean yaLlegoABajada;
+        Marker marcadorSubida;
+        Marker marcadorBajada;
+        long idReserva;
     }
 
-    private final List<PasajeroInfo> pasajeros           = new ArrayList<>();
-    private int                      indicePasajeroActual = 0;
+    private final List<PasajeroInfo> pasajeros = new ArrayList<>();
+    private int indicePasajeroActual = 0;
 
     // ── Máquina de estados — conductor ───────────────────────────────────────
     private enum EstadoViaje {
@@ -198,23 +204,24 @@ public class Mapa extends BaseActivity {
         EN_CAMINO_A_DESTINO,
         VIAJE_FINALIZADO
     }
-    private EstadoViaje estadoViaje              = EstadoViaje.EN_CAMINO_A_PASAJERO;
-    private boolean     alertaProximidadMostrada = false;
-    private ValueAnimator pulsoAnimator          = null;
+
+    private EstadoViaje estadoViaje = EstadoViaje.EN_CAMINO_A_PASAJERO;
+    private boolean alertaProximidadMostrada = false;
+    private ValueAnimator pulsoAnimator = null;
 
     // ── Managers ──────────────────────────────────────────────────────────────
     private SessionManager session;
-    private RouteManager   routeManager;
+    private RouteManager routeManager;
 
     // ── Socket.IO ─────────────────────────────────────────────────────────────
-    private Socket  mSocket;
+    private Socket mSocket;
     private boolean isSocketConnected = false;
 
     // ── Guía de Voz ──────────────────────────────────────────────────────────
     private VoiceAssistantManager voiceAssistant;
-    private JSONArray currentSteps   = null;
-    private int       nextStepIndex  = 0;
-    private long      lastVoiceTime  = 0;
+    private JSONArray currentSteps = null;
+    private int nextStepIndex = 0;
+    private long lastVoiceTime = 0;
 
     // =========================================================================
     //  LIFECYCLE
@@ -232,17 +239,17 @@ public class Mapa extends BaseActivity {
 
         setContentView(R.layout.activity_mapa);
 
-        session      = new SessionManager(this);
-        fusedClient  = LocationServices.getFusedLocationProviderClient(this);
+        session = new SessionManager(this);
+        fusedClient = LocationServices.getFusedLocationProviderClient(this);
         routeManager = new RouteManager();
 
         refFirebase = FirebaseDatabase.getInstance()
                 .getReference("ubicaciones")
                 .child("conductor_" + session.getIdUsuario());
 
-        destinoLat       = getIntent().getDoubleExtra("DESTINO_LAT",  0);
-        destinoLng       = getIntent().getDoubleExtra("DESTINO_LNG",  0);
-        idViaje          = getIntent().getIntExtra("ID_VIAJE",         0);
+        destinoLat = getIntent().getDoubleExtra("DESTINO_LAT", 0);
+        destinoLng = getIntent().getDoubleExtra("DESTINO_LNG", 0);
+        idViaje = getIntent().getIntExtra("ID_VIAJE", 0);
         desdeViajeActivo = getIntent().getBooleanExtra("DESDE_VIAJE", false);
 
         String estadoReserva = getIntent().getStringExtra("ESTADO_RESERVA");
@@ -306,7 +313,10 @@ public class Mapa extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (pulsoAnimator != null) { pulsoAnimator.cancel(); pulsoAnimator = null; }
+        if (pulsoAnimator != null) {
+            pulsoAnimator.cancel();
+            pulsoAnimator = null;
+        }
         if (rPoll != null) hPoll.removeCallbacks(rPoll);
         desconectarSocket();
         if (refEstadoViaje != null && listenerEstadoViaje != null)
@@ -345,8 +355,8 @@ public class Mapa extends BaseActivity {
                         for (int i = 0; i < usuarios.length(); i++) {
                             JSONObject u = usuarios.optJSONObject(i);
                             if (u == null) continue;
-                            int idU  = extraerIdUsuarioDeObj(u);
-                            String est = u.optString("estado","").toUpperCase();
+                            int idU = extraerIdUsuarioDeObj(u);
+                            String est = u.optString("estado", "").toUpperCase();
                             boolean rec = "RECOGIDO".equals(est) || "COMPLETADO".equals(est)
                                     || "EN_CURSO".equals(est);
                             for (PasajeroInfo p : pasajeros) {
@@ -365,11 +375,11 @@ public class Mapa extends BaseActivity {
                                             u.optDouble("lngOrigen",
                                                     u.optDouble("lngInicio", 0)));
                                     if (latS != 0) {
-                                        p.pSubida   = new GeoPoint(latS, lngS);
+                                        p.pSubida = new GeoPoint(latS, lngS);
                                         p.latSubida = latS;
                                         p.lngSubida = lngS;
                                         String nomS = u.optString("nombreParadaSubida",
-                                                u.optString("nombreParadaInicio",""));
+                                                u.optString("nombreParadaInicio", ""));
                                         p.nomSubida = nomS.isEmpty() ? "Punto de recogida" : nomS;
                                     }
                                 }
@@ -385,7 +395,12 @@ public class Mapa extends BaseActivity {
                     }
 
                     boolean todosRec = true;
-                    for (PasajeroInfo p : pasajeros) { if (!p.recogido) { todosRec = false; break; } }
+                    for (PasajeroInfo p : pasajeros) {
+                        if (!p.recogido) {
+                            todosRec = false;
+                            break;
+                        }
+                    }
                     if (todosRec && !pasajeros.isEmpty()
                             && estadoViaje != EstadoViaje.VIAJE_FINALIZADO)
                         estadoViaje = EstadoViaje.EN_CAMINO_A_DESTINO;
@@ -420,8 +435,6 @@ public class Mapa extends BaseActivity {
     }
 
 
-
-
     // =========================================================================
     //  RESTAURAR UI NORMAL
     // =========================================================================
@@ -443,22 +456,22 @@ public class Mapa extends BaseActivity {
     private void cargarExtrasViajeYDibujar() {
         boolean esConductor = session.isConductor();
 
-        double latO = getIntent().getDoubleExtra("ORIGEN_LAT",  0);
-        double lngO = getIntent().getDoubleExtra("ORIGEN_LNG",  0);
+        double latO = getIntent().getDoubleExtra("ORIGEN_LAT", 0);
+        double lngO = getIntent().getDoubleExtra("ORIGEN_LNG", 0);
         double latD = getIntent().getDoubleExtra("DESTINO_LAT", 0);
         double lngD = getIntent().getDoubleExtra("DESTINO_LNG", 0);
-        double latS = getIntent().getDoubleExtra("LAT_SUBIDA",  0);
-        double lngS = getIntent().getDoubleExtra("LNG_SUBIDA",  0);
-        double latB = getIntent().getDoubleExtra("LAT_BAJADA",  0);
-        double lngB = getIntent().getDoubleExtra("LNG_BAJADA",  0);
+        double latS = getIntent().getDoubleExtra("LAT_SUBIDA", 0);
+        double lngS = getIntent().getDoubleExtra("LNG_SUBIDA", 0);
+        double latB = getIntent().getDoubleExtra("LAT_BAJADA", 0);
+        double lngB = getIntent().getDoubleExtra("LNG_BAJADA", 0);
 
         String ns = getIntent().getStringExtra("NOM_SUBIDA");
         String nb = getIntent().getStringExtra("NOM_BAJADA");
         nomSubida = ns != null ? ns : "";
         nomBajada = nb != null ? nb : "";
 
-        if (esNombreGenerico(nomSubida))      nomSubida = "";
-        if (esNombreGenerico(nomBajada))      nomBajada = "";
+        if (esNombreGenerico(nomSubida)) nomSubida = "";
+        if (esNombreGenerico(nomBajada)) nomBajada = "";
         if (esNombreGenerico(nomDestinoRuta)) nomDestinoRuta = "";
 
         if (!nomSubida.isEmpty() || !nomBajada.isEmpty()) {
@@ -654,7 +667,9 @@ public class Mapa extends BaseActivity {
         for (int x = 0; x < usuarios.length(); x++) {
             try {
                 Log.d(TAG, "Usuario[" + x + "]: " + usuarios.getJSONObject(x).toString(2));
-            } catch (Exception ex) { Log.e(TAG, "Error log usuario " + x); }
+            } catch (Exception ex) {
+                Log.e(TAG, "Error log usuario " + x);
+            }
         }
         Log.d(TAG, "══════════════════════════════════════");
 
@@ -673,7 +688,10 @@ public class Mapa extends BaseActivity {
             if (usuObj != null) {
                 for (String k : new String[]{"idUsuarios", "id", "idUsuario"}) {
                     int id = usuObj.optInt(k, -1);
-                    if (id > 0) { p.idUsuario = id; break; }
+                    if (id > 0) {
+                        p.idUsuario = id;
+                        break;
+                    }
                 }
                 p.nombre = usuObj.optString("nombre", usuObj.optString("nombres", ""));
                 String ape = usuObj.optString("apellidos", "");
@@ -689,21 +707,21 @@ public class Mapa extends BaseActivity {
             double latSub = 0, lngSub = 0;
 
 // 1. Objeto anidado
-            for (String key : new String[]{"puntoSubida","subida","paradaSubida","puntoRecogida"}) {
+            for (String key : new String[]{"puntoSubida", "subida", "paradaSubida", "puntoRecogida"}) {
                 JSONObject obj = u.optJSONObject(key);
                 if (obj != null) {
-                    latSub = parseDoubleFlexible(obj, "lat","latitud","latitude");
-                    lngSub = parseDoubleFlexible(obj, "lng","longitud","longitude");
+                    latSub = parseDoubleFlexible(obj, "lat", "latitud", "latitude");
+                    lngSub = parseDoubleFlexible(obj, "lng", "longitud", "longitude");
                     if (p.nomSubida == null || p.nomSubida.isEmpty())
-                        p.nomSubida = obj.optString("nombre", obj.optString("direccion",""));
+                        p.nomSubida = obj.optString("nombre", obj.optString("direccion", ""));
                     if (latSub != 0) break;
                 }
             }
 
 // 2. Campos planos (pueden ser String o número)
             if (latSub == 0) {
-                latSub = parseDoubleFlexible(u, "latSubida","latOrigen","latInicio","lat_subida","latitudSubida");
-                lngSub = parseDoubleFlexible(u, "lngSubida","lngOrigen","lngInicio","lng_subida","longitudSubida");
+                latSub = parseDoubleFlexible(u, "latSubida", "latOrigen", "latInicio", "lat_subida", "latitudSubida");
+                lngSub = parseDoubleFlexible(u, "lngSubida", "lngOrigen", "lngInicio", "lng_subida", "longitudSubida");
                 if (p.nomSubida == null || p.nomSubida.isEmpty())
                     p.nomSubida = u.optString("nombreSubida",
                             u.optString("nombreParadaSubida",
@@ -711,7 +729,7 @@ public class Mapa extends BaseActivity {
             }
 
             if (latSub != 0) {
-                p.pSubida   = new GeoPoint(latSub, lngSub);
+                p.pSubida = new GeoPoint(latSub, lngSub);
                 p.latSubida = latSub;
                 p.lngSubida = lngSub;
             }
@@ -767,21 +785,21 @@ public class Mapa extends BaseActivity {
             double latBaj = 0, lngBaj = 0;
 
 // 1. Objeto anidado
-            for (String key : new String[]{"puntoBajada","bajada","paradaBajada","parada","puntoDestino"}) {
+            for (String key : new String[]{"puntoBajada", "bajada", "paradaBajada", "parada", "puntoDestino"}) {
                 JSONObject obj = u.optJSONObject(key);
                 if (obj != null) {
-                    latBaj = parseDoubleFlexible(obj, "lat","latitud","latitude");
-                    lngBaj = parseDoubleFlexible(obj, "lng","longitud","longitude");
+                    latBaj = parseDoubleFlexible(obj, "lat", "latitud", "latitude");
+                    lngBaj = parseDoubleFlexible(obj, "lng", "longitud", "longitude");
                     if (p.nomBajada == null || p.nomBajada.isEmpty())
-                        p.nomBajada = obj.optString("nombre", obj.optString("direccion",""));
+                        p.nomBajada = obj.optString("nombre", obj.optString("direccion", ""));
                     if (latBaj != 0) break;
                 }
             }
 
 // 2. Campos planos (pueden ser String o número)
             if (latBaj == 0) {
-                latBaj = parseDoubleFlexible(u, "latBajada","latParada","latDestino","lat_bajada","latitudBajada");
-                lngBaj = parseDoubleFlexible(u, "lngBajada","lngParada","lngDestino","lng_bajada","longitudBajada");
+                latBaj = parseDoubleFlexible(u, "latBajada", "latParada", "latDestino", "lat_bajada", "latitudBajada");
+                lngBaj = parseDoubleFlexible(u, "lngBajada", "lngParada", "lngDestino", "lng_bajada", "longitudBajada");
                 if (p.nomBajada == null || p.nomBajada.isEmpty())
                     p.nomBajada = u.optString("nombreBajada",
                             u.optString("nombreParadaBajada",
@@ -845,7 +863,6 @@ public class Mapa extends BaseActivity {
             if (p.nomSubida == null || p.nomSubida.isEmpty()) p.nomSubida = "Punto de recogida";
 
 
-
             // ── Monto y estado ─────────────────────────────────────────────────
             p.monto = u.optDouble("monto",
                     u.optDouble("precioFinal",
@@ -867,7 +884,10 @@ public class Mapa extends BaseActivity {
 
         indicePasajeroActual = pasajeros.size();
         for (int i = 0; i < pasajeros.size(); i++) {
-            if (!pasajeros.get(i).recogido) { indicePasajeroActual = i; break; }
+            if (!pasajeros.get(i).recogido) {
+                indicePasajeroActual = i;
+                break;
+            }
         }
         boolean todosRec = indicePasajeroActual >= pasajeros.size();
         if (todosRec && !pasajeros.isEmpty() && estadoViaje != EstadoViaje.VIAJE_FINALIZADO)
@@ -878,6 +898,7 @@ public class Mapa extends BaseActivity {
             actualizarTextoRutaHud();
         });
     }
+
     private double parseDoubleFlexible(JSONObject obj, String... campos) {
         for (String campo : campos) {
             // Intentar como número
@@ -886,8 +907,11 @@ public class Mapa extends BaseActivity {
             // Intentar como String
             String s = obj.optString(campo, "").trim();
             if (!s.isEmpty() && !s.equals("null")) {
-                try { double d = Double.parseDouble(s); if (d != 0) return d; }
-                catch (Exception ignored) {}
+                try {
+                    double d = Double.parseDouble(s);
+                    if (d != 0) return d;
+                } catch (Exception ignored) {
+                }
             }
         }
         return 0;
@@ -947,6 +971,7 @@ public class Mapa extends BaseActivity {
         reordenarMarcadorGps();
         map.invalidate();
     }
+
     private String geocodificarPreciso(double lat, double lng) {
         try {
             // ── Paso 1: Overpass — buscar barrio/neighbourhood exacto ──
@@ -980,16 +1005,28 @@ public class Mapa extends BaseActivity {
                         JSONObject tags = el.optJSONObject("tags");
                         if (tags == null) continue;
                         String place = tags.optString("place", "");
-                        String name  = tags.optString("name", "");
+                        String name = tags.optString("name", "");
                         if (name.isEmpty() || name.equals("null")) continue;
                         int prioridad;
                         switch (place) {
-                            case "hamlet":        prioridad = 1; break;
-                            case "neighbourhood": prioridad = 2; break;
-                            case "quarter":       prioridad = 3; break;
-                            case "suburb":        prioridad = 4; break;
-                            case "village":       prioridad = 5; break;
-                            default:              prioridad = 9; break;
+                            case "hamlet":
+                                prioridad = 1;
+                                break;
+                            case "neighbourhood":
+                                prioridad = 2;
+                                break;
+                            case "quarter":
+                                prioridad = 3;
+                                break;
+                            case "suburb":
+                                prioridad = 4;
+                                break;
+                            case "village":
+                                prioridad = 5;
+                                break;
+                            default:
+                                prioridad = 9;
+                                break;
                         }
                         if (prioridad < mejorPrioridad) {
                             mejorPrioridad = prioridad;
@@ -1019,7 +1056,7 @@ public class Mapa extends BaseActivity {
             r.close();
             c.disconnect();
 
-            JSONObject geo  = new JSONObject(sb.toString());
+            JSONObject geo = new JSONObject(sb.toString());
             JSONObject addr = geo.optJSONObject("address");
 
             // Usar el mismo método que DetalleViajeActivity
@@ -1127,7 +1164,7 @@ public class Mapa extends BaseActivity {
         TextView tvRuta = new TextView(this);
         tvRuta.setTag("tv_ruta_hud");
         // POR esto (usar nomDestinoRuta como destino principal):
-        String origenHud  = (!nomSubida.isEmpty() && !esNombreGenerico(nomSubida))
+        String origenHud = (!nomSubida.isEmpty() && !esNombreGenerico(nomSubida))
                 ? nomSubida : "Cargando...";
         String destinoHud = (!nomDestinoRuta.isEmpty() && !esNombreGenerico(nomDestinoRuta))
                 ? nomDestinoRuta
@@ -1227,10 +1264,13 @@ public class Mapa extends BaseActivity {
         root.addView(banner);
 // ── NO agregar ningún botón flotante adicional aquí ──
     }
+
     private TextView chipLeyenda(String texto, int color) {
         TextView tv = new TextView(this);
-        tv.setText(texto); tv.setTextColor(color);
-        tv.setTextSize(10f); tv.setTypeface(null, Typeface.BOLD);
+        tv.setText(texto);
+        tv.setTextColor(color);
+        tv.setTextSize(10f);
+        tv.setTypeface(null, Typeface.BOLD);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.rightMargin = px(10);
@@ -1243,7 +1283,7 @@ public class Mapa extends BaseActivity {
         runOnUiThread(() -> {
             if (monto > 0) {
                 java.text.NumberFormat nf = java.text.NumberFormat.getNumberInstance(
-                        new java.util.Locale("es","CO"));
+                        new java.util.Locale("es", "CO"));
                 tvMontoHud.setText("$" + nf.format(monto));
                 tvMontoHud.setVisibility(View.VISIBLE);
                 tvMontoHud.setAlpha(0f);
@@ -1276,7 +1316,8 @@ public class Mapa extends BaseActivity {
                             nomSubida = nom;
                             runOnUiThread(() -> actualizarTextoRutaHud());
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }).start();
 
                 // Donde geocodifica el origen, reemplazar el uso de Geocoder por geocodificarPreciso:
@@ -1291,7 +1332,8 @@ public class Mapa extends BaseActivity {
                             nomSubida = nom;
                             runOnUiThread(() -> actualizarTextoRutaHud());
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }).start();
 
             } else {
@@ -1312,13 +1354,14 @@ public class Mapa extends BaseActivity {
                             nomDestinoRuta = nom;
                             runOnUiThread(() -> actualizarTextoRutaHud());
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }).start();
             } else {
                 destinoText = "Destino";
             }
 
-            final String fOrigen  = origenText;
+            final String fOrigen = origenText;
             final String fDestino = destinoText;
             runOnUiThread(() -> tvRuta.setText("📍 " + fOrigen + "  →  " + fDestino));
         }
@@ -1347,7 +1390,8 @@ public class Mapa extends BaseActivity {
                                 nomSubida = nom;
                                 runOnUiThread(() -> actualizarTextoRutaHud());
                             }
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     }).start();
                 }
 
@@ -1363,7 +1407,8 @@ public class Mapa extends BaseActivity {
                                 nomBajada = nom;
                                 runOnUiThread(() -> actualizarTextoRutaHud());
                             }
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     }).start();
                 }
             }
@@ -1387,7 +1432,7 @@ public class Mapa extends BaseActivity {
             if (!v.isEmpty() && !v.equals("null")) return v;
         }
         // Calle + número
-        String calle  = addr.optString("road", addr.optString("pedestrian", ""));
+        String calle = addr.optString("road", addr.optString("pedestrian", ""));
         String numero = addr.optString("house_number", "");
         if (!calle.isEmpty() && !numero.isEmpty()) return calle + " # " + numero;
         if (!calle.isEmpty()) return calle;
@@ -1398,14 +1443,17 @@ public class Mapa extends BaseActivity {
 
     private void actualizarEstadoHud() {
         if (!session.isConductor()) return;
-        int recogidos=0, pendientes=0;
-        for (PasajeroInfo p : pasajeros) { if (p.recogido) recogidos++; else pendientes++; }
+        int recogidos = 0, pendientes = 0;
+        for (PasajeroInfo p : pasajeros) {
+            if (p.recogido) recogidos++;
+            else pendientes++;
+        }
         if (pasajeros.isEmpty()) return;
         String msg;
         if (pendientes > 0) {
             PasajeroInfo sig = pasajeroActual();
             msg = sig != null
-                    ? "Recogiendo a " + sig.nombre + " (" + recogidos+"/"+pasajeros.size()+")"
+                    ? "Recogiendo a " + sig.nombre + " (" + recogidos + "/" + pasajeros.size() + ")"
                     : "En camino al destino";
         } else {
             msg = "Todos a bordo → al destino";
@@ -1426,35 +1474,35 @@ public class Mapa extends BaseActivity {
         tvEta.setTextColor(Color.WHITE);
         tvEta.setTextSize(13f);
         tvEta.setTypeface(null, Typeface.BOLD);
-        tvEta.setPadding(px(14),px(8),px(14),px(8));
+        tvEta.setPadding(px(14), px(8), px(14), px(8));
         tvEta.setVisibility(View.GONE);
         GradientDrawable bg1 = new GradientDrawable();
         bg1.setShape(GradientDrawable.RECTANGLE);
-        bg1.setCornerRadius(30*dp);
+        bg1.setCornerRadius(30 * dp);
         bg1.setColor(Color.parseColor("#CC1565C0"));
-        bg1.setStroke((int)(1.5f*dp), Color.WHITE);
+        bg1.setStroke((int) (1.5f * dp), Color.WHITE);
         tvEta.setBackground(bg1);
         FrameLayout.LayoutParams lp1 = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
         lp1.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        lp1.bottomMargin = (int)(80*dp);
+        lp1.bottomMargin = (int) (80 * dp);
         root.addView(tvEta, lp1);
 
         tvDistEta = new TextView(this);
         tvDistEta.setTextColor(Color.WHITE);
         tvDistEta.setTextSize(11f);
         tvDistEta.setTypeface(null, Typeface.BOLD);
-        tvDistEta.setPadding(px(10),px(6),px(10),px(6));
+        tvDistEta.setPadding(px(10), px(6), px(10), px(6));
         tvDistEta.setVisibility(View.GONE);
         GradientDrawable bg2 = new GradientDrawable();
         bg2.setShape(GradientDrawable.RECTANGLE);
-        bg2.setCornerRadius(20*dp);
+        bg2.setCornerRadius(20 * dp);
         bg2.setColor(Color.parseColor("#CCFF6F00"));
         tvDistEta.setBackground(bg2);
         FrameLayout.LayoutParams lp2 = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
         lp2.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        lp2.bottomMargin = (int)(122*dp);
+        lp2.bottomMargin = (int) (122 * dp);
         root.addView(tvDistEta, lp2);
     }
 
@@ -1479,11 +1527,9 @@ public class Mapa extends BaseActivity {
 
         final GeoPoint fDesde = desde;
         final GeoPoint fHasta = hasta;
-        // ── IMPORTANTE: NO incluir subidas de pasajeros como waypoints de ruta ──
-        final ArrayList<GeoPoint> fWaypoints = new ArrayList<>(waypointsRuta);
 
         new Thread(() -> {
-            ArrayList<GeoPoint> rutaTotal = osrmRutaConWaypoints(fDesde, fHasta, fWaypoints);
+            ArrayList<GeoPoint> rutaTotal = osrmRuta(fDesde, fHasta);
 
             if (rutaTotal == null || rutaTotal.size() < 2)
                 rutaTotal = rectaEntre(fDesde, fHasta);
@@ -1492,9 +1538,10 @@ public class Mapa extends BaseActivity {
             runOnUiThread(() -> {
                 limpiarLineas(lineasPintadas);
                 limpiarLineas(lineasRecorridas);
+                indiceRecorridoMax = 0;
+                recorridoActivado = false;
                 puntosRutaCompleta = new ArrayList<>(rutaFinal);
 
-                // ── Limpiar marcadores previos para evitar duplicados ──
                 if (marcadorSubida != null) {
                     map.getOverlays().remove(marcadorSubida);
                     marcadorSubida = null;
@@ -1524,41 +1571,54 @@ public class Mapa extends BaseActivity {
 // =========================================================================
 
     private void actualizarRutaRecorrida(GeoPoint posActual) {
-        if (!session.isConductor() || puntosRutaCompleta.isEmpty()) return;
+        if (puntosRutaCompleta.isEmpty()) return;
 
-        // Encontrar el índice del punto más cercano en la ruta completa
+        // Buscar el punto MÁS CERCANO en TODA la ruta siempre
         int indiceMasCercano = 0;
         double distMin = Double.MAX_VALUE;
         for (int i = 0; i < puntosRutaCompleta.size(); i++) {
             double d = calcularDistanciaMetros(posActual, puntosRutaCompleta.get(i));
-            if (d < distMin) { distMin = d; indiceMasCercano = i; }
+            if (d < distMin) {
+                distMin = d;
+                indiceMasCercano = i;
+            }
         }
 
-        // Necesitamos al menos 2 puntos para dibujar algo
-        if (indiceMasCercano < 1) return;
+        // Activar si el conductor está a menos de 200m de cualquier punto
+        if (!recorridoActivado) {
+            if (distMin <= 200.0) {
+                recorridoActivado = true;
+                indiceRecorridoMax = indiceMasCercano;
+            } else {
+                return;
+            }
+        }
 
-        // Segmento recorrido: desde inicio hasta posición actual
+        // El índice SOLO puede avanzar, nunca retroceder
+        if (indiceMasCercano > indiceRecorridoMax) {
+            indiceRecorridoMax = indiceMasCercano;
+        }
+
+        if (indiceRecorridoMax < 1) return;
+
         ArrayList<GeoPoint> recorrido = new ArrayList<>(
-                puntosRutaCompleta.subList(0, indiceMasCercano + 1));
-        recorrido.add(posActual); // añadir posición exacta del conductor
+                puntosRutaCompleta.subList(0, indiceRecorridoMax + 1));
 
-        // Segmento pendiente: desde posición actual hasta el fin
         ArrayList<GeoPoint> pendiente = new ArrayList<>();
-        pendiente.add(posActual);
-        pendiente.addAll(puntosRutaCompleta.subList(
-                indiceMasCercano + 1, puntosRutaCompleta.size()));
+        if (indiceRecorridoMax + 1 < puntosRutaCompleta.size()) {
+            pendiente.addAll(puntosRutaCompleta.subList(
+                    indiceRecorridoMax + 1, puntosRutaCompleta.size()));
+        }
 
-        // Redibujar ambos segmentos
-        limpiarLineas(lineasPintadas);
+        if (recorrido.size() < 2) return;
+
         limpiarLineas(lineasRecorridas);
+        dibujarPolilineaTresCapas(lineasRecorridas, recorrido, COL_RECORRIDO, 9f);
 
-        // Tramo pendiente (color original, opaco)
-        if (pendiente.size() >= 2)
+        if (pendiente.size() >= 2) {
+            limpiarLineas(lineasPintadas);
             dibujarPolilineaTresCapas(lineasPintadas, pendiente, COL_RUTA, 14f);
-
-        // Tramo recorrido (turquesa, ligeramente más delgado)
-        if (recorrido.size() >= 2)
-            dibujarPolilineaTresCapas(lineasRecorridas, recorrido, COL_RECORRIDO, 11f);
+        }
 
         reordenarMarcadorGps();
         map.invalidate();
@@ -1609,7 +1669,7 @@ public class Mapa extends BaseActivity {
         String[] urls = {
                 OSRM_POPAYAN + "/route/v1/driving/" + coordsBase + params,
                 OSRM_PUBLICO + "/route/v1/driving/" + coordsBase + params,
-                OSRM_PROPIO  + "/route/v1/driving/" + coordsBase + params
+                OSRM_PROPIO + "/route/v1/driving/" + coordsBase + params
         };
 
         for (String url : urls) {
@@ -1624,6 +1684,7 @@ public class Mapa extends BaseActivity {
         }
         return null;
     }
+
     private ArrayList<GeoPoint> parsearRutaDetallada(String json) {
         if (json == null || json.isEmpty()) return null;
         try {
@@ -1637,7 +1698,7 @@ public class Mapa extends BaseActivity {
             if (session.isConductor()) {
                 JSONArray legs = route.optJSONArray("legs");
                 if (legs != null && legs.length() > 0) {
-                    currentSteps  = legs.getJSONObject(0).optJSONArray("steps");
+                    currentSteps = legs.getJSONObject(0).optJSONArray("steps");
                     nextStepIndex = 0;
                 }
             }
@@ -1713,7 +1774,7 @@ public class Mapa extends BaseActivity {
         String[] urls = {
                 OSRM_POPAYAN + "/route/v1/driving/" + coords + params,
                 OSRM_PUBLICO + "/route/v1/driving/" + coords + params,
-                OSRM_PROPIO  + "/route/v1/driving/" + coords + params
+                OSRM_PROPIO + "/route/v1/driving/" + coords + params
         };
 
         for (String url : urls) {
@@ -1741,26 +1802,28 @@ public class Mapa extends BaseActivity {
         sombra.setPoints(copia);
         sombra.setColor(Color.argb(60, 0, 0, 0));
         sombra.setWidth(ancho + 11f);   // era +10f
-        map.getOverlays().add(sombra); lista.add(sombra);
+        map.getOverlays().add(sombra);
+        lista.add(sombra);
 
         Polyline borde = new Polyline(map);
         borde.setPoints(copia);
         borde.setColor(Color.WHITE);
         borde.setWidth(ancho + 7f);     // era +6f
-        map.getOverlays().add(borde); lista.add(borde);
+        map.getOverlays().add(borde);
+        lista.add(borde);
 
         Polyline linea = new Polyline(map);
         linea.setPoints(copia);
         linea.setColor(color);
         linea.setWidth(ancho);
-        map.getOverlays().add(linea); lista.add(linea);
+        map.getOverlays().add(linea);
+        lista.add(linea);
     }
 
     private void limpiarLineas(List<Polyline> lista) {
         for (Polyline p : lista) map.getOverlays().remove(p);
         lista.clear();
     }
-
 
 
     // =========================================================================
@@ -1771,7 +1834,7 @@ public class Mapa extends BaseActivity {
         if (json == null || json.isEmpty()) return null;
         try {
             JSONObject obj = new JSONObject(json);
-            if (!"Ok".equals(obj.optString("code",""))) return null;
+            if (!"Ok".equals(obj.optString("code", ""))) return null;
             JSONArray routes = obj.optJSONArray("routes");
             if (routes == null || routes.length() == 0) return null;
             JSONObject route = routes.getJSONObject(0);
@@ -1779,7 +1842,7 @@ public class Mapa extends BaseActivity {
             if (session.isConductor()) {
                 JSONArray legs = route.optJSONArray("legs");
                 if (legs != null && legs.length() > 0) {
-                    currentSteps  = legs.getJSONObject(0).optJSONArray("steps");
+                    currentSteps = legs.getJSONObject(0).optJSONArray("steps");
                     nextStepIndex = 0;
                 }
             }
@@ -1791,20 +1854,28 @@ public class Mapa extends BaseActivity {
                 pts.add(new GeoPoint(par.getDouble(1), par.getDouble(0)));
             }
             return pts.size() >= 2 ? pts : null;
-        } catch (Exception e) { Log.w(TAG,"parsearRutaYPasos: "+e.getMessage()); return null; }
+        } catch (Exception e) {
+            Log.w(TAG, "parsearRutaYPasos: " + e.getMessage());
+            return null;
+        }
     }
 
     private String http(String urlStr) throws Exception {
         HttpURLConnection c = null;
         try {
             c = (HttpURLConnection) new URL(urlStr).openConnection();
-            c.setRequestProperty("User-Agent","Moviflexx/1.0");
-            c.setConnectTimeout(12000); c.setReadTimeout(12000);
+            c.setRequestProperty("User-Agent", "Moviflexx/1.0");
+            c.setConnectTimeout(12000);
+            c.setReadTimeout(12000);
             BufferedReader r = new BufferedReader(new InputStreamReader(c.getInputStream()));
-            StringBuilder sb = new StringBuilder(); String ln;
+            StringBuilder sb = new StringBuilder();
+            String ln;
             while ((ln = r.readLine()) != null) sb.append(ln);
-            r.close(); return sb.toString();
-        } finally { if (c != null) c.disconnect(); }
+            r.close();
+            return sb.toString();
+        } finally {
+            if (c != null) c.disconnect();
+        }
     }
 
     // =========================================================================
@@ -1820,14 +1891,15 @@ public class Mapa extends BaseActivity {
             if (pDestino != null) {
                 boolean esBajadaPasajero = pBajada != null
                         && coordsIguales(pDestino.getLatitude(), pDestino.getLongitude(),
-                        pBajada.getLatitude(),  pBajada.getLongitude());
+                        pBajada.getLatitude(), pBajada.getLongitude());
                 if (!esBajadaPasajero) {
                     boolean coincideConBajadaMulti = false;
                     for (PasajeroInfo pp : pasajeros) {
                         if (pp.pBajada != null && coordsIguales(
                                 pDestino.getLatitude(), pDestino.getLongitude(),
                                 pp.pBajada.getLatitude(), pp.pBajada.getLongitude())) {
-                            coincideConBajadaMulti = true; break;
+                            coincideConBajadaMulti = true;
+                            break;
                         }
                     }
                     if (!coincideConBajadaMulti) {
@@ -1837,23 +1909,23 @@ public class Mapa extends BaseActivity {
                 }
             }
         } else {
-            if (pOrigen  != null) agregarPin(pOrigen, "Inicio de ruta", 0xFF4CAF50,"A");
-            if (pDestino != null) agregarPin(pDestino,"Final de ruta",  0xFFEF5350,"B");
-            if (pSubida  != null && !pasajeroRecogido) {
+            if (pOrigen != null) agregarPin(pOrigen, "Inicio de ruta", 0xFF4CAF50, "A");
+            if (pDestino != null) agregarPin(pDestino, "Final de ruta", 0xFFEF5350, "B");
+            if (pSubida != null && !pasajeroRecogido) {
                 marcadorSubida = new Marker(map);
                 marcadorSubida.setPosition(pSubida);
                 marcadorSubida.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                marcadorSubida.setTitle("Mi punto de recogida\n"+nomSubida);
-                marcadorSubida.setIcon(new BitmapDrawable(getResources(), circuloMarcadorP1(0xFFFF6F00,"P1")));
+                marcadorSubida.setTitle("Mi punto de recogida\n" + nomSubida);
+                marcadorSubida.setIcon(new BitmapDrawable(getResources(), circuloMarcadorP1(0xFFFF6F00, "P1")));
                 map.getOverlays().add(marcadorSubida);
             }
             if (pBajada != null) {
                 marcadorBajada = new Marker(map);
                 marcadorBajada.setPosition(pBajada);
                 marcadorBajada.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                marcadorBajada.setTitle("Mi parada\n"+nomBajada);
+                marcadorBajada.setTitle("Mi parada\n" + nomBajada);
                 marcadorBajada.setIcon(new BitmapDrawable(getResources(),
-                        circuloMarcador(0xFFFF6F00,"")));
+                        circuloMarcador(0xFFFF6F00, "")));
                 map.getOverlays().add(marcadorBajada);
             }
         }
@@ -1863,8 +1935,10 @@ public class Mapa extends BaseActivity {
     private void agregarPin(GeoPoint pos, String titulo, int color, String letra) {
         if (pos == null) return;
         Marker m = new Marker(map);
-        m.setPosition(pos); m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        m.setTitle(titulo); m.setIcon(new BitmapDrawable(getResources(), circuloMarcador(color,letra)));
+        m.setPosition(pos);
+        m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        m.setTitle(titulo);
+        m.setIcon(new BitmapDrawable(getResources(), circuloMarcador(color, letra)));
         map.getOverlays().add(m);
     }
 
@@ -1879,7 +1953,8 @@ public class Mapa extends BaseActivity {
             case EN_CAMINO_A_PASAJERO: {
                 PasajeroInfo sig = pasajeroActual();
                 if (sig == null || sig.pSubida == null) {
-                    estadoViaje = EstadoViaje.EN_CAMINO_A_DESTINO; return;
+                    estadoViaje = EstadoViaje.EN_CAMINO_A_DESTINO;
+                    return;
                 }
                 double dist = calcularDistanciaMetros(posConductor, sig.pSubida);
                 if (dist <= UMBRAL_RECOGIDA_M && !alertaProximidadMostrada) {
@@ -1891,7 +1966,8 @@ public class Mapa extends BaseActivity {
             case LLEGANDO_A_PASAJERO: {
                 PasajeroInfo sig = pasajeroActual();
                 if (sig == null || sig.pSubida == null) {
-                    estadoViaje = EstadoViaje.EN_CAMINO_A_DESTINO; return;
+                    estadoViaje = EstadoViaje.EN_CAMINO_A_DESTINO;
+                    return;
                 }
                 double dist = calcularDistanciaMetros(posConductor, sig.pSubida);
                 if (dist <= 35) transicionarA(EstadoViaje.PASAJERO_A_BORDO, posConductor);
@@ -1919,10 +1995,245 @@ public class Mapa extends BaseActivity {
             if (dist <= UMBRAL_BAJADA_M) {
                 p.yaLlegoABajada = true;
                 final String nom = p.nombre;
-                runOnUiThread(() -> mostrarBannerEstado("🚏 Llegaste a la parada de "+nom, 0xFF2E7D32));
+                final PasajeroInfo pFinal = p;
+                runOnUiThread(() -> {
+                    mostrarBannerEstado("🚏 Llegaste a la parada de " + nom, 0xFF2E7D32);
+                    if (pFinal.marcadorBajada != null) {
+                        map.getOverlays().remove(pFinal.marcadorBajada);
+                        pFinal.marcadorBajada = null;
+                        map.invalidate();
+                    }
+                    finalizarViajePasajeroIndividual(pFinal);
+                });
                 notificarLlegadaBajadaPasajero(p);
             }
         }
+    }
+
+    private void finalizarViajePasajeroIndividual(PasajeroInfo p) {
+        if (idViaje <= 0) return;
+        try {
+            JSONObject body = new JSONObject();
+            body.put("idUsuario", p.idUsuario);
+            body.put("estado", "COMPLETADO");
+            ConexionApi.getInstance(this).post(
+                    Constantes.BASE_URL + "/api/viajes/" + idViaje + "/pasajero-bajo",
+                    body,
+                    r -> Log.d(TAG, "Pasajero bajó notificado OK: " + p.nombre),
+                    e -> Log.w(TAG, "Error notificando bajada individual: " + e));
+
+            DatabaseReference ref = FirebaseDatabase.getInstance()
+                    .getReference("viajes_estado").child("viaje_" + idViaje);
+            ref.child("bajada_pasajero_" + p.idUsuario).setValue("LLEGADO");
+            ref.child("timestamp_bajada_" + p.idUsuario).setValue(System.currentTimeMillis());
+
+        } catch (Exception e) {
+            Log.w(TAG, "finalizarViajePasajeroIndividual: " + e.getMessage());
+        }
+
+        boolean todosCompletaron = true;
+        for (PasajeroInfo px : pasajeros) {
+            if (px.recogido && !px.yaLlegoABajada) {
+                todosCompletaron = false;
+                break;
+            }
+        }
+
+        if (todosCompletaron) {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                mostrarSheetCobroViaje();
+            }, 1000);
+        } else {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                mostrarSheetCobroPasajeroIndividual(p);
+            }, 1000);
+        }
+    }
+
+    private void mostrarSheetCobroPasajeroIndividual(PasajeroInfo p) {
+        if (isFinishing() || isDestroyed()) return;
+
+        BottomSheetDialog sheet = new BottomSheetDialog(this,
+                com.google.android.material.R.style.Theme_MaterialComponents_BottomSheetDialog);
+
+        int p16 = px(16), p12 = px(12), p8 = px(8), p6 = px(6), p4 = px(4);
+        ScrollView sv = new ScrollView(this);
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(p16, p12, p16, px(32));
+        sv.addView(root);
+
+        View tiron = new View(this);
+        LinearLayout.LayoutParams lpT = new LinearLayout.LayoutParams(px(40), px(4));
+        lpT.gravity = Gravity.CENTER_HORIZONTAL;
+        lpT.bottomMargin = p12;
+        tiron.setLayoutParams(lpT);
+        GradientDrawable tBg = new GradientDrawable();
+        tBg.setShape(GradientDrawable.RECTANGLE);
+        tBg.setCornerRadius(px(4));
+        tBg.setColor(Color.parseColor("#BDBDBD"));
+        tiron.setBackground(tBg);
+        root.addView(tiron);
+
+        TextView tvTit = new TextView(this);
+        tvTit.setText("Cobro — " + p.nombre);
+        tvTit.setTextSize(20f);
+        tvTit.setTypeface(null, Typeface.BOLD);
+        tvTit.setTextColor(Color.parseColor("#004D40"));
+        LinearLayout.LayoutParams lpTit = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpTit.bottomMargin = p8;
+        tvTit.setLayoutParams(lpTit);
+        root.addView(tvTit);
+
+        TextView tvSub = new TextView(this);
+        tvSub.setText("Confirma el pago antes de continuar el viaje");
+        tvSub.setTextSize(13f);
+        tvSub.setTextColor(Color.parseColor("#546E7A"));
+        LinearLayout.LayoutParams lpSub = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpSub.bottomMargin = p16;
+        tvSub.setLayoutParams(lpSub);
+        root.addView(tvSub);
+
+        java.text.NumberFormat nf = java.text.NumberFormat.getNumberInstance(
+                new java.util.Locale("es", "CO"));
+        MaterialCardView cardMonto = new MaterialCardView(this);
+        LinearLayout.LayoutParams lpCM = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpCM.bottomMargin = p16;
+        cardMonto.setLayoutParams(lpCM);
+        cardMonto.setRadius(px(16));
+        cardMonto.setCardElevation(0);
+        cardMonto.setCardBackgroundColor(Color.parseColor("#E0F7FA"));
+
+        LinearLayout innerMonto = new LinearLayout(this);
+        innerMonto.setOrientation(LinearLayout.HORIZONTAL);
+        innerMonto.setGravity(Gravity.CENTER_VERTICAL);
+        innerMonto.setPadding(p16, p12, p16, p12);
+
+        TextView tvMontoLbl = new TextView(this);
+        tvMontoLbl.setText("Total a cobrar");
+        tvMontoLbl.setTextSize(14f);
+        tvMontoLbl.setTextColor(Color.parseColor("#00695C"));
+        tvMontoLbl.setLayoutParams(new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        innerMonto.addView(tvMontoLbl);
+
+        TextView tvMontoVal = new TextView(this);
+        tvMontoVal.setText(p.monto > 0 ? "$" + nf.format(p.monto) + " COP" : "Consultar");
+        tvMontoVal.setTextSize(16f);
+        tvMontoVal.setTypeface(null, Typeface.BOLD);
+        tvMontoVal.setTextColor(Color.parseColor("#004D40"));
+        innerMonto.addView(tvMontoVal);
+        cardMonto.addView(innerMonto);
+        root.addView(cardMonto);
+
+        final String[] metodo = {""};
+        LinearLayout filaM = new LinearLayout(this);
+        filaM.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams lpFM = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpFM.bottomMargin = p16;
+        filaM.setLayoutParams(lpFM);
+
+        MaterialButton btnEf = new MaterialButton(this);
+        btnEf.setText("Efectivo");
+        btnEf.setTextSize(13f);
+        btnEf.setTextColor(Color.parseColor("#004D40"));
+        btnEf.setCornerRadius(px(12));
+        btnEf.setBackgroundColor(Color.parseColor("#E0F2F1"));
+        LinearLayout.LayoutParams lpBE = new LinearLayout.LayoutParams(0, px(52), 1f);
+        lpBE.rightMargin = p8;
+        btnEf.setLayoutParams(lpBE);
+
+        MaterialButton btnTr = new MaterialButton(this);
+        btnTr.setText("Transferencia");
+        btnTr.setTextSize(13f);
+        btnTr.setTextColor(Color.parseColor("#004D40"));
+        btnTr.setCornerRadius(px(12));
+        btnTr.setBackgroundColor(Color.parseColor("#E0F2F1"));
+        btnTr.setLayoutParams(new LinearLayout.LayoutParams(0, px(52), 1f));
+        filaM.addView(btnEf);
+        filaM.addView(btnTr);
+        root.addView(filaM);
+
+        MaterialButton btnConf = new MaterialButton(this);
+        btnConf.setText("CONFIRMAR PAGO");
+        btnConf.setTextSize(15f);
+        btnConf.setTextColor(Color.WHITE);
+        btnConf.setEnabled(false);
+        btnConf.setAlpha(0.5f);
+        btnConf.setBackgroundColor(Color.parseColor("#B0BEC5"));
+        btnConf.setCornerRadius(px(14));
+        LinearLayout.LayoutParams lpBtn = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, px(54));
+        lpBtn.bottomMargin = p4;
+        btnConf.setLayoutParams(lpBtn);
+        root.addView(btnConf);
+
+        MaterialButton btnSaltar = new MaterialButton(this);
+        btnSaltar.setText("Continuar sin confirmar");
+        btnSaltar.setTextSize(12f);
+        btnSaltar.setTextColor(Color.parseColor("#90A4AE"));
+        btnSaltar.setBackgroundColor(Color.TRANSPARENT);
+        btnSaltar.setStrokeWidth(0);
+        btnSaltar.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, px(40)));
+        root.addView(btnSaltar);
+
+        Runnable actualizarUI = () -> {
+            boolean esEf = "efectivo".equals(metodo[0]);
+            boolean esTr = "transferencia".equals(metodo[0]);
+            btnEf.setBackgroundColor(esEf ? Color.parseColor("#00897B") : Color.parseColor("#E0F2F1"));
+            btnEf.setTextColor(esEf ? Color.WHITE : Color.parseColor("#004D40"));
+            btnTr.setBackgroundColor(esTr ? Color.parseColor("#00897B") : Color.parseColor("#E0F2F1"));
+            btnTr.setTextColor(esTr ? Color.WHITE : Color.parseColor("#004D40"));
+            boolean hay = !metodo[0].isEmpty();
+            btnConf.setEnabled(hay);
+            btnConf.setAlpha(hay ? 1f : 0.5f);
+            btnConf.setBackgroundColor(hay ? Color.parseColor("#00897B") : Color.parseColor("#B0BEC5"));
+        };
+
+        btnEf.setOnClickListener(v -> { metodo[0] = "efectivo";      actualizarUI.run(); });
+        btnTr.setOnClickListener(v -> { metodo[0] = "transferencia"; actualizarUI.run(); });
+
+        final BottomSheetDialog fSheet = sheet;
+        btnSaltar.setOnClickListener(v -> fSheet.dismiss());
+
+        btnConf.setOnClickListener(v -> {
+            if (metodo[0].isEmpty()) return;
+            btnConf.setEnabled(false);
+            btnConf.setText("Registrando...");
+
+            JSONObject body = new JSONObject();
+            try {
+                body.put("idViaje",              idViaje);
+                body.put("idUsuario",            p.idUsuario);
+                body.put("monto",                p.monto);
+                body.put("tipoPago",             metodo[0].toUpperCase());
+                body.put("estado",               "PENDIENTE");
+                body.put("confirmacionPasajero", false);
+                body.put("confirmacionConductor", true);
+            } catch (Exception ignored) {}
+
+            ConexionApi.getInstance(this).post(Constantes.PAGOS, body,
+                    resp -> runOnUiThread(() -> {
+                        fSheet.dismiss();
+                        Toast.makeText(this,
+                                "✅ Pago de " + p.nombre + " registrado",
+                                Toast.LENGTH_LONG).show();
+                    }),
+                    err -> runOnUiThread(() -> {
+                        btnConf.setEnabled(true);
+                        btnConf.setText("CONFIRMAR PAGO");
+                        Toast.makeText(this, "Error al registrar el pago", Toast.LENGTH_SHORT).show();
+                    })
+            );
+        });
+
+        sheet.setContentView(sv);
+        sheet.show();
     }
 
     private void notificarLlegadaBajadaPasajero(PasajeroInfo p) {
@@ -1935,7 +2246,7 @@ public class Mapa extends BaseActivity {
     }
 
     private void transicionarA(EstadoViaje nuevoEstado, GeoPoint posConductor) {
-        Log.d(TAG, "Estado: "+estadoViaje+" → "+nuevoEstado);
+        Log.d(TAG, "Estado: " + estadoViaje + " → " + nuevoEstado);
         estadoViaje = nuevoEstado;
 
         switch (nuevoEstado) {
@@ -1943,7 +2254,7 @@ public class Mapa extends BaseActivity {
                 PasajeroInfo sig = pasajeroActual();
                 String nomP = sig != null ? sig.nombre : "el pasajero";
                 runOnUiThread(() -> {
-                    mostrarBannerEstado("Estás llegando a "+nomP, 0xFFFF7043);
+                    mostrarBannerEstado("Estás llegando a " + nomP, 0xFFFF7043);
                     if (sig != null && sig.marcadorSubida != null)
                         iniciarPulsoMarcador(sig.marcadorSubida);
                 });
@@ -1956,6 +2267,7 @@ public class Mapa extends BaseActivity {
                 mostrarMontoEnHud(sig.monto, sig.nombre);
                 final PasajeroInfo fSig = sig;
                 runOnUiThread(() -> {
+                    mostrarBannerEstado("¡" + fSig.nombre + " a bordo!", 0xFF2E7D32);
                     animarDesaparicionMarcador(fSig.marcadorSubida, () -> {
                         fSig.marcadorSubida = null;
                         if (fSig.pBajada != null) {
@@ -1972,7 +2284,6 @@ public class Mapa extends BaseActivity {
                             map.invalidate();
                         }
                     });
-                    mostrarBannerEstado("¡" + fSig.nombre + " a bordo!", 0xFF2E7D32);
                 });
                 notificarRecogidaAlBackend(sig);
                 indicePasajeroActual++;
@@ -1981,17 +2292,14 @@ public class Mapa extends BaseActivity {
                 PasajeroInfo siguiente = pasajeroActual();
                 if (siguiente != null) {
                     estadoViaje = EstadoViaje.EN_CAMINO_A_PASAJERO;
-                    runOnUiThread(() -> {
-                        actualizarEstadoHud();
-                        if (miUltimaPosicion != null) actualizarLineaNaranja(miUltimaPosicion);
-                    });
+                    runOnUiThread(() -> actualizarEstadoHud());
                 } else {
                     estadoViaje = EstadoViaje.EN_CAMINO_A_DESTINO;
                     runOnUiThread(() -> {
-                        mostrarBannerEstado("Todos a bordo → al destino", 0xFF1565C0);
+                        String nombresABordo = obtenerNombresABordo();
+                        mostrarBannerEstado(nombresABordo + " → al destino", 0xFF1565C0);
                         if (tvEta != null) tvEta.setVisibility(View.GONE);
                         if (tvDistEta != null) tvDistEta.setVisibility(View.GONE);
-                        if (miUltimaPosicion != null) actualizarLineaNaranja(miUltimaPosicion);
                     });
                 }
                 break;
@@ -2000,12 +2308,24 @@ public class Mapa extends BaseActivity {
                 viajeYaFinalizado = true;
                 runOnUiThread(() -> {
                     mostrarBannerEstado("¡Llegaste al destino!", 0xFF1565C0);
-                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                        ejecutarFinalizarViaje();
-                    }, 1200);
+                    new Handler(Looper.getMainLooper()).postDelayed(
+                            this::ejecutarFinalizarViaje, 1200);
                 });
                 break;
         }
+    }
+
+    private String obtenerNombresABordo() {
+        if (pasajeros.isEmpty()) return "Pasajeros";
+        if (pasajeros.size() == 1) return pasajeros.get(0).nombre;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < pasajeros.size(); i++) {
+            if (i > 0) sb.append(i == pasajeros.size() - 1 ? " y " : ", ");
+            String nombre = pasajeros.get(i).nombre;
+            String primerNombre = nombre.contains(" ") ? nombre.split(" ")[0] : nombre;
+            sb.append(primerNombre);
+        }
+        return sb.toString();
     }
 
     // =========================================================================
@@ -3172,22 +3492,84 @@ public class Mapa extends BaseActivity {
     }
 
     private void fetchUbicacionConductor() {
-        String url = Constantes.BASE_URL+"/api/viajes/"+idViaje
-                +"/ubicacion-conductor?t="+System.currentTimeMillis();
+        String url = Constantes.BASE_URL + "/api/viajes/" + idViaje
+                + "/ubicacion-conductor?t=" + System.currentTimeMillis();
         ConexionApi.getInstance(this).getObjectNoCache(url,
                 resp -> {
-                    double lat = resp.optDouble("lat", resp.optDouble("latitud",Double.NaN));
-                    double lng = resp.optDouble("lng", resp.optDouble("longitud",Double.NaN));
-                    if (!Double.isNaN(lat) && lat!=0 && !Double.isNaN(lng) && lng!=0) {
-                        GeoPoint nuevaPos = new GeoPoint(lat,lng);
-                        runOnUiThread(() -> { animarMarcadorConductor(nuevaPos); actualizarLineaNaranja(nuevaPos); });
+                    double lat = resp.optDouble("lat", resp.optDouble("latitud", Double.NaN));
+                    double lng = resp.optDouble("lng", resp.optDouble("longitud", Double.NaN));
+                    if (!Double.isNaN(lat) && lat != 0 && !Double.isNaN(lng) && lng != 0) {
+                        GeoPoint nuevaPos = new GeoPoint(lat, lng);
+                        runOnUiThread(() -> {
+                            animarMarcadorConductor(nuevaPos);
+                            actualizarLineaNaranja(nuevaPos);
+
+                            if (puntosRutaCompleta.isEmpty() && pDestino != null) {
+                                if (pOrigen == null) pOrigen = nuevaPos;
+                                map.post(() -> dibujarRutaViaje(false));
+                            } else if (!puntosRutaCompleta.isEmpty()) {
+                                actualizarRutaRecorridaPasajero(nuevaPos);
+                            }
+                        });
                         calcularEtaConductor(nuevaPos);
                         verificarLlegadaBajadaPasajero(nuevaPos);
+                        verificarEstadoRecogidaPasajero(); // ← AGREGAR ESTA LÍNEA
                     }
                 },
-                err -> Log.w(TAG,"GPS conductor no disponible"));
+                err -> Log.w(TAG, "GPS conductor no disponible"));
     }
 
+    private void actualizarRutaRecorridaPasajero(GeoPoint posConductor) {
+        if (puntosRutaCompleta.isEmpty()) return;
+
+        // Para el pasajero: encontrar el punto más cercano al conductor
+        // en TODA la ruta sin ningún umbral — el conductor siempre
+        // está "en algún punto" de la ruta aunque sea con drift
+        int indiceMasCercano = 0;
+        double distMin = Double.MAX_VALUE;
+        for (int i = 0; i < puntosRutaCompleta.size(); i++) {
+            double d = calcularDistanciaMetros(posConductor, puntosRutaCompleta.get(i));
+            if (d < distMin) {
+                distMin = d;
+                indiceMasCercano = i;
+            }
+        }
+
+        // Activar siempre — el conductor ya está en camino
+        if (!recorridoActivado) {
+            recorridoActivado = true;
+            indiceRecorridoMax = indiceMasCercano;
+        }
+
+        // Solo avanzar, nunca retroceder
+        if (indiceMasCercano > indiceRecorridoMax) {
+            indiceRecorridoMax = indiceMasCercano;
+        }
+
+        if (indiceRecorridoMax < 1) return;
+
+        ArrayList<GeoPoint> recorrido = new ArrayList<>(
+                puntosRutaCompleta.subList(0, indiceRecorridoMax + 1));
+
+        ArrayList<GeoPoint> pendiente = new ArrayList<>();
+        if (indiceRecorridoMax + 1 < puntosRutaCompleta.size()) {
+            pendiente.addAll(puntosRutaCompleta.subList(
+                    indiceRecorridoMax + 1, puntosRutaCompleta.size()));
+        }
+
+        if (recorrido.size() < 2) return;
+
+        limpiarLineas(lineasRecorridas);
+        dibujarPolilineaTresCapas(lineasRecorridas, recorrido, COL_RECORRIDO, 9f);
+
+        if (pendiente.size() >= 2) {
+            limpiarLineas(lineasPintadas);
+            dibujarPolilineaTresCapas(lineasPintadas, pendiente, COL_RUTA, 14f);
+        }
+
+        reordenarMarcadorGps();
+        map.invalidate();
+    }
     // =========================================================================
     //  ANIMACIÓN MARCADOR CONDUCTOR RT
     // =========================================================================
@@ -3200,6 +3582,11 @@ public class Mapa extends BaseActivity {
                 rumboConductor = calcularRumbo(posAnteriorConductor, nuevaPos);
         }
         posAnteriorConductor = nuevaPos;
+
+        // ── NUEVO: actualizar recorrido también para el pasajero ──
+        if (!session.isConductor() && !puntosRutaCompleta.isEmpty()) {
+            runOnUiThread(() -> actualizarRutaRecorrida(nuevaPos));
+        }
 
         if (marcadorConductorRT == null) {
             marcadorConductorRT = new Marker(map);
@@ -3264,6 +3651,7 @@ public class Mapa extends BaseActivity {
 
         final GeoPoint fPc = posConductor, fDst = destino;
         new Thread(() -> {
+            // ← Sin waypoints — ruta directa entre conductor y destino
             ArrayList<GeoPoint> pts = osrmRuta(fPc, fDst);
             if (pts == null || pts.size() < 2) {
                 pts = new ArrayList<>();
@@ -3504,11 +3892,20 @@ public class Mapa extends BaseActivity {
             });
 
             mSocket.on("location_updated", args -> {
-                if (session.isConductor() || args.length==0) return;
+                if (session.isConductor() || args.length == 0) return;
                 JSONObject data = (JSONObject) args[0];
                 double lat = data.optDouble("lat"), lng = data.optDouble("lng");
-                GeoPoint nuevaPos = new GeoPoint(lat,lng);
-                runOnUiThread(() -> { animarMarcadorConductor(nuevaPos); actualizarLineaNaranja(nuevaPos); });
+                GeoPoint nuevaPos = new GeoPoint(lat, lng);
+                runOnUiThread(() -> {
+                    animarMarcadorConductor(nuevaPos);
+                    actualizarLineaNaranja(nuevaPos);
+                    if (puntosRutaCompleta.isEmpty() && pDestino != null) {
+                        if (pOrigen == null) pOrigen = nuevaPos;
+                        map.post(() -> dibujarRutaViaje(false));
+                    } else if (!puntosRutaCompleta.isEmpty()) {
+                        actualizarRutaRecorridaPasajero(nuevaPos);
+                    }
+                });
                 calcularEtaConductor(nuevaPos);
                 verificarLlegadaBajadaPasajero(nuevaPos);
             });
@@ -3545,6 +3942,53 @@ public class Mapa extends BaseActivity {
 
             mSocket.connect();
         } catch (URISyntaxException e) { Log.e(TAG,"socket init: "+e.getMessage()); }
+    }
+
+    private void verificarEstadoRecogidaPasajero() {
+        if (session.isConductor() || pasajeroRecogido || idViaje <= 0) return;
+        int miId = session.getIdUsuario();
+
+        ConexionApi.getInstance(this).getObjectNoCache(
+                Constantes.viajePorId((long) idViaje),
+                viajeObj -> {
+                    JSONArray usuarios = viajeObj.optJSONArray("usuarios");
+                    if (usuarios == null) return;
+                    for (int i = 0; i < usuarios.length(); i++) {
+                        JSONObject u = usuarios.optJSONObject(i);
+                        if (u == null) continue;
+
+                        // Buscar el usuario que soy yo
+                        int idU = -1;
+                        JSONObject usuObj = u.optJSONObject("usuario");
+                        if (usuObj != null)
+                            for (String k : new String[]{"idUsuarios", "id", "idUsuario"}) {
+                                int id = usuObj.optInt(k, -1);
+                                if (id > 0) { idU = id; break; }
+                            }
+                        if (idU != miId) continue;
+
+                        String est = u.optString("estado", "").toUpperCase();
+                        boolean fueRecogido = "RECOGIDO".equals(est)
+                                || "COMPLETADO".equals(est)
+                                || "EN_CURSO".equals(est);
+
+                        if (fueRecogido && !pasajeroRecogido) {
+                            pasajeroRecogido = true;
+                            runOnUiThread(() -> {
+                                mostrarBannerEstado(
+                                        "¡El conductor te ha recogido! 🚗", 0xFF2E7D32);
+                                // Quitar marcador de subida
+                                if (marcadorSubida != null) {
+                                    map.getOverlays().remove(marcadorSubida);
+                                    marcadorSubida = null;
+                                    map.invalidate();
+                                }
+                            });
+                        }
+                        break;
+                    }
+                },
+                err -> Log.w(TAG, "verificarEstadoRecogida: " + err));
     }
 
     private void desconectarSocket() {
@@ -4178,6 +4622,17 @@ public class Mapa extends BaseActivity {
         return m;
     }
 
+    private Marker pinFallbackSimple(GeoPoint pos, String titulo, String nombre) {
+        String ini = (nombre != null && !nombre.isEmpty())
+                ? nombre.substring(0, 1).toUpperCase() : "P";
+        Marker m = new Marker(map);
+        m.setPosition(pos);
+        m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        m.setTitle(titulo);
+        m.setIcon(new BitmapDrawable(getResources(), pinConCola(0xFF4CAF50, ini)));
+        return m;
+    }
+
     private Bitmap construirPinConFoto(Bitmap fotoBmp, int sz) {
         int colaH=20,r=sz/2-8,cx=sz/2,cy=r+8;
         Bitmap resultado=Bitmap.createBitmap(sz,cy+r+colaH+4,Bitmap.Config.ARGB_8888);
@@ -4558,6 +5013,7 @@ public class Mapa extends BaseActivity {
 
     private void leerWaypointsDelIntent() {
         waypointsRuta.clear();
+        Log.d(TAG, "Waypoints desactivados para evitar curvas");
         String json = getIntent().getStringExtra("PARADAS_JSON");
         if (json == null || json.isEmpty()) return;
         try {

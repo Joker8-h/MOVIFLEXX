@@ -187,13 +187,6 @@
         <!-- ═══════════════════════════════════════════════════════
              SERVICIO FCM — NOTIFICACIONES PUSH
         ═══════════════════════════════════════════════════════ -->
-        <service
-            android:name=".controller.MyFirebaseMessagingService"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
-            </intent-filter>
-        </service>
 
         <service
             android:name=".controller.MyFirebaseMessagingService"
@@ -202,6 +195,8 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+
 
         <!-- ═══════════════════════════════════════════════════════
              META-DATA

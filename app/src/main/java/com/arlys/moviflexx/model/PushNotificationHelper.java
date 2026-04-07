@@ -100,4 +100,34 @@ public class PushNotificationHelper {
                 err -> Log.e(TAG, "❌ Error cargando viaje " + idViaje + ": " + err.toString())
         );
     }
+    public static void enviarPush(Context context, String fcmToken,
+                                  String titulo, String cuerpo, String tipo,
+                                  long idConversacion) {
+        if (context == null || fcmToken == null || fcmToken.trim().isEmpty()) {
+            Log.w(TAG, "❌ No se puede enviar push: context o fcmToken nulo/vacío.");
+            return;
+        }
+        try {
+            JSONObject body = new JSONObject();
+            body.put("token",          fcmToken);
+            body.put("titulo",         titulo != null ? titulo : "MoviFlexx");
+            body.put("mensaje",        cuerpo != null ? cuerpo : "");
+            body.put("cuerpo",         cuerpo != null ? cuerpo : "");
+            body.put("tipo",           tipo   != null ? tipo   : "SISTEMA");
+            body.put("idConversacion", idConversacion);
+            body.put("conversacionId", idConversacion);
+
+            ConexionApi.getInstance(context).post(
+                    Constantes.PUSH_ENVIAR, body,
+                    response -> Log.d(TAG, "✅ Push enviado OK → " + response.toString()),
+                    error -> {
+                        int status = (error.networkResponse != null)
+                                ? error.networkResponse.statusCode : -1;
+                        Log.e(TAG, "❌ Error push HTTP " + status + " | " + error.toString());
+                    }
+            );
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Excepción push: " + e.getMessage(), e);
+        }
+    }
 }
