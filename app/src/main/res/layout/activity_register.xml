@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="24dp" android:background="@color/bg_primary">
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Registro" android:textSize="24sp" android:textStyle="bold" android:textColor="@color/text_primary"/>
+    <EditText android:id="@+id/etNombre" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Nombre" android:layout_marginTop="24dp"/>
+    <EditText android:id="@+id/etCorreo" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Correo" android:inputType="textEmailAddress" android:layout_marginTop="12dp"/>
+    <EditText android:id="@+id/etPass" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Contraseña" android:inputType="textPassword" android:layout_marginTop="12dp"/>
+    <Button android:id="@+id/btnRegister" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Registrarse" android:layout_marginTop="24dp" android:backgroundTint="@color/primary"/>
+</LinearLayout>
