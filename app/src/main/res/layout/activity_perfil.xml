@@ -1,7 +1,132 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:background="@color/bg_primary" android:padding="24dp" android:gravity="center">
-    <TextView android:id="@+id/tvTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="20sp" android:textStyle="bold" android:textColor="@color/text_primary"/>
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Cliente / Repartidor / Comercio" android:textColor="@color/text_secondary" android:layout_marginTop="8dp"/>
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_primary"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        app:title="Perfil"
+        app:titleCentered="true"
+        app:titleTextColor="@color/text_primary"
+        android:background="@color/bg_navbar" />
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/ivAvatar"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:contentDescription="Foto de perfil"
+                app:strokeColor="@color/accent"
+                app:strokeWidth="2dp"
+                app:shapeAppearanceOverlay="@style/CircleImageView"
+                tools:src="@drawable/logo_domiflex" />
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:textColor="@color/text_primary"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
+                tools:text="Carlos Pérez" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Cliente • Popayán"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                app:cardCornerRadius="12dp"
+                app:strokeColor="@color/border"
+                app:cardBackgroundColor="@color/bg_card">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mis pedidos"
+                        android:drawableStart="@android:drawable/ic_menu_agenda"
+                        android:drawableTint="@color/accent"
+                        android:drawablePadding="12dp"
+                        android:gravity="center_vertical"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:paddingVertical="12dp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/border" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Favoritos"
+                        android:drawableStart="@android:drawable/btn_star_big_on"
+                        android:drawableTint="@color/accent"
+                        android:drawablePadding="12dp"
+                        android:gravity="center_vertical"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:paddingVertical="12dp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/border" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Configuración"
+                        android:drawableStart="@android:drawable/ic_menu_preferences"
+                        android:drawableTint="@color/text_secondary"
+                        android:drawablePadding="12dp"
+                        android:gravity="center_vertical"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:paddingVertical="12dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.button.MaterialButton
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="24dp"
+                android:text="Cerrar sesión"
+                app:strokeColor="@color/error"
+                android:textColor="@color/error"
+                app:cornerRadius="24dp" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 </LinearLayout>
