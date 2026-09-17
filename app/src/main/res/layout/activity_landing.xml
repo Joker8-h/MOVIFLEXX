@@ -1,18 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:gravity="center"
-    android:background="@color/bg_primary" android:padding="24dp">
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="DomiFlex" android:textSize="36sp" android:textStyle="bold"
-        android:textColor="@color/primary" />
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="Domicilios rápidos en Colombia" android:textColor="@color/text_secondary"
-        android:layout_marginTop="8dp" android:textSize="16sp"/>
-    <Button android:id="@+id/btnExplorar" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="Explorar Restaurantes" android:layout_marginTop="32dp"
-        android:backgroundTint="@color/primary"/>
-    <Button android:id="@+id/btnLogin" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="Iniciar Sesión" android:layout_marginTop="12dp"
-        style="@style/Widget.Material3.Button.OutlinedButton" />
-</LinearLayout>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_primary"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:padding="24dp">
+
+        <!-- Logo oficial DomiFlex -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="280dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="16dp"
+            app:strokeColor="@color/border"
+            app:strokeWidth="1dp"
+            app:cardBackgroundColor="@color/bg_card">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:src="@drawable/logo_domiflex"
+                android:contentDescription="DomiFlex — Delivery, rapidez y flexibilidad"
+                android:scaleType="fitCenter"
+                android:adjustViewBounds="true"
+                android:padding="12dp" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tu comida favorita,\nmás cerca de ti"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:lineSpacingExtra="4sp"
+            android:gravity="center"
+            android:textColor="@color/text_primary"
+            android:fontFamily="sans-serif-medium" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="28dp"
+            android:text="Domicilios rápidos. Repartidores verificados.\nPaga en efectivo."
+            android:gravity="center"
+            android:textColor="@color/text_secondary"
+            android:textSize="15sp"
+            android:lineSpacingExtra="2sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnExplorar"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Explorar Restaurantes"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:cornerRadius="24dp"
+            android:backgroundTint="@color/accent"
+            android:textColor="@color/black"
+            app:icon="@android:drawable/ic_search_category_default"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLogin"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp"
+            android:text="Iniciar Sesión"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:cornerRadius="24dp"
+            app:strokeColor="@color/accent"
+            android:textColor="@color/accent" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="🍔  Restaurantes  •  💊  Farmacias  •  🛒  Supermercados"
+            android:textColor="@color/text_muted"
+            android:textSize="12sp"
+            android:gravity="center" />
+
+    </LinearLayout>
+</ScrollView>
