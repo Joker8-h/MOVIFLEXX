@@ -1,4 +1,13 @@
 package com.arlys.moviflexx.controller;
 
-public class Conductorstart {
+import android.os.Bundle;
+import androidx.appcompat.app.AppCompatActivity;
+import com.arlys.moviflexx.R;
+
+public class Conductorstart extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.conductorstart);
+    }
 }
