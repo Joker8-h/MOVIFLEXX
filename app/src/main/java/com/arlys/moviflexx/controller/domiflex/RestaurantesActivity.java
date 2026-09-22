@@ -37,6 +37,9 @@ public class RestaurantesActivity extends AppCompatActivity {
                         Intent i = new Intent(RestaurantesActivity.this, RestauranteDetalleActivity.class);
                         i.putExtra("negocioId", n.getId());
                         i.putExtra("negocioNombre", n.getNombre());
+                        i.putExtra("negocioDireccion", n.getDireccion());
+                        i.putExtra("negocioLat", n.getLatitud());
+                        i.putExtra("negocioLng", n.getLongitud());
                         startActivity(i);
                     });
                     rv.setAdapter(adapter);

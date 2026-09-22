@@ -32,9 +32,9 @@ public class Constantes {
     public static String BASE_URL_LOCAL = "http://10.0.2.2:3000/api/";
 
     // Complementos - IAs y mapas
-    public static String OSRM_BASE_URL = "https://osrm-colombia-production.up.railway.app";
-    public static String OPTIMIZER_URL = "https://optimizacion-of-rutas-production.up.railway.app";
+    public static String OSRM_BASE_URL = "https://domiflex-osrm-production.up.railway.app";
+    public static String OPTIMIZER_URL = "https://route-optimizer-production-7e60.up.railway.app";
     public static String IA_PLACA_URL = "https://ia-placa-production.up.railway.app";
-    public static String IA_FACIAL_URL = "https://reconocimientofacial-production-6b61.up.railway.app";
+    public static String IA_FACIAL_URL = "https://domiflex-facial-production.up.railway.app";
     public static String IA_OBJETOS_URL = "https://ia-objetos-production.up.railway.app";
 }

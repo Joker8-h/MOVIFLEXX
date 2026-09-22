@@ -46,6 +46,7 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.lifecycle.livedata)
     implementation(libs.lifecycle.viewmodel)
+    implementation("com.google.firebase:firebase-messaging:24.1.1")
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

@@ -39,6 +39,14 @@
         <activity android:name=".controller.domiflex.PedidoDetalleActivity" android:exported="false"/>
         <activity android:name=".controller.domiflex.TrackingActivity" android:exported="false"/>
         <activity android:name=".controller.domiflex.PerfilActivity" android:exported="false"/>
+        <activity android:name=".controller.domiflex.DriverHomeActivity" android:exported="false"/>
+        <service
+            android:name=".controller.domiflex.DomiFlexMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

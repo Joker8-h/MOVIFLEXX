@@ -1,6 +1,9 @@
 package com.arlys.moviflexx.controller.domiflex;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -34,9 +37,26 @@ public class LoginActivity extends AppCompatActivity {
         body.addProperty("password", etPass.getText().toString());
         RetrofitClient.getApiService().login(body).enqueue(new Callback<JsonObject>() {
             @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                if (response.isSuccessful()) {
+                if (response.isSuccessful() && response.body() != null && response.body().has("token")) {
+                    String token = response.body().get("token").getAsString();
+                    getSharedPreferences("domiflex", MODE_PRIVATE).edit().putString("token", token).apply();
+                    String rol = "";
+                    if (response.body().has("usuario") && response.body().get("usuario").isJsonObject()) {
+                        JsonObject usuario = response.body().getAsJsonObject("usuario");
+                        if (usuario.has("rol") && !usuario.get("rol").isJsonNull()) {
+                            rol = usuario.get("rol").getAsString();
+                        }
+                    }
+                    FcmRegistro.enviar(LoginActivity.this, token);
+                    if (Build.VERSION.SDK_INT >= 33
+                            && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                        requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 42);
+                    }
                     Toast.makeText(LoginActivity.this, "Login OK", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(LoginActivity.this, RestaurantesActivity.class));
+                    Class<?> destino = "REPARTIDOR".equalsIgnoreCase(rol)
+                            ? DriverHomeActivity.class
+                            : RestaurantesActivity.class;
+                    startActivity(new Intent(LoginActivity.this, destino));
                     finish();
                 } else Toast.makeText(LoginActivity.this, "Credenciales inválidas", Toast.LENGTH_SHORT).show();
             }

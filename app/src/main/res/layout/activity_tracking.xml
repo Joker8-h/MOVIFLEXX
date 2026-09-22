@@ -22,16 +22,10 @@
         android:layout_height="220dp"
         android:background="@color/bg_secondary">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:drawableTop="@android:drawable/ic_menu_mapmode"
-            android:drawableTint="@color/accent"
-            android:gravity="center"
-            android:text="Mapa OSRM Colombia"
-            android:textColor="@color/text_muted"
-            android:textSize="13sp" />
+        <WebView
+            android:id="@+id/mapWeb"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
         <com.google.android.material.chip.Chip
             android:layout_width="wrap_content"

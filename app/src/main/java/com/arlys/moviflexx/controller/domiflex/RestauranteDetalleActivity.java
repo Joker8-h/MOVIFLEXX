@@ -25,6 +25,13 @@ public class RestauranteDetalleActivity extends AppCompatActivity {
         setContentView(R.layout.activity_restaurante_detalle);
         negocioId = getIntent().getIntExtra("negocioId", 0);
         String nombre = getIntent().getStringExtra("negocioNombre");
+        getSharedPreferences("domiflex", MODE_PRIVATE).edit()
+                .putInt("negocioId", negocioId)
+                .putString("negocioNombre", nombre)
+                .putString("negocioDireccion", getIntent().getStringExtra("negocioDireccion"))
+                .putString("negocioLat", String.valueOf(getIntent().getDoubleExtra("negocioLat", 0)))
+                .putString("negocioLng", String.valueOf(getIntent().getDoubleExtra("negocioLng", 0)))
+                .apply();
         ((TextView)findViewById(R.id.tvTitulo)).setText(nombre != null ? nombre : "Restaurante");
         RecyclerView rv = findViewById(R.id.rvProductos);
         rv.setLayoutManager(new LinearLayoutManager(this));
