@@ -63,5 +63,12 @@
             android:layout_marginTop="16dp"
             android:textColor="#F4F7FB"
             android:textSize="15sp" />
+
+        <Button
+            android:id="@+id/btnCerrarSesionDriver"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Cerrar sesión" />
     </LinearLayout>
 </ScrollView>

@@ -33,6 +33,10 @@ public class RestauranteDetalleActivity extends AppCompatActivity {
                 .putString("negocioLng", String.valueOf(getIntent().getDoubleExtra("negocioLng", 0)))
                 .apply();
         ((TextView)findViewById(R.id.tvTitulo)).setText(nombre != null ? nombre : "Restaurante");
+        com.google.android.material.appbar.MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            toolbar.setNavigationOnClickListener(v -> finish());
+        }
         RecyclerView rv = findViewById(R.id.rvProductos);
         rv.setLayoutManager(new LinearLayoutManager(this));
         RetrofitClient.getApiService().getProductos(negocioId).enqueue(new Callback<List<Producto>>() {

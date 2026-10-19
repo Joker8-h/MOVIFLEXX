@@ -17,7 +17,7 @@ public class Negocios {
     private int tiempoEstimadoMin;
     private int costoEnvio;
     private int envioMinimo;
-    private int activo;
+    private boolean activo = true;
     private int ownerId;
     private Integer categoriaId;
 

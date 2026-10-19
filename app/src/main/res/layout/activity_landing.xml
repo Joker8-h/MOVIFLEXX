@@ -29,7 +29,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:src="@drawable/logo_domiflex"
-                android:contentDescription="DomiFlex — Delivery, rapidez y flexibilidad"
+                android:contentDescription="Rapitipica — Lo típico, más cerca de ti"
                 android:scaleType="fitCenter"
                 android:adjustViewBounds="true"
                 android:padding="12dp" />
@@ -38,7 +38,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Tu comida favorita,\nmás cerca de ti"
+            android:text="Lo típico,\nmás cerca de ti"
             android:textSize="28sp"
             android:textStyle="bold"
             android:lineSpacingExtra="4sp"
@@ -51,7 +51,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="28dp"
-            android:text="Domicilios rápidos. Repartidores verificados.\nPaga en efectivo."
+            android:text="Domicilios típicos y rápidos.\nRepartidores verificados."
             android:gravity="center"
             android:textColor="@color/text_secondary"
             android:textSize="15sp"

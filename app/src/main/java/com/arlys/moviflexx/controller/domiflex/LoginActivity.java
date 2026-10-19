@@ -44,9 +44,20 @@ public class LoginActivity extends AppCompatActivity {
                     if (response.body().has("usuario") && response.body().get("usuario").isJsonObject()) {
                         JsonObject usuario = response.body().getAsJsonObject("usuario");
                         if (usuario.has("rol") && !usuario.get("rol").isJsonNull()) {
-                            rol = usuario.get("rol").getAsString();
+                            if (usuario.get("rol").isJsonObject()) {
+                                JsonObject rolObj = usuario.getAsJsonObject("rol");
+                                if (rolObj.has("nombre") && !rolObj.get("nombre").isJsonNull()) {
+                                    rol = rolObj.get("nombre").getAsString();
+                                }
+                            } else if (usuario.get("rol").isJsonPrimitive()) {
+                                rol = usuario.get("rol").getAsString();
+                            }
                         }
                     }
+                    getSharedPreferences("domiflex", MODE_PRIVATE).edit()
+                            .putString("token", token)
+                            .putString("rol", rol)
+                            .apply();
                     FcmRegistro.enviar(LoginActivity.this, token);
                     if (Build.VERSION.SDK_INT >= 33
                             && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {

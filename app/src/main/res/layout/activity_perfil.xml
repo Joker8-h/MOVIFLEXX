@@ -8,11 +8,13 @@
     android:orientation="vertical">
 
     <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="56dp"
         app:title="Perfil"
         app:titleCentered="true"
         app:titleTextColor="@color/text_primary"
+        app:navigationIcon="@android:drawable/ic_menu_revert"
         android:background="@color/bg_navbar" />
 
     <androidx.core.widget.NestedScrollView
@@ -49,6 +51,7 @@
                 tools:text="Carlos Pérez" />
 
             <TextView
+                android:id="@+id/tvRolPerfil"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
@@ -71,7 +74,8 @@
                     android:padding="16dp">
 
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:id="@+id/btnMisPedidos"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Mis pedidos"
                         android:drawableStart="@android:drawable/ic_menu_agenda"
@@ -80,7 +84,9 @@
                         android:gravity="center_vertical"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
-                        android:paddingVertical="12dp" />
+                        android:paddingVertical="12dp"
+                        android:clickable="true"
+                        android:focusable="true" />
 
                     <View
                         android:layout_width="match_parent"
@@ -88,7 +94,8 @@
                         android:background="@color/border" />
 
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:id="@+id/btnFavoritos"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Favoritos"
                         android:drawableStart="@android:drawable/btn_star_big_on"
@@ -97,7 +104,9 @@
                         android:gravity="center_vertical"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
-                        android:paddingVertical="12dp" />
+                        android:paddingVertical="12dp"
+                        android:clickable="true"
+                        android:focusable="true" />
 
                     <View
                         android:layout_width="match_parent"
@@ -105,7 +114,8 @@
                         android:background="@color/border" />
 
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:id="@+id/btnConfiguracion"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Configuración"
                         android:drawableStart="@android:drawable/ic_menu_preferences"
@@ -114,11 +124,14 @@
                         android:gravity="center_vertical"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
-                        android:paddingVertical="12dp" />
+                        android:paddingVertical="12dp"
+                        android:clickable="true"
+                        android:focusable="true" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCerrarSesion"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"

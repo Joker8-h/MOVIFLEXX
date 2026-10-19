@@ -25,7 +25,7 @@ public interface ApiService {
     @POST("auth/login")
     Call<JsonObject> login(@Body JsonObject body);
 
-    @POST("auth/register")
+    @POST("auth/registro")
     Call<JsonObject> register(@Body JsonObject body);
 
     @POST("auth/fcm-token")
@@ -58,7 +58,7 @@ public interface ApiService {
     @GET("pedidos/mis-pedidos")
     Call<List<Pedidos>> getMisPedidos(@Header("Authorization") String token);
 
-    @GET("pedidos/repartidor")
+    @GET("pedidos/mis-pedidos")
     Call<List<Pedidos>> getPedidosRepartidor(@Header("Authorization") String token);
 
     @GET("pedidos/{id}")
@@ -86,6 +86,6 @@ public interface ApiService {
     Call<JsonObject> confirmarRepartidor(@Header("Authorization") String token, @Path("id") int id);
 
     // Pricing - estimación
-    @POST("pedidos/estimar")
-    Call<JsonObject> estimarPrecio(@Body JsonObject body);
+    @POST("pedidos/cotizar")
+    Call<JsonObject> estimarPrecio(@Header("Authorization") String token, @Body JsonObject body);
 }

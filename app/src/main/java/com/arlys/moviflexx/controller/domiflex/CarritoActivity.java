@@ -29,12 +29,22 @@ public class CarritoActivity extends AppCompatActivity {
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_carrito);
+        com.google.android.material.appbar.MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            toolbar.setNavigationOnClickListener(v -> finish());
+        }
         RecyclerView rv = findViewById(R.id.rvCarrito);
         rv.setLayoutManager(new LinearLayoutManager(this));
         TextView tvTotal = findViewById(R.id.tvTotal);
+        TextView tvSubtotal = findViewById(R.id.tvSubtotal);
+        TextView tvEnvio = findViewById(R.id.tvEnvio);
         Button btnPedir = findViewById(R.id.btnPedir);
         CarritoManager cm = CarritoManager.getInstance();
-        tvTotal.setText("Total: $"+cm.getTotal());
+        int subtotal = cm.getTotal();
+        int envio = subtotal > 0 ? 2000 : 0;
+        if (tvSubtotal != null) tvSubtotal.setText("$" + subtotal);
+        if (tvEnvio != null) tvEnvio.setText("$" + envio);
+        tvTotal.setText("$" + (subtotal + envio));
         CarritoAdapter adapter = new CarritoAdapter(cm.getItems(), cm.getCantidades());
         rv.setAdapter(adapter);
         btnPedir.setOnClickListener(v -> {

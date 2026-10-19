@@ -23,15 +23,20 @@ public class RegisterActivity extends AppCompatActivity {
         EditText etCorreo = findViewById(R.id.etCorreo);
         EditText etPass = findViewById(R.id.etPass);
         Button btn = findViewById(R.id.btnRegister);
+        android.view.View tvLogin = findViewById(R.id.tvLogin);
+        if (tvLogin != null) {
+            tvLogin.setOnClickListener(v -> finish());
+        }
         btn.setOnClickListener(v -> {
             JsonObject body = new JsonObject();
-            body.addProperty("nombre", etNombre.getText().toString());
-            body.addProperty("email", etCorreo.getText().toString());
+            body.addProperty("nombre", etNombre.getText().toString().trim());
+            body.addProperty("email", etCorreo.getText().toString().trim());
             body.addProperty("password", etPass.getText().toString());
             body.addProperty("rol", "CLIENTE");
+            body.addProperty("skipOtp", true);
             RetrofitClient.getApiService().register(body).enqueue(new Callback<JsonObject>() {
                 @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> r) {
-                    Toast.makeText(RegisterActivity.this, r.isSuccessful()?"Registro OK":"Error", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(RegisterActivity.this, r.isSuccessful()?"Registro OK":"Error en registro", Toast.LENGTH_SHORT).show();
                     if (r.isSuccessful()) finish();
                 }
                 @Override public void onFailure(Call<JsonObject> call, Throwable t) {

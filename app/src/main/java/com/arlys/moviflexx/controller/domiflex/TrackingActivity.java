@@ -33,10 +33,19 @@ public class TrackingActivity extends AppCompatActivity {
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tracking);
+        com.google.android.material.appbar.MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            toolbar.setNavigationOnClickListener(v -> finish());
+        }
+        android.view.View btnChat = findViewById(R.id.btnChatRepartidor);
+        if (btnChat != null) {
+            btnChat.setOnClickListener(v -> android.widget.Toast.makeText(this, "Conectando con el repartidor del pedido #" + pedidoId, android.widget.Toast.LENGTH_SHORT).show());
+        }
         pedidoId = getIntent().getIntExtra("pedidoId", 0);
         tvInfo = findViewById(R.id.tvInfo);
         mapWeb = findViewById(R.id.mapWeb);
-        mapWeb.getSettings().setJavaScriptEnabled(false);
+        mapWeb.getSettings().setJavaScriptEnabled(true);
+        mapWeb.getSettings().setDomStorageEnabled(true);
         tvInfo.setText("Pedido #" + pedidoId + "\nCargando estado…");
     }
 

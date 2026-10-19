@@ -7,7 +7,7 @@ public class Producto {
     private int precio;
     private String imagen;
     private String categoria;
-    private int disponible;
+    private boolean disponible = true;
     private int restauranteId;
 
     public Producto() {}
@@ -18,7 +18,7 @@ public class Producto {
         this.precio = precio;
         this.categoria = categoria;
         this.restauranteId = restauranteId;
-        this.disponible = 1;
+        this.disponible = true;
     }
 
     public int getId() { return id; }
@@ -33,8 +33,10 @@ public class Producto {
     public void setImagen(String i) { this.imagen = i; }
     public String getCategoria() { return categoria; }
     public void setCategoria(String c) { this.categoria = c; }
-    public int getDisponible() { return disponible; }
-    public void setDisponible(int d) { this.disponible = d; }
+    public boolean isDisponible() { return disponible; }
+    public int getDisponible() { return disponible ? 1 : 0; }
+    public void setDisponible(boolean d) { this.disponible = d; }
+    public void setDisponible(int d) { this.disponible = d != 0; }
     public int getRestauranteId() { return restauranteId; }
     public void setRestauranteId(int r) { this.restauranteId = r; }
 }

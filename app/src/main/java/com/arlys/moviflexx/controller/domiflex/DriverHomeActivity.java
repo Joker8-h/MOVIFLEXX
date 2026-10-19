@@ -44,6 +44,17 @@ public class DriverHomeActivity extends AppCompatActivity implements LocationLis
         btnEstado = findViewById(R.id.btnEstado);
         btnEfectivo = findViewById(R.id.btnEfectivo);
         findViewById(R.id.btnRefrescar).setOnClickListener(v -> cargar());
+        android.view.View btnLogout = findViewById(R.id.btnCerrarSesionDriver);
+        if (btnLogout != null) {
+            btnLogout.setOnClickListener(v -> {
+                detenerGps();
+                getSharedPreferences("domiflex", MODE_PRIVATE).edit().clear().apply();
+                android.content.Intent i = new android.content.Intent(this, LoginActivity.class);
+                i.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK | android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(i);
+                finish();
+            });
+        }
         btnTomar.setOnClickListener(v -> tomar());
         btnEstado.setOnClickListener(v -> avanzar());
         btnEfectivo.setOnClickListener(v -> confirmarEfectivo());
@@ -103,14 +114,21 @@ public class DriverHomeActivity extends AppCompatActivity implements LocationLis
                     String negocio = pedido.has("negocio") && pedido.get("negocio").isJsonObject()
                             ? pedido.getAsJsonObject("negocio").has("nombre") ? pedido.getAsJsonObject("negocio").get("nombre").getAsString() : "Negocio"
                             : "Envío";
-                    lista.append("#").append(pedido.get("idPedido").getAsInt())
+                    String total = pedido.has("total") ? pedido.get("total").getAsString() : "0";
+                    lista.append("📦 Pedido #").append(pedido.get("idPedido").getAsInt())
                             .append(" · ").append(negocio)
-                            .append("\n").append(texto(pedido, "dirEntrega"))
-                            .append("\n\n");
+                            .append("\n💰 Total: $").append(total)
+                            .append("\n📍 Entrega: ").append(texto(pedido, "dirEntrega"))
+                            .append("\n────────────────────\n");
                 }
                 tvLista.setText(lista.toString().trim());
-                btnTomar.setEnabled(disponible != null);
-                btnTomar.setVisibility(Button.VISIBLE);
+                if (disponible != null) {
+                    btnTomar.setEnabled(true);
+                    btnTomar.setText("Tomar Pedido #" + disponible.get("idPedido").getAsInt());
+                    btnTomar.setVisibility(Button.VISIBLE);
+                } else {
+                    btnTomar.setEnabled(false);
+                }
             }
             @Override public void onFailure(Call<JsonArray> call, Throwable t) {
                 tvLista.setText("No se pudo consultar la lista.");
