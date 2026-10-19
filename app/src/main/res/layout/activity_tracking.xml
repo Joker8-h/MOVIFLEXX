@@ -12,15 +12,15 @@
         android:layout_width="match_parent"
         android:layout_height="56dp"
         app:title="En camino"
-        app:titleCentered="true"
-        app:titleTextColor="@color/text_primary"
+        app:titleCentered="false"
+        app:titleTextColor="@color/white"
         app:navigationIcon="@android:drawable/ic_menu_revert"
         android:background="@color/bg_navbar" />
 
-    <!-- Mapa placeholder 220dp como en mock -->
+    <!-- Mapa con tarjeta flotante "Tu pedido llegará en 15 min" según Boceto 5 -->
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="220dp"
+        android:layout_height="240dp"
         android:background="@color/bg_secondary">
 
         <WebView
@@ -31,12 +31,13 @@
         <com.google.android.material.chip.Chip
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="top|end"
+            android:layout_gravity="top|center_horizontal"
             android:layout_margin="12dp"
-            android:text="En vivo"
-            app:chipBackgroundColor="@color/accent"
-            android:textColor="@color/black"
-            app:chipIcon="@android:drawable/presence_online"
+            android:text="Tu pedido llegará en 15 min"
+            app:chipBackgroundColor="@color/white"
+            android:textColor="@color/text_primary"
+            app:chipStrokeColor="@color/border"
+            app:chipStrokeWidth="1dp"
             style="@style/Widget.Material3.Chip.Assist" />
     </FrameLayout>
 
@@ -57,17 +58,17 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Tu pedido llegará en 15 min"
-                android:textColor="@color/accent"
+                android:textColor="@color/text_primary"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                tools:text="Tu pedido llegará en 12 min • 1.6 km" />
+                tools:text="Tu pedido llegará en 15 min • 1.6 km" />
 
-            <!-- Timeline placeholder -->
+            <!-- Stepper verde (#16A34A) según Boceto 5 -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                app:cardCornerRadius="12dp"
+                app:cardCornerRadius="16dp"
                 app:strokeColor="@color/border"
                 app:cardBackgroundColor="@color/bg_card">
 
@@ -80,9 +81,10 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="● Confirmado  →  🏍 Repartidor asignado  →  📦 En camino  →  ✅ Entregado"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
+                        android:text="✓ Confirmado   ━━━   ✓ En camino   ━━━   ○ Entregado"
+                        android:textColor="@color/success"
+                        android:textStyle="bold"
+                        android:textSize="14sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -91,13 +93,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="¿Problemas? Chat con tu repartidor"
+                android:text="Chat en vivo con tu repartidor"
                 android:textColor="@color/accent"
-                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textSize="14sp"
                 android:drawableStart="@android:drawable/sym_action_chat"
                 android:drawableTint="@color/accent"
                 android:drawablePadding="8dp"
-                android:padding="12dp"
+                android:padding="14dp"
                 android:background="@color/bg_card"
                 android:gravity="center_vertical"
                 android:clickable="true"

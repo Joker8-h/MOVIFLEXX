@@ -12,8 +12,8 @@
         android:layout_width="match_parent"
         android:layout_height="56dp"
         app:title="Tu carrito"
-        app:titleCentered="true"
-        app:titleTextColor="@color/text_primary"
+        app:titleCentered="false"
+        app:titleTextColor="@color/white"
         app:navigationIcon="@android:drawable/ic_menu_revert"
         android:background="@color/bg_navbar" />
 
@@ -36,13 +36,11 @@
                 android:nestedScrollingEnabled="false"
                 tools:listitem="@layout/item_carrito" />
 
-            <!-- Empty handled via visibility -->
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                app:cardCornerRadius="12dp"
+                app:cardCornerRadius="16dp"
                 app:strokeColor="@color/border"
                 app:cardBackgroundColor="@color/bg_card">
 
@@ -52,18 +50,9 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Resumen del pedido"
-                        android:textColor="@color/text_primary"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
                         android:orientation="horizontal">
 
                         <TextView
@@ -79,8 +68,9 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="@color/text_primary"
+                            android:textStyle="bold"
                             android:textSize="14sp"
-                            tools:text="$14.000" />
+                            tools:text="$19.400" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -93,7 +83,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Envío"
+                            android:text="Domicilio"
                             android:textColor="@color/text_secondary"
                             android:textSize="14sp" />
 
@@ -102,14 +92,15 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="@color/text_primary"
+                            android:textStyle="bold"
                             android:textSize="14sp"
-                            tools:text="$3.300" />
+                            tools:text="$3.000" />
                     </LinearLayout>
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:layout_marginVertical="16dp"
+                        android:layout_marginVertical="14dp"
                         android:background="@color/border" />
 
                     <LinearLayout
@@ -123,27 +114,19 @@
                             android:layout_weight="1"
                             android:text="Total"
                             android:textColor="@color/text_primary"
-                            android:textSize="16sp"
+                            android:textSize="17sp"
                             android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/tvTotal"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Total: $0"
-                            android:textColor="@color/accent"
+                            android:text="$0"
+                            android:textColor="@color/text_primary"
                             android:textSize="18sp"
                             android:textStyle="bold"
-                            tools:text="$17.300" />
+                            tools:text="$22.400" />
                     </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="Método de pago: Efectivo"
-                        android:textColor="@color/text_muted"
-                        android:textSize="12sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -151,24 +134,25 @@
                 android:id="@+id/tvConfirmHint"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="14dp"
                 android:gravity="center"
-                android:text="Paga en efectivo al recibir • Sigue tu pedido en vivo"
+                android:text="Paga al recibir o en línea • Sigue tu pedido en vivo"
                 android:textColor="@color/text_muted"
                 android:textSize="12sp" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
+    <!-- Botón rojo "Continuar" según Boceto 4 -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnPedir"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="54dp"
         android:layout_margin="16dp"
-        android:text="Confirmar Pedido (Efectivo)"
-        android:textSize="15sp"
+        android:text="Continuar"
+        android:textSize="16sp"
         android:textStyle="bold"
-        app:cornerRadius="28dp"
+        app:cornerRadius="27dp"
         android:backgroundTint="@color/accent"
-        android:textColor="@color/black" />
+        android:textColor="@color/white" />
 
 </LinearLayout>

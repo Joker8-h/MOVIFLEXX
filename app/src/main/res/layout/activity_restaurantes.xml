@@ -7,14 +7,14 @@
     android:background="@color/bg_primary"
     android:orientation="vertical">
 
-    <!-- Top App Bar -->
+    <!-- Top App Bar Oscura según Boceto 2 -->
     <com.google.android.material.appbar.MaterialToolbar
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:background="@color/bg_navbar"
-        app:title="Explorar"
-        app:titleTextColor="@color/text_primary"
-        style="@style/Widget.Material3.Toolbar" >
+        app:title="Tu ubicación • Calle 45 # 12-34"
+        app:titleTextColor="@color/white"
+        style="@style/Widget.Material3.Toolbar">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -31,62 +31,72 @@
                 app:icon="@android:drawable/ic_menu_sort_by_size"
                 android:contentDescription="Carrito"
                 app:iconSize="22dp"
-                android:textColor="@color/text_primary" />
+                app:iconTint="@color/white"
+                android:textColor="@color/white" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPerfil"
                 style="@style/Widget.Material3.Button.IconButton.Filled"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
                 android:layout_marginStart="4dp"
                 android:layout_marginEnd="8dp"
+                android:backgroundTint="@color/accent"
                 app:icon="@android:drawable/ic_menu_myplaces"
+                app:iconTint="@color/white"
                 android:contentDescription="Perfil"
                 app:iconSize="18dp" />
         </LinearLayout>
     </com.google.android.material.appbar.MaterialToolbar>
 
-    <!-- Search -->
-    <com.google.android.material.card.MaterialCardView
+    <!-- Barra de búsqueda blanca según Boceto 2: "¿Qué se te antoja hoy?" -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        app:cardCornerRadius="24dp"
-        app:strokeColor="@color/border"
-        app:strokeWidth="1dp"
-        app:cardBackgroundColor="@color/bg_card"
-        app:cardElevation="0dp">
+        android:background="@color/bg_navbar"
+        android:paddingHorizontal="14dp"
+        android:paddingBottom="14dp">
 
-        <LinearLayout
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="16dp">
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="24dp"
+            app:strokeColor="@color/border"
+            app:strokeWidth="1dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardElevation="2dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="🔍"
-                android:textSize="16sp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp">
 
-            <EditText
-                android:id="@+id/etBuscar"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="12dp"
-                android:background="@null"
-                android:hint="Buscar restaurantes, farmacias…"
-                android:textColor="@color/text_primary"
-                android:textColorHint="@color/text_muted"
-                android:textSize="15sp"
-                android:singleLine="true"
-                android:imeOptions="actionSearch" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔍"
+                    android:textSize="16sp" />
 
-    <!-- Lista -->
+                <EditText
+                    android:id="@+id/etBuscar"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="10dp"
+                    android:background="@null"
+                    android:hint="¿Qué se te antoja hoy?"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_muted"
+                    android:textSize="15sp"
+                    android:singleLine="true"
+                    android:imeOptions="actionSearch" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </FrameLayout>
+
+    <!-- Lista de restaurantes populares -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvNegocios"
         android:layout_width="match_parent"
@@ -94,7 +104,7 @@
         android:layout_weight="1"
         android:clipToPadding="false"
         android:paddingBottom="80dp"
-        android:paddingTop="4dp"
+        android:paddingTop="8dp"
         tools:listitem="@layout/item_negocio" />
 
 </LinearLayout>

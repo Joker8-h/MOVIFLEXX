@@ -4,94 +4,78 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_primary"
+    android:background="@color/bg_navbar"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:gravity="center_horizontal"
-        android:padding="24dp">
+        android:gravity="center"
+        android:padding="28dp">
 
-        <!-- Logo oficial DomiFlex -->
+        <!-- Ilustración Scooter & Logo Rapitipica según Boceto 1 (Splash) -->
         <com.google.android.material.card.MaterialCardView
-            android:layout_width="280dp"
+            android:layout_width="240dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="20dp"
             android:layout_marginBottom="24dp"
-            app:cardCornerRadius="16dp"
-            app:strokeColor="@color/border"
-            app:strokeWidth="1dp"
-            app:cardBackgroundColor="@color/bg_card">
+            app:cardCornerRadius="24dp"
+            app:strokeColor="#33E30613"
+            app:strokeWidth="2dp"
+            app:cardBackgroundColor="#FF161B22">
 
             <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:src="@drawable/logo_domiflex"
-                android:contentDescription="Rapitipica — Lo típico, más cerca de ti"
+                android:contentDescription="Rapitipica — Lo que quieres, en un clic"
                 android:scaleType="fitCenter"
                 android:adjustViewBounds="true"
-                android:padding="12dp" />
+                android:padding="16dp" />
         </com.google.android.material.card.MaterialCardView>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Lo típico,\nmás cerca de ti"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:lineSpacingExtra="4sp"
+            android:text="Rapitipica"
+            android:textSize="36sp"
+            android:textStyle="bold|italic"
             android:gravity="center"
-            android:textColor="@color/text_primary"
-            android:fontFamily="sans-serif-medium" />
+            android:textColor="@color/white"
+            android:fontFamily="sans-serif-black" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:layout_marginBottom="28dp"
-            android:text="Domicilios típicos y rápidos.\nRepartidores verificados."
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="36dp"
+            android:text="Lo que quieres, en un clic"
             android:gravity="center"
-            android:textColor="@color/text_secondary"
-            android:textSize="15sp"
-            android:lineSpacingExtra="2sp" />
+            android:textColor="#FFD1D5DB"
+            android:textSize="16sp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnExplorar"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="Explorar Restaurantes"
-            android:textSize="15sp"
+            android:layout_height="54dp"
+            android:text="Comenzar"
+            android:textSize="16sp"
             android:textStyle="bold"
-            app:cornerRadius="24dp"
+            app:cornerRadius="27dp"
             android:backgroundTint="@color/accent"
-            android:textColor="@color/black"
-            app:icon="@android:drawable/ic_search_category_default"
-            app:iconGravity="textStart"
-            app:iconPadding="8dp" />
+            android:textColor="@color/white" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnLogin"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="12dp"
-            android:text="Iniciar Sesión"
+            android:text="Iniciar sesión"
             android:textSize="15sp"
             android:textStyle="bold"
-            app:cornerRadius="24dp"
-            app:strokeColor="@color/accent"
-            android:textColor="@color/accent" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="🍔  Restaurantes  •  💊  Farmacias  •  🛒  Supermercados"
-            android:textColor="@color/text_muted"
-            android:textSize="12sp"
-            android:gravity="center" />
+            android:textColor="@color/white" />
 
     </LinearLayout>
 </ScrollView>
